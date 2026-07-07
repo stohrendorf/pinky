@@ -1,0 +1,45 @@
+{
+  "name": "pinky",
+  "private": true,
+  "version": "0.1.0",
+  "description": "EQ-only DAW - a pink noise phase-cancellation studio",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "daw",
+    "web-audio",
+    "eq",
+    "pink-noise",
+    "phase-cancellation",
+    "svelte"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^26.2.0",
+    "eslint": "^10.8.1",
+    "eslint-plugin-perfectionist": "^5.10.1",
+    "eslint-plugin-svelte": "^3.22.0",
+    "globals": "^17.9.0",
+    "svelte": "^5.56.8",
+    "svelte-check": "^4.7.5",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.67.0",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.3.1"
+  }
+}

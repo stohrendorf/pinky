@@ -1,0 +1,530 @@
+<script lang="ts">
+    import {
+        run 
+    } from 'svelte/legacy';
+
+    import type {
+        MasterId
+    } from '../lib/master-controls';
+    import type {
+        DemoSong
+    } from '../lib/project';
+
+    import {
+        applyMaster, BUDGET_MAX, BUDGET_MIN, getNodeBudget, master, setNodeBudget
+    } from '../lib/engine';
+    import {
+        MASTER_SLIDERS
+    } from '../lib/instruments';
+    import {
+        activeDemo,
+        DEMO_LIBRARY,
+        exportProject,
+        importProject,
+        loadDemoProject,
+        newEmptyProject,
+        playing,
+        project,
+        savedAt,
+        saveProject,
+        selInstId,
+        selPatId,
+        songCursor,
+        songLabel,
+        touch
+    } from '../lib/project';
+    import {
+        exportWav, rendering
+    } from '../lib/render';
+    import {
+        showShortcuts
+    } from '../lib/shortcuts';
+    import {
+        playPattern, playSong, seekSong, stopTransport
+    } from '../lib/transport';
+    import Slider from './Slider.svelte';
+    import Button from './ui/Button.svelte';
+    import Confirm from './ui/Confirm.svelte';
+    import Dialog from './ui/Dialog.svelte';
+    import IconButton from './ui/IconButton.svelte';
+
+    let masterParams = $state({...master});
+
+    let showConfirmNew = $state(false);
+    let showAlert = $state(false);
+    let alertMessage = $state('');
+    let utilityExpanded = $state(false);
+
+    function toggleUtilities() {
+        utilityExpanded = !utilityExpanded;
+    }
+
+    function setMaster(id: MasterId, v: number) {
+        applyMaster(id, v);
+        masterParams = {...masterParams, [id]: v};
+    }
+
+    function newProject() {
+        showConfirmNew = true;
+    }
+
+    function onConfirmNew() {
+        stopTransport();
+        const p = newEmptyProject();
+        activeDemo.set(null);
+        project.set(p);
+        selInstId.set(p.instruments[0].id);
+        selPatId.set(p.patterns[0].id);
+        songCursor.set(0);
+    }
+
+    function demo(song: DemoSong) {
+        stopTransport();
+        loadDemoProject(song);
+    }
+
+    // Save feedback — driven by the store, so Ctrl+S flashes it too
+    let saved = $state('');
+    let savedTimer: ReturnType<typeof setTimeout> | undefined = $state();
+    run(() => {
+        if ($savedAt) {
+            saved = '✓ saved';
+            clearTimeout(savedTimer);
+            savedTimer = setTimeout(() => saved = '', 1600);
+        }
+    });
+
+    function setSwing(v: number) {
+        if (!$project) {return;}
+        $project.swing = v / 100;
+        touch();
+    }
+
+    const swingPct = $derived(Math.round(($project?.swing || 0) * 100));
+
+    /* Performance, not music: how many audio nodes the engine may run before it
+     * starts thinning new voices out (see the scope readout). It depends on the
+     * machine, so it lives here as a slider and is stored per browser — not in
+     * the song. */
+    let nodeBudget = $state(getNodeBudget());
+
+    function setBudget(v: number) {
+        setNodeBudget(v);
+        nodeBudget = getNodeBudget();
+    }
+
+    // Offline bounce: renders the song (or the marked loop region) to a WAV file
+    async function exportAudio() {
+        const err = await exportWav();
+        if (err) {
+            alertMessage = err;
+            showAlert = true;
+        }
+    }
+
+    let fileInput: HTMLInputElement | undefined = $state();
+
+    async function importFile(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        target.value = '';
+        if (!file) {return;}
+        stopTransport();
+        const ok = importProject(await file.text());
+        if (!ok) {
+            alertMessage = 'Could not import: not a valid song file.';
+            showAlert = true;
+        }
+    }
+</script>
+
+<header class="topbar">
+    <div class="topbar-main">
+        <div class="session-group">
+            <div class="brand" title="Pinky EQ-only DAW"><i class="fa fa-wave-square"></i> <span>Pinky</span></div>
+            <div class="transport-controls">
+                <Button className="compact-button" disabled={$playing} title="Play Pattern" on:click={playPattern}><i class="fa fa-play"></i> Pattern
+                </Button>
+                <Button className="compact-button" disabled={$playing} title="Play Song" on:click={playSong}><i class="fa fa-music"></i> Song
+                </Button>
+                <Button
+className="compact-button"
+disabled={!$playing}
+title="Stop"
+variant="secondary"
+                        on:click={stopTransport}><i class="fa fa-stop"></i></Button>
+                <Button
+className="compact-button"
+disabled={$songCursor === 0}
+title="Playback cursor back to the start (Home)"
+                        variant="secondary"
+                        on:click={() => seekSong(0)}><i class="fa fa-backward-step"></i></Button>
+            </div>
+            <span class="song-label">{$songLabel}</span>
+            <span class="saved-flash" aria-live="polite">{saved}</span>
+        </div>
+        <div class="utility-group">
+            <IconButton
+icon="fa-question-circle"
+title="Keyboard shortcuts (?)"
+                        variant="ghost"
+                        on:click={() => showShortcuts.set(true)}></IconButton>
+            <Button
+ariaControls="topbar-utilities"
+className="utility-toggle"
+expanded={utilityExpanded}
+                    pressed={utilityExpanded}
+title="Show application utilities"
+                    variant="ghost"
+on:click={toggleUtilities}>
+                <i class="fa fa-sliders"></i><span>Studio</span>
+            </Button>
+        </div>
+    </div>
+
+    {#if utilityExpanded}
+        <aside id="topbar-utilities" class="utility-sidebar" aria-label="Application utilities">
+            <div class="sidebar-column">
+                <div class="sidebar-section">
+                    <span class="menu-heading">Project</span>
+                    <Button variant="secondary" on:click={saveProject}><i class="fa fa-save"></i> Save</Button>
+                    <Button variant="secondary" on:click={exportProject}><i class="fa fa-download"></i> Export</Button>
+                    <Button variant="secondary" on:click={() => fileInput?.click()}><i class="fa fa-upload"></i> Import
+                    </Button>
+                    <Button variant="secondary" on:click={newProject}><i class="fa fa-add"></i> New</Button>
+                </div>
+                <div class="sidebar-section">
+                    <span class="menu-heading">Render</span>
+                    <Button
+disabled={$rendering}
+title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
+variant="secondary"
+                            on:click={exportAudio}>
+                        <i class="fa fa-file-audio"></i> {$rendering ? 'Rendering…' : 'Render WAV'}</Button>
+                </div>
+            </div>
+            <div class="sidebar-column">
+                <div class="sidebar-section">
+                    <span class="menu-heading">Mix</span>
+                    <div class="master-controls" aria-label="Master controls">
+                        {#each MASTER_SLIDERS as s (s.id)}
+                            <Slider
+{...s}
+onchange={v => setMaster(s.id as MasterId, v)}
+                                    value={masterParams[s.id as MasterId]}/>
+                        {/each}
+                    </div>
+                </div>
+                <div class="sidebar-section timing-section" aria-label="Timing controls">
+                    <span class="menu-heading">Timing</span>
+                    <label class="swing-label" title="Groove: pushes every 2nd 16th late (100% = triplet shuffle)">
+                        Swing
+                        <input
+max="100"
+min="0"
+oninput={e => setSwing(parseInt((e.target as HTMLInputElement).value, 10))}
+step="1"
+type="range"
+                               value={swingPct}>
+                        <span class="swing-val">{swingPct}%</span>
+                    </label>
+                    {#if $project}<label class="bpm-label">BPM <input
+max="240"
+min="40"
+type="number"
+                                                                      bind:value={$project.bpm}></label>{/if}
+                </div>
+            </div>
+            <div class="sidebar-section library-section">
+                <span class="menu-heading"><i class="fa fa-compact-disc"></i> Demo songs</span>
+                <div class="demo-grid">
+                    {#each DEMO_LIBRARY as d (d.id)}
+                        <Button
+pressed={$activeDemo === d.id}
+title={d.title}
+                                variant={$activeDemo === d.id ? 'primary' : 'secondary'}
+on:click={() => demo(d.id)}><i class="fa {d.icon}"></i> {d.label}
+                        </Button>
+                    {/each}
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="menu-heading">Performance</span>
+                <label
+class="node-budget-control"
+                       title="Audio node budget: above it the engine thins new voices so playback can keep up.">
+                    Nodes
+                    <input
+max={BUDGET_MAX}
+min={BUDGET_MIN}
+oninput={e => setBudget(parseInt((e.target as HTMLInputElement).value, 10))}
+step="20"
+type="range"
+                           value={nodeBudget}>
+                    <span>{nodeBudget}</span>
+                </label>
+            </div>
+        </aside>
+    {/if}
+</header>
+
+<input
+bind:this={fileInput}
+class="file-input"
+accept=".json,application/json"
+onchange={importFile}
+type="file">
+
+<Confirm
+confirmLabel="Create new project"
+destructive
+message="Start a new empty project? Unsaved changes are lost."
+         title="New Project"
+bind:show={showConfirmNew}
+on:confirm={onConfirmNew}/>
+<Dialog title="Alert" bind:show={showAlert}>
+    <p>{alertMessage}</p>
+    <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+        <Button on:click={() => showAlert = false}>OK</Button>
+    </div>
+</Dialog>
+<style>
+    .topbar {
+        position: relative;
+        z-index: 50;
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 3px 16px rgba(0, 0, 0, .2);
+    }
+
+    .topbar-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 52px;
+        padding: 8px 16px;
+        overflow: hidden;
+    }
+
+    .session-group,
+    .utility-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .session-group {
+        flex: 1 1 auto;
+    }
+
+    .utility-group {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex: 0 0 auto;
+        color: var(--primary-text);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -.01em;
+    }
+
+    .transport-controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 0 0 auto;
+    }
+
+    .utility-sidebar {
+        min-width: 0;
+    }
+
+    .utility-toggle {
+        min-width: 36px;
+    }
+
+    .help-button {
+        min-width: 36px;
+    }
+
+    .utility-sidebar {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 16px;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 16px 20px;
+        box-sizing: border-box;
+        width: min(600px, calc(100vw - 32px));
+        max-height: calc(100dvh - 56px);
+        overflow: auto;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, .45);
+        background: var(--color-surface-raised);
+    }
+
+    :global(.compact-button.btn) {
+        min-width: 32px;
+        padding: 7px 10px;
+        font-size: 11px;
+    }
+
+
+    .song-label {
+        font-size: 12px;
+        opacity: .75;
+        color: var(--color-text-muted);
+        flex: 0 0 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .saved-flash {
+        display: inline-block;
+        width: 52px;
+        text-align: left;
+        margin-left: 2px;
+        font-weight: 400;
+        opacity: .8;
+        white-space: nowrap;
+    }
+
+
+    .bpm-label {
+        font-size: 12px;
+        display: inline;
+    }
+
+    .swing-label {
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .swing-label input {
+        width: 70px;
+        vertical-align: middle;
+    }
+
+    .node-budget-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .node-budget-control input {
+        width: 120px;
+    }
+
+    .node-budget-control span {
+        min-width: 32px;
+        opacity: .7;
+    }
+
+    .swing-val {
+        opacity: .7;
+        width: 34px;
+        display: inline-block;
+    }
+
+    .master-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .master-controls :global(.slider-group) {
+        width: 100%;
+        margin: 0;
+        font-size: 10px;
+    }
+
+    .bpm-label input {
+        width: 56px;
+        background: var(--border);
+        color: var(--primary-text);
+        border: none;
+        border-radius: 4px;
+        padding: 4px;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .sidebar-section {
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .sidebar-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .menu-heading {
+        display: block;
+        width: 100%;
+        margin-bottom: 2px;
+        color: var(--color-text-subtle);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+
+    .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 760px) {
+        .brand span,
+        .song-label {
+            display: none;
+        }
+
+        .utility-group {
+            gap: 4px;
+        }
+
+        .topbar-main {
+            gap: 4px;
+            padding-inline: 8px;
+        }
+
+        .utility-sidebar {
+            grid-template-columns: 1fr;
+            right: 8px;
+            width: calc(100vw - 16px);
+        }
+
+        .sidebar-column {
+            gap: 10px;
+        }
+    }
+
+</style>

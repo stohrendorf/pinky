@@ -1,0 +1,6262 @@
+{
+  "formatVersion": 1,
+  "instruments": [
+    {
+      "id": "277b7056-8f0a-46c8-956e-a50d79239410",
+      "name": "Drums/Kick",
+      "color": "#53d8fb",
+      "params": {
+        "tone": 1,
+        "q": 5,
+        "harm": 3,
+        "falloff": 0.9,
+        "stretch": 0,
+        "noise": 0.15,
+        "noiseFreq": 3400,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 21,
+        "pitchTime": 0.06,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.18,
+        "sus": 0,
+        "rel": 0.12,
+        "gain": 0.78,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.9
+          },
+          {
+            "ratio": 3,
+            "level": 0.81
+          }
+        ]
+      }
+    },
+    {
+      "id": "26c72beb-782f-4e57-bbe8-2aa6d92313b0",
+      "name": "Drums/Snare",
+      "color": "#ff9f43",
+      "params": {
+        "tone": 0.5,
+        "q": 6,
+        "harm": 2,
+        "falloff": 0.5,
+        "stretch": 0,
+        "noise": 0.9,
+        "noiseFreq": 4800,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 9,
+        "pitchTime": 0.05,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.18,
+        "sus": 0,
+        "rel": 0.2,
+        "gain": 0.7,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "3a3320b1-9730-4b27-bd39-4ba15a793f95",
+      "name": "Drums/Clap",
+      "color": "#ee5253",
+      "params": {
+        "tone": 0.15,
+        "q": 5,
+        "harm": 1,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 1,
+        "noiseFreq": 1800,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.004,
+        "dec": 0.14,
+        "sus": 0,
+        "rel": 0.18,
+        "gain": 0.68,
+        "pan": 0.15,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "b2e7ae65-e022-4683-8a9f-806c5b945e16",
+      "name": "Drums/Hi-Hat",
+      "color": "#10ac84",
+      "params": {
+        "tone": 0,
+        "q": 40,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 1,
+        "noiseFreq": 10500,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.04,
+        "sus": 0,
+        "rel": 0.05,
+        "gain": 0.5,
+        "pan": 0.3,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.6
+          },
+          {
+            "ratio": 3,
+            "level": 0.36
+          },
+          {
+            "ratio": 4,
+            "level": 0.22
+          }
+        ]
+      }
+    },
+    {
+      "id": "6f3d949a-c8b4-4934-bdc3-2419f1fcffc7",
+      "name": "Drums/Open Hat",
+      "color": "#a29bfe",
+      "params": {
+        "tone": 0,
+        "q": 40,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 1,
+        "noiseFreq": 8500,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.32,
+        "sus": 0,
+        "rel": 0.32,
+        "gain": 0.38,
+        "pan": 0.35,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.6
+          },
+          {
+            "ratio": 3,
+            "level": 0.36
+          },
+          {
+            "ratio": 4,
+            "level": 0.22
+          }
+        ]
+      }
+    },
+    {
+      "id": "99f7930f-8dc0-443b-92ae-e2e34011952e",
+      "name": "Drums/Shaker",
+      "color": "#0abde3",
+      "params": {
+        "tone": 0,
+        "q": 40,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.7,
+        "noiseFreq": 12000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.015,
+        "dec": 0.06,
+        "sus": 0,
+        "rel": 0.06,
+        "gain": 0.34,
+        "pan": -0.35,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.6
+          },
+          {
+            "ratio": 3,
+            "level": 0.36
+          },
+          {
+            "ratio": 4,
+            "level": 0.22
+          }
+        ]
+      }
+    },
+    {
+      "id": "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6",
+      "name": "Drums/Tom",
+      "color": "#ff6b6b",
+      "params": {
+        "tone": 1,
+        "q": 10,
+        "harm": 2,
+        "falloff": 0.5,
+        "stretch": 0,
+        "noise": 0.15,
+        "noiseFreq": 1800,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 14,
+        "pitchTime": 0.09,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.22,
+        "sus": 0,
+        "rel": 0.2,
+        "gain": 0.68,
+        "pan": -0.15,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "b83e60f6-2a73-4abc-a134-08b9f72db181",
+      "name": "Bass/Synth Bass",
+      "color": "#f9ca24",
+      "params": {
+        "tone": 1,
+        "q": 9,
+        "harm": 4,
+        "falloff": 0.7,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 3250,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 4,
+        "pitchTime": 0.1,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.005,
+        "dec": 0.17,
+        "sus": 0.35,
+        "rel": 0.12,
+        "gain": 0.46,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.7
+          },
+          {
+            "ratio": 3,
+            "level": 0.49
+          },
+          {
+            "ratio": 4,
+            "level": 0.34
+          }
+        ]
+      }
+    },
+    {
+      "id": "a7878711-ea0d-4fce-8b17-a7f0d24edc16",
+      "name": "Bass/Sub",
+      "color": "#badc58",
+      "params": {
+        "tone": 1,
+        "q": 16,
+        "harm": 1,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.01,
+        "dec": 0.5,
+        "sus": 0.8,
+        "rel": 0.3,
+        "gain": 0.68,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "5128ef5e-c44d-42ec-95f1-725521698852",
+      "name": "Synth/Lead Synth",
+      "color": "#e056fd",
+      "params": {
+        "tone": 1,
+        "q": 34,
+        "harm": 5,
+        "falloff": 0.95,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 2,
+        "detune": 9,
+        "att": 0.006,
+        "dec": 0.28,
+        "sus": 0.5,
+        "rel": 0.3,
+        "gain": 0.36,
+        "pan": -0.1,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.62
+          },
+          {
+            "ratio": 3,
+            "level": 0.85
+          },
+          {
+            "ratio": 4,
+            "level": 0.42
+          },
+          {
+            "ratio": 5,
+            "level": 0.5
+          },
+          {
+            "ratio": 6,
+            "level": 0.24
+          }
+        ]
+      }
+    },
+    {
+      "id": "b701000b-807a-4378-bc95-fdf789120a99",
+      "name": "FX/Echo",
+      "color": "#48dbfb",
+      "params": {
+        "tone": 1,
+        "q": 60,
+        "harm": 3,
+        "falloff": 0.7,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.01,
+        "dec": 0.28,
+        "sus": 0.5,
+        "rel": 0.35,
+        "gain": 0.22,
+        "pan": 0.45,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.7
+          },
+          {
+            "ratio": 3,
+            "level": 0.49
+          }
+        ]
+      }
+    },
+    {
+      "id": "0eb37e26-f5cc-4490-a76e-a2087a66d660",
+      "name": "Synth/Arp",
+      "color": "#7ed6df",
+      "params": {
+        "tone": 1,
+        "q": 83,
+        "harm": 5,
+        "falloff": 0.75,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.005,
+        "dec": 0.14,
+        "sus": 0.15,
+        "rel": 0.2,
+        "gain": 0.55,
+        "pan": 0.3,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2.06,
+            "level": 0.55
+          },
+          {
+            "ratio": 3.14,
+            "level": 0.34
+          },
+          {
+            "ratio": 4.24,
+            "level": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "c8b35431-c7a6-46ae-9a71-5833ff0c876b",
+      "name": "Percussion/Tuned/Bell",
+      "color": "#53d8fb",
+      "params": {
+        "tone": 1,
+        "q": 95,
+        "harm": 6,
+        "falloff": 0.68,
+        "stretch": 0.5,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 1.4,
+        "sus": 0,
+        "rel": 1.73,
+        "gain": 0.6,
+        "pan": 0.2,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 0.5,
+            "level": 0.55
+          },
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.2,
+            "level": 0.7
+          },
+          {
+            "ratio": 1.5,
+            "level": 0.4
+          },
+          {
+            "ratio": 2,
+            "level": 0.5
+          },
+          {
+            "ratio": 2.5,
+            "level": 0.26
+          },
+          {
+            "ratio": 3,
+            "level": 0.2
+          },
+          {
+            "ratio": 4,
+            "level": 0.14
+          }
+        ]
+      }
+    },
+    {
+      "id": "715b1f61-d4e7-41ed-8138-1f06f69052b9",
+      "name": "Synth/Pad",
+      "color": "#ff9f43",
+      "params": {
+        "tone": 1,
+        "q": 24,
+        "harm": 6,
+        "falloff": 0.9,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 1750,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 4,
+        "detune": 24,
+        "att": 0.4,
+        "dec": 1,
+        "sus": 0.7,
+        "rel": 2,
+        "gain": 0.05,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.85
+          },
+          {
+            "ratio": 3,
+            "level": 0.5
+          },
+          {
+            "ratio": 4,
+            "level": 0.62
+          },
+          {
+            "ratio": 6,
+            "level": 0.32
+          },
+          {
+            "ratio": 8,
+            "level": 0.22
+          }
+        ]
+      }
+    },
+    {
+      "id": "38694b69-4127-41c7-8fee-ebadd22e0f66",
+      "name": "Synth/Stab",
+      "color": "#ee5253",
+      "params": {
+        "tone": 1,
+        "q": 26,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 3,
+        "detune": 16,
+        "att": 0.004,
+        "dec": 0.16,
+        "sus": 0.1,
+        "rel": 0.18,
+        "gain": 0.65,
+        "pan": -0.25,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 3,
+            "level": 0.5
+          },
+          {
+            "ratio": 5,
+            "level": 0.3
+          },
+          {
+            "ratio": 7,
+            "level": 0.16
+          }
+        ]
+      }
+    },
+    {
+      "id": "9d169527-85db-4de0-a468-d9b1254afeb4",
+      "name": "FX/Zap",
+      "color": "#10ac84",
+      "params": {
+        "tone": 1,
+        "q": 40,
+        "harm": 2,
+        "falloff": 0.4,
+        "stretch": 0.35,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 48,
+        "pitchTime": 0.06,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.12,
+        "sus": 0,
+        "rel": 0.12,
+        "gain": 0.5,
+        "pan": 0.35,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2.549,
+            "level": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "e935d2ca-9af8-472c-b091-6d33e03f6550",
+      "name": "FX/Reverse",
+      "color": "#a29bfe",
+      "params": {
+        "tone": 1,
+        "q": 30,
+        "harm": 3,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.24,
+        "noiseFreq": 7000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": -24,
+        "pitchTime": 0.45,
+        "noiseBend": 0.8,
+        "voices": 3,
+        "detune": 20,
+        "att": 0.4,
+        "dec": 0.2,
+        "sus": 0.3,
+        "rel": 0.3,
+        "gain": 0.4,
+        "pan": 0.25,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.4
+          },
+          {
+            "ratio": 3,
+            "level": 0.18
+          }
+        ]
+      }
+    },
+    {
+      "id": "984d2c92-c5c1-41fa-b23c-ebc70b9e81fe",
+      "name": "FX/Riser",
+      "color": "#0abde3",
+      "params": {
+        "tone": 1,
+        "q": 30,
+        "harm": 1,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.2,
+        "noiseFreq": 3500,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": -24,
+        "pitchTime": 2.8,
+        "noiseBend": 1,
+        "voices": 2,
+        "detune": 14,
+        "att": 0.5,
+        "dec": 0.3,
+        "sus": 1,
+        "rel": 0.5,
+        "gain": 0.45,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.32
+          },
+          {
+            "ratio": 3,
+            "level": 0.14
+          }
+        ]
+      }
+    },
+    {
+      "id": "38a692b3-78ce-4bc8-9a8c-d77b421c65e3",
+      "name": "Synth/Slide Lead",
+      "color": "#e056fd",
+      "params": {
+        "tone": 1,
+        "q": 45,
+        "harm": 4,
+        "falloff": 0.8,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 3,
+        "detune": 14,
+        "att": 0.02,
+        "dec": 0.3,
+        "sus": 0.65,
+        "rel": 0.5,
+        "gain": 0.4,
+        "pan": -0.2,
+        "legatoGlide": 0.16,
+        "legatoCurve": "smooth",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.8
+          },
+          {
+            "ratio": 3,
+            "level": 0.64
+          },
+          {
+            "ratio": 4,
+            "level": 0.51
+          }
+        ]
+      }
+    },
+    {
+      "id": "5947e197-779c-4462-858d-7ec98979a42f",
+      "name": "Percussion/Metal Perc",
+      "color": "#badc58",
+      "params": {
+        "tone": 1,
+        "q": 70,
+        "harm": 5,
+        "falloff": 0.75,
+        "stretch": 0.62,
+        "noise": 0.1,
+        "noiseFreq": 6500,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.12,
+        "sus": 0,
+        "rel": 0.1,
+        "gain": 0.32,
+        "pan": -0.45,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 3.074,
+            "level": 0.75
+          },
+          {
+            "ratio": 5.928,
+            "level": 0.56
+          },
+          {
+            "ratio": 9.448,
+            "level": 0.42
+          },
+          {
+            "ratio": 13.562,
+            "level": 0.32
+          }
+        ]
+      }
+    }
+  ],
+  "patterns": [
+    {
+      "id": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "name": "02 Main/beat",
+      "steps": 32,
+      "color": "#ee5253",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 7,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 23,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.78
+          }
+        ],
+        "b2e7ae65-e022-4683-8a9f-806c5b945e16": [
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "B4",
+            "start": 2,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C5",
+            "start": 6,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "E5",
+            "start": 8,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C#5",
+            "start": 10,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "A#4",
+            "start": 12,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "E5",
+            "start": 14,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C#5",
+            "start": 15,
+            "len": 1,
+            "selected": false,
+            "vel": 0.4
+          },
+          {
+            "pitch": "A#4",
+            "start": 16,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C5",
+            "start": 18,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "A5",
+            "start": 20,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "F#4",
+            "start": 22,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "A#4",
+            "start": 24,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "D5",
+            "start": 26,
+            "len": 1,
+            "selected": false,
+            "vel": 0.6
+          },
+          {
+            "pitch": "E5",
+            "start": 28,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          },
+          {
+            "pitch": "A4",
+            "start": 30,
+            "len": 1,
+            "selected": true,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C5",
+            "start": 31,
+            "len": 1,
+            "selected": false,
+            "vel": 0.4
+          },
+          {
+            "pitch": "A4",
+            "start": 4,
+            "len": 1,
+            "selected": false,
+            "vel": 0.95
+          }
+        ],
+        "6f3d949a-c8b4-4934-bdc3-2419f1fcffc7": [
+          {
+            "pitch": "C5",
+            "start": 2,
+            "len": 1,
+            "selected": false,
+            "vel": 0.65
+          },
+          {
+            "pitch": "D5",
+            "start": 10,
+            "len": 1,
+            "selected": false,
+            "vel": 0.65
+          },
+          {
+            "pitch": "E5",
+            "start": 18,
+            "len": 1,
+            "selected": false,
+            "vel": 0.65
+          },
+          {
+            "pitch": "G5",
+            "start": 26,
+            "len": 1,
+            "selected": true,
+            "vel": 0.65
+          }
+        ],
+        "26c72beb-782f-4e57-bbe8-2aa6d92313b0": [
+          {
+            "pitch": "D3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D3",
+            "start": 24,
+            "len": 1,
+            "vel": 1
+          }
+        ],
+        "3a3320b1-9730-4b27-bd39-4ba15a793f95": [
+          {
+            "pitch": "C5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.95
+          }
+        ],
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": []
+      }
+    },
+    {
+      "id": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "name": "02 Main/beat turnaround",
+      "steps": 32,
+      "color": "#ee5253",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 7,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 23,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.78
+          }
+        ],
+        "b2e7ae65-e022-4683-8a9f-806c5b945e16": [
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "B4",
+            "start": 2,
+            "len": 1,
+            "vel": 0.43
+          },
+          {
+            "pitch": "A4",
+            "start": 4,
+            "len": 1,
+            "vel": 0.46
+          },
+          {
+            "pitch": "C5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "E5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.53
+          },
+          {
+            "pitch": "C#5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.56
+          },
+          {
+            "pitch": "A#4",
+            "start": 12,
+            "len": 1,
+            "vel": 0.59
+          },
+          {
+            "pitch": "E5",
+            "start": 14,
+            "len": 1,
+            "vel": 0.63
+          },
+          {
+            "pitch": "C#5",
+            "start": 15,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#4",
+            "start": 16,
+            "len": 1,
+            "vel": 0.69
+          },
+          {
+            "pitch": "C5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A5",
+            "start": 20,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F#4",
+            "start": 22,
+            "len": 1,
+            "vel": 0.79
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "D5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.85
+          },
+          {
+            "pitch": "E5",
+            "start": 28,
+            "len": 1,
+            "vel": 0.89
+          },
+          {
+            "pitch": "F#5",
+            "start": 30,
+            "len": 1,
+            "vel": 0.92
+          },
+          {
+            "pitch": "G#5",
+            "start": 31,
+            "len": 1,
+            "vel": 0.95
+          }
+        ],
+        "6f3d949a-c8b4-4934-bdc3-2419f1fcffc7": [
+          {
+            "pitch": "C5",
+            "start": 2,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "D5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "E5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "G5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.65
+          }
+        ],
+        "26c72beb-782f-4e57-bbe8-2aa6d92313b0": [
+          {
+            "pitch": "D3",
+            "start": 8,
+            "len": 1,
+            "vel": 0.45
+          },
+          {
+            "pitch": "D3",
+            "start": 24,
+            "len": 1,
+            "vel": 0.63
+          },
+          {
+            "pitch": "E3",
+            "start": 28,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F3",
+            "start": 30,
+            "len": 1,
+            "vel": 1
+          }
+        ],
+        "3a3320b1-9730-4b27-bd39-4ba15a793f95": [
+          {
+            "pitch": "C5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.95
+          }
+        ],
+        "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6": [
+          {
+            "pitch": "A#3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "G#3",
+            "start": 28,
+            "len": 1,
+            "vel": 0.7
+          },
+          {
+            "pitch": "F3",
+            "start": 29,
+            "len": 1,
+            "vel": 0.8
+          },
+          {
+            "pitch": "C4",
+            "start": 30,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F4",
+            "start": 31,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "058b5d64-72ae-4a9e-9eeb-e24e21c971db",
+      "name": "02 Main/beat four-floor",
+      "steps": 32,
+      "color": "#ee5253",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 8,
+            "len": 1,
+            "vel": 0.92
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 24,
+            "len": 1,
+            "vel": 0.92
+          }
+        ],
+        "b2e7ae65-e022-4683-8a9f-806c5b945e16": [
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "B4",
+            "start": 2,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D5",
+            "start": 4,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C#5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "B4",
+            "start": 10,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D5",
+            "start": 12,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "E5",
+            "start": 14,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C5",
+            "start": 16,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "B4",
+            "start": 18,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D5",
+            "start": 20,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C#5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "D5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "E5",
+            "start": 28,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "F#5",
+            "start": 30,
+            "len": 1,
+            "vel": 0.6
+          }
+        ],
+        "6f3d949a-c8b4-4934-bdc3-2419f1fcffc7": [
+          {
+            "pitch": "B4",
+            "start": 2,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "C#5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "D5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.65
+          },
+          {
+            "pitch": "F5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.65
+          }
+        ],
+        "3a3320b1-9730-4b27-bd39-4ba15a793f95": [
+          {
+            "pitch": "C5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C5",
+            "start": 28,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C5",
+            "start": 30,
+            "len": 1,
+            "vel": 0.68
+          }
+        ],
+        "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6": [
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "G#3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.73
+          },
+          {
+            "pitch": "C4",
+            "start": 28,
+            "len": 1,
+            "vel": 0.87
+          },
+          {
+            "pitch": "D#4",
+            "start": 30,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "b0ac9d14-8c10-489b-8da0-2340916534e5",
+      "name": "02 Main/beat half-time",
+      "steps": 32,
+      "color": "#ee5253",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          }
+        ],
+        "26c72beb-782f-4e57-bbe8-2aa6d92313b0": [
+          {
+            "pitch": "D3",
+            "start": 16,
+            "len": 1,
+            "vel": 0.7
+          }
+        ],
+        "99f7930f-8dc0-443b-92ae-e2e34011952e": [
+          {
+            "pitch": "C5",
+            "start": 4,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "A4",
+            "start": 12,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "C5",
+            "start": 20,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "D5",
+            "start": 28,
+            "len": 1,
+            "vel": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "2b8bacf9-5af3-4f3e-bd3e-1b43ba69009f",
+      "name": "02 Main/drum fill",
+      "steps": 32,
+      "color": "#ee5253",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 8,
+            "len": 1,
+            "vel": 0.92
+          },
+          {
+            "pitch": "C3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 18,
+            "len": 1,
+            "vel": 0.78
+          },
+          {
+            "pitch": "C3",
+            "start": 20,
+            "len": 1,
+            "vel": 0.92
+          },
+          {
+            "pitch": "C3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.78
+          }
+        ],
+        "26c72beb-782f-4e57-bbe8-2aa6d92313b0": [
+          {
+            "pitch": "D3",
+            "start": 8,
+            "len": 1,
+            "vel": 0.45
+          },
+          {
+            "pitch": "D3",
+            "start": 12,
+            "len": 1,
+            "vel": 0.51
+          },
+          {
+            "pitch": "D3",
+            "start": 24,
+            "len": 1,
+            "vel": 0.57
+          },
+          {
+            "pitch": "D#3",
+            "start": 25,
+            "len": 1,
+            "vel": 0.63
+          },
+          {
+            "pitch": "E3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.69
+          },
+          {
+            "pitch": "F3",
+            "start": 27,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F#3",
+            "start": 28,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G3",
+            "start": 29,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "A3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.94
+          },
+          {
+            "pitch": "B3",
+            "start": 31,
+            "len": 1,
+            "vel": 1
+          }
+        ],
+        "b2e7ae65-e022-4683-8a9f-806c5b945e16": [
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "C5",
+            "start": 2,
+            "len": 1,
+            "vel": 0.44
+          },
+          {
+            "pitch": "C#5",
+            "start": 4,
+            "len": 1,
+            "vel": 0.47
+          },
+          {
+            "pitch": "C#5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.51
+          },
+          {
+            "pitch": "D5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.58
+          },
+          {
+            "pitch": "D#5",
+            "start": 12,
+            "len": 1,
+            "vel": 0.62
+          },
+          {
+            "pitch": "D#5",
+            "start": 14,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "E5",
+            "start": 16,
+            "len": 1,
+            "vel": 0.69
+          },
+          {
+            "pitch": "E5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.73
+          },
+          {
+            "pitch": "F5",
+            "start": 20,
+            "len": 1,
+            "vel": 0.77
+          },
+          {
+            "pitch": "F5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.8
+          },
+          {
+            "pitch": "F#5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.84
+          },
+          {
+            "pitch": "G5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "G#5",
+            "start": 28,
+            "len": 1,
+            "vel": 0.91
+          },
+          {
+            "pitch": "A5",
+            "start": 30,
+            "len": 1,
+            "vel": 0.95
+          }
+        ],
+        "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6": [
+          {
+            "pitch": "F4",
+            "start": 12,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D#4",
+            "start": 14,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "F4",
+            "start": 24,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#4",
+            "start": 26,
+            "len": 1,
+            "vel": 0.84
+          },
+          {
+            "pitch": "C4",
+            "start": 28,
+            "len": 1,
+            "vel": 0.92
+          },
+          {
+            "pitch": "F3",
+            "start": 30,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "name": "02 Main/shaker",
+      "steps": 32,
+      "color": "#ff9f43",
+      "tracks": {
+        "99f7930f-8dc0-443b-92ae-e2e34011952e": [
+          {
+            "pitch": "D5",
+            "start": 1,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "B4",
+            "start": 3,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "A4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "D5",
+            "start": 9,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "B4",
+            "start": 11,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "A4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "D5",
+            "start": 17,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "B4",
+            "start": 19,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "A4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "D5",
+            "start": 25,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "B4",
+            "start": 27,
+            "len": 1,
+            "vel": 0.35
+          },
+          {
+            "pitch": "C5",
+            "start": 29,
+            "len": 1,
+            "vel": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "name": "02 Main/bass F",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 3,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 11,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 13,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 15,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 19,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 27,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 29,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 31,
+            "len": 1,
+            "vel": 0.72
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 14,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 14,
+            "vel": 0.9
+          }
+        ],
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": []
+      }
+    },
+    {
+      "id": "d1467f4f-7f87-4bc5-8377-9951db9b93ef",
+      "name": "02 Main/bass Bbm",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "A#3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "A#3",
+            "start": 3,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "A#3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 11,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "C#4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "A#3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "D#4",
+            "start": 15,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "G#3",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "G#3",
+            "start": 19,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "G#3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 2,
+            "vel": 0.88
+          },
+          {
+            "pitch": "C4",
+            "start": 27,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "C3",
+            "start": 29,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "C4",
+            "start": 30,
+            "len": 2,
+            "vel": 0.88
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "A#3",
+            "start": 0,
+            "len": 14,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G#3",
+            "start": 16,
+            "len": 7,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 7,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "bbcb5772-8530-4728-a47d-7cd8b5243835",
+      "name": "02 Main/bass Db-Eb",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "C#3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C#3",
+            "start": 4,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C#4",
+            "start": 6,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "D#3",
+            "start": 8,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 12,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "D#4",
+            "start": 14,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "C#3",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C#3",
+            "start": 20,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C#4",
+            "start": 22,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "C3",
+            "start": 24,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C3",
+            "start": 28,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "G3",
+            "start": 30,
+            "len": 2,
+            "vel": 0.72
+          }
+        ]
+      }
+    },
+    {
+      "id": "fb90e608-a1f8-4046-8184-10dc9d890574",
+      "name": "02 Main/bass climb",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 3,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 11,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 13,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 15,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 4,
+            "vel": 1
+          },
+          {
+            "pitch": "G#3",
+            "start": 20,
+            "len": 4,
+            "vel": 1
+          },
+          {
+            "pitch": "A#3",
+            "start": 24,
+            "len": 4,
+            "vel": 1
+          },
+          {
+            "pitch": "C4",
+            "start": 28,
+            "len": 4,
+            "vel": 0.88
+          }
+        ]
+      }
+    },
+    {
+      "id": "b4c11b11-ebf4-4eed-a4fa-2a2fb64cfd01",
+      "name": "05 Outro/bass outro",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 3,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 11,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 13,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 15,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 19,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 6,
+            "vel": 1
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 31,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "58d96ba1-a536-476b-a0d0-0a8400768001",
+      "name": "02 Chorus/hook A",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A#5",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 11,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#5",
+            "start": 13,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 16,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 19,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C#6",
+            "start": 25,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 27,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "G#5",
+            "start": 29,
+            "len": 2,
+            "vel": 0.76
+          }
+        ],
+        "277b7056-8f0a-46c8-956e-a50d79239410": [],
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": [],
+        "38694b69-4127-41c7-8fee-ebadd22e0f66": [],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [],
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": []
+      }
+    },
+    {
+      "id": "70994b11-62dc-47a6-8997-9b6350e39db8",
+      "name": "02 Chorus/hook B",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F6",
+            "start": 6,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D#6",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#6",
+            "start": 11,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 12,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 14,
+            "len": 9,
+            "vel": 0.76
+          }
+        ]
+      }
+    },
+    {
+      "id": "d15f4cdf-bfc2-4213-993f-cd1a06ae11a2",
+      "name": "02 Chorus/hook Bbm",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "A#5",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C#6",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "A#5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "A#5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D#6",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "A#5",
+            "start": 11,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "G#5",
+            "start": 13,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "G#5",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "G5",
+            "start": 19,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 24,
+            "len": 3,
+            "vel": 0.9
+          },
+          {
+            "pitch": "B5",
+            "start": 27,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 28,
+            "len": 4,
+            "vel": 0.9
+          }
+        ],
+        "e935d2ca-9af8-472c-b091-6d33e03f6550": [
+          {
+            "pitch": "C6",
+            "start": 28,
+            "len": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "4c492453-39cc-41d2-96b9-24d6a924d159",
+      "name": "02 Main/answer",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "C#6",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 4,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G#5",
+            "start": 6,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#6",
+            "start": 8,
+            "len": 3,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A#5",
+            "start": 12,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G5",
+            "start": 14,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C#6",
+            "start": 16,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 20,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G#5",
+            "start": 22,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 24,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "B5",
+            "start": 27,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 28,
+            "len": 4,
+            "vel": 0.9
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "C#6",
+            "start": 3,
+            "len": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 11,
+            "len": 1
+          },
+          {
+            "pitch": "C#6",
+            "start": 19,
+            "len": 1
+          },
+          {
+            "pitch": "E6",
+            "start": 30,
+            "len": 1
+          }
+        ],
+        "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6": [
+          {
+            "pitch": "C4",
+            "start": 15,
+            "len": 1,
+            "vel": 0.6
+          },
+          {
+            "pitch": "G#3",
+            "start": 31,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "name": "02 Main/stabs A",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "38694b69-4127-41c7-8fee-ebadd22e0f66": [
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C#4",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F4",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#4",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "name": "02 Main/stabs B",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "38694b69-4127-41c7-8fee-ebadd22e0f66": [
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "D#4",
+            "start": 18,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G4",
+            "start": 18,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "A#4",
+            "start": 18,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C#4",
+            "start": 22,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F4",
+            "start": 22,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 22,
+            "len": 2,
+            "vel": 0.82
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f6bf8da-ef26-40bf-8df3-e3ae1bf4cd14",
+      "name": "02 Main/stabs Bbm",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "38694b69-4127-41c7-8fee-ebadd22e0f66": [
+          {
+            "pitch": "A#4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C#5",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F5",
+            "start": 5,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "A#4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C#5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "C5",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "D#5",
+            "start": 21,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G4",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C5",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "E5",
+            "start": 29,
+            "len": 1,
+            "vel": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
+      "name": "02 Main/pad Fm",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": [
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 31,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G#4",
+            "start": 0,
+            "len": 31,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 31,
+            "vel": 0.75
+          }
+        ],
+        "5128ef5e-c44d-42ec-95f1-725521698852": [],
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": []
+      }
+    },
+    {
+      "id": "afe42072-5666-4f92-bfbb-7f92b9b9ff64",
+      "name": "02 Main/pad Db-Eb",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": [
+          {
+            "pitch": "C#4",
+            "start": 0,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G#4",
+            "start": 0,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "D#4",
+            "start": 8,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G4",
+            "start": 8,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "A#4",
+            "start": 8,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C#4",
+            "start": 16,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "F4",
+            "start": 16,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G#4",
+            "start": 16,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "E4",
+            "start": 24,
+            "len": 7,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G4",
+            "start": 24,
+            "len": 7,
+            "vel": 0.75
+          }
+        ]
+      }
+    },
+    {
+      "id": "5981782d-aaba-4f72-82c3-380c6760df84",
+      "name": "03 Development/pad break",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": [
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G#4",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C5",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C#4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "F4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G#4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 15,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C#3",
+            "start": 16,
+            "len": 15,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "e94f8117-b9e0-4592-ad98-4b52e92c46a8",
+      "name": "02 Main/arp",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 2,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 4,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F6",
+            "start": 6,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 12,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 14,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "F5",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 20,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F6",
+            "start": 22,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "D#6",
+            "start": 24,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 26,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "A#5",
+            "start": 28,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 30,
+            "len": 1,
+            "vel": 0.68
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "F6",
+            "start": 7,
+            "len": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 15,
+            "len": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 23,
+            "len": 1
+          },
+          {
+            "pitch": "F6",
+            "start": 31,
+            "len": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "1a9f3db3-857e-447b-a516-c57e0fe74633",
+      "name": "02 Main/bells",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 8,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "G#5",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F6",
+            "start": 24,
+            "len": 1,
+            "vel": 0.82
+          }
+        ],
+        "277b7056-8f0a-46c8-956e-a50d79239410": []
+      }
+    },
+    {
+      "id": "ed88cb62-3488-4874-b8ef-20be80870924",
+      "name": "02 Chorus/hook (bells)",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "F5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#5",
+            "start": 9,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "F5",
+            "start": 11,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "D#5",
+            "start": 13,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "F5",
+            "start": 16,
+            "len": 8,
+            "vel": 1
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "F6",
+            "start": 20,
+            "len": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 24,
+            "len": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 28,
+            "len": 1
+          }
+        ],
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [],
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": [],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [],
+        "5128ef5e-c44d-42ec-95f1-725521698852": [],
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": [],
+        "99f7930f-8dc0-443b-92ae-e2e34011952e": [],
+        "1b00d36a-c6b2-4f69-a42b-0acc4325c4d6": []
+      }
+    },
+    {
+      "id": "d99be841-89c6-4c8d-af7a-9c01e9bd9907",
+      "name": "04 Climax/bells finale A",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F6",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#6",
+            "start": 3,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#6",
+            "start": 9,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "D#6",
+            "start": 13,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "F6",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C7",
+            "start": 19,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "C#7",
+            "start": 25,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "G#6",
+            "start": 29,
+            "len": 1,
+            "vel": 0.66
+          }
+        ]
+      }
+    },
+    {
+      "id": "5182619b-0247-46ed-9c31-6a05c67dab9b",
+      "name": "04 Climax/bells finale B",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F6",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C7",
+            "start": 3,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "F7",
+            "start": 6,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "D#7",
+            "start": 9,
+            "len": 1,
+            "vel": 0.66
+          },
+          {
+            "pitch": "C7",
+            "start": 12,
+            "len": 1,
+            "vel": 0.82
+          },
+          {
+            "pitch": "F6",
+            "start": 14,
+            "len": 1,
+            "vel": 0.66
+          }
+        ]
+      }
+    },
+    {
+      "id": "b6cb3a88-a8dc-4048-bc0a-70ac58effcb7",
+      "name": "04 Climax/riser",
+      "steps": 32,
+      "color": "#ff6b6b",
+      "tracks": {
+        "984d2c92-c5c1-41fa-b23c-ebc70b9e81fe": [
+          {
+            "pitch": "F5",
+            "start": 8,
+            "len": 24
+          }
+        ]
+      }
+    },
+    {
+      "id": "905aa309-88bb-40c0-b782-3f871f0b3319",
+      "name": "02 Main/sweep",
+      "steps": 32,
+      "color": "#ff6b6b",
+      "tracks": {
+        "e935d2ca-9af8-472c-b091-6d33e03f6550": [
+          {
+            "pitch": "F5",
+            "start": 26,
+            "len": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "name": "02 Chorus/hook A echo",
+      "steps": 32,
+      "color": "#48dbfb",
+      "tracks": {
+        "b701000b-807a-4378-bc95-fdf789120a99": [
+          {
+            "pitch": "F5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "G#5",
+            "start": 6,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 9,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 11,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "A#5",
+            "start": 12,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 14,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D#5",
+            "start": 16,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 19,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 22,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 25,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 27,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C#6",
+            "start": 28,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 30,
+            "len": 2,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "name": "02 Chorus/hook B echo",
+      "steps": 32,
+      "color": "#48dbfb",
+      "tracks": {
+        "b701000b-807a-4378-bc95-fdf789120a99": [
+          {
+            "pitch": "F5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 6,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F6",
+            "start": 9,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 11,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D#6",
+            "start": 12,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D#6",
+            "start": 14,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 15,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "G5",
+            "start": 16,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F5",
+            "start": 17,
+            "len": 2,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "name": "02 Main/bass F var",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "b83e60f6-2a73-4abc-a134-08b9f72db181": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 3,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 5,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 11,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 13,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "A#3",
+            "start": 15,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 19,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F4",
+            "start": 21,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "F3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F4",
+            "start": 25,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "D#3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "F3",
+            "start": 27,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "D#4",
+            "start": 28,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "C4",
+            "start": 29,
+            "len": 1,
+            "vel": 0.88
+          },
+          {
+            "pitch": "A#3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.72
+          },
+          {
+            "pitch": "G#3",
+            "start": 31,
+            "len": 1,
+            "vel": 0.72
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 14,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 14,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "56a4118d-fb82-4084-b5ee-ac215ae07782",
+      "name": "02 Main/arp down",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "0eb37e26-f5cc-4490-a76e-a2087a66d660": [
+          {
+            "pitch": "F6",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 2,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 4,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 8,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 10,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 12,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 14,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "F6",
+            "start": 16,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 18,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "G#5",
+            "start": 20,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "F5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "G#5",
+            "start": 24,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "A#5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.68
+          },
+          {
+            "pitch": "C6",
+            "start": 28,
+            "len": 1,
+            "vel": 1
+          },
+          {
+            "pitch": "D#6",
+            "start": 30,
+            "len": 1,
+            "vel": 0.68
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "D#6",
+            "start": 7,
+            "len": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 15,
+            "len": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 23,
+            "len": 1
+          },
+          {
+            "pitch": "C7",
+            "start": 31,
+            "len": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "36b7f71d-3b78-438c-8156-934c600998ec",
+      "name": "02 Chorus/hook A big",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "G#5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 6,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A#5",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 11,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#5",
+            "start": 13,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 16,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 19,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 22,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 24,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C#6",
+            "start": 25,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 27,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "G#5",
+            "start": 29,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "G#4",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 6,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A#4",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 11,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#4",
+            "start": 13,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 16,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C5",
+            "start": 19,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 22,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 24,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C#5",
+            "start": 25,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C5",
+            "start": 27,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "G#4",
+            "start": 29,
+            "len": 2,
+            "vel": 0.76
+          }
+        ]
+      }
+    },
+    {
+      "id": "1c3d6d4d-3677-4620-b56b-1270f4e88df2",
+      "name": "02 Chorus/hook B big",
+      "steps": 32,
+      "color": "#53d8fb",
+      "tracks": {
+        "5128ef5e-c44d-42ec-95f1-725521698852": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F6",
+            "start": 6,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D#6",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#6",
+            "start": 11,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C6",
+            "start": 12,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G5",
+            "start": 13,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 14,
+            "len": 9,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 3,
+            "vel": 1
+          },
+          {
+            "pitch": "C5",
+            "start": 3,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F5",
+            "start": 6,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 8,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D#5",
+            "start": 9,
+            "len": 2,
+            "vel": 0.76
+          },
+          {
+            "pitch": "D#5",
+            "start": 11,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "C5",
+            "start": 12,
+            "len": 1,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G4",
+            "start": 13,
+            "len": 1,
+            "vel": 0.76
+          },
+          {
+            "pitch": "F4",
+            "start": 14,
+            "len": 9,
+            "vel": 0.76
+          }
+        ]
+      }
+    },
+    {
+      "id": "ec83fb44-c203-4543-a3e7-6e3143fe4383",
+      "name": "04 Climax/final hit",
+      "steps": 32,
+      "color": "#f9ca24",
+      "tracks": {
+        "277b7056-8f0a-46c8-956e-a50d79239410": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 1,
+            "vel": 1
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 12,
+            "vel": 0.9
+          }
+        ],
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 8,
+            "vel": 1
+          },
+          {
+            "pitch": "C6",
+            "start": 0,
+            "len": 8,
+            "vel": 1
+          }
+        ],
+        "6f3d949a-c8b4-4934-bdc3-2419f1fcffc7": [
+          {
+            "pitch": "D5",
+            "start": 0,
+            "len": 1,
+            "vel": 0.85
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "F6",
+            "start": 0,
+            "len": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "de3d43f8-6f45-4d54-b4e1-0e2396d366f9",
+      "name": "03 Development/pad break 2",
+      "steps": 32,
+      "color": "#5f27cd",
+      "tracks": {
+        "715b1f61-d4e7-41ed-8138-1f06f69052b9": [
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "A#4",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "C#5",
+            "start": 0,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "D#4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "G4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          },
+          {
+            "pitch": "A#4",
+            "start": 16,
+            "len": 15,
+            "vel": 0.75
+          }
+        ],
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "A#2",
+            "start": 0,
+            "len": 15,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D#3",
+            "start": 16,
+            "len": 15,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "652f21d9-6f67-454f-be0d-c7af96baac29",
+      "name": "03 Development/bells break",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "c8b35431-c7a6-46ae-9a71-5833ff0c876b": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C#6",
+            "start": 6,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#5",
+            "start": 12,
+            "len": 2,
+            "vel": 0.82
+          },
+          {
+            "pitch": "D#5",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "G5",
+            "start": 22,
+            "len": 2,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#5",
+            "start": 28,
+            "len": 2,
+            "vel": 0.82
+          }
+        ],
+        "9d169527-85db-4de0-a468-d9b1254afeb4": [
+          {
+            "pitch": "F6",
+            "start": 30,
+            "len": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "3451e483-8ac1-4b22-b254-ed1520fd160f",
+      "name": "02 Main/solo A",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "38a692b3-78ce-4bc8-9a8c-d77b421c65e3": [
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "C5",
+              "start": 4,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C5",
+            "start": 4,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "G#4",
+              "start": 8,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "G#4",
+            "start": 8,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "A#4",
+              "start": 12,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "A#4",
+            "start": 12,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "C5",
+              "start": 16,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C5",
+            "start": 16,
+            "len": 9,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "F5",
+              "start": 24,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "F5",
+            "start": 24,
+            "len": 9,
+            "vel": 0.92
+          }
+        ]
+      }
+    },
+    {
+      "id": "5a892d8f-c927-469e-803a-61cdf12a791f",
+      "name": "02 Main/solo B",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "38a692b3-78ce-4bc8-9a8c-d77b421c65e3": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "D#5",
+              "start": 4,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "D#5",
+            "start": 4,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "C5",
+              "start": 8,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C5",
+            "start": 8,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "G#4",
+              "start": 12,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "G#4",
+            "start": 12,
+            "len": 5,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "A#4",
+              "start": 16,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "A#4",
+            "start": 16,
+            "len": 9,
+            "vel": 0.92,
+            "legatoTo": {
+              "pitch": "C5",
+              "start": 24,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C5",
+            "start": 24,
+            "len": 8,
+            "vel": 0.92
+          }
+        ]
+      }
+    },
+    {
+      "id": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
+      "name": "02 Main/metal",
+      "steps": 32,
+      "color": "#badc58",
+      "tracks": {
+        "5947e197-779c-4462-858d-7ec98979a42f": [
+          {
+            "pitch": "G5",
+            "start": 2,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 6,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "G5",
+            "start": 10,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D#6",
+            "start": 14,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "G5",
+            "start": 18,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C6",
+            "start": 22,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "G5",
+            "start": 26,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F6",
+            "start": 30,
+            "len": 1,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "6f01b346-dc44-4816-a0e4-57b760b85820",
+      "name": "02 Main/sub dive",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "a7878711-ea0d-4fce-8b17-a7f0d24edc16": [
+          {
+            "pitch": "F2",
+            "start": 0,
+            "len": 18,
+            "vel": 0.9,
+            "legatoTo": {
+              "pitch": "F1",
+              "start": 16,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "F1",
+            "start": 16,
+            "len": 16,
+            "vel": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "5ac46ca2-4158-450e-8110-23d4cc2a3e97",
+      "name": "03 Development/transition lift",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "984d2c92-c5c1-41fa-b23c-ebc70b9e81fe": [
+          {
+            "pitch": "C4",
+            "start": 0,
+            "len": 32,
+            "vel": 0.46
+          }
+        ]
+      }
+    },
+    {
+      "id": "fecae414-af65-4aa8-8d52-efd15af94124",
+      "name": "04 Climax/slide answer",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "38a692b3-78ce-4bc8-9a8c-d77b421c65e3": [
+          {
+            "pitch": "F5",
+            "start": 0,
+            "len": 3,
+            "vel": 0.54,
+            "legatoTo": {
+              "pitch": "G#5",
+              "start": 4,
+              "glide": 0.14,
+              "curve": "ease-in"
+            }
+          },
+          {
+            "pitch": "G#5",
+            "start": 4,
+            "len": 3,
+            "vel": 0.58,
+            "legatoTo": {
+              "pitch": "A#5",
+              "start": 8,
+              "glide": 0.18,
+              "curve": "smooth"
+            }
+          },
+          {
+            "pitch": "A#5",
+            "start": 8,
+            "len": 3,
+            "vel": 0.62,
+            "legatoTo": {
+              "pitch": "C6",
+              "start": 12,
+              "glide": 0.12,
+              "curve": "ease-out"
+            }
+          },
+          {
+            "pitch": "C6",
+            "start": 12,
+            "len": 3,
+            "vel": 0.66
+          },
+          {
+            "pitch": "A#5",
+            "start": 16,
+            "len": 3,
+            "vel": 0.58,
+            "legatoTo": {
+              "pitch": "G#5",
+              "start": 20,
+              "glide": 0.16,
+              "curve": "smooth"
+            }
+          },
+          {
+            "pitch": "G#5",
+            "start": 20,
+            "len": 3,
+            "vel": 0.54
+          },
+          {
+            "pitch": "F5",
+            "start": 24,
+            "len": 3,
+            "vel": 0.56,
+            "legatoTo": {
+              "pitch": "C5",
+              "start": 28,
+              "glide": 0.2,
+              "curve": "ease-in"
+            }
+          },
+          {
+            "pitch": "C5",
+            "start": 28,
+            "len": 4,
+            "vel": 0.5
+          }
+        ]
+      }
+    }
+  ],
+  "arrangement": [
+    {
+      "id": "6349fefa-2f10-49b2-8103-c9ff1fed7649",
+      "patternId": "058b5d64-72ae-4a9e-9eeb-e24e21c971db",
+      "track": 0,
+      "start": 32,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d0f4d212-5e30-4ffe-9a1e-dc5dd2bc1d0c",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 64,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "4d7c1293-7b8a-4a6b-a4b6-a7f8eb2b9885",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 96,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "6247cc9a-214e-491c-a2a1-b8b65c4663ca",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 128,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "fa736fd1-8362-45af-a874-4019d690909b",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 160,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "7872fb91-df85-42bf-949d-2924c6dd0d2f",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 192,
+      "len": 160,
+      "selected": false
+    },
+    {
+      "id": "643f7553-ce1b-49a2-835e-3e18712f535b",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 352,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "f1f6fb36-e4ba-420d-a4e3-e80ce6ec158f",
+      "patternId": "b0ac9d14-8c10-489b-8da0-2340916534e5",
+      "track": 0,
+      "start": 384,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "4b1109f0-759b-4210-a3e9-8c9f4772faba",
+      "patternId": "b0ac9d14-8c10-489b-8da0-2340916534e5",
+      "track": 0,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "914d1305-d567-4639-a140-30db726859ee",
+      "patternId": "b0ac9d14-8c10-489b-8da0-2340916534e5",
+      "track": 0,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "9b324cc1-aeb2-47c8-862e-dffbc3aba20e",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 512,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "c1eab0c6-66b4-4a25-8d1c-8b9ffc040ef2",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 544,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d4b5be3d-036c-4758-ad07-be06bec574de",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 576,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "23f807d1-c7ee-45b2-915a-0f4fc40c01fc",
+      "patternId": "2b8bacf9-5af3-4f3e-bd3e-1b43ba69009f",
+      "track": 0,
+      "start": 608,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "2cf5461b-fdb1-4215-a682-6cb940434799",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 640,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "334531d7-106e-433f-94df-287604ca8f0a",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 672,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "c352e814-34ed-4936-affa-2d2bcd54e8db",
+      "patternId": "0f686465-83a4-42dd-8e98-4a96114b2478",
+      "track": 0,
+      "start": 704,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "4afa2889-47b4-4497-ae2e-45f0d9305e55",
+      "patternId": "2919c113-ffab-4de6-8d49-c927c82bd625",
+      "track": 0,
+      "start": 736,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "2534acbe-971f-415a-b0c6-6bff5fd413e2",
+      "patternId": "ec83fb44-c203-4543-a3e7-6e3143fe4383",
+      "track": 0,
+      "start": 800,
+      "len": 32,
+      "transpose": 2
+    },
+    {
+      "id": "7bc7c487-0cd8-41dd-b9d7-1abb016498b7",
+      "patternId": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "track": 1,
+      "start": 128,
+      "len": 160,
+      "selected": false
+    },
+    {
+      "id": "6275af86-295f-4eda-931b-465f31fa1423",
+      "patternId": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "track": 1,
+      "start": 320,
+      "len": 64,
+      "selected": false
+    },
+    {
+      "id": "08324515-61aa-4fb2-9078-047fc75acc3a",
+      "patternId": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "track": 1,
+      "start": 512,
+      "len": 64,
+      "selected": false
+    },
+    {
+      "id": "2becaaec-c5b7-4f03-a9d1-8c90a2211bb4",
+      "patternId": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "track": 1,
+      "start": 576,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "92bb20c4-7941-424a-bfe1-080877fddd25",
+      "patternId": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
+      "track": 1,
+      "start": 640,
+      "len": 128,
+      "selected": false
+    },
+    {
+      "id": "1ab81648-bb2e-47c3-b2fb-ac75216de3c5",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 0,
+      "len": 96,
+      "selected": false
+    },
+    {
+      "id": "93fea79b-f203-4b57-b957-303890490558",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 96,
+      "len": 32
+    },
+    {
+      "id": "d5cd4cf8-5836-4d60-8dc4-031cf021eb49",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "3ef2a45e-0642-4916-9b8a-29838d7e60f6",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "03d8a326-a648-460c-90c6-b2f3bdcd4e72",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "e5c54fcd-e5ae-4aee-bd50-abb471157390",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "1e2074fd-27a0-40bb-bff2-70ee7237ad84",
+      "patternId": "d1467f4f-7f87-4bc5-8377-9951db9b93ef",
+      "track": 2,
+      "start": 256,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "021396eb-76ad-42aa-bb30-8dc2c41d739d",
+      "patternId": "bbcb5772-8530-4728-a47d-7cd8b5243835",
+      "track": 2,
+      "start": 288,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "eeb07b47-ddb0-4079-9d10-f10007484b3c",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 320,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "0ff96e7d-8945-45b6-aee2-219eab346bcf",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "92e5e49a-3f0b-4e35-bf38-bcdfe75eb4a6",
+      "patternId": "6f01b346-dc44-4816-a0e4-57b760b85820",
+      "track": 2,
+      "start": 480,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d5aa9224-8a96-43c6-8e38-19925f5bb2c8",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 512,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "dd3c18da-2fb0-4706-a6ad-19d0d16df302",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 544,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "c5563ced-1030-4383-8115-5abd6d9a83b7",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 576,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "ec11f62d-36e7-4e70-9100-3cb398e1cca2",
+      "patternId": "fb90e608-a1f8-4046-8184-10dc9d890574",
+      "track": 2,
+      "start": 608,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "4646349e-ff89-4357-a815-f239fe1e6158",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 640,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "5ec4929b-4d6a-48cb-9cf3-1a42d20cb9a5",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "0601721a-d4bd-4404-8816-a633d62e5feb",
+      "patternId": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
+      "track": 2,
+      "start": 704,
+      "len": 32,
+      "transpose": 2
+    },
+    {
+      "id": "00e11035-6dc6-4f2a-ad28-2e7c95d69ec6",
+      "patternId": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
+      "track": 2,
+      "start": 736,
+      "len": 32,
+      "transpose": 2
+    },
+    {
+      "id": "a719c266-2b36-45f3-a713-d79420bc9e46",
+      "patternId": "b4c11b11-ebf4-4eed-a4fa-2a2fb64cfd01",
+      "track": 2,
+      "start": 768,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "5c439463-a041-43ff-bba1-f3458720b5cf",
+      "patternId": "58d96ba1-a536-476b-a0d0-0a8400768001",
+      "track": 3,
+      "start": 64,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "f6b37dc8-e71b-42a8-96d6-14d1f3167367",
+      "patternId": "70994b11-62dc-47a6-8997-9b6350e39db8",
+      "track": 3,
+      "start": 96,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "70241120-62bc-47de-afa5-8605fa304d03",
+      "patternId": "58d96ba1-a536-476b-a0d0-0a8400768001",
+      "track": 3,
+      "start": 128,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "edc80ed4-4e59-4106-898c-af4cc1111d62",
+      "patternId": "70994b11-62dc-47a6-8997-9b6350e39db8",
+      "track": 3,
+      "start": 160,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "0ea01cf6-7b48-4192-803a-da27f399d643",
+      "patternId": "d15f4cdf-bfc2-4213-993f-cd1a06ae11a2",
+      "track": 3,
+      "start": 256,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "0655fd76-b7ca-4833-bb6f-8520e2c07e99",
+      "patternId": "4c492453-39cc-41d2-96b9-24d6a924d159",
+      "track": 3,
+      "start": 288,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "3e6e094d-f424-466a-88a6-080323052a15",
+      "patternId": "58d96ba1-a536-476b-a0d0-0a8400768001",
+      "track": 3,
+      "start": 320,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "e5a942b4-337e-4285-8a1b-9b8a46a4fd27",
+      "patternId": "70994b11-62dc-47a6-8997-9b6350e39db8",
+      "track": 3,
+      "start": 352,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "bc211c33-259b-4494-8026-e5205b65e447",
+      "patternId": "3451e483-8ac1-4b22-b254-ed1520fd160f",
+      "track": 3,
+      "start": 512,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "092f835c-733c-4a6c-b8ec-9672f78c0cdc",
+      "patternId": "5a892d8f-c927-469e-803a-61cdf12a791f",
+      "track": 3,
+      "start": 544,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "bd4a137b-c4fc-4f24-ad1f-ac544f0f4833",
+      "patternId": "58d96ba1-a536-476b-a0d0-0a8400768001",
+      "track": 3,
+      "start": 640,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "90997b4b-8bf1-4856-9e54-22d93119233d",
+      "patternId": "70994b11-62dc-47a6-8997-9b6350e39db8",
+      "track": 3,
+      "start": 672,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "82f54904-437b-44d7-bc56-8e33cc6e7223",
+      "patternId": "36b7f71d-3b78-438c-8156-934c600998ec",
+      "track": 3,
+      "start": 704,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "f6f60f48-4fbd-4310-b4e2-cf1b115e60d6",
+      "patternId": "1c3d6d4d-3677-4620-b56b-1270f4e88df2",
+      "track": 3,
+      "start": 736,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "c948c345-f71c-4c35-b56f-214ebd4304a5",
+      "patternId": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
+      "track": 4,
+      "start": 0,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "533f99a1-f877-407c-b74d-faac0099f1ec",
+      "patternId": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
+      "track": 4,
+      "start": 32,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "4d1a88cd-02f2-47f7-b62a-a40fd3497824",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 64,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "80de5f47-7a84-40ad-9cd9-091ad0b7a8ee",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 96,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "090107cc-7964-4653-9e0d-183db4e5be35",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 128,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "e37431e0-4f9d-4d92-b6f4-9c33b97373ea",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 160,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "91c0270c-aebe-491d-80cf-d5ea4cba5692",
+      "patternId": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
+      "track": 4,
+      "start": 192,
+      "len": 64
+    },
+    {
+      "id": "d4e5d753-102c-414b-aadc-a61ea0dc18c7",
+      "patternId": "2f6bf8da-ef26-40bf-8df3-e3ae1bf4cd14",
+      "track": 4,
+      "start": 256,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "32c4da0b-176b-4553-b89b-c180dbba8707",
+      "patternId": "afe42072-5666-4f92-bfbb-7f92b9b9ff64",
+      "track": 4,
+      "start": 288,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "a575b6ea-f323-462f-95d7-70d979e30b59",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 320,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "5fb17af5-5bc7-471c-9fab-f828dec86318",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 352,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d70eb988-e5cb-4109-86c6-30294990f8a5",
+      "patternId": "5981782d-aaba-4f72-82c3-380c6760df84",
+      "track": 4,
+      "start": 384,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d99bcf9d-c1c2-4644-800e-3e76669a4770",
+      "patternId": "de3d43f8-6f45-4d54-b4e1-0e2396d366f9",
+      "track": 4,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "d45c47bf-bbca-4ca3-9cb2-eee9f2529610",
+      "patternId": "5981782d-aaba-4f72-82c3-380c6760df84",
+      "track": 4,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "f1e145f6-24d5-4fc9-8509-19a4d113d873",
+      "patternId": "afe42072-5666-4f92-bfbb-7f92b9b9ff64",
+      "track": 4,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "2a431945-c3ba-421d-bf6c-1b6e6ef720d8",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 512,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "246ac7d6-18d3-4614-9ef1-1b58952ed958",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 544,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d64c762a-37f3-4d08-86e9-fd925ae54c47",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 640,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "44955490-8fb1-4d4d-8c8a-e2482031d715",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 672,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "0cb73814-684a-4b98-bee6-6a7b030adf3b",
+      "patternId": "27013e2e-7f3b-409c-8a7c-37811e04d836",
+      "track": 4,
+      "start": 704,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "8c7e06af-f884-4842-9afc-aef0659c0e02",
+      "patternId": "9d26bdaf-593e-4900-b6cb-7597e215563d",
+      "track": 4,
+      "start": 736,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "ac9de0a7-ba33-4dd0-aa87-e6fb66fed5e1",
+      "patternId": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
+      "track": 4,
+      "start": 768,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "4a9885a5-e161-4cf6-8ed0-bb57011d4a87",
+      "patternId": "1a9f3db3-857e-447b-a516-c57e0fe74633",
+      "track": 5,
+      "start": 0,
+      "len": 32,
+      "selected": true
+    },
+    {
+      "id": "084ea0cc-db7c-4e4d-8611-bc93ece015c9",
+      "patternId": "e94f8117-b9e0-4592-ad98-4b52e92c46a8",
+      "track": 5,
+      "start": 192,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "43fd2513-cade-4075-9e7f-f42042530a06",
+      "patternId": "56a4118d-fb82-4084-b5ee-ac215ae07782",
+      "track": 5,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "3c51e2d6-512c-40fb-997d-911ed4096212",
+      "patternId": "ed88cb62-3488-4874-b8ef-20be80870924",
+      "track": 5,
+      "start": 384,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "7e0ff51c-9d83-4a54-9f05-c07b27f23890",
+      "patternId": "1a9f3db3-857e-447b-a516-c57e0fe74633",
+      "track": 5,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "c82663ec-e0fb-423a-9f05-9683d014420f",
+      "patternId": "ed88cb62-3488-4874-b8ef-20be80870924",
+      "track": 5,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "2e777607-9aac-4d5e-97c9-69544eddbadc",
+      "patternId": "652f21d9-6f67-454f-be0d-c7af96baac29",
+      "track": 5,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "b15054ee-3d42-4475-858c-8a8ddab55929",
+      "patternId": "e94f8117-b9e0-4592-ad98-4b52e92c46a8",
+      "track": 5,
+      "start": 576,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "8773169c-b2ac-4dc0-908f-855012d63976",
+      "patternId": "d99be841-89c6-4c8d-af7a-9c01e9bd9907",
+      "track": 5,
+      "start": 640,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "e728b2ed-ebfb-4b1d-8cf4-921904510004",
+      "patternId": "5182619b-0247-46ed-9c31-6a05c67dab9b",
+      "track": 5,
+      "start": 672,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "54cc19af-5354-4447-8461-d421105933d0",
+      "patternId": "d99be841-89c6-4c8d-af7a-9c01e9bd9907",
+      "track": 5,
+      "start": 704,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "e0d9aa6d-0f3d-4c6e-a23b-4e20bd57aad0",
+      "patternId": "5182619b-0247-46ed-9c31-6a05c67dab9b",
+      "track": 5,
+      "start": 736,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "409fd47a-8439-4d62-986e-3ceb0e74611a",
+      "patternId": "1a9f3db3-857e-447b-a516-c57e0fe74633",
+      "track": 5,
+      "start": 768,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "85c9290e-821b-4f1e-a36b-55d15850b7a1",
+      "patternId": "905aa309-88bb-40c0-b782-3f871f0b3319",
+      "track": 6,
+      "start": 0,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "0e581596-0dbf-4f52-bdab-76dc919599d2",
+      "patternId": "b6cb3a88-a8dc-4048-bc0a-70ac58effcb7",
+      "track": 6,
+      "start": 32,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "ec56430f-78c1-41f1-a7f9-75358bd3a80c",
+      "patternId": "905aa309-88bb-40c0-b782-3f871f0b3319",
+      "track": 6,
+      "start": 384,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "d28c1aee-6a0a-4356-b8a8-3f9587fcd97b",
+      "patternId": "b6cb3a88-a8dc-4048-bc0a-70ac58effcb7",
+      "track": 6,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "fd7bc778-a5c0-4f3a-884f-d71f474e50e4",
+      "patternId": "b6cb3a88-a8dc-4048-bc0a-70ac58effcb7",
+      "track": 6,
+      "start": 608,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "f31df63f-b1e3-45a0-b298-2f648c5fc815",
+      "patternId": "905aa309-88bb-40c0-b782-3f871f0b3319",
+      "track": 6,
+      "start": 736,
+      "len": 64,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "dde4b533-0be3-4ae5-9dad-71eef72a6196",
+      "patternId": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "track": 7,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "894c41e4-8b65-4cb2-8c9d-40880ca1a5fa",
+      "patternId": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "track": 7,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "aa91cb29-bfa1-47ee-ac13-0838b5f1716a",
+      "patternId": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "track": 7,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "69dcd744-e67c-438e-8b5f-078165711492",
+      "patternId": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "track": 7,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "c040734f-568c-4883-af53-b08290a6021c",
+      "patternId": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "track": 7,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "861dc242-4f3c-496a-b053-9c1dcc1da6b9",
+      "patternId": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "track": 7,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "66e746bc-bc91-4d88-bd6c-9415c0227b08",
+      "patternId": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "track": 7,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "fc87b350-b98a-4225-a279-9d89c1c2418b",
+      "patternId": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "track": 7,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "77795924-7f89-45aa-9507-6ab7c4ac27ce",
+      "patternId": "aebe9792-1865-481a-b24c-e9c3f449f267",
+      "track": 7,
+      "start": 704,
+      "len": 32,
+      "transpose": 2
+    },
+    {
+      "id": "1071ff01-aa36-4ce9-9367-d48d0f06b928",
+      "patternId": "f2ae06a4-6fdf-4aa3-b6d3-7580a13c47ac",
+      "track": 7,
+      "start": 736,
+      "len": 32,
+      "transpose": 2
+    },
+    {
+      "id": "16b8c953-9d30-4627-a855-431c21dc7ef0",
+      "patternId": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
+      "track": 8,
+      "start": 512,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "38959c97-f9c9-4df8-af9d-aaba4dbdf494",
+      "patternId": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
+      "track": 8,
+      "start": 544,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "e1888bbc-3278-470c-8804-9911dc1e7861",
+      "patternId": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
+      "track": 8,
+      "start": 704,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "fb2b19ac-909d-42e4-9ec7-a63b37e1b92e",
+      "patternId": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
+      "track": 8,
+      "start": 736,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "82fb449f-f43b-426a-a8f9-b3a5550b7f91",
+      "patternId": "5ac46ca2-4158-450e-8110-23d4cc2a3e97",
+      "track": 6,
+      "start": 480,
+      "len": 32,
+      "selected": false
+    },
+    {
+      "id": "72823d39-5d85-4a1d-a418-3023c408ba9f",
+      "patternId": "5ac46ca2-4158-450e-8110-23d4cc2a3e97",
+      "track": 6,
+      "start": 768,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "c08bd119-2fb9-4001-8ea0-84084992713d",
+      "patternId": "fecae414-af65-4aa8-8d52-efd15af94124",
+      "track": 3,
+      "start": 704,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    },
+    {
+      "id": "c4472c53-e780-4420-b4f9-8377f14ac505",
+      "patternId": "fecae414-af65-4aa8-8d52-efd15af94124",
+      "track": 3,
+      "start": 736,
+      "len": 32,
+      "selected": false,
+      "transpose": 2
+    }
+  ],
+  "tracks": [
+    {
+      "name": "Drums",
+      "color": "#ee5253"
+    },
+    {
+      "name": "Percussion",
+      "color": "#ff9f43"
+    },
+    {
+      "name": "Bass",
+      "color": "#10ac84"
+    },
+    {
+      "name": "Lead",
+      "color": "#53d8fb"
+    },
+    {
+      "name": "Chords",
+      "color": "#5f27cd"
+    },
+    {
+      "name": "Bells & Arp",
+      "color": "#0abde3"
+    },
+    {
+      "name": "FX",
+      "color": "#ff6b6b"
+    },
+    {
+      "name": "Echo",
+      "color": "#48dbfb"
+    },
+    {
+      "name": "Metal",
+      "color": "#badc58"
+    }
+  ],
+  "bpm": 118,
+  "zoom": {
+    "seq": {
+      "width": 24,
+      "height": 14
+    },
+    "arr": {
+      "width": 4,
+      "height": 37.044000000000004
+    }
+  },
+  "swing": 0.14,
+  "automation": [
+    {
+      "id": "4b809a77-c579-4842-92eb-fa5f71050dca",
+      "target": "master",
+      "param": "rev",
+      "points": [
+        {
+          "step": 0,
+          "value": 0.18
+        },
+        {
+          "step": 376,
+          "value": 0.18,
+          "curve": "ease-in"
+        },
+        {
+          "step": 424,
+          "value": 0.52,
+          "curve": "smooth"
+        },
+        {
+          "step": 480,
+          "value": 0.52,
+          "curve": "ease-out"
+        },
+        {
+          "step": 508,
+          "value": 0.24
+        },
+        {
+          "step": 512,
+          "value": 0.18
+        }
+      ]
+    },
+    {
+      "id": "2c590ee9-c6dc-434c-9772-335e8a1c0275",
+      "target": "master",
+      "param": "tilt",
+      "points": [
+        {
+          "step": 0,
+          "value": 0
+        },
+        {
+          "step": 476,
+          "value": 0
+        },
+        {
+          "step": 510,
+          "value": 7
+        },
+        {
+          "step": 512,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "9e69130a-4408-40d1-9451-04920282adbf",
+      "target": "0eb37e26-f5cc-4490-a76e-a2087a66d660",
+      "param": "q",
+      "points": [
+        {
+          "step": 0,
+          "value": 83
+        },
+        {
+          "step": 192,
+          "value": 83
+        },
+        {
+          "step": 254,
+          "value": 120
+        },
+        {
+          "step": 258,
+          "value": 83
+        }
+      ]
+    },
+    {
+      "id": "b5e40aa2-1175-4c71-adc2-9a8113129e98",
+      "target": "715b1f61-d4e7-41ed-8138-1f06f69052b9",
+      "param": "tone",
+      "points": [
+        {
+          "step": 0,
+          "value": 1
+        },
+        {
+          "step": 376,
+          "value": 1
+        },
+        {
+          "step": 384,
+          "value": 0.28
+        },
+        {
+          "step": 432,
+          "value": 0.55
+        },
+        {
+          "step": 480,
+          "value": 1
+        },
+        {
+          "step": 512,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "aacbea9f-6c0a-4b09-aac8-f671172a250d",
+      "target": "715b1f61-d4e7-41ed-8138-1f06f69052b9",
+      "param": "gain",
+      "points": [
+        {
+          "step": 0,
+          "value": 0.04,
+          "curve": "smooth"
+        },
+        {
+          "step": 192,
+          "value": 0.06,
+          "curve": "ease-out"
+        },
+        {
+          "step": 384,
+          "value": 0.035,
+          "curve": "ease-in"
+        },
+        {
+          "step": 432,
+          "value": 0.055
+        },
+        {
+          "step": 480,
+          "value": 0.07
+        },
+        {
+          "step": 512,
+          "value": 0.045
+        }
+      ]
+    },
+    {
+      "id": "a395afc6-d4ec-432d-a91e-639df1f44407",
+      "target": "0eb37e26-f5cc-4490-a76e-a2087a66d660",
+      "param": "pan",
+      "points": [
+        {
+          "step": 0,
+          "value": 0.3
+        },
+        {
+          "step": 192,
+          "value": 0.3
+        },
+        {
+          "step": 208,
+          "value": -0.65
+        },
+        {
+          "step": 224,
+          "value": 0.65
+        },
+        {
+          "step": 240,
+          "value": -0.65
+        },
+        {
+          "step": 256,
+          "value": 0.3
+        }
+      ]
+    }
+  ],
+  "automationOrder": [
+    "4b809a77-c579-4842-92eb-fa5f71050dca",
+    "2c590ee9-c6dc-434c-9772-335e8a1c0275",
+    "9e69130a-4408-40d1-9451-04920282adbf",
+    "b5e40aa2-1175-4c71-adc2-9a8113129e98",
+    "aacbea9f-6c0a-4b09-aac8-f671172a250d",
+    "a395afc6-d4ec-432d-a91e-639df1f44407"
+  ],
+  "automationPositions": {}
+}

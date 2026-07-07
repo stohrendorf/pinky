@@ -1,0 +1,3598 @@
+{
+  "formatVersion": 1,
+  "instruments": [
+    {
+      "id": "969e0862-43d3-4d7c-bd86-848c748df0e1",
+      "name": "Drums/Anvil Kick",
+      "color": "#53d8fb",
+      "params": {
+        "tone": 1,
+        "q": 6,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.2,
+        "noiseFreq": 220,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 30,
+        "pitchTime": 0.5,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.3,
+        "sus": 0.05,
+        "rel": 0.2,
+        "gain": 1,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.5,
+            "level": 0.25
+          },
+          {
+            "ratio": 2.8,
+            "level": 0.12
+          }
+        ]
+      }
+    },
+    {
+      "id": "07d74e10-0577-4e74-be36-1086c1f5ef43",
+      "name": "Drums/Scrap Snare",
+      "color": "#ff9f43",
+      "params": {
+        "tone": 0.3,
+        "q": 8,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.85,
+        "noiseFreq": 2400,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 9,
+        "pitchTime": 0.04,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.14,
+        "sus": 0,
+        "rel": 0.12,
+        "gain": 0.8,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.9,
+            "level": 0.5
+          },
+          {
+            "ratio": 3.4,
+            "level": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "e1501cec-2062-46c5-9eaa-3e8a354523b4",
+      "name": "Drums/Garden Toms",
+      "color": "#ee5253",
+      "params": {
+        "tone": 1,
+        "q": 14,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.05,
+        "noiseFreq": 900,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 11,
+        "pitchTime": 0.07,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.3,
+        "sus": 0.05,
+        "rel": 0.2,
+        "gain": 0.85,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.35
+          },
+          {
+            "ratio": 3,
+            "level": 0.12
+          }
+        ]
+      }
+    },
+    {
+      "id": "b680cbf9-36ef-4f92-8bf7-8bb6942e426f",
+      "name": "Drums/Chord Hats",
+      "color": "#10ac84",
+      "params": {
+        "tone": 0.55,
+        "q": 70,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.55,
+        "noiseFreq": 8200,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.09,
+        "sus": 0,
+        "rel": 0.08,
+        "gain": 0.4,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "557f8b22-0041-44d0-922e-9096d8516232",
+      "name": "Percussion/Tuned/Gongue Bell",
+      "color": "#a29bfe",
+      "params": {
+        "tone": 1,
+        "q": 85,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0.4,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.01,
+        "dec": 1.2,
+        "sus": 0.2,
+        "rel": 2.2,
+        "gain": 0.55,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.41,
+            "level": 0.65
+          },
+          {
+            "ratio": 2.24,
+            "level": 0.5
+          },
+          {
+            "ratio": 3.36,
+            "level": 0.32
+          },
+          {
+            "ratio": 4.47,
+            "level": 0.18
+          }
+        ]
+      }
+    },
+    {
+      "id": "28e6e75f-5f91-4bf2-829c-5ba9f5496dd1",
+      "name": "Percussion/Tuned/Glass Chime",
+      "color": "#0abde3",
+      "params": {
+        "tone": 1,
+        "q": 100,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0.55,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 1.4,
+        "sus": 0,
+        "rel": 1.8,
+        "gain": 0.35,
+        "pan": 0.35,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.5,
+            "level": 0.55
+          },
+          {
+            "ratio": 2.83,
+            "level": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "71601831-0b39-4fe9-9b1b-492d0134ed66",
+      "name": "Synth/Breath Pad",
+      "color": "#ff6b6b",
+      "params": {
+        "tone": 0.42,
+        "q": 12,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.24,
+        "noiseFreq": 500,
+        "formant": 0.22,
+        "f1": 520,
+        "f2": 1250,
+        "f3": 2600,
+        "formantQ": 3.5,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 3,
+        "detune": 14,
+        "att": 1.6,
+        "dec": 1,
+        "sus": 0.9,
+        "rel": 2.4,
+        "gain": 0.4,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 0.85
+          },
+          {
+            "ratio": 2,
+            "level": 0.38
+          },
+          {
+            "ratio": 3,
+            "level": 0.2
+          },
+          {
+            "ratio": 5,
+            "level": 0.08
+          }
+        ]
+      }
+    },
+    {
+      "id": "f4260cf8-24ab-46e4-99fa-c89161f3b695",
+      "name": "FX/Riser Spire",
+      "color": "#f9ca24",
+      "params": {
+        "tone": 0.7,
+        "q": 55,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.4,
+        "noiseFreq": 3200,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": -30,
+        "pitchTime": 2.4,
+        "noiseBend": 0.8,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.3,
+        "dec": 0.3,
+        "sus": 1,
+        "rel": 0.6,
+        "gain": 0.5,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.4
+          },
+          {
+            "ratio": 3,
+            "level": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "887d775b-9145-406b-8aa2-d2853c094b19",
+      "name": "Synth/Shimmer Chorus",
+      "color": "#badc58",
+      "params": {
+        "tone": 0.8,
+        "q": 30,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 8,
+        "detune": 55,
+        "att": 0.6,
+        "dec": 0.6,
+        "sus": 0.85,
+        "rel": 1.6,
+        "gain": 0.32,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.6
+          },
+          {
+            "ratio": 3,
+            "level": 0.35
+          },
+          {
+            "ratio": 4,
+            "level": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "e2185518-eb09-4abb-8e4f-d89de5765b0b",
+      "name": "Synth/Metal Pluck",
+      "color": "#e056fd",
+      "params": {
+        "tone": 1,
+        "q": 60,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.002,
+        "dec": 0.28,
+        "sus": 0,
+        "rel": 0.18,
+        "gain": 0.5,
+        "pan": -0.25,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 1.41,
+            "level": 0.75
+          },
+          {
+            "ratio": 2.24,
+            "level": 0.55
+          },
+          {
+            "ratio": 2.83,
+            "level": 0.4
+          },
+          {
+            "ratio": 3.61,
+            "level": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2f6b608-9ac8-494d-a534-f04b95d56797",
+      "name": "Synth/Iron Drone",
+      "color": "#48dbfb",
+      "params": {
+        "tone": 1,
+        "q": 10,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0.1,
+        "noiseFreq": 90,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 0,
+        "pitchTime": 0.08,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 1.2,
+        "dec": 0.6,
+        "sus": 1,
+        "rel": 2.5,
+        "gain": 0.5,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "c5042a82-2408-4d51-8930-ac7e9aebe466",
+      "name": "Bass/Rubber Bass",
+      "color": "#7ed6df",
+      "params": {
+        "tone": 1,
+        "q": 16,
+        "harm": 4,
+        "falloff": 0.6,
+        "stretch": 0,
+        "noise": 0,
+        "noiseFreq": 6000,
+        "formant": 0,
+        "f1": 700,
+        "f2": 1150,
+        "f3": 2800,
+        "formantQ": 6,
+        "vib": 0,
+        "vibRate": 5.5,
+        "vibDelay": 0.35,
+        "pitchDrop": 6,
+        "pitchTime": 0.05,
+        "noiseBend": 0,
+        "voices": 1,
+        "detune": 12,
+        "att": 0.006,
+        "dec": 0.22,
+        "sus": 0.55,
+        "rel": 0.18,
+        "gain": 0.85,
+        "pan": 0,
+        "legatoGlide": 0,
+        "legatoCurve": "linear",
+        "partials": [
+          {
+            "ratio": 1,
+            "level": 1
+          },
+          {
+            "ratio": 2,
+            "level": 0.4
+          },
+          {
+            "ratio": 3,
+            "level": 0.18
+          }
+        ]
+      }
+    }
+  ],
+  "patterns": [
+    {
+      "id": "be4d98ee-fc03-407b-b40b-bd7a10b2757b",
+      "name": "04 Climax/Kit — Build",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 3,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D1",
+            "start": 16,
+            "len": 3,
+            "vel": 0.75
+          }
+        ],
+        "07d74e10-0577-4e74-be36-1086c1f5ef43": [
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 2,
+            "vel": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "name": "02 Main/Kit — Main",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "D1",
+            "start": 10,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "D1",
+            "start": 16,
+            "len": 2,
+            "vel": 0.95
+          },
+          {
+            "pitch": "D1",
+            "start": 26,
+            "len": 2,
+            "vel": 0.7
+          }
+        ],
+        "07d74e10-0577-4e74-be36-1086c1f5ef43": [
+          {
+            "pitch": "C4",
+            "start": 8,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 2,
+            "vel": 0.9
+          }
+        ],
+        "b680cbf9-36ef-4f92-8bf7-8bb6942e426f": []
+      }
+    },
+    {
+      "id": "aed4e830-2985-4071-a0c1-b8c968fd69f0",
+      "name": "04 Climax/Kit — Climax",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "D1",
+            "start": 6,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D1",
+            "start": 10,
+            "len": 2,
+            "vel": 0.8
+          },
+          {
+            "pitch": "D1",
+            "start": 16,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "D1",
+            "start": 22,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D1",
+            "start": 26,
+            "len": 2,
+            "vel": 0.85
+          }
+        ],
+        "07d74e10-0577-4e74-be36-1086c1f5ef43": [
+          {
+            "pitch": "C4",
+            "start": 8,
+            "len": 2,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C4",
+            "start": 14,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "C4",
+            "start": 24,
+            "len": 2,
+            "vel": 0.95
+          },
+          {
+            "pitch": "C4",
+            "start": 30,
+            "len": 1,
+            "vel": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "84708ca8-1a54-4bc6-a1a7-a24c9d777494",
+      "name": "02 Main/Kit — Bassline 0",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 6,
+            "vel": 0.95
+          },
+          {
+            "pitch": "A1",
+            "start": 8,
+            "len": 4,
+            "vel": 0.7
+          },
+          {
+            "pitch": "D1",
+            "start": 16,
+            "len": 6,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F1",
+            "start": 24,
+            "len": 6,
+            "vel": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "fab7d6aa-d927-4e7e-be3a-09eaab014c7b",
+      "name": "02 Main/Kit — Bassline 1",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "A#0",
+            "start": 0,
+            "len": 6,
+            "vel": 0.95
+          },
+          {
+            "pitch": "F1",
+            "start": 8,
+            "len": 4,
+            "vel": 0.7
+          },
+          {
+            "pitch": "A#0",
+            "start": 16,
+            "len": 6,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D1",
+            "start": 24,
+            "len": 6,
+            "vel": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "0cde1da9-81bc-480f-bcb7-819d29b71a12",
+      "name": "02 Main/Kit — Bassline 2",
+      "steps": 32,
+      "color": "#3d1f24",
+      "tracks": {
+        "969e0862-43d3-4d7c-bd86-848c748df0e1": [
+          {
+            "pitch": "C1",
+            "start": 0,
+            "len": 6,
+            "vel": 0.95
+          },
+          {
+            "pitch": "G1",
+            "start": 8,
+            "len": 4,
+            "vel": 0.7
+          },
+          {
+            "pitch": "C1",
+            "start": 16,
+            "len": 6,
+            "vel": 0.9
+          },
+          {
+            "pitch": "E1",
+            "start": 24,
+            "len": 6,
+            "vel": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "name": "02 Main/Toms — Entrance",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "e1501cec-2062-46c5-9eaa-3e8a354523b4": [
+          {
+            "pitch": "C3",
+            "start": 8,
+            "len": 3,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D3",
+            "start": 20,
+            "len": 3,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "name": "02 Main/Toms — Motif",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "e1501cec-2062-46c5-9eaa-3e8a354523b4": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D3",
+            "start": 4,
+            "len": 2,
+            "vel": 0.8
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 2,
+            "vel": 0.85
+          },
+          {
+            "pitch": "D3",
+            "start": 12,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G3",
+            "start": 20,
+            "len": 2,
+            "vel": 0.85
+          },
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 2,
+            "vel": 0.75
+          },
+          {
+            "pitch": "D3",
+            "start": 28,
+            "len": 3,
+            "vel": 0.8
+          }
+        ]
+      }
+    },
+    {
+      "id": "78db97c3-0007-4811-9345-94c8acceda46",
+      "name": "04 Climax/Toms — Motif (climax)",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "e1501cec-2062-46c5-9eaa-3e8a354523b4": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 3,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G3",
+            "start": 6,
+            "len": 2,
+            "vel": 0.95
+          },
+          {
+            "pitch": "F3",
+            "start": 9,
+            "len": 2,
+            "vel": 0.8
+          },
+          {
+            "pitch": "A3",
+            "start": 12,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "F3",
+            "start": 15,
+            "len": 2,
+            "vel": 0.85
+          },
+          {
+            "pitch": "C3",
+            "start": 18,
+            "len": 2,
+            "vel": 0.9
+          },
+          {
+            "pitch": "D3",
+            "start": 21,
+            "len": 2,
+            "vel": 0.8
+          },
+          {
+            "pitch": "G3",
+            "start": 24,
+            "len": 2,
+            "vel": 1
+          },
+          {
+            "pitch": "C4",
+            "start": 27,
+            "len": 3,
+            "vel": 0.95
+          }
+        ]
+      }
+    },
+    {
+      "id": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "name": "02 Main/Toms — Fade",
+      "steps": 32,
+      "color": "#10ac84",
+      "tracks": {
+        "e1501cec-2062-46c5-9eaa-3e8a354523b4": [
+          {
+            "pitch": "C3",
+            "start": 2,
+            "len": 3,
+            "vel": 0.5
+          },
+          {
+            "pitch": "D3",
+            "start": 18,
+            "len": 3,
+            "vel": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "name": "02 Main/Bass — 0",
+      "steps": 32,
+      "color": "#7ed6df",
+      "tracks": {
+        "c5042a82-2408-4d51-8930-ac7e9aebe466": [
+          {
+            "pitch": "D2",
+            "start": 0,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A1",
+            "start": 6,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "D2",
+              "start": 8,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "D2",
+            "start": 8,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "F2",
+            "start": 14,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D2",
+            "start": 16,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "A1",
+            "start": 22,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "D2",
+              "start": 24,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "D2",
+            "start": 24,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "F2",
+            "start": 30,
+            "len": 2,
+            "vel": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "name": "02 Main/Bass — 1",
+      "steps": 32,
+      "color": "#7ed6df",
+      "tracks": {
+        "c5042a82-2408-4d51-8930-ac7e9aebe466": [
+          {
+            "pitch": "A#1",
+            "start": 0,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F1",
+            "start": 6,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "A#1",
+              "start": 8,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "A#1",
+            "start": 8,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "D2",
+            "start": 14,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "A#1",
+            "start": 16,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "F1",
+            "start": 22,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "A#1",
+              "start": 24,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "A#1",
+            "start": 24,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "D2",
+            "start": 30,
+            "len": 2,
+            "vel": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "name": "02 Main/Bass — 2",
+      "steps": 32,
+      "color": "#7ed6df",
+      "tracks": {
+        "c5042a82-2408-4d51-8930-ac7e9aebe466": [
+          {
+            "pitch": "C2",
+            "start": 0,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G1",
+            "start": 6,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "C2",
+              "start": 8,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C2",
+            "start": 8,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "E2",
+            "start": 14,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C2",
+            "start": 16,
+            "len": 5,
+            "vel": 0.9
+          },
+          {
+            "pitch": "G1",
+            "start": 22,
+            "len": 3,
+            "vel": 0.6,
+            "legatoTo": {
+              "pitch": "C2",
+              "start": 24,
+              "glide": 0,
+              "curve": "linear"
+            }
+          },
+          {
+            "pitch": "C2",
+            "start": 24,
+            "len": 5,
+            "vel": 0.85
+          },
+          {
+            "pitch": "E2",
+            "start": 30,
+            "len": 2,
+            "vel": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "name": "02 Main/Hats — 0",
+      "steps": 32,
+      "color": "#f9ca24",
+      "tracks": {
+        "b680cbf9-36ef-4f92-8bf7-8bb6942e426f": [
+          {
+            "pitch": "D3",
+            "start": 2,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "A3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "F3",
+            "start": 18,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "A3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "D3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "F3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "name": "02 Main/Hats — 1",
+      "steps": 32,
+      "color": "#f9ca24",
+      "tracks": {
+        "b680cbf9-36ef-4f92-8bf7-8bb6942e426f": [
+          {
+            "pitch": "A#2",
+            "start": 2,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "D3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "F3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "A#2",
+            "start": 14,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "D3",
+            "start": 18,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "F3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "A#2",
+            "start": 26,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "name": "02 Main/Hats — 2",
+      "steps": 32,
+      "color": "#f9ca24",
+      "tracks": {
+        "b680cbf9-36ef-4f92-8bf7-8bb6942e426f": [
+          {
+            "pitch": "C3",
+            "start": 2,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "E3",
+            "start": 6,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "G3",
+            "start": 10,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C3",
+            "start": 14,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "E3",
+            "start": 18,
+            "len": 1,
+            "vel": 0.5
+          },
+          {
+            "pitch": "G3",
+            "start": 22,
+            "len": 1,
+            "vel": 0.4
+          },
+          {
+            "pitch": "C3",
+            "start": 26,
+            "len": 1,
+            "vel": 0.55
+          },
+          {
+            "pitch": "E3",
+            "start": 30,
+            "len": 1,
+            "vel": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "name": "02 Main/Bells — 0",
+      "steps": 32,
+      "color": "#a29bfe",
+      "tracks": {
+        "557f8b22-0041-44d0-922e-9096d8516232": [
+          {
+            "pitch": "D2",
+            "start": 0,
+            "len": 16,
+            "vel": 0.7
+          },
+          {
+            "pitch": "A2",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ],
+        "28e6e75f-5f91-4bf2-829c-5ba9f5496dd1": [
+          {
+            "pitch": "A3",
+            "start": 6,
+            "len": 6,
+            "vel": 0.4
+          },
+          {
+            "pitch": "D4",
+            "start": 22,
+            "len": 8,
+            "vel": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "09df6520-d265-4888-91be-d631821445e9",
+      "name": "02 Main/Bells — 1",
+      "steps": 32,
+      "color": "#a29bfe",
+      "tracks": {
+        "557f8b22-0041-44d0-922e-9096d8516232": [
+          {
+            "pitch": "A#1",
+            "start": 0,
+            "len": 16,
+            "vel": 0.7
+          },
+          {
+            "pitch": "F2",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ],
+        "28e6e75f-5f91-4bf2-829c-5ba9f5496dd1": [
+          {
+            "pitch": "F3",
+            "start": 6,
+            "len": 6,
+            "vel": 0.4
+          },
+          {
+            "pitch": "A#3",
+            "start": 22,
+            "len": 8,
+            "vel": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "c5ee4515-bb84-4583-8311-8b354d47bce3",
+      "name": "02 Main/Bells — 2",
+      "steps": 32,
+      "color": "#a29bfe",
+      "tracks": {
+        "557f8b22-0041-44d0-922e-9096d8516232": [
+          {
+            "pitch": "C2",
+            "start": 0,
+            "len": 16,
+            "vel": 0.7
+          },
+          {
+            "pitch": "G2",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ],
+        "28e6e75f-5f91-4bf2-829c-5ba9f5496dd1": [
+          {
+            "pitch": "G3",
+            "start": 6,
+            "len": 6,
+            "vel": 0.4
+          },
+          {
+            "pitch": "C4",
+            "start": 22,
+            "len": 8,
+            "vel": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "name": "02 Main/Pad — Calm",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "71601831-0b39-4fe9-9b1b-492d0134ed66": [
+          {
+            "pitch": "D2",
+            "start": 0,
+            "len": 32,
+            "vel": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "b2725472-6401-42dc-9f0c-709042170344",
+      "name": "02 Main/Pad — Active",
+      "steps": 32,
+      "color": "#0abde3",
+      "tracks": {
+        "71601831-0b39-4fe9-9b1b-492d0134ed66": [
+          {
+            "pitch": "D2",
+            "start": 0,
+            "len": 16,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D2",
+            "start": 16,
+            "len": 16,
+            "vel": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "3e66d3b8-325f-40e3-95f1-2d10cbf1d65e",
+      "name": "04 Climax/Riser — to Main",
+      "steps": 32,
+      "color": "#ff6b6b",
+      "tracks": {
+        "f4260cf8-24ab-46e4-99fa-c89161f3b695": [
+          {
+            "pitch": "D4",
+            "start": 0,
+            "len": 30,
+            "vel": 0.75
+          }
+        ]
+      }
+    },
+    {
+      "id": "bb547b01-40f8-45ce-8ee1-2f42c49fcb2b",
+      "name": "03 Development/Riser — Breakdown Swell",
+      "steps": 32,
+      "color": "#ff6b6b",
+      "tracks": {
+        "f4260cf8-24ab-46e4-99fa-c89161f3b695": [
+          {
+            "pitch": "F4",
+            "start": 0,
+            "len": 32,
+            "vel": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "ccde8039-8e9e-4f7e-929c-435040561b82",
+      "name": "04 Climax/Riser — Noise Lead",
+      "steps": 32,
+      "color": "#ff6b6b",
+      "tracks": {
+        "f4260cf8-24ab-46e4-99fa-c89161f3b695": [
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 4,
+            "vel": 0.7
+          },
+          {
+            "pitch": "G3",
+            "start": 6,
+            "len": 4,
+            "vel": 0.65
+          },
+          {
+            "pitch": "A3",
+            "start": 12,
+            "len": 6,
+            "vel": 0.75
+          },
+          {
+            "pitch": "F3",
+            "start": 20,
+            "len": 4,
+            "vel": 0.6
+          },
+          {
+            "pitch": "C4",
+            "start": 26,
+            "len": 6,
+            "vel": 0.8
+          }
+        ]
+      }
+    },
+    {
+      "id": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "name": "02 Main/Shimmer — 0",
+      "steps": 32,
+      "color": "#badc58",
+      "tracks": {
+        "887d775b-9145-406b-8aa2-d2853c094b19": [
+          {
+            "pitch": "D3",
+            "start": 0,
+            "len": 16,
+            "vel": 0.6
+          },
+          {
+            "pitch": "F3",
+            "start": 0,
+            "len": 16,
+            "vel": 0.5
+          },
+          {
+            "pitch": "A3",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "78702f60-24f2-49d1-8767-2148e1ea0c9c",
+      "name": "02 Main/Shimmer — 1",
+      "steps": 32,
+      "color": "#badc58",
+      "tracks": {
+        "887d775b-9145-406b-8aa2-d2853c094b19": [
+          {
+            "pitch": "A#2",
+            "start": 0,
+            "len": 16,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D3",
+            "start": 0,
+            "len": 16,
+            "vel": 0.5
+          },
+          {
+            "pitch": "F3",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "8092ee88-35dc-4dc7-ad38-d4e467692c4c",
+      "name": "02 Main/Shimmer — 2",
+      "steps": 32,
+      "color": "#badc58",
+      "tracks": {
+        "887d775b-9145-406b-8aa2-d2853c094b19": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 16,
+            "vel": 0.6
+          },
+          {
+            "pitch": "E3",
+            "start": 0,
+            "len": 16,
+            "vel": 0.5
+          },
+          {
+            "pitch": "G3",
+            "start": 16,
+            "len": 16,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "name": "02 Main/Pluck — 0",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "e2185518-eb09-4abb-8e4f-d89de5765b0b": [
+          {
+            "pitch": "D3",
+            "start": 0,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "F3",
+            "start": 4,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "A3",
+            "start": 8,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "F3",
+            "start": 12,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "D3",
+            "start": 16,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "F3",
+            "start": 20,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "A3",
+            "start": 24,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "F3",
+            "start": 28,
+            "len": 2,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "name": "02 Main/Pluck — 1",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "e2185518-eb09-4abb-8e4f-d89de5765b0b": [
+          {
+            "pitch": "A#2",
+            "start": 0,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "D3",
+            "start": 4,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "F3",
+            "start": 8,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "D3",
+            "start": 12,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "A#2",
+            "start": 16,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "D3",
+            "start": 20,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "F3",
+            "start": 24,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "D3",
+            "start": 28,
+            "len": 2,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "name": "02 Main/Pluck — 2",
+      "steps": 32,
+      "color": "#e056fd",
+      "tracks": {
+        "e2185518-eb09-4abb-8e4f-d89de5765b0b": [
+          {
+            "pitch": "C3",
+            "start": 0,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "E3",
+            "start": 4,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "G3",
+            "start": 8,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "E3",
+            "start": 12,
+            "len": 2,
+            "vel": 0.55
+          },
+          {
+            "pitch": "C3",
+            "start": 16,
+            "len": 2,
+            "vel": 0.7
+          },
+          {
+            "pitch": "E3",
+            "start": 20,
+            "len": 2,
+            "vel": 0.6
+          },
+          {
+            "pitch": "G3",
+            "start": 24,
+            "len": 2,
+            "vel": 0.65
+          },
+          {
+            "pitch": "E3",
+            "start": 28,
+            "len": 2,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "name": "02 Main/Drone — Pedal",
+      "steps": 32,
+      "color": "#48dbfb",
+      "tracks": {
+        "c2f6b608-9ac8-494d-a534-f04b95d56797": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 32,
+            "vel": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "89d4a1b4-f300-4edd-b780-1a79917287f9",
+      "name": "02 Main/Drone — Swell",
+      "steps": 32,
+      "color": "#48dbfb",
+      "tracks": {
+        "c2f6b608-9ac8-494d-a534-f04b95d56797": [
+          {
+            "pitch": "D1",
+            "start": 0,
+            "len": 16,
+            "vel": 0.6
+          },
+          {
+            "pitch": "D1",
+            "start": 16,
+            "len": 16,
+            "vel": 0.8
+          }
+        ]
+      }
+    }
+  ],
+  "arrangement": [
+    {
+      "id": "c614fcc6-b479-40d6-9c3a-b790d3055a44",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 0,
+      "len": 32
+    },
+    {
+      "id": "4fa429a6-99fe-4868-a20e-eb2cc6401b3c",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 0,
+      "len": 32
+    },
+    {
+      "id": "a92a850c-8ff7-42ce-afac-38a9ffcbb618",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 0,
+      "len": 32
+    },
+    {
+      "id": "478c7f68-d5e9-4e97-81d7-d839eca6e3e5",
+      "patternId": "09df6520-d265-4888-91be-d631821445e9",
+      "track": 4,
+      "start": 32,
+      "len": 32
+    },
+    {
+      "id": "0208d5d8-2ec9-4942-97c1-8e4fc4b63ad1",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 32,
+      "len": 32
+    },
+    {
+      "id": "4358f12b-b89e-4a8f-b463-e1db53258068",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 32,
+      "len": 32
+    },
+    {
+      "id": "80a60bda-0700-475c-a75a-ab68354ffc75",
+      "patternId": "c5ee4515-bb84-4583-8311-8b354d47bce3",
+      "track": 4,
+      "start": 64,
+      "len": 32
+    },
+    {
+      "id": "10582438-e611-47ef-845e-13baeb440ae6",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 64,
+      "len": 32
+    },
+    {
+      "id": "10bd55bf-a879-4776-9468-5bd16669c7ae",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 64,
+      "len": 32
+    },
+    {
+      "id": "559a943b-5aad-4cf9-95fe-71f9445bc0c4",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 64,
+      "len": 32
+    },
+    {
+      "id": "a1b80689-9299-466c-8f8b-032c74b799b0",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 96,
+      "len": 32
+    },
+    {
+      "id": "1ba47d10-0942-42cc-a1c7-1fa1a392861c",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 96,
+      "len": 32
+    },
+    {
+      "id": "b630a77e-b2c7-46c1-8e8d-dee9b5fe14c3",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 96,
+      "len": 32
+    },
+    {
+      "id": "f9e607b6-8904-454f-9def-d4b1a35658e3",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 96,
+      "len": 32
+    },
+    {
+      "id": "55d3ca97-3c57-4d69-ae2e-b589164f1a1f",
+      "patternId": "be4d98ee-fc03-407b-b40b-bd7a10b2757b",
+      "track": 0,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "5fa1c1d3-79bc-46b6-a945-bb19d5b70b60",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "a33b76bd-efbe-438c-8575-ec157b2fbce0",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "d5ad91e4-5034-4d83-8a98-aecf28808744",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "567060ef-52d7-4f19-968c-321fc91551e6",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 128,
+      "len": 32
+    },
+    {
+      "id": "08ec516c-ab6e-44a6-8ecb-e9853fa3b822",
+      "patternId": "be4d98ee-fc03-407b-b40b-bd7a10b2757b",
+      "track": 0,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "b30f6346-d432-4882-bc6b-00eb07bbf39e",
+      "patternId": "09df6520-d265-4888-91be-d631821445e9",
+      "track": 4,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "5065b08f-99dd-4e34-87ca-4e4168a5b018",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "cade7235-79c1-4893-9b49-c742eb920d70",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "d671a9ba-174a-4cc8-955b-45b2dd1dffb8",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "95a7a518-db8d-4c35-9323-085c96c85535",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 160,
+      "len": 32
+    },
+    {
+      "id": "29e7dab7-84ac-419d-abf7-1d36ef1c1f82",
+      "patternId": "be4d98ee-fc03-407b-b40b-bd7a10b2757b",
+      "track": 0,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "1f85cc38-059e-43e4-866d-6fc9cfdaeba4",
+      "patternId": "c5ee4515-bb84-4583-8311-8b354d47bce3",
+      "track": 4,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "93eb0695-d9e3-452c-a3cb-6fea45d7452e",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "010abdef-ed8b-470c-beb0-0b1890de6b7d",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "6fb7bc3b-1ab0-4f3c-a10e-7a6eae5063c8",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "57b83f67-427c-4a12-a484-7f6cd868847f",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 192,
+      "len": 32
+    },
+    {
+      "id": "f4e8ed8b-608c-40a5-b904-8862877c4a27",
+      "patternId": "be4d98ee-fc03-407b-b40b-bd7a10b2757b",
+      "track": 0,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "773eae50-a5ca-40e5-bb80-883d7ec81aa8",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "26068f75-435e-42cc-87f5-2680a4a0293c",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "c5c47f71-3e24-4bc4-99e9-e56074db4b14",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "b129b168-0ea9-415c-85e9-836493e98b44",
+      "patternId": "3ee725e9-9678-4ae8-b947-105d0036bc7a",
+      "track": 1,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "2ac198f9-7aad-4cc8-8adb-8b7572e59763",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "4c9ad53c-0673-4787-902f-0d0d802837d0",
+      "patternId": "3e66d3b8-325f-40e3-95f1-2d10cbf1d65e",
+      "track": 6,
+      "start": 224,
+      "len": 32
+    },
+    {
+      "id": "05fc5c60-7d27-4a01-87b9-052a98ad32ae",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "7e82cac8-31c5-470e-86e2-2f4606fdafb1",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "e5417b93-5377-4786-99bc-b245fe5dcff4",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "b3e08cb5-3f54-4d56-a0c8-e11efb6b8bc7",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "01fec0b0-1b29-45fa-acbd-bf5b0fc30420",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "41bd91fd-0392-4b9e-a3a2-46a529214fcf",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 256,
+      "len": 32
+    },
+    {
+      "id": "3d62a4c8-3941-4180-b02d-33e260484049",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "4679e6e6-f030-49d1-a629-2cf48df18e40",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "2f901cc7-fc90-45c5-8d04-9ab84be6bd15",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "2ad25969-b2d3-4ea1-8c17-aa3c3d5ccaa5",
+      "patternId": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "track": 3,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "ffb08e6c-265c-4b3a-8594-cd12a9bcc6b9",
+      "patternId": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "track": 8,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "f9b0b9c3-ce99-445f-adef-d90d88065bdf",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 288,
+      "len": 32
+    },
+    {
+      "id": "b0dfd8f5-3f39-4fd1-aeb2-90df6ee72c0d",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "0e6052e1-cb1d-4005-a675-9c7f0c697e4c",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "cddddeaa-b734-469d-842e-8e0f44957a8d",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "c3d202f3-1c03-43e3-8d3e-8fdabcfe317d",
+      "patternId": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "track": 3,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "128eb666-fa85-4ec6-829b-5a88f2ee1997",
+      "patternId": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "track": 8,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "441abd86-4b9d-4bdd-a846-054bd21d6e6c",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 320,
+      "len": 32
+    },
+    {
+      "id": "4081f6a8-7100-43ef-8436-5bf0d9582299",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "6210cd11-a277-49bd-bf88-48f59360dc13",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "14323e32-ccef-4612-9b39-0c993fc72e5a",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "35bdef40-a43b-4487-8f84-cf9ee84aba2a",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "df8bee38-ce35-4802-9c1a-6a1f9c16367a",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "d82eee72-09c1-4d72-bed1-e16eb0c378ef",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 352,
+      "len": 32
+    },
+    {
+      "id": "d84389e3-9891-4e48-9d6a-572deb258261",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "9210d029-0ef3-48bb-ac76-a451d368a26d",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "8e140952-244a-498f-b672-bf0c43a7aa16",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "7a1b0465-c6aa-400e-91bd-9ecb99ce4c54",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "6c306b38-0c21-4d94-bbf2-f25de2c3e6b3",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "1172bcbb-40ef-414b-943d-fcfcc25a15cd",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 384,
+      "len": 32
+    },
+    {
+      "id": "07439e91-e0af-484f-8c61-580800dc240c",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "a5b622c9-9d35-46c0-90e9-017195c1788c",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "9d654ee0-868f-4df0-9deb-fc258f49b2d6",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "9638aa7c-364c-411d-ab7c-b52eb83b21a5",
+      "patternId": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "track": 3,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "01e86b79-8060-4d0d-bcf2-ef1cafa20b8a",
+      "patternId": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "track": 8,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "20d2f3d1-cdad-4dbf-92c2-ef652b4030ee",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 416,
+      "len": 32
+    },
+    {
+      "id": "e0017686-01f8-4d33-9aee-77806da464ca",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "e16b8685-0fc7-4072-b12f-70c71b694b53",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "a5ff3d7b-7b7e-4903-ac27-612ad1a6c745",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "98de5a59-8067-4ac1-854b-f82820805738",
+      "patternId": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "track": 3,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "abec5740-dbd3-4bd7-93d3-f8c2ea482a54",
+      "patternId": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "track": 8,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "bd5ac8af-e3ec-4dd2-a51f-babb231f6ad5",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 448,
+      "len": 32
+    },
+    {
+      "id": "f3f16f90-f206-4172-9ee0-f9036965d9f7",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "81790098-34bd-4f44-b754-f51fc8feb008",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "459d8e31-2a37-4866-ae6d-85add1c33020",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "795cf790-3d6b-49be-a147-db28a1d9bf27",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "7a90a840-c667-4423-a8fe-bdd239803ff0",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "25c8dfd6-8d92-4c11-9c3a-2a900b392553",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 480,
+      "len": 32
+    },
+    {
+      "id": "b6dd8cf5-6b2a-4caf-b427-cefc9782406a",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 512,
+      "len": 32
+    },
+    {
+      "id": "d12375c8-bdac-4c99-bd49-aeb0f29beb6b",
+      "patternId": "b2725472-6401-42dc-9f0c-709042170344",
+      "track": 5,
+      "start": 512,
+      "len": 32
+    },
+    {
+      "id": "7ac7d346-1048-4df5-953c-f84be758f3f3",
+      "patternId": "89d4a1b4-f300-4edd-b780-1a79917287f9",
+      "track": 9,
+      "start": 512,
+      "len": 32
+    },
+    {
+      "id": "c3c330ef-8b55-4ef4-a80b-67d9e86c720c",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 512,
+      "len": 32
+    },
+    {
+      "id": "dbe02d4b-8d90-4ca1-8355-d86794408eeb",
+      "patternId": "84708ca8-1a54-4bc6-a1a7-a24c9d777494",
+      "track": 0,
+      "start": 512,
+      "len": 32
+    },
+    {
+      "id": "49778b6c-d4fc-4b7a-8025-a97003074ed7",
+      "patternId": "09df6520-d265-4888-91be-d631821445e9",
+      "track": 4,
+      "start": 544,
+      "len": 32
+    },
+    {
+      "id": "7233fa21-8002-456c-8559-45e7a874bd9b",
+      "patternId": "b2725472-6401-42dc-9f0c-709042170344",
+      "track": 5,
+      "start": 544,
+      "len": 32
+    },
+    {
+      "id": "708df026-f6e7-444d-9374-6bea235ff190",
+      "patternId": "89d4a1b4-f300-4edd-b780-1a79917287f9",
+      "track": 9,
+      "start": 544,
+      "len": 32
+    },
+    {
+      "id": "1eb21f09-95f3-43c8-b006-3f3b385c683d",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 544,
+      "len": 32
+    },
+    {
+      "id": "b0d4114e-3350-455c-8117-80d8b8a47648",
+      "patternId": "fab7d6aa-d927-4e7e-be3a-09eaab014c7b",
+      "track": 0,
+      "start": 544,
+      "len": 32
+    },
+    {
+      "id": "4836c9f8-9e2e-4fcc-ad21-eee9f1f5029c",
+      "patternId": "c5ee4515-bb84-4583-8311-8b354d47bce3",
+      "track": 4,
+      "start": 576,
+      "len": 32
+    },
+    {
+      "id": "36ddcf32-575f-45dd-921a-5dca63cbec56",
+      "patternId": "b2725472-6401-42dc-9f0c-709042170344",
+      "track": 5,
+      "start": 576,
+      "len": 32
+    },
+    {
+      "id": "dec28eb3-bb8e-4710-a495-a77a22b87d13",
+      "patternId": "89d4a1b4-f300-4edd-b780-1a79917287f9",
+      "track": 9,
+      "start": 576,
+      "len": 32
+    },
+    {
+      "id": "9bcadd3a-626b-4fc9-aa28-2a82e8424379",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 576,
+      "len": 32
+    },
+    {
+      "id": "8e26bea6-9f02-4044-8e45-cdfd684a1bda",
+      "patternId": "0cde1da9-81bc-480f-bcb7-819d29b71a12",
+      "track": 0,
+      "start": 576,
+      "len": 32
+    },
+    {
+      "id": "7228dacb-7697-47f8-b76f-bb48c875dc31",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "4d3fa642-f2aa-449d-be31-3e20d87193e4",
+      "patternId": "b2725472-6401-42dc-9f0c-709042170344",
+      "track": 5,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "85ead96f-3537-4757-89fb-4bd4986c11c4",
+      "patternId": "89d4a1b4-f300-4edd-b780-1a79917287f9",
+      "track": 9,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "bfc1a7d0-9b21-4524-b790-6c724b44ff9f",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "86a17f87-4b41-49ee-974a-b81162651245",
+      "patternId": "84708ca8-1a54-4bc6-a1a7-a24c9d777494",
+      "track": 0,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "ec226a67-26a0-4974-aac1-d0bc8c682a7c",
+      "patternId": "bb547b01-40f8-45ce-8ee1-2f42c49fcb2b",
+      "track": 6,
+      "start": 608,
+      "len": 32
+    },
+    {
+      "id": "f0969489-2442-4f49-8b87-31af03887737",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "fdb11c83-22a9-43ff-bedd-7d45de0d52eb",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "4db77cd4-9f1f-4ebc-85e2-d7630c3438d3",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "caec24ab-951a-4608-a9a3-352822cac3e7",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "1690c0dc-10f2-4639-8f07-74fd7b5d920e",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "7d5bee32-0efc-4745-8a71-bf5d5487ef21",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "52ceb5ad-7ebf-4212-a6b4-e80780e9cc74",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 640,
+      "len": 32
+    },
+    {
+      "id": "75c14a87-18b3-43ad-99f8-fbcaabd7148c",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "3f286fe3-b79f-49b0-8534-c73d4c8c220e",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "c8ed7ecf-e632-4b0a-aa03-e72730e5a12d",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "28478ff5-db4b-49b5-ab89-c343a52516a6",
+      "patternId": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "track": 3,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "15546f1f-8b06-4118-854f-55261d5b2405",
+      "patternId": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "track": 8,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "31dbaa26-926c-4907-8d0a-87be55b99d25",
+      "patternId": "78702f60-24f2-49d1-8767-2148e1ea0c9c",
+      "track": 7,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "4590cba1-d099-4b88-9044-18a6f9e5dea8",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 672,
+      "len": 32
+    },
+    {
+      "id": "612b57fb-29ca-49dd-9244-44c43993d4e6",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "5e155adc-4321-42a9-b15d-e5e781a56e5b",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "50044c29-20ba-446a-ad30-112bd89c5db0",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "3f7e8665-20b3-4bb4-8daa-722cda7b3ac2",
+      "patternId": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "track": 3,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "c5701969-4f76-4cfd-b5fc-e7e381cb197d",
+      "patternId": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "track": 8,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "3bfb1c74-e8f5-405e-bf64-aa1b4490f04f",
+      "patternId": "8092ee88-35dc-4dc7-ad38-d4e467692c4c",
+      "track": 7,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "4ca39358-dabb-4312-a678-0df8fbc83429",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 704,
+      "len": 32
+    },
+    {
+      "id": "abb1f6d4-b909-4258-8e53-852da11b271d",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "e845b64e-3f1e-42b4-866b-a5ae1b2242bb",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "a249e879-63d2-4edb-8f4b-3ce08ecde100",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "7ceb2cce-f55d-4929-b080-15e6d656b2de",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "7f0b57d3-2f73-4b3a-bf0b-63ed4aa07e6d",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "243f0886-2204-4331-aeff-54d906b320fa",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "34cd94dd-5d4d-49e4-97a9-fb639d25e7b3",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 736,
+      "len": 32
+    },
+    {
+      "id": "37addde9-5b6d-41fa-a2a0-089944bde6f2",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "012d9a76-5433-4a08-9ded-3c6e8efe0b9d",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "644b9c78-a62d-49cc-81e0-d86d09828344",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "1709f689-9f2b-43d3-8946-d158772805c9",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "f0fbe8ea-af98-4bdb-b5a3-2d1e6fb34db9",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "b35e8968-d7a9-4f65-abb5-60357396a0c4",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "ef2374a8-6e6f-4351-a5fd-afff575c52b3",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 768,
+      "len": 32
+    },
+    {
+      "id": "0ae8e437-768b-48e8-a520-7ef1ad3537c5",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "c65395bb-d0cd-4c2a-9825-b4115a376991",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "e4104f19-6cc6-4a49-b806-0d9265883886",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "054b4d90-ea45-4fe8-ad3d-79c9074db48d",
+      "patternId": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "track": 3,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "fc4eb82a-4cd4-4d40-9bd2-658ce2b722ef",
+      "patternId": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "track": 8,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "c3513d8b-a26b-438e-87f9-e11b593df9f3",
+      "patternId": "78702f60-24f2-49d1-8767-2148e1ea0c9c",
+      "track": 7,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "0f208390-9317-4b11-9300-c3f5b20ac5cc",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 800,
+      "len": 32
+    },
+    {
+      "id": "ed796943-a7b8-4ac5-8380-9876f4609bcd",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "8f8b9f0f-83a2-4c50-ad09-5295c9a466fa",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "08673caf-1658-42f7-ac22-bc20f1ca0a51",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "10bc9f57-1820-4de3-80d5-27ac0045c946",
+      "patternId": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "track": 3,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "85ca9a6a-7723-4308-ad17-d8fa8cd04eb1",
+      "patternId": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "track": 8,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "cdeacd43-9767-41e2-b74e-d7fe192ae6e3",
+      "patternId": "8092ee88-35dc-4dc7-ad38-d4e467692c4c",
+      "track": 7,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "772d3c8b-932c-49a5-b7ab-118b9c57c807",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 832,
+      "len": 32
+    },
+    {
+      "id": "43294bc2-cf7e-4e3a-9cfe-456079ef462f",
+      "patternId": "fd6ffe9b-0d97-4cdf-b3b0-3d75004709b3",
+      "track": 0,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "8279ccff-a589-4e0c-9e0b-288463964483",
+      "patternId": "1d01b8d9-d8e7-4463-94ef-bb750d24973f",
+      "track": 1,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "7953aff7-7866-45d0-a5f5-067f19af7f82",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "d279592d-9363-4238-b600-fa3500be2bef",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "291b781a-6b62-4ef8-818b-d721eab89351",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "3a8f339e-f9fd-4341-985a-3cd08dbafcea",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "6ebf43cd-1106-4555-ae65-3a360855b75c",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 864,
+      "len": 32
+    },
+    {
+      "id": "58553fb1-e4d2-4d5f-85e8-ffd7c7cb00a8",
+      "patternId": "aed4e830-2985-4071-a0c1-b8c968fd69f0",
+      "track": 0,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "307c392c-38d0-4202-98b9-5487a92ed32c",
+      "patternId": "78db97c3-0007-4811-9345-94c8acceda46",
+      "track": 1,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "ceeda88d-b477-4653-a046-66237cc34a6c",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "38944e63-26e0-4b7f-ac97-6f3385740d8e",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "b41c98a3-64d4-48f1-8f66-3993db0ae6ba",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "e91b551c-c07a-41c7-8c9d-bd6891c66954",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "beaf45c0-b362-4eae-ae83-9d2ce8a2d1a1",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "0e0e092e-0235-4a30-9774-047073062860",
+      "patternId": "ccde8039-8e9e-4f7e-929c-435040561b82",
+      "track": 6,
+      "start": 896,
+      "len": 32
+    },
+    {
+      "id": "b7baba9c-6425-4233-8d26-4da10de4de5a",
+      "patternId": "aed4e830-2985-4071-a0c1-b8c968fd69f0",
+      "track": 0,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "4e8a3200-f46a-4259-bb11-005658ad51cc",
+      "patternId": "78db97c3-0007-4811-9345-94c8acceda46",
+      "track": 1,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "ae7e1de0-21d2-4410-84f0-10ff068efa18",
+      "patternId": "20a80a0d-c5df-40d1-9fc5-a68316502d63",
+      "track": 2,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "6664bd37-6127-4a97-b40e-0f63a2604dda",
+      "patternId": "58fa42e7-0d91-4430-86cf-8e2e9a1c8fe1",
+      "track": 3,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "401dee1d-a6d9-42f3-83e3-9019576f71ab",
+      "patternId": "01a6f38e-596d-4e02-a3d5-6beab8b5838d",
+      "track": 8,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "dae2687c-2198-4cb0-b7c9-64d92a5256ed",
+      "patternId": "78702f60-24f2-49d1-8767-2148e1ea0c9c",
+      "track": 7,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "4af7ed59-07e3-45ec-a43b-2189de5357e8",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "5a8e53e6-6dea-4fa1-a361-bca46eca157a",
+      "patternId": "ccde8039-8e9e-4f7e-929c-435040561b82",
+      "track": 6,
+      "start": 928,
+      "len": 32
+    },
+    {
+      "id": "1ffe69a2-2bc0-44ea-ab51-1499135fa24b",
+      "patternId": "aed4e830-2985-4071-a0c1-b8c968fd69f0",
+      "track": 0,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "360202e5-a75f-47bb-9a16-2e58db539c0e",
+      "patternId": "78db97c3-0007-4811-9345-94c8acceda46",
+      "track": 1,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "edb343c4-0275-42e9-8848-d7d58a0a22df",
+      "patternId": "b2a58556-e172-4b04-8496-1298bfef2116",
+      "track": 2,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "0f4dd561-72a7-4854-8315-84986c3b49cc",
+      "patternId": "a074612c-7743-4f4c-a89a-815cf0857470",
+      "track": 3,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "4dcfb623-bd6b-4534-861e-356bcf4ae6b3",
+      "patternId": "e114e595-ebec-4591-9bb6-daed53ff5f32",
+      "track": 8,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "89a51cc5-2f16-40e1-8908-456a99c14a53",
+      "patternId": "8092ee88-35dc-4dc7-ad38-d4e467692c4c",
+      "track": 7,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "0cf727d4-ae78-4d3c-975f-7eb4e8081dc6",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "5e43dc51-d567-457f-a2b5-64103dfe2dfe",
+      "patternId": "ccde8039-8e9e-4f7e-929c-435040561b82",
+      "track": 6,
+      "start": 960,
+      "len": 32
+    },
+    {
+      "id": "ace92cc7-ea81-4191-ada8-945cf1a972f6",
+      "patternId": "aed4e830-2985-4071-a0c1-b8c968fd69f0",
+      "track": 0,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "11ad4c96-ee6e-4bb0-9789-75e10e9667b4",
+      "patternId": "78db97c3-0007-4811-9345-94c8acceda46",
+      "track": 1,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "c215fa8c-09dc-42c3-9cb8-524a0c209ef5",
+      "patternId": "f2e66aa4-a4b2-40df-ad14-a743adfbfe79",
+      "track": 2,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "a603b579-bf04-43cc-a8e3-ced0fab871de",
+      "patternId": "415fa88a-1d11-44a2-a389-ac6b6b38850a",
+      "track": 3,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "53a67419-7b44-456a-b371-4b4639b3f2b1",
+      "patternId": "d6cd9c5c-e655-42c0-b20f-5afc99b002eb",
+      "track": 8,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "8f27f795-ff35-459b-b0af-336b82389bb1",
+      "patternId": "611ee3f1-ef37-41b0-b3e9-dcec0716f8ad",
+      "track": 7,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "051d3e9a-a2ee-4fbf-b1f8-415cd1589e6f",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "f5986abd-e67a-4465-8ef1-d9706ae647bc",
+      "patternId": "ccde8039-8e9e-4f7e-929c-435040561b82",
+      "track": 6,
+      "start": 992,
+      "len": 32
+    },
+    {
+      "id": "2a5b7fab-2de3-49de-893f-fa743e9b2ad3",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 1024,
+      "len": 32
+    },
+    {
+      "id": "fa8e90a3-7d83-4ebe-b06f-ad2c322d021d",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 1024,
+      "len": 32
+    },
+    {
+      "id": "e1ca77c1-5827-4465-b857-2cd63d3c5cb6",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 1024,
+      "len": 32
+    },
+    {
+      "id": "00fee6f7-0fc5-4a3c-95ec-3b81e6d168af",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 1024,
+      "len": 32
+    },
+    {
+      "id": "ba9f234b-e653-4fe4-b3b4-55bb1ba52428",
+      "patternId": "09df6520-d265-4888-91be-d631821445e9",
+      "track": 4,
+      "start": 1056,
+      "len": 32
+    },
+    {
+      "id": "657451af-b0c3-4a1a-9e30-73b4500301ce",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 1056,
+      "len": 32
+    },
+    {
+      "id": "60075f6f-d7be-4ad3-98db-d3ebb3f4073c",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 1056,
+      "len": 32
+    },
+    {
+      "id": "82113e67-35b2-41ec-972a-cb2667b7ffdd",
+      "patternId": "c4333ccc-d9d0-488e-810f-3f6521815ceb",
+      "track": 1,
+      "start": 1056,
+      "len": 32
+    },
+    {
+      "id": "cddd03b3-88cc-4eb3-8ba5-7f43ffa5ca87",
+      "patternId": "c5ee4515-bb84-4583-8311-8b354d47bce3",
+      "track": 4,
+      "start": 1088,
+      "len": 32
+    },
+    {
+      "id": "9d287c40-808c-4a1a-ae83-f3ddb48ea784",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 1088,
+      "len": 32
+    },
+    {
+      "id": "5dbc80dd-9059-4c3a-950b-694235d3c4cc",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 1088,
+      "len": 32
+    },
+    {
+      "id": "cd63592c-7749-4527-88e7-5fadbfa82f31",
+      "patternId": "a025888a-f9e9-4ffa-9e6b-d78dbca0cd54",
+      "track": 4,
+      "start": 1120,
+      "len": 32
+    },
+    {
+      "id": "29fd4e7d-1321-442f-b841-cef8fa8b5043",
+      "patternId": "3a969b32-5ebe-49af-ba3f-9d3ac372a5e4",
+      "track": 5,
+      "start": 1120,
+      "len": 32
+    },
+    {
+      "id": "28367314-f31d-429d-82ed-1ea552d95058",
+      "patternId": "c1227472-fe35-458e-b2e3-ac4d885a8e41",
+      "track": 9,
+      "start": 1120,
+      "len": 32
+    }
+  ],
+  "tracks": [
+    {
+      "name": "Kit",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Toms",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Bass",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Hats",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Bells",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Pad",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Riser",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Shimmer",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Pluck",
+      "color": "#1b1b2b"
+    },
+    {
+      "name": "Drone",
+      "color": "#1b1b2b"
+    }
+  ],
+  "bpm": 100,
+  "swing": 0.12,
+  "loop": null,
+  "automation": [
+    {
+      "id": "4ae0c4e1-ac25-4390-bded-2c208cc69e27",
+      "target": "71601831-0b39-4fe9-9b1b-492d0134ed66",
+      "param": "noiseFreq",
+      "points": [
+        {
+          "step": 0,
+          "value": 400,
+          "curve": "ease-in"
+        },
+        {
+          "step": 128,
+          "value": 600,
+          "curve": "smooth"
+        },
+        {
+          "step": 384,
+          "value": 900,
+          "curve": "ease-out"
+        },
+        {
+          "step": 512,
+          "value": 2600
+        },
+        {
+          "step": 640,
+          "value": 4200
+        },
+        {
+          "step": 1024,
+          "value": 500
+        }
+      ]
+    },
+    {
+      "id": "099ee81a-5008-42fb-a56b-f9d6fb87a562",
+      "target": "b680cbf9-36ef-4f92-8bf7-8bb6942e426f",
+      "param": "q",
+      "points": [
+        {
+          "step": 256,
+          "value": 55
+        },
+        {
+          "step": 640,
+          "value": 75
+        },
+        {
+          "step": 896,
+          "value": 88
+        }
+      ]
+    },
+    {
+      "id": "80f50794-93e0-4ac6-a7ce-125926050cef",
+      "target": "master",
+      "param": "rev",
+      "points": [
+        {
+          "step": 0,
+          "value": 0.55
+        },
+        {
+          "step": 256,
+          "value": 0.2
+        },
+        {
+          "step": 512,
+          "value": 0.6
+        },
+        {
+          "step": 640,
+          "value": 0.22
+        },
+        {
+          "step": 1024,
+          "value": 0.65
+        }
+      ]
+    },
+    {
+      "id": "fa7aca0c-40c0-407b-aa7c-ccb1886e480f",
+      "target": "master",
+      "param": "tilt",
+      "points": [
+        {
+          "step": 0,
+          "value": -6
+        },
+        {
+          "step": 256,
+          "value": 2
+        },
+        {
+          "step": 512,
+          "value": -5
+        },
+        {
+          "step": 640,
+          "value": 4
+        },
+        {
+          "step": 896,
+          "value": 4
+        },
+        {
+          "step": 1024,
+          "value": -6
+        }
+      ]
+    },
+    {
+      "id": "713d12f9-5659-4c72-aa7a-e06ddd16db0b",
+      "target": "master",
+      "param": "vol",
+      "points": [
+        {
+          "step": 0,
+          "value": 0.75
+        },
+        {
+          "step": 512,
+          "value": 0.7
+        },
+        {
+          "step": 896,
+          "value": 0.95
+        },
+        {
+          "step": 1024,
+          "value": 0.6
+        }
+      ]
+    }
+  ],
+  "automationOrder": [
+    "4ae0c4e1-ac25-4390-bded-2c208cc69e27",
+    "099ee81a-5008-42fb-a56b-f9d6fb87a562",
+    "80f50794-93e0-4ac6-a7ce-125926050cef",
+    "fa7aca0c-40c0-407b-aa7c-ccb1886e480f",
+    "713d12f9-5659-4c72-aa7a-e06ddd16db0b"
+  ],
+  "automationPositions": {},
+  "zoom": {
+    "seq": {
+      "width": 24,
+      "height": 14
+    },
+    "arr": {
+      "width": 24,
+      "height": 32
+    }
+  }
+}
