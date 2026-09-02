@@ -46,4 +46,17 @@ describe('VoiceCollection', () => {
         first.reset();
         expect(first.active).toHaveProperty('size', 0);
     });
+
+    it('retunes the same held voice through consecutive pitch keys', () => {
+        const voices = collection();
+        const held = voice(1, 1);
+        voices.register('preview', 'preview:C4', 0, held, 1);
+
+        expect(voices.glide('preview', 'preview:C4', 'preview:C#4', 1, 277.18, 0.015)).toBe(true);
+        expect(voices.glide('preview', 'preview:C#4', 'preview:D4', 1.1, 293.66, 0.015)).toBe(true);
+
+        expect(held.glide).toHaveBeenNthCalledWith(1, 277.18, 1, 0.015, 'linear');
+        expect(held.glide).toHaveBeenNthCalledWith(2, 293.66, 1.1, 0.015, 'linear');
+        expect(voices.active).toEqual(new Map([['preview:D4', held]]));
+    });
 });

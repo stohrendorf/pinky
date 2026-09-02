@@ -81,12 +81,12 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
         this.noteOffAt(track, name, (this.currentTime() ?? 0) + when);
     }
 
-    glideAt(track: string, from: string, to: string, atTime: number, time: number, curve: CurveShape = 'linear'): void {
+    glideAt(track: string, from: string, to: string, atTime: number, time: number, curve: CurveShape = 'linear'): boolean {
         const note = this.findNote(to);
         const now = this.currentTime();
-        if (!note || now === null) {return;}
+        if (!note || now === null) {return false;}
         const at = Math.max(atTime, now);
-        this.voices.glide(track, track + ':' + from, track + ':' + to, at, note.freq, time, curve);
+        return this.voices.glide(track, track + ':' + from, track + ':' + to, at, note.freq, time, curve);
     }
 
     allNotesOff(): void {

@@ -48,6 +48,8 @@ describe('Sequencer note interactions', () => {
         expect(sequencer).toContain('function handlePatternResize');
         expect(sequencer).toMatch(/aria-valuemax="512"[\s\S]*aria-valuemin="1"/);
         expect(sequencer).toContain('setPatternSteps((event.clientX - rect.left) / cellWidth)');
+        expect(sequencer).toContain('? {...pattern, steps: nextSteps, tracks}');
+        expect(sequencer).not.toContain('pat.steps = nextSteps;');
         expect(sequencer).not.toContain('Shorten pattern by four steps');
         expect(sequencer).not.toContain('Extend pattern by four steps');
         expect(sequencer).toMatch(/\.corner\s*\{[^}]*width:\s*88px;/s);
@@ -75,20 +77,84 @@ describe('Sequencer note interactions', () => {
         expect(sequencer).toContain('updateLegatoTargets(notes, originalPositions, dragLegatoTargets)');
     });
 
-    it('uses an empty left click to clear a note selection before creating a note', () => {
-        expect(sequencer).toMatch(/if \(selectedNotes\.length > 0 && !e\.shiftKey\) \{\s*clearSelection\(\);\s*return;\s*\}/);
+    it('uses an empty left click to clear a note selection and start creating a note', () => {
+        expect(sequencer).toMatch(/\} else \{\s*if \(!e\.shiftKey\) \{clearSelection\(\);\}\s*if \(!\$selInstId\) \{return;\}/);
+        expect(sequencer).not.toMatch(/if \(selectedNotes\.length > 0 && !e\.shiftKey\) \{\s*clearSelection\(\);\s*return;\s*\}/);
     });
 
-    it('leaves newly added notes unselected for rapid note entry', () => {
-        expect(sequencer).toContain('const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1};');
-        expect(sequencer).not.toContain('const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1, selected: true};');
+    it('selects a newly added note before using it as the active drag target', () => {
+        expect(sequencer).toContain('const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1, selected: true};');
     });
 
-    it('auditions an existing note only while its drag changes its pitch', () => {
+    it('replaces the current instrument track when adding a note so the roll redraws', () => {
+        expect(sequencer).toContain('const track = [...(pat.tracks[$selInstId] ?? []), newNote];');
+        expect(sequencer).toContain('pat.tracks[$selInstId] = track;');
+        expect(sequencer).toContain('dragNote = pat.tracks[$selInstId][track.length - 1] as ExtendedNote;');
+        expect(sequencer).not.toContain('notes.push(newNote);');
+    });
+
+    it('replaces dragged and resized notes so their updated geometry redraws immediately', () => {
+        expect(sequencer).toContain('function replaceEditedNotes');
+        expect(sequencer).toContain('function draggedNotes');
+        expect(sequencer).toContain('let dragTargets: ExtendedNote[] = [];');
+        expect(sequencer).toContain('return dragTargets;');
+        expect(sequencer).toContain('const track = pat.tracks[$selInstId] ?? [];');
+        expect(sequencer).toContain('pat.tracks[$selInstId] = track.map(note => replacements.get(note) ?? note);');
+        expect(sequencer).toContain('dragTargets = dragTargets.map(note => replacements.get(note) ?? note);');
+        expect(sequencer).toMatch(/const targetNotes = draggedNotes\(\);[\s\S]*replaceEditedNotes\(targetNotes\)[\s\S]*dragNote = replacements\.get\(dragNote\) \?\? dragNote;/);
+    });
+
+    it('keeps a newly placed note as the active drag target until mouse-up', () => {
+        expect(sequencer).toMatch(/const newNote: ExtendedNote = \{pitch: ROW_NOTES\[r\]\.name, start: s, len: 1, selected: true\};[\s\S]*dragNote = pat\.tracks\[\$selInstId\]\[track\.length - 1\] as ExtendedNote;[\s\S]*beginNoteDrag\(dragNote, r, s, s_raw\);/);
+        expect(sequencer).toMatch(/dragNote = null;\s*dragTargets = \[\];/);
+    });
+
+    it('initializes each movable note drag from the current track and auditions it immediately', () => {
+        expect(sequencer).toContain('function beginNoteDrag');
+        expect(sequencer).toMatch(/const targetNotes = note\.selected \? \(pat\.tracks\[\$selInstId\] \?\? \[\]\)\.filter\(current => current\.selected\) as ExtendedNote\[\] : \[note\];/);
+        expect(sequencer).toMatch(/dragTargets = targetNotes;[\s\S]*void previewDraggedNote\(note\);/);
+        expect(sequencer).toMatch(/beginNoteDrag\(found, r, s, s_raw\);/);
+        expect(sequencer).toMatch(/beginNoteDrag\(dragNote, r, s, s_raw\);/);
+    });
+
+    it('replaces the note track when deleting so the roll redraws immediately', () => {
+        expect(sequencer).toMatch(/function deleteNoteAt[\s\S]*const track = pat\.tracks\[\$selInstId\] \?\? \[\];[\s\S]*pat\.tracks\[\$selInstId\] = track\.filter\(note => note !== found\);/);
+        expect(sequencer).not.toContain('notes.splice(notes.indexOf(found), 1);');
+    });
+
+    it('commits selection and legato edits as new track arrays so the roll redraws', () => {
+        expect(sequencer).toMatch(/function commitCurrentTrack\(\)[\s\S]*pat\.tracks\[\$selInstId\] = \[\.\.\.\(pat\.tracks\[\$selInstId\] \?\? \[\]\)\];/);
+        expect(sequencer).toMatch(/function clearSelection\(\)[\s\S]*commitCurrentTrack\(\);/);
+        expect(sequencer).toMatch(/function addLegato\(\)[\s\S]*if \(createLegatoBetweenSelected\(\)\) \{commitCurrentTrack\(\);\}/);
+    });
+
+    it('replaces selection-changed notes so their selected border follows the logical selection', () => {
+        expect(sequencer).toContain('function updateNoteSelection');
+        expect(sequencer).toContain('function selectOnlyNote');
+        expect(sequencer).toMatch(/function clearSelection\(\)[\s\S]*updateNoteSelection\(\(note\) => note\.selected \? false : note\.selected\);/);
+        expect(sequencer).toMatch(/function selectOnlyNote\(note: ExtendedNote\)[\s\S]*updateNoteSelection\(\(current\) => current === note\);/);
+    });
+
+    it('measures drag coordinates against the scrolled grid background', () => {
+        expect(sequencer).toContain('function gridPositionAt');
+        expect(sequencer).toContain("rollEl.querySelector('.grid-container')");
+        expect(sequencer).toMatch(/handleMouseDown\(mouseEvent, gridPosition\.r, gridPosition\.s\);/);
+    });
+
+    it('retunes the held preview voice whenever a dragged note changes pitch', () => {
         expect(sequencer).toContain("const DRAG_PREVIEW_TRACK = 'drag-preview'");
         expect(sequencer).toContain('function previewDraggedNote');
-        expect(sequencer).toMatch(/if \(previewPitch === note\.pitch\) \{?return;?\}?/);
+        expect(sequencer).toContain('const pitch = note.pitch;');
+        expect(sequencer).toContain('const velocity = note.vel ?? 1;');
+        expect(sequencer).toMatch(/if \(previewPitch === pitch\) \{?return;?\}?/);
         expect(sequencer).toMatch(/if \(deltaS === 0 && deltaR === 0\) \{?return;?\}?/);
+        expect(sequencer).toContain('let activePreviewPitch: string | null = null;');
+        expect(sequencer).toContain('const previousPitch = activePreviewPitch;');
+        expect(sequencer).toContain('lastPlayedPitch.set(pitch);');
+        expect(sequencer).toContain('glideAt(DRAG_PREVIEW_TRACK, previousPitch, pitch, 0, 0.015)');
+        expect(sequencer).toContain('if (previousPitch) {noteOff(DRAG_PREVIEW_TRACK, previousPitch);}');
+        expect(sequencer).toContain('noteOnAt(DRAG_PREVIEW_TRACK, pitch, 0, selectedInstrument().params, velocity);');
+        expect(sequencer).toContain('activePreviewPitch = pitch;');
         expect(sequencer).toContain('previewDraggedNote(dragNote);');
         expect(sequencer).toContain('function stopDragPreview');
         expect(sequencer).toContain('stopDragPreview();');

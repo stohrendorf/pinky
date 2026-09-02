@@ -16,7 +16,7 @@
         CURVE_SHAPES, segmentProgress
     } from '../lib/automation';
     import {
-        ensureAudio, noteOff, noteOnAt
+        ensureAudio, glideAt, noteOff, noteOnAt
     } from '../lib/engine';
     import {
         legatoTransition
@@ -92,11 +92,12 @@
 
     function setPatternSteps(nextSteps: number) {
         nextSteps = Math.max(1, Math.min(512, Math.round(nextSteps)));
-        if (nextSteps === steps) {return;}
-        pat.steps = nextSteps;
-        Object.keys(pat.tracks).forEach(id => {
-            pat.tracks[id] = pat.tracks[id].filter(n => n.start < nextSteps);
-        });
+        if (nextSteps === steps || !$project) {return;}
+        const tracks = Object.fromEntries(Object.entries(pat.tracks)
+            .map(([id, track]) => [id, track.filter(note => note.start < nextSteps)]));
+        $project.patterns = $project.patterns.map(pattern => pattern.id === pat.id
+            ? {...pattern, steps: nextSteps, tracks}
+            : pattern);
         touch();
     }
 
@@ -141,10 +142,12 @@
     let dragStartPos = {s: 0, r: 0};
     let dragOffset = {s: 0, r: 0};
     let dragStartY = 0;
+    let dragTargets: ExtendedNote[] = [];
     let resizeMode = $state(false);
     let velMode = $state(false);
     let dragLegatoTargets = new Map<Note, Pick<NonNullable<Note['legatoTo']>, 'pitch' | 'start'>>();
     let previewPitch: string | null = null;
+    let activePreviewPitch: string | null = null;
     let rollEl: HTMLElement | undefined = $state();
 
 
@@ -184,34 +187,108 @@
     });
 
     async function previewDraggedNote(note: Note) {
-        if (previewPitch === note.pitch) {return;}
-        stopDragPreview();
-        previewPitch = note.pitch;
+        const pitch = note.pitch;
+        const velocity = note.vel ?? 1;
+        if (previewPitch === pitch) {return;}
+        previewPitch = pitch;
+        lastPlayedPitch.set(pitch);
         await ensureAudio();
-        if (previewPitch !== note.pitch) {return;}
-        noteOnAt(DRAG_PREVIEW_TRACK, note.pitch, 0, selectedInstrument().params, note.vel ?? 1);
+        if (previewPitch !== pitch) {return;}
+        const previousPitch = activePreviewPitch;
+        if (!previousPitch || !glideAt(DRAG_PREVIEW_TRACK, previousPitch, pitch, 0, 0.015)) {
+            if (previousPitch) {noteOff(DRAG_PREVIEW_TRACK, previousPitch);}
+            noteOnAt(DRAG_PREVIEW_TRACK, pitch, 0, selectedInstrument().params, velocity);
+        }
+        activePreviewPitch = pitch;
     }
 
     function stopDragPreview() {
-        if (!previewPitch) {return;}
-        noteOff(DRAG_PREVIEW_TRACK, previewPitch);
+        if (activePreviewPitch) {noteOff(DRAG_PREVIEW_TRACK, activePreviewPitch);}
+        activePreviewPitch = null;
         previewPitch = null;
     }
 
     function clearSelection() {
-        notes.forEach(n => n.selected = false);
+        updateNoteSelection((note) => note.selected ? false : note.selected);
+        commitCurrentTrack();
+    }
+
+    function updateNoteSelection(selectionForNote: (note: ExtendedNote) => boolean | undefined): Map<ExtendedNote, ExtendedNote> {
+        const replacements = new Map<ExtendedNote, ExtendedNote>();
+        if (!$selInstId) {return replacements;}
+        const track = pat.tracks[$selInstId] ?? [];
+        pat.tracks[$selInstId] = track.map((note) => {
+            const selected = selectionForNote(note as ExtendedNote);
+            if (note.selected === selected) {return note;}
+            const replacement = {...note, selected} as ExtendedNote;
+            replacements.set(note as ExtendedNote, replacement);
+            return replacement;
+        });
+        touch();
+        return replacements;
+    }
+
+    function selectOnlyNote(note: ExtendedNote): ExtendedNote {
+        const replacements = updateNoteSelection((current) => current === note);
+        return replacements.get(note) ?? note;
+    }
+
+    function toggleNoteSelection(note: ExtendedNote): ExtendedNote {
+        const replacements = updateNoteSelection((current) => current === note ? !current.selected : current.selected);
+        return replacements.get(note) ?? note;
+    }
+
+    function commitCurrentTrack() {
+        if (!$selInstId) {return;}
+        pat.tracks[$selInstId] = [...(pat.tracks[$selInstId] ?? [])];
         touch();
     }
 
+    function replaceEditedNotes(editedNotes: ExtendedNote[]): Map<Note, ExtendedNote> {
+        const replacements = new Map<Note, ExtendedNote>(editedNotes.map(note => [note, {...note}] as const));
+        if (!$selInstId) {return replacements;}
+        const track = pat.tracks[$selInstId] ?? [];
+        pat.tracks[$selInstId] = track.map(note => replacements.get(note) ?? note);
+        dragTargets = dragTargets.map(note => replacements.get(note) ?? note);
+        dragLegatoTargets = new Map<Note, Pick<NonNullable<Note['legatoTo']>, 'pitch' | 'start'>>(
+            [...dragLegatoTargets].map(([note, target]) => [replacements.get(note) ?? note, target] as const)
+        );
+        return replacements;
+    }
+
+    function draggedNotes(): ExtendedNote[] {
+        return dragTargets;
+    }
+
+    function beginNoteDrag(note: ExtendedNote, r: number, s: number, s_raw: number): ExtendedNote[] {
+        dragNote = note;
+        dragStartRawS = s_raw;
+        dragStartPos = {s, r};
+        if (!$selInstId) {return [note];}
+        const targetNotes = note.selected ? (pat.tracks[$selInstId] ?? []).filter(current => current.selected) as ExtendedNote[] : [note];
+        dragTargets = targetNotes;
+        dragOffset = {s: s - note.start, r: r - rowOfNote[note.pitch]};
+        dragLegatoTargets = new Map(notes.flatMap(current => current.legatoTo ? [[current, {
+            pitch: current.legatoTo.pitch,
+            start: current.legatoTo.start
+        }] as const] : []));
+        targetNotes.forEach(current => {
+            current._initStart = current.start;
+            current._initRow = rowOfNote[current.pitch];
+        });
+        void previewDraggedNote(note);
+        return targetNotes;
+    }
+
     function addLegato() {
-        createLegatoBetweenSelected();
+        if (createLegatoBetweenSelected()) {commitCurrentTrack();}
     }
 
 
     function updateLegatoCurve(curve: string) {
         if (!selectedLegato?.source.legatoTo || !CURVE_SHAPES.some(shape => shape.id === curve)) {return;}
         selectedLegato.source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
-        touch();
+        commitCurrentTrack();
     }
 
     function legatoPath(source: Note, target: Note): string {
@@ -234,26 +311,18 @@
         return cellWidth > 160 ? 0.0625 : (cellWidth > 80 ? 0.125 : (cellWidth > 40 ? 0.25 : (cellWidth > 20 ? 0.5 : 1)));
     }
 
-    function formatStep(value: number): string {
-        return String(Math.round(value * 1000) / 1000);
-    }
-
     function openNoteEditor(e: MouseEvent, note: ExtendedNote) {
         e.preventDefault();
-        if (!note.selected) {
-            clearSelection();
-            note.selected = true;
-            touch();
-        }
-        const row = rowOfNote[note.pitch] ?? 0;
-        noteEditor = note;
-        noteDraft = {pitch: note.pitch, vel: note.vel ?? 1};
+        const selectedNote = note.selected ? note : selectOnlyNote(note);
+        const row = rowOfNote[selectedNote.pitch] ?? 0;
+        noteEditor = selectedNote;
+        noteDraft = {pitch: selectedNote.pitch, vel: selectedNote.vel ?? 1};
         noteEditorPosition = {
-            left: Math.max(4, Math.min(steps * cellWidth - 158, note.start * cellWidth)),
+            left: Math.max(4, Math.min(steps * cellWidth - 158, selectedNote.start * cellWidth)),
             top: Math.max(4, Math.min(ROW_NOTES.length * cellHeight - 104, (row + 1) * cellHeight + 4))
         };
         noteEditorError = '';
-        lastPlayedPitch.set(note.pitch);
+        lastPlayedPitch.set(selectedNote.pitch);
         contextualEditor = NOTE_EDITOR_KEY;
         tick().then(() => {
             noteEditorInput?.focus();
@@ -276,6 +345,8 @@
         }
         noteEditor.pitch = noteDraft.pitch;
         noteEditor.vel = clampVel(vel);
+        const replacements = replaceEditedNotes([noteEditor]);
+        noteEditor = replacements.get(noteEditor) ?? noteEditor;
         lastPlayedPitch.set(noteEditor.pitch);
         touch();
         closeNoteEditor();
@@ -289,9 +360,11 @@
     }
 
     function deleteNoteAt(r: number, s: number) {
-        const found = notes.find(n => rowOfNote[n.pitch] === r && s >= n.start && s < n.start + n.len);
+        if (!$selInstId) {return;}
+        const track = pat.tracks[$selInstId] ?? [];
+        const found = track.find(n => rowOfNote[n.pitch] === r && s >= n.start && s < n.start + n.len);
         if (found) {
-            notes.splice(notes.indexOf(found), 1);
+            pat.tracks[$selInstId] = track.filter(note => note !== found);
             touch();
         }
     }
@@ -310,22 +383,21 @@
 
         if (e.button !== 0) {return;}
 
-        const found = notes.find(n => rowOfNote[n.pitch] === r && s_raw >= n.start && s_raw < n.start + n.len) as ExtendedNote;
+        let found = notes.find(n => rowOfNote[n.pitch] === r && s_raw >= n.start && s_raw < n.start + n.len) as ExtendedNote;
         lastPlayedPitch.set(found?.pitch || ROW_NOTES[r].name);
 
         editStep.set(Math.max(0, s)); // paste anchor (Ctrl+V)
 
         if (e.altKey && found) { // Alt+drag = velocity of the selection
             if (!found.selected) {
-                clearSelection();
-                found.selected = true;
+                found = selectOnlyNote(found);
             }
             dragNote = found;
             velMode = true;
             resizeMode = false;
             dragStartY = e.clientY;
             (notes.filter(n => n.selected) as ExtendedNote[]).forEach(n => n._initVel = n.vel ?? 1);
-            touch();
+            commitCurrentTrack();
             return;
         }
 
@@ -339,50 +411,29 @@
 
         if (found) {
             if (e.shiftKey || e.ctrlKey) {
-                found.selected = !found.selected;
+                found = toggleNoteSelection(found);
             } else {
                 if (!found.selected) {
-                    clearSelection();
-                    found.selected = true;
+                    found = selectOnlyNote(found);
                 }
             }
-            dragNote = found;
-            void ensureAudio();
-            dragStartRawS = s_raw;
-            dragStartPos = {s, r};
-
-            const targetNotes = found.selected ? (notes.filter(n => n.selected) as ExtendedNote[]) : [found];
+            const targetNotes = beginNoteDrag(found, r, s, s_raw);
             if ((e.target as HTMLElement).classList.contains('resize-handle')) {
                 resizeMode = true;
                 targetNotes.forEach(n => n._initLen = n.len);
             } else {
                 resizeMode = false;
-                dragOffset = {s: s - found.start, r: r - rowOfNote[found.pitch]};
-                dragLegatoTargets = new Map(notes.flatMap(note => note.legatoTo ? [[note, {
-                    pitch: note.legatoTo.pitch,
-                    start: note.legatoTo.start
-                }] as const] : []));
-                targetNotes.forEach(n => {
-                    n._initStart = n.start;
-                    n._initRow = rowOfNote[n.pitch];
-                });
             }
-            touch();
+            commitCurrentTrack();
         } else {
-            if (selectedNotes.length > 0 && !e.shiftKey) {
-                clearSelection();
-                return;
-            }
             if (!e.shiftKey) {clearSelection();}
-            const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1};
-            notes.push(newNote);
-            dragNote = newNote;
-            dragStartRawS = s_raw;
-            dragStartPos = {s, r};
-            dragOffset = {s: 0, r: 0};
-            newNote._initStart = newNote.start;
-            newNote._initRow = r;
-            touch();
+            if (!$selInstId) {return;}
+            const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1, selected: true};
+            const track = [...(pat.tracks[$selInstId] ?? []), newNote];
+            pat.tracks[$selInstId] = track;
+            dragNote = pat.tracks[$selInstId][track.length - 1] as ExtendedNote;
+            beginNoteDrag(dragNote, r, s, s_raw);
+            commitCurrentTrack();
         }
     }
 
@@ -399,23 +450,23 @@
             const r_min = Math.min(selectionStart.r, selectionEnd.r);
             const r_max = Math.max(selectionStart.r, selectionEnd.r);
 
-            notes.forEach(n => {
-                const nr = rowOfNote[n.pitch];
-                const inRect = n.start < s_max && (n.start + n.len) > s_min && nr >= r_min && nr <= r_max;
+            updateNoteSelection((note) => {
+                const nr = rowOfNote[note.pitch];
+                const inRect = note.start < s_max && (note.start + note.len) > s_min && nr >= r_min && nr <= r_max;
                 if (e.shiftKey) {
-                    if (inRect) {n.selected = true;}
-                } else {
-                    n.selected = inRect;
+                    return inRect || note.selected;
                 }
+                return inRect;
             });
-            touch();
             return;
         }
 
         if (velMode && dragNote) {
             const delta = (dragStartY - e.clientY) / 120; // ~120px = full range
-            const targetNotes = dragNote.selected ? selectedNotes : [dragNote];
+            const targetNotes = draggedNotes();
             targetNotes.forEach(n => n.vel = clampVel((n._initVel ?? 1) + delta));
+            const replacements = replaceEditedNotes(targetNotes);
+            dragNote = replacements.get(dragNote) ?? dragNote;
             touch();
             return;
         }
@@ -426,18 +477,20 @@
 
         if (resizeMode) {
             const deltaLen = s_raw - dragStartRawS;
-            const targetNotes = dragNote.selected ? selectedNotes : [dragNote];
+            const targetNotes = draggedNotes();
             targetNotes.forEach(n => {
                 const initLen = n._initLen ?? n.len;
                 const newLen = Math.max(snap, initLen + deltaLen);
                 n.len = Math.round(newLen / snap) * snap;
             });
             removeInvalidLegatoLinks(notes);
+            const replacements = replaceEditedNotes(targetNotes);
+            dragNote = replacements.get(dragNote) ?? dragNote;
             touch();
         } else {
             const deltaS = s_raw - dragStartRawS;
             const deltaR = r - dragStartPos.r;
-            const targetNotes = dragNote.selected ? selectedNotes : [dragNote];
+            const targetNotes = draggedNotes();
             const originalPositions = new Map(targetNotes.map(n => [n, {
                 start: n._initStart ?? n.start,
                 pitch: ROW_NOTES[n._initRow ?? rowOfNote[n.pitch]].name
@@ -452,6 +505,8 @@
             });
             if (deltaS === 0 && deltaR === 0) {return;}
             updateLegatoTargets(notes, originalPositions, dragLegatoTargets);
+            const replacements = replaceEditedNotes(targetNotes);
+            dragNote = replacements.get(dragNote) ?? dragNote;
             void previewDraggedNote(dragNote);
             touch();
         }
@@ -462,7 +517,7 @@
         stopDragPreview();
         if (dragNote) {
             lastPlayedPitch.set(dragNote.pitch);
-            selectedNotes.forEach(n => {
+            draggedNotes().forEach(n => {
                 delete n._initLen;
                 delete n._initStart;
                 delete n._initRow;
@@ -470,6 +525,7 @@
             });
         }
         dragNote = null;
+        dragTargets = [];
         dragLegatoTargets = new Map();
         handleViewportMouseUp(viewport);
         isSelecting = false;
@@ -485,6 +541,17 @@
         handleViewportMouseDown(e, viewport);
     }
 
+    function gridPositionAt(e: MouseEvent): {r: number; s: number} {
+        if (!rollEl) {return {r: NaN, s: NaN};}
+        const grid = rollEl.querySelector('.grid-container') as HTMLElement;
+        if (!grid) {return {r: NaN, s: NaN};}
+        const rect = grid.getBoundingClientRect();
+        return {
+            r: Math.floor((e.clientY - rect.top) / cellHeight),
+            s: (e.clientX - rect.left) / cellWidth
+        };
+    }
+
     function handleMouseMoveGlobal(e: MouseEvent) {
         if (resizingPattern) {
             handlePatternResize(e);
@@ -492,13 +559,8 @@
         }
         if (handleViewportMouseMove(e, viewport, viewportOptions)) {return;}
 
-        if (!rollEl) {return;}
-        const grid = rollEl.querySelector('.grid-container') as HTMLElement;
-        if (!grid) {return;}
-        const rect = grid.getBoundingClientRect();
-        const s_raw = (e.clientX - rect.left) / cellWidth;
-        const r = Math.floor((e.clientY - rect.top) / cellHeight);
-        handleMouseMove(e, r, s_raw);
+        const gridPosition = gridPositionAt(e);
+        handleMouseMove(e, gridPosition.r, gridPosition.s);
     }
     const pat = $derived(($project?.patterns.find(p => p.id === $selPatId) || $project?.patterns[0]) as Pattern);
     const steps = $derived(pat.steps || STEPS);
@@ -1102,8 +1164,8 @@ style="height: {cellHeight}px;"
                              class:black={note.black}
                              class:octave={note.name.startsWith('C') && !note.black}
                              onmousedown={(e) => {
-                                 const s_raw = (e.clientX - e.currentTarget.getBoundingClientRect().left) / cellWidth;
-                                 handleMouseDown(e, r, s_raw);
+                                 const gridPosition = gridPositionAt(e);
+                                 handleMouseDown(e, gridPosition.r, gridPosition.s);
                              }}>
                         </div>
                     {/each}
@@ -1140,9 +1202,8 @@ style="left: {n.start * cellWidth}px; width: {n.len * cellWidth}px; top: {r * ce
                              ondblclick={stopPropagation((e) => openNoteEditor(e as MouseEvent, n))}
                              onmousedown={stopPropagation((e) => {
                                  const mouseEvent = e as MouseEvent;
-                                 const rect = (mouseEvent.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
-                                 const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
-                                 handleMouseDown(mouseEvent, r, s_raw);
+                                 const gridPosition = gridPositionAt(mouseEvent);
+                                 handleMouseDown(mouseEvent, gridPosition.r, gridPosition.s);
                              })}
                              title="{n.pitch} • velocity {Math.round(v * 100)}% (Alt+drag)">
                             {n.pitch}

@@ -77,7 +77,7 @@ describe('NoteScheduler', () => {
     it('glides the explicitly named source voice', () => {
         const {instance, voices} = scheduler(2);
 
-        instance.glideAt('lead', 'C4', 'D4', 3, 0.2);
+        expect(instance.glideAt('lead', 'C4', 'D4', 3, 0.2)).toBe(true);
 
         expect(voices.glide).toHaveBeenCalledWith('lead', 'lead:C4', 'lead:D4', 3, 293.66, 0.2, 'linear');
     });
@@ -108,6 +108,7 @@ describe('NoteScheduler', () => {
         instance.noteOffAt('lead', 'C4', 0);
         instance.allNotesOff();
         instance.automateInstrument('lead', params, 0, 0.1);
+        expect(instance.glideAt('lead', 'C4', 'D4', 0, 0.1)).toBe(false);
 
         expect(createVoice).not.toHaveBeenCalled();
         expect(voices.replaceActive).not.toHaveBeenCalled();
