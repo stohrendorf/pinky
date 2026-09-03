@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - uses: actions/configure-pages@v6
+        with:
+          enablement: true
       - run: npm run build -- --base=/${{ github.event.repository.name }}/
       - uses: actions/upload-pages-artifact@v5
         with:
