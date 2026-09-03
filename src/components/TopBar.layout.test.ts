@@ -39,6 +39,13 @@ describe('TopBar demo selection', () => {
         expect(toolbar).toContain('aria-label="Application utilities"');
     });
 
+    it('links subtly to the source repository from the persistent header', () => {
+        expect(toolbar).toMatch(/<a[\s\S]*class="repo-link"[\s\S]*href="https:\/\/github\.com\/stohrendorf\/pinky"/);
+        expect(toolbar).toContain('target="_blank"');
+        expect(toolbar).toContain('rel="noopener noreferrer"');
+        expect(toolbar).toContain('aria-label="View Pinky on GitHub"');
+    });
+
     it('keeps the top bar groups shrinkable within the viewport', () => {
         expect(toolbar).toMatch(/\.topbar-main\s*\{[\s\S]*min-width:\s*0;[\s\S]*overflow:\s*hidden;/s);
         expect(toolbar).toMatch(/\.session-group\s*\{[\s\S]*flex:\s*1 1 auto;/s);

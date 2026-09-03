@@ -1,6 +1,6 @@
 <script lang="ts">
     import {
-        run 
+        run
     } from 'svelte/legacy';
 
     import type {
@@ -95,7 +95,9 @@
     });
 
     function setSwing(v: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.swing = v / 100;
         touch();
     }
@@ -128,7 +130,9 @@
         const target = e.target as HTMLInputElement;
         const file = target.files?.[0];
         target.value = '';
-        if (!file) {return;}
+        if (!file) {
+            return;
+        }
         stopTransport();
         const ok = importProject(await file.text());
         if (!ok) {
@@ -148,15 +152,15 @@
                 <Button className="compact-button" disabled={$playing} title="Play Song" on:click={playSong}><i class="fa fa-music"></i> Song
                 </Button>
                 <Button
-className="compact-button"
-disabled={!$playing}
-title="Stop"
-variant="secondary"
+                        className="compact-button"
+                        disabled={!$playing}
+                        title="Stop"
+                        variant="secondary"
                         on:click={stopTransport}><i class="fa fa-stop"></i></Button>
                 <Button
-className="compact-button"
-disabled={$songCursor === 0}
-title="Playback cursor back to the start (Home)"
+                        className="compact-button"
+                        disabled={$songCursor === 0}
+                        title="Playback cursor back to the start (Home)"
                         variant="secondary"
                         on:click={() => seekSong(0)}><i class="fa fa-backward-step"></i></Button>
             </div>
@@ -164,19 +168,28 @@ title="Playback cursor back to the start (Home)"
             <span class="saved-flash" aria-live="polite">{saved}</span>
         </div>
         <div class="utility-group">
+            <a
+                    class="repo-link"
+                    aria-label="View Pinky on GitHub"
+                    href="https://github.com/stohrendorf/pinky"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    title="View source on GitHub">
+                <i class="fa-brands fa-github"></i>
+            </a>
             <IconButton
-icon="fa-question-circle"
-title="Keyboard shortcuts (?)"
-                        variant="ghost"
-                        on:click={() => showShortcuts.set(true)}></IconButton>
-            <Button
-ariaControls="topbar-utilities"
-className="utility-toggle"
-expanded={utilityExpanded}
-                    pressed={utilityExpanded}
-title="Show application utilities"
+                    icon="fa-question-circle"
+                    title="Keyboard shortcuts (?)"
                     variant="ghost"
-on:click={toggleUtilities}>
+                    on:click={() => showShortcuts.set(true)}></IconButton>
+            <Button
+                    ariaControls="topbar-utilities"
+                    className="utility-toggle"
+                    expanded={utilityExpanded}
+                    pressed={utilityExpanded}
+                    title="Show application utilities"
+                    variant="ghost"
+                    on:click={toggleUtilities}>
                 <i class="fa fa-sliders"></i><span>Studio</span>
             </Button>
         </div>
@@ -196,9 +209,9 @@ on:click={toggleUtilities}>
                 <div class="sidebar-section">
                     <span class="menu-heading">Render</span>
                     <Button
-disabled={$rendering}
-title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
-variant="secondary"
+                            disabled={$rendering}
+                            title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
+                            variant="secondary"
                             on:click={exportAudio}>
                         <i class="fa fa-file-audio"></i> {$rendering ? 'Rendering…' : 'Render WAV'}</Button>
                 </div>
@@ -209,8 +222,8 @@ variant="secondary"
                     <div class="master-controls" aria-label="Master controls">
                         {#each MASTER_SLIDERS as s (s.id)}
                             <Slider
-{...s}
-onchange={v => setMaster(s.id as MasterId, v)}
+                                    {...s}
+                                    onchange={v => setMaster(s.id as MasterId, v)}
                                     value={masterParams[s.id as MasterId]}/>
                         {/each}
                     </div>
@@ -220,19 +233,19 @@ onchange={v => setMaster(s.id as MasterId, v)}
                     <label class="swing-label" title="Groove: pushes every 2nd 16th late (100% = triplet shuffle)">
                         Swing
                         <input
-max="100"
-min="0"
-oninput={e => setSwing(parseInt((e.target as HTMLInputElement).value, 10))}
-step="1"
-type="range"
-                               value={swingPct}>
+                                max="100"
+                                min="0"
+                                oninput={e => setSwing(parseInt((e.target as HTMLInputElement).value, 10))}
+                                step="1"
+                                type="range"
+                                value={swingPct}>
                         <span class="swing-val">{swingPct}%</span>
                     </label>
                     {#if $project}<label class="bpm-label">BPM <input
-max="240"
-min="40"
-type="number"
-                                                                      bind:value={$project.bpm}></label>{/if}
+                            max="240"
+                            min="40"
+                            type="number"
+                            bind:value={$project.bpm}></label>{/if}
                 </div>
             </div>
             <div class="sidebar-section library-section">
@@ -240,10 +253,10 @@ type="number"
                 <div class="demo-grid">
                     {#each DEMO_LIBRARY as d (d.id)}
                         <Button
-pressed={$activeDemo === d.id}
-title={d.title}
+                                pressed={$activeDemo === d.id}
+                                title={d.title}
                                 variant={$activeDemo === d.id ? 'primary' : 'secondary'}
-on:click={() => demo(d.id)}><i class="fa {d.icon}"></i> {d.label}
+                                on:click={() => demo(d.id)}><i class="fa {d.icon}"></i> {d.label}
                         </Button>
                     {/each}
                 </div>
@@ -251,16 +264,16 @@ on:click={() => demo(d.id)}><i class="fa {d.icon}"></i> {d.label}
             <div class="sidebar-section">
                 <span class="menu-heading">Performance</span>
                 <label
-class="node-budget-control"
-                       title="Audio node budget: above it the engine thins new voices so playback can keep up.">
+                        class="node-budget-control"
+                        title="Audio node budget: above it the engine thins new voices so playback can keep up.">
                     Nodes
                     <input
-max={BUDGET_MAX}
-min={BUDGET_MIN}
-oninput={e => setBudget(parseInt((e.target as HTMLInputElement).value, 10))}
-step="20"
-type="range"
-                           value={nodeBudget}>
+                            max={BUDGET_MAX}
+                            min={BUDGET_MIN}
+                            oninput={e => setBudget(parseInt((e.target as HTMLInputElement).value, 10))}
+                            step="20"
+                            type="range"
+                            value={nodeBudget}>
                     <span>{nodeBudget}</span>
                 </label>
             </div>
@@ -269,19 +282,19 @@ type="range"
 </header>
 
 <input
-bind:this={fileInput}
-class="file-input"
-accept=".json,application/json"
-onchange={importFile}
-type="file">
+        bind:this={fileInput}
+        class="file-input"
+        accept=".json,application/json"
+        onchange={importFile}
+        type="file">
 
 <Confirm
-confirmLabel="Create new project"
-destructive
-message="Start a new empty project? Unsaved changes are lost."
-         title="New Project"
-bind:show={showConfirmNew}
-on:confirm={onConfirmNew}/>
+        confirmLabel="Create new project"
+        destructive
+        message="Start a new empty project? Unsaved changes are lost."
+        title="New Project"
+        bind:show={showConfirmNew}
+        on:confirm={onConfirmNew}/>
 <Dialog title="Alert" bind:show={showAlert}>
     <p>{alertMessage}</p>
     <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
@@ -322,6 +335,23 @@ on:confirm={onConfirmNew}/>
     .utility-group {
         flex: 0 0 auto;
         margin-left: auto;
+    }
+
+    .repo-link {
+        display: inline-grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 5px;
+        color: var(--color-text-muted);
+        font-size: 15px;
+        text-decoration: none;
+    }
+
+    .repo-link:hover,
+    .repo-link:focus-visible {
+        color: var(--primary-text);
+        background: var(--color-surface-raised);
     }
 
     .brand {
