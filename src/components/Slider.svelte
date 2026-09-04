@@ -9,7 +9,7 @@
         onchange?: (v: number) => void;
     }
 
-    const {
+    let {
         label,
         min,
         max,
@@ -20,29 +20,20 @@
         }
     }: Props = $props();
 
-    // The range input must update its label in the same event that moves its native thumb.
-    // eslint-disable-next-line svelte/prefer-writable-derived
-    let displayedValue = $state(value);
-
-    $effect(() => {
-        displayedValue = value;
-    });
-
     function updateValue(event: Event) {
-        displayedValue = parseFloat((event.target as HTMLInputElement).value);
-        onchange(displayedValue);
+        onchange(parseFloat((event.target as HTMLInputElement).value));
     }
 </script>
 
 <div class="slider-group">
     <label>
-        {label} <span class="value">{displayedValue}{unit}</span>
+        {label} <span class="value">{value}{unit}</span>
         <input
 {max}
 {min}
 oninput={updateValue}
 {step}
                type="range"
-               value={displayedValue}>
+               {value}>
     </label>
 </div>

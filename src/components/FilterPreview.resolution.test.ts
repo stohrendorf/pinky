@@ -35,4 +35,8 @@ describe('FilterPreview', () => {
     it('keeps the moved curve tall enough to read its response shape', () => {
         expect(preview).toMatch(/svg\s*\{[\s\S]*height: 104px;/);
     });
+
+    it('keeps its input props reactive so parameter changes redraw the curve immediately', () => {
+        expect(preview).toContain("let { params, note = 'C4' }: Props = $props();");
+    });
 });

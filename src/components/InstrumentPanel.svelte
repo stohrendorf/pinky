@@ -126,8 +126,14 @@
 
 
     function setParam(id: NumericParam, v: number) {
-        inst.params[id] = v;
-        touch();
+        const instrumentId = inst.id;
+        project.update(current => current ? {
+            ...current,
+            instruments: current.instruments.map(instrument => instrument.id === instrumentId ? {
+                ...instrument,
+                params: {...instrument.params, [id]: v}
+            } : instrument)
+        } : current);
     }
 
     function setLegatoCurve(curve: string) {

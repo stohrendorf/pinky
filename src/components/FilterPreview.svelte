@@ -15,7 +15,7 @@
         note?: string;
     }
 
-    const { params, note = 'C4' }: Props = $props();
+    let { params, note = 'C4' }: Props = $props();
 
     const WIDTH = 720;
     const HEIGHT = 120;

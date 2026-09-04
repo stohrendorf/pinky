@@ -13,12 +13,14 @@ const slider = readFileSync(fileURLToPath(new URL('./Slider.svelte', import.meta
 
 describe('InstrumentPanel guided editing', () => {
     it('keeps slider value labels reactive after an instrument parameter changes', () => {
-        expect(slider).toContain('let displayedValue = $state(value);');
-        expect(slider).toContain('displayedValue = parseFloat((event.target as HTMLInputElement).value);');
-        expect(slider).toContain('{displayedValue}{unit}');
-        expect(slider).toContain('value={displayedValue}');
+        expect(slider).toContain('let {');
+        expect(slider).toContain('onchange(parseFloat((event.target as HTMLInputElement).value));');
+        expect(slider).toContain('{value}{unit}');
+        expect(slider).toContain('{value}>');
         expect(panel).toContain('function setParam(id: NumericParam, v: number)');
-        expect(panel).toContain('touch();');
+        expect(panel).toContain('project.update(current => current ? {');
+        expect(panel).toContain('instruments: current.instruments.map(instrument => instrument.id === instrumentId ? {');
+        expect(panel).toContain('params: {...instrument.params, [id]: v}');
     });
     it('keeps starter controls together and organizes specialist controls into named editor tabs', () => {
         expect(panel).toMatch(/const STARTER_PANEL_TITLES = \['EQ Voice', 'Envelope', 'Mix'\]/);
