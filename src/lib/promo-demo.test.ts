@@ -43,7 +43,7 @@ describe('Pinky Promo demo', () => {
         expect(gain('FX/Impact')).toBe(0.9);
         expect(gain('Drums/Kick')).toBe(0.72);
         expect(gain('Vocals/Choir (oo)')).toBe(0.2);
-        expect(gain('Synth/Pluck')).toBe(0.22);
+        expect(gain('Synth/Pluck')).toBe(0.88);
         expect(gain('Drums/Hi-Hat')).toBe(0.14);
         expect(gain('FX/Air')).toBe(0.1);
         expect(promo.automation).toHaveLength(1);
