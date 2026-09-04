@@ -48,10 +48,11 @@
     .btn {
         border: 1px solid transparent;
         color: var(--primary-text);
-        padding: 8px 16px;
-        font-size: 13px;
+        padding: 7px 12px;
+        font-size: 11px;
         font-weight: 600;
-        border-radius: 5px;
+        border-radius: 2px;
+        letter-spacing: .055em;
         cursor: pointer;
         transition: background-color .12s ease, border-color .12s ease, color .12s ease;
         display: inline-flex;
@@ -101,8 +102,8 @@
     }
 
     .btn.primary:hover:not(:disabled) {
-        background: #f68689;
-        border-color: #f68689;
+        background: var(--color-accent-bright);
+        border-color: var(--color-accent-bright);
     }
 
     .btn:disabled {

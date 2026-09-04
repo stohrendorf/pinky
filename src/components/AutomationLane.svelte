@@ -247,6 +247,7 @@
     // the drawn path: held before the first point, held after the last one
     const pts = $derived(lane.points);
     const path = $derived(curvePath(pts));
+    const fillPath = $derived(path ? `${path} L ${width} ${height} L 0 ${height} Z` : '');
     run(() => {
         if (contextualEditor !== editorKey && editingPoint) {
             editingPoint = null;
@@ -271,9 +272,10 @@ x1="0"
 x2={width}
 y1={valToY(def.min + span / 2)}
 y2={valToY(def.min + span / 2)}/>
-        {#if path}
-            <path style="stroke: {color}" class="curve" d={path}/>
-            {#each pts as p}
+{#if path}
+    <path style="fill: {color}" class="curve-fill" d={fillPath}/>
+    <path style="stroke: {color}" class="curve" d={path}/>
+    {#each pts as p}
                 <g
 class="pt"
 class:active={selectedPoint === p || editingPoint === p}
@@ -282,7 +284,12 @@ onfocus={() => onselect(p)}
                    onkeydown={e => onPointKeydown(e, p)}
                    role="button"
                    tabindex="0">
-                    <circle style="fill: {color}" cx={p.step * cellWidth} cy={valToY(p.value)} r="4"/>
+                    <circle
+style="stroke: {color}"
+class="curve-node"
+cx={p.step * cellWidth}
+cy={valToY(p.value)}
+r="3.5"/>
                     <title>{fmt(p.value)} @ step {Math.round(p.step)}</title>
                 </g>
             {/each}
@@ -347,7 +354,7 @@ bind:value={editingValue}>
 <style>
     .auto-lane {
         display: block;
-        background: var(--surface-deep);
+        background: linear-gradient(90deg, rgba(231, 109, 117, .035), transparent 40%), var(--color-canvas);
         border-bottom: 1px solid var(--border-subtle);
         cursor: crosshair;
     }
@@ -357,29 +364,37 @@ bind:value={editingValue}>
     }
 
     .mid {
-        stroke: #2a2a42;
+        stroke: var(--color-border-subtle);
         stroke-width: 1;
+        opacity: .55;
+    }
+
+    .curve-fill {
+        opacity: .13;
     }
 
     .curve {
         fill: none;
-        stroke-width: 1.5;
-        opacity: .9;
+        stroke-width: 1.25;
+        opacity: .95;
+        vector-effect: non-scaling-stroke;
     }
 
     .pt {
         outline: none;
     }
 
-    .pt circle {
-        stroke: #0a0a14;
-        stroke-width: 1;
+    .curve-node {
+        fill: var(--color-canvas);
+        stroke-width: 1.5;
+        vector-effect: non-scaling-stroke;
     }
 
-    .pt.active circle,
-    .pt:focus circle {
-        stroke: #fff;
+    .pt.active .curve-node,
+    .pt:focus .curve-node {
+        fill: var(--color-playhead);
         stroke-width: 2;
+        filter: drop-shadow(0 0 3px rgba(255, 244, 244, .55));
     }
 
     .point-readout,
@@ -389,8 +404,8 @@ bind:value={editingValue}>
         z-index: 5;
         padding: 3px 5px;
         border: 1px solid var(--accent);
-        border-radius: 4px;
-        background: #11111f;
+        border-radius: 2px;
+        background: var(--color-surface);
         color: var(--primary-text);
         box-shadow: 0 3px 10px rgba(0, 0, 0, .35);
         font-size: 10px;
@@ -412,8 +427,8 @@ bind:value={editingValue}>
 
     .point-readout select {
         padding: 1px 3px;
-        border: 1px solid #48485e;
-        border-radius: 3px;
+        border: 1px solid var(--color-border);
+        border-radius: 2px;
         background: var(--surface-input);
         color: inherit;
         font: inherit;
@@ -422,8 +437,8 @@ bind:value={editingValue}>
     .point-readout input,
     .point-editor input {
         padding: 3px 5px;
-        border: 1px solid #48485e;
-        border-radius: 3px;
+        border: 1px solid var(--color-border);
+        border-radius: 2px;
         background: var(--surface-input);
         color: var(--primary-text);
         font: inherit;
@@ -460,7 +475,7 @@ bind:value={editingValue}>
 
     .val {
         font-size: 9px;
-        fill: #6f6f92;
+        fill: var(--color-text-faint);
         pointer-events: none;
     }
 </style>

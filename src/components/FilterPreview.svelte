@@ -99,7 +99,6 @@ y2={HEIGHT * 3 / 4}/>
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .08em;
-        text-transform: uppercase;
     }
 
     .filter-preview-header strong {

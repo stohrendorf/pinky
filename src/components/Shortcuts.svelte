@@ -35,7 +35,6 @@
         margin: 0 0 6px;
         font-size: 11px;
         color: var(--accent2);
-        text-transform: uppercase;
         letter-spacing: 1px;
     }
 

@@ -305,9 +305,9 @@
     .topbar {
         position: relative;
         z-index: 50;
-        background: var(--color-surface);
+        background: linear-gradient(90deg, var(--color-surface-deep), var(--color-surface));
         border-bottom: 1px solid var(--border);
-        box-shadow: 0 3px 16px rgba(0, 0, 0, .2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .24);
     }
 
     .topbar-main {
@@ -359,10 +359,10 @@
         align-items: center;
         gap: 7px;
         flex: 0 0 auto;
-        color: var(--primary-text);
+        color: var(--accent);
         font-size: 15px;
         font-weight: 700;
-        letter-spacing: -.01em;
+        letter-spacing: .12em;
     }
 
     .transport-controls {
@@ -399,9 +399,9 @@
         overflow: auto;
         padding: 18px;
         border: 1px solid var(--border);
-        border-radius: 10px;
+        border-radius: 2px;
         box-shadow: 0 16px 40px rgba(0, 0, 0, .45);
-        background: var(--color-surface-raised);
+        background: var(--color-surface);
     }
 
     :global(.compact-button.btn) {
@@ -521,7 +521,6 @@
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .1em;
-        text-transform: uppercase;
     }
 
     .demo-grid {

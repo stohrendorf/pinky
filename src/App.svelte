@@ -280,7 +280,6 @@ bind:show={showInstrumentEditor}>
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .08em;
-        text-transform: uppercase;
     }
 
     .scope-tray :global(.scope-wrap) {

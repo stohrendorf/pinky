@@ -183,7 +183,7 @@ open={openMenu !== null}/>
         height: 100%;
         background: var(--color-surface);
         border: 1px solid var(--border);
-        border-radius: 5px;
+        border-radius: 2px;
         overflow: hidden;
     }
 
@@ -192,12 +192,11 @@ open={openMenu !== null}/>
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding: 6px 8px;
-        color: var(--accent2);
+        padding: 7px 8px;
+        color: var(--color-text-muted);
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .08em;
-        text-transform: uppercase;
         border-bottom: 1px solid var(--border);
     }
 
@@ -222,11 +221,16 @@ open={openMenu !== null}/>
         align-items: center;
         min-height: 30px;
         padding-left: var(--indent);
-        border-radius: 3px;
+        border-radius: 1px;
     }
 
-    .tree-row:hover, .tree-row.selected {
+    .tree-row:hover {
         background: var(--color-surface-hover);
+    }
+
+    .tree-row.selected {
+        background: var(--color-accent-soft);
+        box-shadow: inset 2px 0 var(--accent);
     }
 
     .row-main {
@@ -295,7 +299,7 @@ open={openMenu !== null}/>
         flex: 0 0 auto;
         width: 9px;
         height: 9px;
-        border-radius: 3px;
+        border-radius: 1px;
     }
 
     .item-icon {

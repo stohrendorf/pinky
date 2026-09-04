@@ -146,13 +146,14 @@ style={k.black ? `left:${k.left}%; width:${blackW}%` : ''}
         height: 72px;
         margin: 12px 0;
         user-select: none;
-        background: #1b1b2b;
-        border-radius: 8px;
+        background: var(--color-canvas-deep);
+        border: 1px solid var(--border);
+        border-radius: 2px;
         overflow: hidden;
     }
 
     .key {
-        border-radius: 0 0 6px 6px;
+        border-radius: 0;
         cursor: pointer;
         display: flex;
         align-items: flex-end;
@@ -164,8 +165,8 @@ style={k.black ? `left:${k.left}%; width:${blackW}%` : ''}
     }
 
     .white {
-        background: #ececf2;
-        color: #333;
+        background: #ede9e7;
+        color: #282326;
         flex: 1;
         border: 1px solid #555;
         position: relative;
@@ -190,7 +191,7 @@ style={k.black ? `left:${k.left}%; width:${blackW}%` : ''}
     }
 
     .black.active {
-        background: #ffaa44;
+        background: var(--color-accent);
         color: var(--primary-text);
     }
 </style>

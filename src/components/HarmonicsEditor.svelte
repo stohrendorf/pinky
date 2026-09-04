@@ -125,7 +125,11 @@ onpointermove={move}
          onpointerup={() => dragging = false}>
         {#each list as p, i (i)}
             <div class="col" title="partial {i + 1}: ×{p.ratio}, level {p.level}">
-                <div style="height: {p.level * 100}%" class="bar"></div>
+                <div class="drawbar-track">
+                    <div style="height: {p.level * 100}%" class="drawbar-fill">
+                        <span class="drawbar-cap" aria-hidden="true"></span>
+                    </div>
+                </div>
             </div>
         {/each}
     </div>
@@ -143,6 +147,7 @@ step="0.01"
                        type="number"
                        value={p.level}>
                 <input
+class="ratio-input"
 aria-label="frequency ratio of partial {i + 1}"
 max="24"
 min="0.1"
@@ -187,13 +192,10 @@ title="Generate a new profile from a timbre shape, partial count, falloff and st
     }
 
     .badge {
+        color: var(--color-text-subtle);
         font-size: 9px;
-        letter-spacing: 0;
-        text-transform: none;
-        color: var(--primary-text);
-        background: var(--border);
-        border-radius: 4px;
-        padding: 1px 5px;
+        font-weight: 500;
+        letter-spacing: .08em;
     }
 
     .row {
@@ -207,57 +209,86 @@ title="Generate a new profile from a timbre shape, partial count, falloff and st
     .bars {
         display: grid;
         grid-template-columns: repeat(var(--n), 1fr);
-        gap: 3px;
-        height: 96px;
-        padding: 4px;
-        background: var(--border);
-        border-radius: 6px;
+        gap: 10px;
+        height: 148px;
+        padding: 10px 14px 8px;
+        border: 1px solid var(--color-border-subtle);
+        background: var(--color-canvas);
         touch-action: none;
         cursor: crosshair;
     }
 
     .col {
         display: flex;
-        align-items: flex-end;
-        background: rgba(0, 0, 0, .25);
-        border-radius: 3px;
-        overflow: hidden;
+        min-width: 0;
     }
 
-    .bar {
+    .drawbar-track {
+        display: flex;
+        position: relative;
+        flex: 1;
+        align-items: flex-end;
+        min-width: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, .055), rgba(255, 255, 255, .02));
+    }
+
+    .drawbar-fill {
+        position: relative;
         width: 100%;
         min-height: 1px;
-        background: linear-gradient(to top, var(--accent), var(--accent2));
+        background: linear-gradient(to top, #8d4249, var(--color-accent));
+        opacity: .9;
+    }
+
+    .drawbar-cap {
+        position: absolute;
+        top: -2px;
+        right: -3px;
+        left: -3px;
+        height: 4px;
+        background: var(--color-playhead);
+        box-shadow: 0 1px 5px rgba(255, 244, 244, .24);
     }
 
     .ratios {
         display: grid;
         grid-template-columns: repeat(var(--n), 1fr);
-        gap: 3px;
-        padding: 0 4px;
-        margin-top: 3px;
+        gap: 10px;
+        padding: 0 14px;
+        margin-top: 5px;
     }
 
     .cell {
         text-align: center;
     }
 
-    .cell input[type='number'] {
+    .level-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .ratio-input {
         width: 100%;
         min-width: 0;
-        padding: 3px 4px;
-        border: 1px solid #48485e;
-        border-radius: 3px;
-        background: var(--surface-input);
-        color: var(--primary-text);
+        padding: 1px 2px;
+        border: 0;
+        background: transparent;
+        color: var(--color-text-subtle);
         font: inherit;
+        font-size: 10px;
         text-align: center;
         -moz-appearance: textfield;
     }
 
-    .cell input[type='number']:focus {
-        border-color: var(--accent);
-        outline: none;
+    .ratio-input:focus {
+        color: var(--color-playhead);
+        outline: 1px solid var(--color-accent);
+        outline-offset: 2px;
     }
 
     .cell input::-webkit-outer-spin-button,

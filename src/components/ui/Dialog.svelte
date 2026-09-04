@@ -100,8 +100,8 @@ tabindex="-1">
         box-sizing: border-box;
         background: var(--color-surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border-radius: 2px;
+        box-shadow: 0 24px 56px rgba(0, 0, 0, .7), inset 0 2px var(--accent);
         display: flex;
         flex-direction: column;
         max-width: calc(100vw - 32px);
@@ -109,7 +109,7 @@ tabindex="-1">
     }
 
     .modal-header {
-        padding: 12px 16px;
+        padding: 14px 16px 12px;
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
@@ -119,10 +119,9 @@ tabindex="-1">
     .modal-header h3 {
         margin: 0;
         flex: 0 0 auto;
-        font-size: 14px;
+        font-size: 12px;
         color: var(--accent2);
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: .12em;
     }
 
     .modal-header-actions {

@@ -54,6 +54,12 @@ describe('AutomationLane contextual node editing', () => {
         expect(lane).toContain('const path = $derived(curvePath(pts));');
     });
 
+    it('renders the curve as a softly filled area with outlined nodes', () => {
+        expect(lane).toContain('class="curve-fill"');
+        expect(lane).toContain('const fillPath = $derived');
+        expect(lane).toContain('class="curve-node"');
+    });
+
     it('draws hold segments as a true step at the destination point', () => {
         expect(lane).toContain("if (from.curve === 'hold')");
         expect(lane).toContain('segments.push(`L ${to.step * cellWidth} ${valToY(from.value)}`);');

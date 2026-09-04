@@ -86,7 +86,6 @@
     .hex-input label {
         font-size: 11px;
         color: var(--color-text-muted);
-        text-transform: uppercase;
     }
 
     .hex-input input {

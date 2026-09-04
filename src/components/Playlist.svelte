@@ -710,8 +710,9 @@
 
 <style>
     .playlist-container {
-        background: #1b1b2b;
-        border-radius: 8px;
+        background: var(--color-canvas-deep);
+        border: 1px solid var(--border);
+        border-radius: 2px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -773,7 +774,7 @@
         grid-row: 1;
         overflow: hidden;
         min-width: 0;
-        background: #202032;
+        background: var(--color-surface-input);
         border-bottom: 1px solid var(--border);
     }
 
@@ -808,7 +809,7 @@
         position: relative;
         min-width: 100%;
         height: 100%;
-        background: #202032;
+        background: var(--color-surface-input);
         will-change: transform;
     }
 
@@ -816,7 +817,7 @@
         position: absolute;
         top: 0;
         font-size: 9px;
-        color: #8888aa;
+        color: var(--color-text-subtle);
         padding: 4px;
         border-left: 1px solid var(--border);
         height: 100%;
@@ -834,13 +835,13 @@
         overflow: hidden;
         min-height: 0;
         border-right: 1px solid var(--border);
-        background: #1b1b2b;
+        background: var(--color-canvas-deep);
     }
 
     .track-labels {
         position: relative;
         width: 100%;
-        background: #1b1b2b;
+        background: var(--color-canvas-deep);
         will-change: transform;
     }
 
@@ -872,7 +873,7 @@
     .track-label {
         position: relative;
         font-size: 11px;
-        color: #8888aa;
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
         padding: 0 8px;
@@ -1040,7 +1041,7 @@
         display: flex;
         flex-direction: column;
         background-image: linear-gradient(90deg, var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, #202032 1px, transparent 1px);
+        linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
         background-size: calc(var(--cell-width) * 16) 100%,
         var(--cell-width) 100%;
     }
@@ -1061,7 +1062,7 @@
     .clip {
         position: absolute;
         background: var(--accent);
-        border-radius: 4px;
+        border-radius: 1px;
         pointer-events: auto;
         cursor: move;
         box-sizing: border-box;
@@ -1075,7 +1076,7 @@
     .clip.selected {
         opacity: 1;
         filter: brightness(1.2);
-        outline: 2px solid #fff;
+        outline: 1px solid var(--color-playhead);
         z-index: 10;
     }
 
@@ -1127,8 +1128,8 @@
         top: 0;
         bottom: 0;
         width: 2px;
-        background: #fff;
-        box-shadow: 0 0 8px #fff;
+        background: var(--color-playhead);
+        box-shadow: 0 0 8px rgba(255, 244, 244, .7);
         z-index: 20;
         pointer-events: none;
     }
@@ -1139,7 +1140,7 @@
     }
 
     .playlist-footer {
-        background: #24243a;
+        background: var(--color-surface);
         border-top: 1px solid var(--border);
         padding: 5px 12px;
     }
@@ -1193,7 +1194,7 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        background: rgba(83, 216, 251, 0.28);
+        background: var(--color-accent-selection);
         border-left: 2px solid var(--accent2);
         border-right: 2px solid var(--accent2);
         box-sizing: border-box;
@@ -1204,9 +1205,9 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        background: rgba(83, 216, 251, 0.07);
-        border-left: 1px solid rgba(83, 216, 251, 0.5);
-        border-right: 1px solid rgba(83, 216, 251, 0.5);
+        background: rgba(231, 109, 117, .07);
+        border-left: 1px solid rgba(231, 109, 117, .5);
+        border-right: 1px solid rgba(231, 109, 117, .5);
         box-sizing: border-box;
         pointer-events: none;
         z-index: 5;
@@ -1242,7 +1243,7 @@
 
     .auto-label {
         font-size: 10px;
-        color: #8888aa;
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
         padding: 0 6px;
@@ -1272,7 +1273,7 @@
 
     .auto-label .auto-val {
         font-variant-numeric: tabular-nums;
-        color: #6f6f92;
+        color: var(--color-text-subtle);
         padding: 0 4px;
         white-space: nowrap;
     }

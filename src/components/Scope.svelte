@@ -430,9 +430,8 @@ onclick={() => paused = !paused}
         justify-content: center;
         font-size: 11px;
         letter-spacing: .08em;
-        text-transform: uppercase;
-        color: #6f6f92;
-        background: #0a0a14;
+        color: var(--color-text-subtle);
+        background: var(--color-canvas-deep);
         pointer-events: none;
     }
 
@@ -440,7 +439,7 @@ onclick={() => paused = !paused}
         width: 100%;
         height: 100px;
         background: var(--color-canvas);
-        border-radius: 8px;
+        border-radius: 2px;
         display: block;
     }
 </style>
