@@ -19,7 +19,7 @@ import {
     PROJECT_FORMAT_VERSION
 } from './types';
 
-const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'noise', 'jazz', 'iron', 'suite', 'diva', 'relay', 'frontier', 'pocket', 'amber', 'velvet', 'prism', 'chip'];
+const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'noise', 'jazz', 'iron', 'suite', 'diva', 'relay', 'frontier', 'pocket', 'amber', 'velvet', 'prism', 'chip', 'promo'];
 
 describe('demo song selection', () => {
     it('keeps picker metadata and supported demo IDs in one registry', () => {

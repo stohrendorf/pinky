@@ -2,3 +2,7 @@
 node_modules
 dist
 .output.txt
+/promo/out/*.json
+/promo/out/*.wav
+/promo/out/*.png
+__pycache__

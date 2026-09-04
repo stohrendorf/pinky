@@ -29,6 +29,9 @@ import {
     buildBitHorizon, buildFarHorizon, buildPocketTheory, buildPrismCircuit, buildRelayDawn, buildVelvetSpurs
 } from './original-demos';
 import {
+    buildPromoDemo
+} from './promo-demo';
+import {
     createId, isProjectId, PROJECT_FORMAT_VERSION
 } from './types';
 
@@ -118,7 +121,8 @@ export const DEMO_LIBRARY = [
         title: 'Velvet Spurs — soul, blues and cinematic flamenco in a midnight chase'
     },
     {id: 'prism', label: 'Prism Circuit', icon: 'fa-gem', title: 'Prism Circuit — a progressive electronic showcase'},
-    {id: 'chip', label: 'Bit Horizon', icon: 'fa-gamepad', title: 'Bit Horizon — an original chiptune adventure'}
+    {id: 'chip', label: 'Bit Horizon', icon: 'fa-gamepad', title: 'Bit Horizon — an original chiptune adventure'},
+    {id: 'promo', label: 'Pinky Promo', icon: 'fa-film', title: 'Pinky Promo — the editable trailer soundtrack'}
 ] as const;
 export type DemoSong = typeof DEMO_LIBRARY[number]['id'];
 export const activeDemo: Writable<DemoSong | null> = writable(null);
@@ -150,6 +154,7 @@ const DEMO_SONGS: Record<DemoSong, Project> = {
     velvet: buildVelvetSpurs(),
     prism: buildPrismCircuit(),
     chip: buildBitHorizon(),
+    promo: buildPromoDemo()
 };
 
 export function isProject(value: unknown): value is Project {

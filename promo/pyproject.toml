@@ -1,0 +1,19 @@
+[project]
+name = "pinky-promo"
+version = "0.1.0"
+description = "Renders the pinky promo video: soundtrack synthesised the pinky way (pink noise + EQ), motion graphics drawn frame by frame, muxed with ffmpeg."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "pillow>=10.4",
+    "imageio-ffmpeg>=0.5",
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
