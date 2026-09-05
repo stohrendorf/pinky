@@ -20,8 +20,8 @@ from .analysis import FMAX, Analysis
 from .gfx import (ACCENT, BG, BORDER, BORDER_SUBTLE, CANVAS, DEEP, FAINT, GRID, MUTED, PLAYHEAD, RAISED, SUBTLE,
                   SURFACE, TEXT, Canvas, draw_text, ease_in_out, ease_out_back, ease_out_cubic, ease_out_expo, fade,
                   font, freq_to_x, lerp, mix_color, rgba, seg, smoothstep)
-from .score import BAR, BEAT, INSTRUMENTS, STEP, bar_time
-from .synth import peaking_sos
+from .response import chain_response, peaking_sos, pink_psd
+from .score import BAR, BEAT, STEP, bar_time
 
 T_CARVE, T_TITLE, T_FEAT, T_BREAK, T_CLIMAX, T_OUTRO = (bar_time(b) for b in (2, 4, 6, 14, 16, 19))
 FEATURE_LEN = 2 * BAR
@@ -344,7 +344,7 @@ def piano_roll(fr: Frame, box, t0: float) -> None:
             continue
         ny = y0 + r * rh
         lit = st <= pos <= st + n.dur / STEP
-        col = INSTRUMENTS['pluck'].color
+        col = fr.an.song.instruments['pluck'].color
         d.rounded_rectangle((nx0 + 1, ny + 1, nx1 - 1, ny + rh - 1), radius=fr.px(2),
                             fill=rgba(mix_color(col, TEXT, 0.6) if lit else col, 0.95 if lit else 0.55 + 0.35 * n.vel),
                             outline=rgba(col, 1))
@@ -388,7 +388,6 @@ def drawbars(fr: Frame, box, t0: float) -> None:
     w = x1 - x0
     xs = np.linspace(0, w, 420)
     f = gfx.x_to_freq(xs, w, 6000.0, 80.0)
-    from .synth import chain_response, pink_psd  # local import keeps module load order simple
     fr_, qs, gs = zip(*[(f0 * r, 40 * math.sqrt(r), 40 * lv) for r, lv in parts if lv > 0.01])
     resp = 10 * np.log10(np.maximum(np.abs(chain_response(fr_, qs, gs, f)) ** 2 * pink_psd(f), 1e-12))
     resp = np.clip((resp - resp.max()) / 60 + 1, 0, 1)
@@ -458,7 +457,7 @@ def formants(fr: Frame, box, t0: float) -> None:
         x = x0 + freq_to_x(hf, w, 5000.0, fmin_c)
         lift = float(np.interp(hf, f, resp))
         hgt = (floor - top) * (0.22 + 0.16 / n ** 0.5 + 0.55 * lift)
-        col = mix_color('#6a5a62', INSTRUMENTS['voice'].color, lift ** 0.7)
+        col = mix_color('#6a5a62', fr.an.song.instruments['voice'].color, lift ** 0.7)
         d.line((x, floor, x, floor - hgt), fill=rgba(col, 0.7 + 0.3 * lift), width=max(1, int(fr.px(4))))
         rr = fr.px(4)
         d.ellipse((x - rr, floor - hgt - rr, x + rr, floor - hgt + rr), fill=rgba(col, 1))

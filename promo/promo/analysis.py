@@ -10,7 +10,7 @@ import numpy as np
 
 from . import score as sc
 from .gfx import x_to_freq
-from .synth import SR, chain_response, pink_psd
+from .response import SR, Inst, chain_response, pink_psd
 
 N_BARS = 112
 FMAX = 12000.0
@@ -68,9 +68,6 @@ class Analysis:
         self.by_inst = {}
         for n in song.notes:
             self.by_inst.setdefault(n.inst, []).append(n)
-        # what one voice of each instrument is worth in the mix: the engine's
-        # 0.9·gain per rank times the bus fader normalize_bus() ended up with
-        self.voice_gain = {name: 0.9 * inst.gain * song.bus_gain.get(name, 1.0) for name, inst in sc.INSTRUMENTS.items()}
         log(f'  analysed {self.nframes} frames')
 
     # ---- envelopes ----
@@ -105,16 +102,16 @@ class Analysis:
         return last
 
     # ---- what is sounding ----
-    def active(self, t: float, insts=None) -> list[tuple[sc.Inst, float, float, sc.Note]]:
+    def active(self, t: float, insts=None) -> list[tuple[Inst, float, float, sc.Note]]:
         """(instrument, frequency, level, note) of every voice alive at t."""
         out = []
         for name, notes in self.by_inst.items():
             if insts is not None and name not in insts:
                 continue
-            inst = sc.INSTRUMENTS[name]
+            inst = self.song.instruments[name]
             for n in notes:
                 if n.t <= t <= n.t + n.dur + inst.rel * 1.05:
-                    lvl = env_at(inst, t - n.t, n.dur) * n.vel * self.voice_gain[name]
+                    lvl = env_at(inst, t - n.t, n.dur) * n.vel * inst.voice_gain
                     if lvl > 1e-4:
                         out.append((inst, sc.hz(n.midi), lvl, n))
         return out

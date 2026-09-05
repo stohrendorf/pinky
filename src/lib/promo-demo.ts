@@ -1,16 +1,39 @@
 import type {
-    Instrument, InstrumentParams, Note, Pattern, Project
+    Instrument, InstrumentParams, Note, PartialSpec, Pattern, Project
 } from './types';
 
 import {
-    DEFAULT_PARAMS, ensurePartials
+    DEFAULT_PARAMS, ensurePartials, genPartials
 } from './instruments';
 
-/** The editable 100 BPM trailer arrangement used by the Pinky promo. */
+/* ---- Pinky Promo ----
+ * The soundtrack of promo/out/pinky-promo.mp4, note for note: a trailer-shaped
+ * piece in D minor at 100 BPM. Bars are 2.4 s and the picture cuts on the bar
+ * lines, so the arrangement below *is* the video's timeline:
+ *
+ *     bar  0- 1  hiss + sub drone          "every sound in this video is pink noise"
+ *     bar  2- 3  choir pad, booms          the spectrum gets carved
+ *     bar  4- 5  TITLE HIT, riser          "pinky"
+ *     bar  6-13  groove                    feature sequence (4 x 2 bars)
+ *     bar 14-15  break, snare roll         "no samples / no oscillators / just EQ"
+ *     bar 16-18  climax with the soprano   full-screen scope
+ *     bar 19-20  final hit, ring-out       logo + link
+ *
+ * The score used to live in promo/promo/score.py next to a NumPy re-creation
+ * of the engine; now the video is bounced from *this* project through the real
+ * engine (promo/bounce.mjs -> promo-bounce.ts), and score.py only reads what
+ * promoScore() writes out. The Python score named notes with middle C = C4;
+ * notes.ts has middle C = C5, so everything here sits one octave name higher
+ * and sounds at the same frequency (the Python 'D2' sub is the 73 Hz 'D3'). */
 
-type NoteSpec = [pitch: string, start: number, len?: number, vel?: number];
+export const BPM = 100;
+const BAR = 16; // steps
 
-const ID = {
+/** The instrument keys the video renderer knows the parts by. */
+export type PromoPart = 'air' | 'sub' | 'boom' | 'kick' | 'snare' | 'clap' | 'hat' | 'ohat' | 'bass' | 'pad'
+    | 'strings' | 'pluck' | 'lead' | 'voice' | 'bell' | 'impact' | 'riser';
+
+export const PROMO_ID: Record<PromoPart, string> = {
     air: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c001',
     sub: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c002',
     boom: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c003',
@@ -18,227 +41,345 @@ const ID = {
     snare: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c005',
     clap: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c006',
     hat: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c007',
-    openHat: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c008',
+    ohat: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c008',
     bass: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c009',
-    choir: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c010',
+    pad: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c010',
     strings: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c011',
     pluck: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c012',
     lead: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c013',
-    soprano: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c014',
+    voice: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c014',
     bell: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c015',
     impact: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c016',
     riser: '7ad4a5b1-89d0-4ad0-8f43-4ce61bd1c017'
-} as const;
+};
+export const PROMO_PART_OF: Record<string, PromoPart> = Object.fromEntries(
+    Object.entries(PROMO_ID).map(([part, id]) => [id, part as PromoPart]));
 
-const color = {
+const COLOR: Record<PromoPart, string> = {
     air: '#85828a', sub: '#53d8fb', boom: '#ff9f43', kick: '#ff9f43', snare: '#ee5253', clap: '#ff6b6b',
-    hat: '#f9ca24', openHat: '#f9ca24', bass: '#10ac84', choir: '#a29bfe', strings: '#0abde3', pluck: '#badc58',
-    lead: '#e056fd', soprano: '#f06f73', bell: '#48dbfb', impact: '#7ed6df', riser: '#aaa7ac'
+    hat: '#f9ca24', ohat: '#f9ca24', bass: '#10ac84', pad: '#a29bfe', strings: '#0abde3', pluck: '#badc58',
+    lead: '#e056fd', voice: '#f06f73', bell: '#48dbfb', impact: '#7ed6df', riser: '#aaa7ac'
 };
 
-const notes = (...items: NoteSpec[]): Note[] => items.map(([pitch, start, len = 1, vel = 0.8]) => ({pitch, start, len, vel}));
-const pattern = (id: string, name: string, tracks: Record<string, Note[]>, steps = 32): Pattern =>
-    ({id, name, steps, color: '#e056fd', tracks});
-const instrument = (id: string, name: string, c: string, params: Partial<InstrumentParams>): Instrument =>
-    ({id, name, color: c, params: ensurePartials({...DEFAULT_PARAMS, ...params})});
+/* ---- the presets (score.py INSTRUMENTS) ----
+ * Same parameters as the Python score. The Python renderer normalised every
+ * instrument's bus to a target level afterwards (level_db: impact −7, kick and
+ * boom −9, sub, bass and soprano −13/−14 … air −27 dBFS). Here the `gain`
+ * values *are* those faders: each part was rendered solo through the real
+ * engine (`node promo/bounce.mjs --measure`) and its gain set so that the same
+ * 99th-percentile 50 ms RMS lands on the same target. */
+const harmonic = (count: number, falloff: number): PartialSpec[] => genPartials({shape: 'Harmonic', count, falloff, stretch: 0});
+const CHOIR: PartialSpec[] = [1, 0.5, 0.33, 0.24, 0.18, 0.13].map((level, index) => ({ratio: index + 1, level}));
+const SOPRANO: PartialSpec[] = [1, 0.6, 0.42, 0.3, 0.22, 0.16, 0.12, 0.09].map((level, index) => ({ratio: index + 1, level}));
 
-const chord = (pitches: string[], start: number, len: number, vel: number): NoteSpec[] =>
-    pitches.map(pitch => [pitch, start, len, vel] as NoteSpec);
-const repeated = (pitches: string[], starts: number[], len: number, vel: (step: number) => number): NoteSpec[] =>
-    starts.flatMap(start => pitches.map(pitch => [pitch, start, len, vel(start)] as NoteSpec));
+const instrument = (part: PromoPart, name: string, params: Partial<InstrumentParams>): Instrument =>
+    ({id: PROMO_ID[part], name, color: COLOR[part], params: ensurePartials({...DEFAULT_PARAMS, ...params})});
 
-const CHORDS = {
-    dm: ['D3', 'F3', 'A3', 'D4'],
-    bb: ['A#2', 'D3', 'F3', 'A#3'],
-    f: ['C3', 'F3', 'A3', 'C4'],
-    c: ['C3', 'E3', 'G3', 'C4']
-};
-const ARPS = {
-    dm: ['D4', 'A4', 'D5', 'F5', 'A4', 'D5', 'F5', 'A5'],
-    bb: ['A#3', 'F4', 'A#4', 'D5', 'F4', 'A#4', 'D5', 'F5'],
-    f: ['F4', 'C5', 'F5', 'A5', 'C5', 'F5', 'A5', 'C6'],
-    c: ['C4', 'G4', 'C5', 'E5', 'G4', 'C5', 'E5', 'G5']
-};
-
-const groove = (id: string, name: string, chordName: keyof typeof CHORDS, root: string, kickTurn = false, lead: NoteSpec[] = [], strings = false): Pattern => {
-    const chordNotes = chord(CHORDS[chordName], 0, 16, 0.9);
-    const bass = [0, 3, 6, 8, 11, 14]
-        .map(start => [root, start, start % 8 === 0 ? 2 : 1.5, start % 8 === 0 ? 1 : 0.75] as NoteSpec);
-    const pluck = ARPS[chordName]
-        .map((pitch, index) => [pitch, index * 2, 1.5, index % 2 === 0 ? 1 : 0.8] as NoteSpec);
-    const hats = repeated(['A5'], Array.from({length: 8}, (_, index) => index * 2), 1,
-        step => step % 4 === 0 ? 0.85 : 0.5);
-    // notes.ts puts middle C at C5, so a kick that thumps at 55 Hz is A2 and
-    // a snare body around 150 Hz is D4 (an octave lower they were subsonic)
-    const snare = [4, 12].map(start => ['D4', start, 1, start === 12 ? 1 : 0.9] as NoteSpec);
-    const kicks: NoteSpec[] = kickTurn
-        ? [['A2', 0, 1, 1], ['A2', 8, 1, 1], ['A2', 10, 1, 0.85]]
-        : [['A2', 0, 1, 1], ['A2', 6, 1, 0.85], ['A2', 8, 1, 1]];
-    const trackNotes: Record<string, Note[]> = {
-        [ID.choir]: notes(...chordNotes),
-        [ID.bass]: notes(...bass),
-        [ID.pluck]: notes(...pluck),
-        [ID.kick]: notes(...kicks),
-        [ID.snare]: notes(...snare),
-        [ID.clap]: notes(...snare.map(([pitch, start, len, vel]) => [pitch, start, len, (vel || 1) * 0.8] as NoteSpec)),
-        [ID.hat]: notes(...hats),
-        [ID.openHat]: notes(['A5', 14, 2, 0.8])
-    };
-    if (strings) {
-        trackNotes[ID.strings] = notes(...chord(CHORDS[chordName].map(pitch => {
-            const octave = Number(pitch.at(-1));
-            return `${pitch.slice(0, -1)}${octave + 1}`;
-        }), 0, 16, 0.8));
-    }
-    if (lead.length) {
-        trackNotes[ID.lead] = notes(...lead);
-    }
-    return pattern(id, name, trackNotes, 16);
-};
-
-export function buildPromoDemo(): Project {
-    const instruments = [
-        instrument(ID.air, 'FX/Air', color.air, {tone: 0, noise: 1, noiseFreq: 2200, att: 2.6, dec: 0.5, sus: 1, rel: 2, gain: 0.1}),
-        instrument(ID.sub, 'Bass/Sub', color.sub, {q: 14, harm: 2, falloff: 0.5, att: 1.2, dec: 0.3, sus: 1, rel: 0.6, gain: 0.45}),
-        instrument(ID.boom, 'Percussion/Boom', color.boom, {q: 8, harm: 1, pitchDrop: 26, pitchTime: 0.09, noise: 0.12, noiseFreq: 3200, att: 0.002, dec: 0.55, sus: 0, rel: 0.5, gain: 0.72}),
-        instrument(ID.kick, 'Drums/Kick', color.kick, {q: 8, harm: 1, pitchDrop: 26, pitchTime: 0.07, noise: 0.12, noiseFreq: 4000, att: 0.002, dec: 0.16, sus: 0, rel: 0.12, gain: 0.72}),
-        instrument(ID.snare, 'Drums/Snare', color.snare, {tone: 0.5, q: 6, harm: 2, falloff: 0.5, pitchDrop: 7, pitchTime: 0.05, noise: 0.9, noiseFreq: 4500, att: 0.002, dec: 0.16, sus: 0, rel: 0.14, gain: 0.42}),
-        instrument(ID.clap, 'Drums/Clap', color.clap, {tone: 0.15, q: 5, harm: 1, noise: 1, noiseFreq: 1800, att: 0.004, dec: 0.12, sus: 0, rel: 0.15, gain: 0.27}),
-        instrument(ID.hat, 'Drums/Hi-Hat', color.hat, {tone: 0, noise: 1, noiseFreq: 9500, att: 0.002, dec: 0.05, sus: 0, rel: 0.05, gain: 0.14}),
-        instrument(ID.openHat, 'Drums/Open Hat', color.openHat, {tone: 0, noise: 1, noiseFreq: 8500, att: 0.002, dec: 0.3, sus: 0, rel: 0.3, gain: 0.11}),
-        // q 10: at 60..90 Hz a 40 dB band rings up in q·10/(π·f) s, and these
-        // are 16th-note pulses (see timbre-analysis.ts)
-        instrument(ID.bass, 'Bass/Pulse', color.bass, {q: 10, harm: 3, falloff: 0.6, att: 0.005, dec: 0.25, sus: 0.6, rel: 0.15, gain: 0.6}),
-        instrument(ID.choir, 'Vocals/Choir (oo)', color.choir, {tone: 0.82, q: 36, harm: 6, falloff: 0.6, formant: 0.85, f1: 350, f2: 800, f3: 2600, formantQ: 2.8, vib: 12, vibRate: 4.6, vibDelay: 0.6, voices: 4, detune: 18, att: 0.45, dec: 0.6, sus: 0.9, rel: 1.1, gain: 0.2}),
-        instrument(ID.strings, 'Orchestra/Strings', color.strings, {q: 35, harm: 8, falloff: 0.75, voices: 5, detune: 26, att: 0.25, dec: 0.8, sus: 0.9, rel: 1.2, gain: 0.16}),
-        instrument(ID.pluck, 'Synth/Pluck', color.pluck, {q: 60, harm: 5, falloff: 0.55, att: 0.003, dec: 0.28, sus: 0.12, rel: 0.35, gain: 0.88}),
-        instrument(ID.lead, 'Synth/Lead (saw)', color.lead, {q: 45, harm: 6, falloff: 0.4, voices: 3, detune: 14, att: 0.02, dec: 0.3, sus: 0.7, rel: 0.3, gain: 0.84}),
-        instrument(ID.soprano, 'Vocals/Soprano (ah)', color.soprano, {tone: 0.95, q: 42, harm: 8, falloff: 0.7, formant: 0.9, f1: 800, f2: 1150, f3: 2900, formantQ: 3.2, vib: 34, vibRate: 5.6, vibDelay: 0.4, noise: 0.03, noiseFreq: 3800, voices: 2, detune: 9, att: 0.09, dec: 0.3, sus: 0.85, rel: 0.45, gain: 0.42}),
-        instrument(ID.bell, 'Percussion/Bell', color.bell, {q: 80, harm: 8, falloff: 0.75, stretch: 0.12, att: 0.002, dec: 1.4, sus: 0, rel: 1.6, gain: 0.34}),
-        instrument(ID.impact, 'FX/Impact', color.impact, {q: 6, harm: 1, pitchDrop: 30, pitchTime: 0.28, noise: 0.5, noiseFreq: 1500, noiseBend: 1, att: 0.001, dec: 1.1, sus: 0, rel: 1.6, gain: 0.9}),
-        instrument(ID.riser, 'FX/Riser', color.riser, {q: 30, harm: 1, noise: 0.35, noiseFreq: 3500, pitchDrop: -24, pitchTime: 4.6, noiseBend: 1, att: 0.6, dec: 0.3, sus: 1, rel: 0.4, gain: 0.2})
-    ];
-
-    const sourcePatterns = [
-        pattern('1c02ba01-71ab-435d-9337-1450f2571001', '01 Intro/noise swell', {
-            [ID.air]: notes(['A4', 0, 30, 0.9]), [ID.sub]: notes(['D2', 4, 28, 0.9])
+function buildInstruments(): Instrument[] {
+    return [
+        instrument('air', 'FX/Air', {tone: 0, noise: 1, noiseFreq: 2200, att: 2.6, dec: 0.5, sus: 1, rel: 2, gain: 0.03}),
+        instrument('sub', 'Bass/Sub', {q: 30, harm: 2, falloff: 0.5, partials: harmonic(2, 0.5), att: 1.2, dec: 0.3, sus: 1, rel: 0.6, gain: 0.82}),
+        instrument('boom', 'Percussion/Boom', {
+            q: 8, harm: 1, partials: harmonic(1, 1), pitchDrop: 26, pitchTime: 0.09, noise: 0.12, noiseFreq: 3200,
+            att: 0.002, dec: 0.55, sus: 0, rel: 0.5, gain: 0.56
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571002', '02 Arrival/spectrum carve', {
-            [ID.choir]: notes(...chord(CHORDS.dm, 0, 32, 0.9)),
-            [ID.boom]: notes(['G2', 0, 2, 1], ['G2', 16, 2, 0.9], ['G2', 26, 2, 0.7], ['G2', 29, 2, 0.8])
+        instrument('kick', 'Drums/Kick', {
+            q: 8, harm: 1, partials: harmonic(1, 1), pitchDrop: 26, pitchTime: 0.07, noise: 0.12, noiseFreq: 4000,
+            att: 0.002, dec: 0.16, sus: 0, rel: 0.12, gain: 0.73
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571003', '03 Title/pinky hit', {
-            [ID.impact]: notes(['G2', 0, 4, 1]), [ID.boom]: notes(['D2', 0, 3, 1]),
-            [ID.bell]: notes(['D4', 0, 6, 0.8], ['A4', 0, 6, 0.5]), [ID.choir]: notes(...chord(CHORDS.dm, 0, 32, 1)),
-            [ID.sub]: notes(['D2', 0, 32, 1]), [ID.riser]: notes(['D3', 2, 30, 0.9]),
-            [ID.hat]: notes(...repeated(['A5'], [16, 18, 20, 22, 24, 26, 28, 30], 1, step => step % 4 === 0 ? 0.85 : 0.55)),
-            [ID.kick]: notes(['A2', 24, 1, 0.7], ['A2', 30, 1, 0.8])
+        instrument('snare', 'Drums/Snare', {
+            tone: 0.5, q: 6, harm: 2, falloff: 0.5, partials: harmonic(2, 0.5), pitchDrop: 7, pitchTime: 0.05,
+            noise: 0.9, noiseFreq: 4500, att: 0.002, dec: 0.16, sus: 0, rel: 0.14, gain: 0.27
         }),
-        groove('1c02ba01-71ab-435d-9337-1450f2571004', '04 Groove/d minor pulse', 'dm', 'D3'),
-        groove('1c02ba01-71ab-435d-9337-1450f2571005', '05 Groove/d minor turn', 'dm', 'D3', true),
-        groove('1c02ba01-71ab-435d-9337-1450f2571006', '06 Groove/b flat pulse', 'bb', 'A#2'),
-        groove('1c02ba01-71ab-435d-9337-1450f2571007', '07 Groove/b flat turn', 'bb', 'A#2', true),
-        groove('1c02ba01-71ab-435d-9337-1450f2571008', '08 Groove/f major signal', 'f', 'F3', false, [
-            ['D5', 0, 3, 0.9], ['F5', 4, 2, 0.9], ['E5', 6, 2, 0.9], ['D5', 8, 6, 0.9]
-        ], true),
-        groove('1c02ba01-71ab-435d-9337-1450f2571009', '09 Groove/f major turn', 'f', 'F3', true, [
-            ['C5', 0, 4, 0.9], ['A4', 4, 3, 0.9], ['D5', 8, 8, 0.9]
-        ], true),
-        groove('1c02ba01-71ab-435d-9337-1450f2571010', '10 Groove/c major answer', 'c', 'C3', false, [
-            ['F5', 0, 3, 0.9], ['G5', 4, 2, 0.9], ['A5', 6, 2, 0.9], ['G5', 8, 6, 0.9]
-        ], true),
-        groove('1c02ba01-71ab-435d-9337-1450f2571011', '11 Groove/c major turn', 'c', 'C3', true, [
-            ['F5', 0, 4, 0.9], ['E5', 4, 3, 0.9], ['D5', 8, 8, 0.9]
-        ], true),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571012', '12 Break/floor drops', {
-            [ID.boom]: notes(['G2', 0, 2, 1]), [ID.choir]: notes(...chord(CHORDS.dm, 0, 32, 1)),
-            [ID.sub]: notes(['D2', 0, 32, 1]), [ID.riser]: notes(['D3', 2, 30, 1]),
-            [ID.lead]: notes(['D5', 0, 8, 0.8], ['A4', 8, 8, 0.7]),
-            [ID.hat]: notes(...repeated(['A5'], [0, 2, 4, 6, 8, 10, 12, 14], 1, () => 0.5)),
-            [ID.snare]: notes(...[0, 2, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15].map((start, index) => ['D4', 16 + start, 1, 0.55 + index * 0.04] as NoteSpec))
+        instrument('clap', 'Drums/Clap', {
+            tone: 0.15, q: 5, harm: 1, partials: harmonic(1, 1), noise: 1, noiseFreq: 1800,
+            att: 0.004, dec: 0.12, sus: 0, rel: 0.15, gain: 0.16
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571013', '13 Climax/d minor lift', {
-            [ID.choir]: notes(...chord(CHORDS.dm, 0, 16, 1)), [ID.strings]: notes(...chord(['D4', 'F4', 'A4', 'D5'], 0, 16, 1)),
-            [ID.bass]: notes(...repeated(['D3'], [0, 2, 4, 6, 8, 10, 12, 14], 1.5, step => step % 4 === 0 ? 1 : 0.8)),
-            [ID.pluck]: notes(...ARPS.dm.flatMap((pitch, index) => [[pitch, index * 2, 1.5, 0.9] as NoteSpec, [pitch, index * 2 + 1, 1, 0.5] as NoteSpec])),
-            [ID.kick]: notes(...[0, 4, 8, 12, 14].map(step => ['A2', step, 1, step === 14 ? 0.8 : 1] as NoteSpec)),
-            [ID.snare]: notes(['D4', 4, 1, 1], ['D4', 12, 1, 1]), [ID.clap]: notes(['D3', 4, 1, 0.8], ['D3', 12, 1, 0.8]),
-            [ID.hat]: notes(...repeated(['A5'], Array.from({length: 16}, (_, index) => index), 1, step => 0.45 + (step % 4 === 0 ? 0.4 : step % 2 === 0 ? 0.15 : 0))),
-            [ID.openHat]: notes(['A5', 14, 2, 0.9]), [ID.soprano]: notes(['A4', 0, 4, 1], ['D5', 4, 4, 1], ['F5', 8, 8, 1])
+        instrument('hat', 'Drums/Hi-Hat', {tone: 0, noise: 1, noiseFreq: 9500, att: 0.002, dec: 0.05, sus: 0, rel: 0.05, gain: 0.11}),
+        instrument('ohat', 'Drums/Open Hat', {tone: 0, noise: 1, noiseFreq: 8500, att: 0.002, dec: 0.3, sus: 0, rel: 0.3, gain: 0.06}),
+        instrument('bass', 'Bass/Pulse', {q: 25, harm: 3, falloff: 0.5, partials: harmonic(3, 0.5), att: 0.005, dec: 0.25, sus: 0.6, rel: 0.15, gain: 0.55}),
+        instrument('pad', 'Vocals/Choir (oo)', {
+            tone: 0.82, q: 36, harm: 6, falloff: 0.6, partials: CHOIR, formant: 0.85, f1: 350, f2: 800, f3: 2600, formantQ: 2.8,
+            vib: 12, vibRate: 4.6, vibDelay: 0.6, voices: 4, detune: 18, att: 0.45, dec: 0.6, sus: 0.9, rel: 1.1, gain: 0.22
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571014', '14 Climax/b flat rise', {
-            [ID.choir]: notes(...chord(CHORDS.bb, 0, 16, 1)), [ID.strings]: notes(...chord(['A#3', 'D4', 'F4', 'A#4'], 0, 16, 1)),
-            [ID.bass]: notes(...repeated(['A#2'], [0, 2, 4, 6, 8, 10, 12, 14], 1.5, step => step % 4 === 0 ? 1 : 0.8)),
-            [ID.pluck]: notes(...ARPS.bb.flatMap((pitch, index) => [[pitch, index * 2, 1.5, 0.9] as NoteSpec, [pitch, index * 2 + 1, 1, 0.5] as NoteSpec])),
-            [ID.kick]: notes(...[0, 4, 8, 12, 14].map(step => ['A2', step, 1, step === 14 ? 0.8 : 1] as NoteSpec)),
-            [ID.snare]: notes(['D4', 4, 1, 1], ['D4', 12, 1, 1]), [ID.clap]: notes(['D3', 4, 1, 0.8], ['D3', 12, 1, 0.8]),
-            [ID.hat]: notes(...repeated(['A5'], Array.from({length: 16}, (_, index) => index), 1, step => 0.45 + (step % 4 === 0 ? 0.4 : step % 2 === 0 ? 0.15 : 0))),
-            [ID.openHat]: notes(['A5', 14, 2, 0.9]), [ID.soprano]: notes(['E5', 0, 4, 1], ['D5', 4, 4, 1], ['C5', 8, 4, 1], ['D5', 12, 4, 1])
+        instrument('strings', 'Orchestra/Strings', {
+            q: 35, harm: 8, falloff: 0.75, partials: harmonic(8, 0.75), voices: 5, detune: 26,
+            att: 0.25, dec: 0.8, sus: 0.9, rel: 1.2, gain: 0.07
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571015', '15 Climax/f major release', {
-            [ID.choir]: notes(...chord(CHORDS.f, 0, 16, 1)), [ID.strings]: notes(...chord(['C4', 'F4', 'A4', 'C5'], 0, 16, 1)),
-            [ID.bass]: notes(...repeated(['F3'], [0, 2, 4, 6, 8, 10, 12, 14], 1.5, step => step % 4 === 0 ? 1 : 0.8)),
-            [ID.pluck]: notes(...ARPS.f.flatMap((pitch, index) => [[pitch, index * 2, 1.5, 0.9] as NoteSpec, [pitch, index * 2 + 1, 1, 0.5] as NoteSpec])),
-            [ID.kick]: notes(...[0, 4, 8, 12, 14].map(step => ['A2', step, 1, step === 14 ? 0.8 : 1] as NoteSpec)),
-            [ID.snare]: notes(['D4', 4, 1, 1], ['D4', 12, 1, 1]), [ID.clap]: notes(['D3', 4, 1, 0.8], ['D3', 12, 1, 0.8]),
-            [ID.hat]: notes(...repeated(['A5'], Array.from({length: 16}, (_, index) => index), 1, step => 0.45 + (step % 4 === 0 ? 0.4 : step % 2 === 0 ? 0.15 : 0))),
-            [ID.openHat]: notes(['A5', 14, 2, 0.9]), [ID.soprano]: notes(['F5', 0, 6, 1], ['E5', 6, 2, 1], ['D5', 8, 8, 1])
+        instrument('pluck', 'Synth/Pluck', {q: 60, harm: 5, falloff: 0.55, partials: harmonic(5, 0.55), att: 0.003, dec: 0.28, sus: 0.12, rel: 0.35, gain: 0.47}),
+        instrument('lead', 'Synth/Lead (saw)', {
+            q: 45, harmShape: 'Saw / Reed', harm: 6, falloff: 1, partials: genPartials({shape: 'Saw / Reed', count: 6, falloff: 1, stretch: 0}),
+            voices: 3, detune: 14, att: 0.02, dec: 0.3, sus: 0.7, rel: 0.3, gain: 0.4
         }),
-        pattern('1c02ba01-71ab-435d-9337-1450f2571016', '16 Outro/final hit', {
-            [ID.impact]: notes(['G2', 0, 4, 1]), [ID.boom]: notes(['D2', 0, 3, 1]), [ID.bell]: notes(['D4', 0, 6, 0.8], ['A4', 0, 6, 0.5]),
-            [ID.choir]: notes(...chord(CHORDS.dm, 0, 24, 1)), [ID.strings]: notes(...chord(['D4', 'F4', 'A4', 'D5'], 0, 20, 0.9)),
-            [ID.sub]: notes(['D2', 0, 20, 1]), [ID.soprano]: notes(['D5', 0, 16, 1])
+        instrument('voice', 'Vocals/Soprano (ah)', {
+            tone: 0.95, q: 42, harm: 8, falloff: 0.7, partials: SOPRANO, formant: 0.9, f1: 800, f2: 1150, f3: 2900, formantQ: 3.2,
+            vib: 34, vibRate: 5.6, vibDelay: 0.4, noise: 0.03, noiseFreq: 3800, voices: 2, detune: 9,
+            att: 0.09, dec: 0.3, sus: 0.85, rel: 0.45, gain: 0.48
+        }),
+        instrument('bell', 'Percussion/Bell', {
+            q: 80, harmShape: 'Bell partials', harm: 8, falloff: 1, partials: genPartials({shape: 'Bell partials', count: 8, falloff: 1, stretch: 0}),
+            att: 0.002, dec: 1.4, sus: 0, rel: 1.6, gain: 0.8
+        }),
+        instrument('impact', 'FX/Impact', {
+            q: 6, harm: 1, partials: harmonic(1, 1), pitchDrop: 30, pitchTime: 0.28, noise: 0.5, noiseFreq: 1500, noiseBend: 1,
+            att: 0.002, dec: 1.1, sus: 0, rel: 1.6, gain: 0.84
+        }),
+        instrument('riser', 'FX/Riser', {
+            q: 30, harm: 1, partials: harmonic(1, 1), noise: 0.35, noiseFreq: 3500, pitchDrop: -24, pitchTime: 4.6, noiseBend: 1,
+            att: 0.6, dec: 0.3, sus: 1, rel: 0.4, gain: 0.11
         })
     ];
-    const lanes: {name: string; label: string; color: string; instruments: string[]}[] = [
-        {name: '01 FX & Impacts', label: 'FX & Impacts', color: '#7ed6df', instruments: [ID.air, ID.boom, ID.bell, ID.impact, ID.riser]},
-        {name: '02 Drums', label: 'Drums', color: '#ff9f43', instruments: [ID.kick, ID.snare, ID.clap, ID.hat, ID.openHat]},
-        {name: '03 Low End', label: 'Low End', color: '#10ac84', instruments: [ID.sub, ID.bass]},
-        {name: '04 Harmony', label: 'Harmony', color: '#a29bfe', instruments: [ID.choir, ID.strings]},
-        {name: '05 Arpeggio', label: 'Arpeggio', color: '#badc58', instruments: [ID.pluck]},
-        {name: '06 Lead', label: 'Lead', color: '#e056fd', instruments: [ID.lead]},
-        {name: '07 Soprano', label: 'Soprano', color: '#f06f73', instruments: [ID.soprano]}
+}
+
+/* ---- the score (score.py compose()) ---- */
+const CHORDS = {
+    Dm: ['D4', 'F4', 'A4', 'D5'],
+    Bb: ['A#3', 'D4', 'F4', 'A#4'],
+    F: ['C4', 'F4', 'A4', 'C5'],
+    C: ['C4', 'E4', 'G4', 'C5']
+};
+const ROOTS = {Dm: 'D3', Bb: 'A#2', F: 'F3', C: 'C3'};
+const ARPS = {
+    Dm: ['D5', 'A5', 'D6', 'F6', 'A5', 'D6', 'F6', 'A6'],
+    Bb: ['A#4', 'F5', 'A#5', 'D6', 'F5', 'A#5', 'D6', 'F6'],
+    F: ['F5', 'C6', 'F6', 'A6', 'C6', 'F6', 'A6', 'C7'],
+    C: ['C5', 'G5', 'C6', 'E6', 'G5', 'C6', 'E6', 'G6']
+};
+type ChordName = keyof typeof CHORDS;
+
+const up = (pitch: string, octaves: number): string => `${pitch.slice(0, -1)}${Number(pitch.at(-1)) + octaves}`;
+
+/** The sections of the video: one source pattern each, cut on bar lines. */
+interface Section {
+    name: string;
+    start: number;
+    len: number;
+}
+
+const SECTIONS: Section[] = [
+    {name: '01 Intro/noise swell', start: 0, len: 2 * BAR},
+    {name: '02 Arrival/spectrum carve', start: 2 * BAR, len: 2 * BAR},
+    {name: '03 Title/pinky hit', start: 4 * BAR, len: 2 * BAR},
+    {name: '04 Groove/d minor pulse', start: 6 * BAR, len: BAR},
+    {name: '05 Groove/d minor turn', start: 7 * BAR, len: BAR},
+    {name: '06 Groove/b flat pulse', start: 8 * BAR, len: BAR},
+    {name: '07 Groove/b flat turn', start: 9 * BAR, len: BAR},
+    {name: '08 Groove/f major signal', start: 10 * BAR, len: BAR},
+    {name: '09 Groove/f major turn', start: 11 * BAR, len: BAR},
+    {name: '10 Groove/c major answer', start: 12 * BAR, len: BAR},
+    {name: '11 Groove/c major turn', start: 13 * BAR, len: BAR},
+    {name: '12 Break/floor drops', start: 14 * BAR, len: 2 * BAR},
+    {name: '13 Climax/d minor lift', start: 16 * BAR, len: BAR},
+    {name: '14 Climax/b flat rise', start: 17 * BAR, len: BAR},
+    {name: '15 Climax/f major release', start: 18 * BAR, len: BAR},
+    {name: '16 Outro/final hit', start: 19 * BAR, len: 2 * BAR}
+];
+export const PROMO_LENGTH_STEPS = 21 * BAR; // 50.4 s — the last two bars are the ring-out
+
+/** Where the video's chapters start and end, in steps (score.py sections). */
+export const PROMO_CHAPTERS: Record<string, [number, number]> = {
+    noise: [0, 2 * BAR], carve: [2 * BAR, 4 * BAR], title: [4 * BAR, 6 * BAR], features: [6 * BAR, 14 * BAR],
+    break: [14 * BAR, 16 * BAR], climax: [16 * BAR, 19 * BAR], outro: [19 * BAR, PROMO_LENGTH_STEPS]
+};
+
+/* Notes are written in absolute song steps, the way score.py places them
+ * (bar, step), and land in the source pattern of the section they start in. */
+class Score {
+    readonly tracks = new Map<Section, Partial<Record<PromoPart, Note[]>>>();
+
+    n(part: PromoPart, pitch: string, bar: number, step: number, len: number, vel = 1): void {
+        const at = bar * BAR + step;
+        const section = SECTIONS.find(s => at >= s.start && at < s.start + s.len);
+        if (!section) {throw new Error(`promo: step ${at} is outside of the song`);}
+        const notes = this.tracks.get(section) || {};
+        (notes[part] ||= []).push({pitch, start: at - section.start, len, vel});
+        this.tracks.set(section, notes);
+    }
+
+    chord(part: PromoPart, name: ChordName, bar: number, step: number, len: number, vel = 1, octave = 0): void {
+        for (const pitch of CHORDS[name]) {this.n(part, up(pitch, octave), bar, step, len, vel);}
+    }
+
+    kick(bar: number, step: number, vel = 1): void {
+        this.n('kick', 'A2', bar, step, 1, vel);
+    }
+
+    boom(bar: number, step: number, vel = 1): void {
+        this.n('boom', 'G2', bar, step, 2, vel);
+    }
+
+    snare(bar: number, step: number, vel = 1): void {
+        this.n('snare', 'D4', bar, step, 1, vel);
+        this.n('clap', 'D4', bar, step, 1, vel * 0.8);
+    }
+
+    impact(bar: number, step: number, strength = 1): void {
+        this.n('impact', 'G2', bar, step, 4, strength);
+        this.n('boom', 'D2', bar, step, 3, strength);
+        this.n('bell', 'D5', bar, step, 6, strength * 0.8);
+        this.n('bell', 'A5', bar, step, 6, strength * 0.5);
+    }
+}
+
+function compose(): Score {
+    const s = new Score();
+
+    // bars 0-1: hiss swells in, the sub drone appears underneath (and holds
+    // right up to the title hit — the note is longer than its pattern)
+    s.n('air', 'A5', 0, 0, 30, 0.9);
+    s.n('sub', 'D3', 0, 4, 60, 0.9);
+
+    // bars 2-3: choir pad, cinematic booms
+    s.chord('pad', 'Dm', 2, 0, 32, 0.9);
+    s.boom(2, 0, 1);
+    s.boom(3, 0, 0.9);
+    s.boom(3, 10, 0.7);
+    s.boom(3, 13, 0.8);
+
+    // bar 4: the title hit — then the riser pulls into the groove
+    s.impact(4, 0, 1);
+    s.chord('pad', 'Dm', 4, 0, 32, 1);
+    s.n('riser', 'D4', 4, 2, 30, 0.9);
+    s.n('sub', 'D3', 4, 0, 32, 1);
+    for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', 5, st, 1, st % 4 === 0 ? 0.85 : 0.55);}
+    s.kick(5, 8, 0.7);
+    s.kick(5, 14, 0.8);
+
+    // bars 6-13: the groove — Dm | Bb | F | C, two bars each
+    const progression: ChordName[] = ['Dm', 'Dm', 'Bb', 'Bb', 'F', 'F', 'C', 'C'];
+    progression.forEach((ch, i) => {
+        const bar = 6 + i;
+        s.chord('pad', ch, bar, 0, 16, 0.9);
+        if (i >= 4) {s.chord('strings', ch, bar, 0, 16, 0.8, 1);}
+        for (const st of [0, 3, 6, 8, 11, 14]) {
+            s.n('bass', ROOTS[ch], bar, st, st % 8 === 0 ? 2 : 1.5, st % 8 === 0 ? 1 : 0.75);
+        }
+        ARPS[ch].forEach((pitch, k) => s.n('pluck', pitch, bar, k * 2, 1.5, k % 2 === 0 ? 1 : 0.8));
+        for (const st of i % 2 === 0 ? [0, 6, 8] : [0, 8, 10]) {s.kick(bar, st, st % 8 === 0 ? 1 : 0.85);}
+        s.snare(bar, 4, 0.9);
+        s.snare(bar, 12, 1);
+        for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', bar, st, 1, st % 4 === 0 ? 0.85 : 0.5);}
+        s.n('ohat', 'A6', bar, 14, 2, 0.8);
+    });
+    // a lead motif over the second half of the groove
+    const motif: [number, number, string, number][] = [
+        [10, 0, 'D6', 3], [10, 4, 'F6', 2], [10, 6, 'E6', 2], [10, 8, 'D6', 6],
+        [11, 0, 'C6', 4], [11, 4, 'A5', 3], [11, 8, 'D6', 8],
+        [12, 0, 'F6', 3], [12, 4, 'G6', 2], [12, 6, 'A6', 2], [12, 8, 'G6', 6],
+        [13, 0, 'F6', 4], [13, 4, 'E6', 3], [13, 8, 'D6', 8]
     ];
-    const starts = [0, 32, 64, 96, 112, 128, 144, 160, 176, 192, 208, 224, 256, 272, 288, 304];
-    const lengths = [32, 32, 32, 16, 16, 16, 16, 16, 16, 16, 16, 32, 16, 16, 16, 32];
+    for (const [bar, st, pitch, len] of motif) {s.n('lead', pitch, bar, st, len, 0.9);}
+
+    // bars 14-15: the break — the floor drops away, then the roll and the riser
+    s.boom(14, 0, 1);
+    s.chord('pad', 'Dm', 14, 0, 32, 1);
+    s.n('sub', 'D3', 14, 0, 32, 1);
+    s.n('riser', 'D4', 14, 2, 30, 1);
+    for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', 14, st, 1, 0.5);}
+    for (let st = 0; st < 8; st += 2) {s.n('snare', 'D4', 15, st, 1, 0.55 + st * 0.04);}
+    for (let st = 8; st < 16; st++) {s.n('snare', 'D4', 15, st, 1, 0.7 + (st - 8) * 0.04);}
+    s.n('lead', 'D6', 14, 0, 8, 0.8);
+    s.n('lead', 'A5', 14, 8, 8, 0.7);
+
+    // bars 16-18: the climax — everything, plus the soprano
+    (['Dm', 'Bb', 'F'] as ChordName[]).forEach((ch, i) => {
+        const bar = 16 + i;
+        s.chord('pad', ch, bar, 0, 16, 1);
+        s.chord('strings', ch, bar, 0, 16, 1, 1);
+        for (let st = 0; st < 16; st += 2) {s.n('bass', ROOTS[ch], bar, st, 1.5, st % 4 === 0 ? 1 : 0.8);}
+        ARPS[ch].forEach((pitch, k) => {
+            s.n('pluck', pitch, bar, k * 2, 1.5, 0.9);
+            s.n('pluck', pitch, bar, k * 2 + 1, 1, 0.5);
+        });
+        for (const st of [0, 4, 8, 12]) {s.kick(bar, st, 1);}
+        s.kick(bar, 14, 0.8);
+        s.snare(bar, 4, 1);
+        s.snare(bar, 12, 1);
+        for (let st = 0; st < 16; st++) {s.n('hat', 'A6', bar, st, 1, 0.45 + (st % 4 === 0 ? 0.4 : 0) + (st % 2 === 0 ? 0.15 : 0));}
+        s.n('ohat', 'A6', bar, 14, 2, 0.9);
+    });
+    const aria: [number, number, string, number][] = [
+        [16, 0, 'A5', 4], [16, 4, 'D6', 4], [16, 8, 'F6', 8],
+        [17, 0, 'E6', 4], [17, 4, 'D6', 4], [17, 8, 'C6', 4], [17, 12, 'D6', 4],
+        [18, 0, 'F6', 6], [18, 6, 'E6', 2], [18, 8, 'D6', 8]
+    ];
+    for (const [bar, st, pitch, len] of aria) {s.n('voice', pitch, bar, st, len, 1);}
+
+    // bar 19: the last hit, ringing out
+    s.impact(19, 0, 1);
+    s.chord('pad', 'Dm', 19, 0, 24, 1);
+    s.chord('strings', 'Dm', 19, 0, 20, 0.9, 1);
+    s.n('sub', 'D3', 19, 0, 20, 1);
+    s.n('voice', 'D6', 19, 0, 16, 1);
+    return s;
+}
+
+/* ---- the arrangement ----
+ * Every section is split over the production lanes below, so that each part
+ * of the mix is its own editable clip in the arranger. */
+const LANES: {name: string; label: string; color: string; parts: PromoPart[]}[] = [
+    {name: '01 FX & Impacts', label: 'FX & Impacts', color: '#7ed6df', parts: ['air', 'boom', 'bell', 'impact', 'riser']},
+    {name: '02 Drums', label: 'Drums', color: '#ff9f43', parts: ['kick', 'snare', 'clap', 'hat', 'ohat']},
+    {name: '03 Low End', label: 'Low End', color: '#10ac84', parts: ['sub', 'bass']},
+    {name: '04 Harmony', label: 'Harmony', color: '#a29bfe', parts: ['pad', 'strings']},
+    {name: '05 Arpeggio', label: 'Arpeggio', color: '#badc58', parts: ['pluck']},
+    {name: '06 Lead', label: 'Lead', color: '#e056fd', parts: ['lead']},
+    {name: '07 Soprano', label: 'Soprano', color: '#f06f73', parts: ['voice']}
+];
+
+const MASTER_VOL_LANE = '5c02ba01-71ab-435d-9337-1450f2573001';
+const MASTER_REV_LANE = '5c02ba01-71ab-435d-9337-1450f2573002';
+// the master at the hits and the climax (the bounce measured +8.3 dBFS at 1.0)
+const FULL = 0.34;
+const dB = (base: number, delta: number): number => Math.round(base * 10 ** (delta / 20) * 1000) / 1000;
+
+export function buildPromoDemo(): Project {
+    const score = compose();
     const patterns: Pattern[] = [];
-    const arrangement = sourcePatterns.flatMap((source, sectionIndex) => lanes.flatMap((lane, track) => {
-        const groupedNotes = Object.fromEntries(Object.entries(source.tracks)
-            .filter(([instrumentId]) => lane.instruments.includes(instrumentId)));
-        if (!Object.keys(groupedNotes).length) {return [];}
-        const groupedPattern = pattern(
-            `1c02ba01-71ab-435d-9337-1450f257${(4001 + patterns.length).toString().padStart(4, '0')}`,
-            `${source.name} — ${lane.label}`,
-            groupedNotes,
-            source.steps
-        );
-        patterns.push(groupedPattern);
+    const arrangement = SECTIONS.flatMap(section => LANES.flatMap((lane, track) => {
+        const notes = score.tracks.get(section) || {};
+        const tracks = Object.fromEntries(lane.parts.filter(part => notes[part]?.length).map(part => [PROMO_ID[part], notes[part]!]));
+        if (!Object.keys(tracks).length) {return [];}
+        const pat: Pattern = {
+            id: `1c02ba01-71ab-435d-9337-1450f257${(4001 + patterns.length).toString().padStart(4, '0')}`,
+            name: `${section.name} — ${lane.label}`,
+            steps: section.len,
+            color: lane.color,
+            tracks
+        };
+        patterns.push(pat);
         return [{
             id: `4c02ba01-71ab-435d-9337-1450f257${(5001 + patterns.length).toString().padStart(4, '0')}`,
-            patternId: groupedPattern.id,
+            patternId: pat.id,
             track,
-            start: starts[sectionIndex],
-            len: lengths[sectionIndex]
+            start: section.start,
+            len: section.len
         }];
     }));
 
     return {
         formatVersion: 1,
-        instruments,
+        instruments: buildInstruments(),
         patterns,
         arrangement,
-        tracks: lanes.map(({name, color}) => ({name, color})),
-        bpm: 100,
-        loop: {start: 0, end: 336},
+        tracks: LANES.map(({name, color}) => ({name, color})),
+        bpm: BPM,
+        loop: {start: 0, end: PROMO_LENGTH_STEPS},
         automation: [
-            {id: '5c02ba01-71ab-435d-9337-1450f2573001', target: 'master', param: 'vol', points: [
-                {step: 0, value: 0.28, curve: 'hold'}, {step: 32, value: 0.5, curve: 'ease-in'},
-                {step: 63, value: 0.71, curve: 'hold'}, {step: 64, value: 1},
-                {step: 224, value: 1, curve: 'ease-out'}, {step: 226, value: 0.71, curve: 'hold'},
-                {step: 255, value: 0.71, curve: 'hold'}, {step: 256, value: 1}
-            ]}
+            // the trailer arc: whisper (-11 dB), swell (-6), and the title hit opens
+            // the master up; the break drops it 3 dB until the climax hits. FULL is
+            // where the climax true-peaks at -1 dBFS through the engine — the DAW
+            // has no limiter to lean on, so the master is the only ceiling.
+            {id: MASTER_VOL_LANE, target: 'master', param: 'vol', points: [
+                {step: 0, value: dB(FULL, -11), curve: 'hold'}, {step: 32, value: dB(FULL, -6), curve: 'ease-in'},
+                {step: 63, value: dB(FULL, -3), curve: 'hold'}, {step: 64, value: FULL},
+                {step: 224, value: FULL, curve: 'ease-out'}, {step: 226, value: dB(FULL, -3), curve: 'hold'},
+                {step: 255, value: dB(FULL, -3), curve: 'hold'}, {step: 256, value: FULL}
+            ]},
+            // the video's reverb: a 28 % wet mix of the engine's 2.2 s burst
+            {id: MASTER_REV_LANE, target: 'master', param: 'rev', points: [{step: 0, value: 0.74, curve: 'hold'}]}
         ],
-        automationOrder: ['5c02ba01-71ab-435d-9337-1450f2573001'],
+        automationOrder: [MASTER_VOL_LANE, MASTER_REV_LANE],
         automationPositions: {},
         zoom: {seq: {width: 24, height: 14}, arr: {width: 24, height: 32}}
     };

@@ -17,7 +17,7 @@ export default tseslint.config(
     })),
     ...svelte.configs['flat/recommended'],
     {
-        files: ['**/*.{js,ts,svelte}'],
+        files: ['**/*.{js,mjs,ts,svelte}'],
         plugins: {
             perfectionist
         },
@@ -76,6 +76,13 @@ export default tseslint.config(
             'svelte/no-immutable-reactive-statements': 'warn',
             'svelte/sort-attributes': ['error', {alphabetical: true}],
             'svelte/no-unused-svelte-ignore': 'warn'
+        }
+    },
+    {
+        // the promo bounce is a Node CLI — it reports on the console
+        files: ['promo/*.mjs'],
+        rules: {
+            'no-console': 'off'
         }
     },
     {

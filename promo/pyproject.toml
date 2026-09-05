@@ -1,12 +1,11 @@
 [project]
 name = "pinky-promo"
 version = "0.1.0"
-description = "Renders the pinky promo video: soundtrack synthesised the pinky way (pink noise + EQ), motion graphics drawn frame by frame, muxed with ffmpeg."
+description = "Renders the pinky promo video: soundtrack bounced from the DAW's own engine (node promo/bounce.mjs), motion graphics drawn frame by frame, muxed with ffmpeg."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.0",
-    "scipy>=1.14",
     "pillow>=10.4",
     "imageio-ffmpeg>=0.5",
 ]
