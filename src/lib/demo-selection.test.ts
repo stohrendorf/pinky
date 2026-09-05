@@ -19,7 +19,7 @@ import {
     PROJECT_FORMAT_VERSION
 } from './types';
 
-const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'noise', 'jazz', 'iron', 'suite', 'diva', 'relay', 'frontier', 'pocket', 'amber', 'velvet', 'prism', 'chip', 'promo'];
+const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'monsoon', 'noise', 'diva', 'pocket', 'chip', 'promo'];
 
 describe('demo song selection', () => {
     it('keeps picker metadata and supported demo IDs in one registry', () => {
@@ -44,13 +44,13 @@ describe('demo song selection', () => {
     });
 
     it('stores explicit legato links in bundled demos', () => {
-        loadDemoProject('iron');
-        const iron = get(project)!;
-        const ironNotes = iron.patterns.flatMap(pattern => Object.values(pattern.tracks).flat());
-        expect(ironNotes).toContainEqual(expect.objectContaining({
-            pitch: 'A1',
-            start: 6,
-            legatoTo: expect.objectContaining({pitch: 'D2', start: 8, curve: 'linear'})
+        loadDemoProject('monsoon');
+        const monsoon = get(project)!;
+        const monsoonNotes = monsoon.patterns.flatMap(pattern => Object.values(pattern.tracks).flat());
+        expect(monsoonNotes).toContainEqual(expect.objectContaining({
+            pitch: 'D#6',
+            start: 0,
+            legatoTo: expect.objectContaining({pitch: 'D6', start: 3, curve: 'ease-out'})
         }));
 
         loadDemoProject('axelf');
@@ -60,8 +60,8 @@ describe('demo song selection', () => {
     });
 
     it('does not add links to demos without legacy overlapping portamento notes', () => {
-        loadDemoProject('suite');
-        const suite = get(project)!;
-        expect(suite.patterns.flatMap(pattern => Object.values(pattern.tracks).flat()).some(note => note.legatoTo)).toBe(false);
+        loadDemoProject('diva');
+        const diva = get(project)!;
+        expect(diva.patterns.flatMap(pattern => Object.values(pattern.tracks).flat()).some(note => note.legatoTo)).toBe(false);
     });
 });

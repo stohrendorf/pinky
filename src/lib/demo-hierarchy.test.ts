@@ -10,7 +10,7 @@ import {
     buildDemoProject
 } from './project';
 
-const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'noise', 'jazz', 'iron', 'suite', 'diva', 'relay', 'frontier', 'pocket', 'amber', 'velvet', 'prism', 'chip', 'promo'];
+const DEMO_SONGS: DemoSong[] = ['axelf', 'toccata', 'monsoon', 'noise', 'diva', 'pocket', 'chip', 'promo'];
 
 describe('bundled demo hierarchy', () => {
     it.each(DEMO_SONGS)('organizes %s instruments and patterns into slash paths', song => {

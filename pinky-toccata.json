@@ -414,11 +414,11 @@
       "color": "#ee5253",
       "params": {
         "tone": 1,
-        "q": 5,
+        "q": 7,
         "harm": 6,
         "falloff": 0.9,
         "stretch": 0,
-        "noise": 0.25,
+        "noise": 0.15,
         "noiseFreq": 900,
         "formant": 0,
         "f1": 700,
@@ -428,16 +428,16 @@
         "vib": 0,
         "vibRate": 5.5,
         "vibDelay": 0.35,
-        "pitchDrop": 7,
-        "pitchTime": 0.09,
+        "pitchDrop": 5,
+        "pitchTime": 0.06,
         "noiseBend": 0,
         "voices": 1,
         "detune": 12,
         "att": 0.002,
-        "dec": 0.35,
+        "dec": 0.4,
         "sus": 0,
-        "rel": 0.4,
-        "gain": 0.75,
+        "rel": 0.45,
+        "gain": 0.6,
         "pan": 0,
         "legatoGlide": 0,
         "legatoCurve": "linear",
@@ -940,7 +940,7 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 12,
             "len": 20
           }
@@ -1022,37 +1022,37 @@
         ],
         "b3d67b35-a5d9-44b0-99dc-208f52724fa2": [
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 0,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 8,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 16,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 22,
             "len": 2,
             "vel": 0.7
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 26,
             "len": 2,
             "vel": 0.7
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 30,
             "len": 2,
             "vel": 0.7
@@ -1107,7 +1107,7 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 0,
             "len": 28
           }
@@ -1516,25 +1516,25 @@
         ],
         "b3d67b35-a5d9-44b0-99dc-208f52724fa2": [
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 16,
             "len": 2,
             "vel": 0.35
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 20,
             "len": 2,
             "vel": 0.57
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 24,
             "len": 2,
             "vel": 0.78
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 28,
             "len": 2,
             "vel": 1
@@ -1550,145 +1550,145 @@
       "tracks": {
         "b3d67b35-a5d9-44b0-99dc-208f52724fa2": [
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 0,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 2,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 3,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 4,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 6,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 7,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 8,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 10,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 11,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 12,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 14,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 15,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 16,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 18,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 19,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 20,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 22,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 23,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 24,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 26,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 27,
             "len": 1,
             "vel": 0.55
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 28,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 30,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 31,
             "len": 1,
             "vel": 0.55
@@ -1706,97 +1706,97 @@
       "tracks": {
         "b3d67b35-a5d9-44b0-99dc-208f52724fa2": [
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 0,
             "len": 1,
             "vel": 0.35
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 2,
             "len": 1,
             "vel": 0.39
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 4,
             "len": 1,
             "vel": 0.44
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 6,
             "len": 1,
             "vel": 0.48
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 8,
             "len": 1,
             "vel": 0.52
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 10,
             "len": 1,
             "vel": 0.57
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 12,
             "len": 1,
             "vel": 0.61
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 14,
             "len": 1,
             "vel": 0.65
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 16,
             "len": 1,
             "vel": 0.7
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 18,
             "len": 1,
             "vel": 0.74
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 20,
             "len": 1,
             "vel": 0.78
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 22,
             "len": 1,
             "vel": 0.83
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 24,
             "len": 1,
             "vel": 0.87
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 26,
             "len": 1,
             "vel": 0.91
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 28,
             "len": 1,
             "vel": 0.96
           },
           {
-            "pitch": "A1",
+            "pitch": "A2",
             "start": 30,
             "len": 1,
             "vel": 1
@@ -1894,7 +1894,7 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 0,
             "len": 32
           }
@@ -1991,22 +1991,22 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 0,
             "len": 8
           },
           {
-            "pitch": "C1",
+            "pitch": "C2",
             "start": 8,
             "len": 8
           },
           {
-            "pitch": "A#0",
+            "pitch": "A#1",
             "start": 16,
             "len": 8
           },
           {
-            "pitch": "A0",
+            "pitch": "A1",
             "start": 24,
             "len": 8
           }
@@ -3474,7 +3474,7 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 0,
             "len": 32
           }
@@ -4031,26 +4031,26 @@
         ],
         "8bc56d6b-5f38-40cb-9e6b-f5d031a23ed0": [
           {
-            "pitch": "D1",
+            "pitch": "D2",
             "start": 2,
             "len": 30
           }
         ],
         "b3d67b35-a5d9-44b0-99dc-208f52724fa2": [
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 2,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 8,
             "len": 2,
             "vel": 1
           },
           {
-            "pitch": "D2",
+            "pitch": "D3",
             "start": 16,
             "len": 3,
             "vel": 1

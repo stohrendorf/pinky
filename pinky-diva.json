@@ -243,7 +243,7 @@
       "color": "#a29bfe",
       "params": {
         "tone": 1,
-        "q": 26,
+        "q": 20,
         "harm": 5,
         "falloff": 0.6,
         "stretch": 0,

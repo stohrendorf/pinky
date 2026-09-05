@@ -11,22 +11,21 @@ import type {
     Instrument, Note, Pattern, Project, Track
 } from './types';
 
-import amberSongJson from '../../pinky-amber.json';
 import axelFSongJson from '../../pinky-axelf.json';
 import divaSongJson from '../../pinky-diva.json';
-import ironSongJson from '../../pinky-iron.json';
-import jazzSongJson from '../../pinky-jazz.json';
 import noiseSongJson from '../../pinky-noise.json';
-import suiteSongJson from '../../pinky-suite.json';
 import toccataSongJson from '../../pinky-toccata.json';
 import {
     createInstrument, PRESETS
 } from './instruments';
 import {
+    buildBronzeMonsoon
+} from './monsoon-demo';
+import {
     STEPS
 } from './notes';
 import {
-    buildBitHorizon, buildFarHorizon, buildPocketTheory, buildPrismCircuit, buildRelayDawn, buildVelvetSpurs
+    buildBitHorizon, buildPocketTheory
 } from './original-demos';
 import {
     buildPromoDemo
@@ -77,23 +76,19 @@ export function selectedInstrument(): Instrument {
 /* ---- demo songs ---- */
 // Demo metadata lives beside the loader registry so the picker and supported
 // project IDs cannot drift apart. JSON demos can be updated by exporting them.
+// Every demo earns its place with something the others do not do: the two
+// covers, the noise concept piece, the vocal formant showcase, a funk groove,
+// a chiptune, the trailer score — and the gamelan/taiko/khoomei piece.
 export const DEMO_LIBRARY = [
     {id: 'axelf', label: 'Axel F', icon: 'fa-headphones', title: 'Axel F (Pinky Mix) — F minor synth-funk'},
     {id: 'toccata', label: 'Toccata', icon: 'fa-landmark', title: 'Toccata & Fugue (Pinky Mix) — BWV 565 goes rock'},
+    {
+        id: 'monsoon',
+        label: 'Bronze Monsoon',
+        icon: 'fa-cloud-showers-heavy',
+        title: 'Bronze Monsoon — gamelan kotekan, taiko in 3 against 4, shakuhachi, duduk, a bowed singing bowl and a khoomei overtone drone in a temple in the rain'
+    },
     {id: 'noise', label: 'Out of Noise', icon: 'fa-wind', title: 'Out of Noise — music emerging from filtered noise'},
-    {id: 'jazz', label: 'Smoke & Mirrors', icon: 'fa-martini-glass', title: 'Smoke & Mirrors — late-night jazz noir'},
-    {
-        id: 'iron',
-        label: 'Iron Garden',
-        icon: 'fa-gears',
-        title: 'Iron Garden — a mechanical garden of tuned percussion, bell metal and breathing noise'
-    },
-    {
-        id: 'suite',
-        label: 'The Long Way Home',
-        icon: 'fa-route',
-        title: 'The Long Way Home — an orchestral suite in five movements'
-    },
     {
         id: 'diva',
         label: 'Diva Machina',
@@ -101,26 +96,11 @@ export const DEMO_LIBRARY = [
         title: 'Diva Machina — an operatic aria that turns into something no human could sing'
     },
     {
-        id: 'relay',
-        label: 'Relay Dawn',
-        icon: 'fa-satellite-dish',
-        title: 'Relay Dawn — an original cinematic space pulse'
-    },
-    {id: 'frontier', label: 'Far Horizon', icon: 'fa-flag', title: 'Far Horizon — an original resolute sci-fi march'},
-    {
         id: 'pocket',
         label: 'Pocket Theory',
         icon: 'fa-record-vinyl',
         title: 'Pocket Theory — an original syncopated funk piece'
     },
-    {id: 'amber', label: 'Amber Hours', icon: 'fa-mug-hot', title: 'Amber Hours — a lo-fi ambient coding companion'},
-    {
-        id: 'velvet',
-        label: 'Velvet Spurs',
-        icon: 'fa-hat-cowboy',
-        title: 'Velvet Spurs — soul, blues and cinematic flamenco in a midnight chase'
-    },
-    {id: 'prism', label: 'Prism Circuit', icon: 'fa-gem', title: 'Prism Circuit — a progressive electronic showcase'},
     {id: 'chip', label: 'Bit Horizon', icon: 'fa-gamepad', title: 'Bit Horizon — an original chiptune adventure'},
     {id: 'promo', label: 'Pinky Promo', icon: 'fa-film', title: 'Pinky Promo — the editable trailer soundtrack'}
 ] as const;
@@ -142,17 +122,10 @@ const projectJson = (value: unknown): Project => {
 const DEMO_SONGS: Record<DemoSong, Project> = {
     axelf: projectJson(axelFSongJson),
     toccata: projectJson(toccataSongJson),
+    monsoon: buildBronzeMonsoon(),
     noise: projectJson(noiseSongJson),
-    jazz: projectJson(jazzSongJson),
-    iron: projectJson(ironSongJson),
-    suite: projectJson(suiteSongJson),
     diva: projectJson(divaSongJson),
-    relay: buildRelayDawn(),
-    frontier: buildFarHorizon(),
     pocket: buildPocketTheory(),
-    amber: projectJson(amberSongJson),
-    velvet: buildVelvetSpurs(),
-    prism: buildPrismCircuit(),
     chip: buildBitHorizon(),
     promo: buildPromoDemo()
 };

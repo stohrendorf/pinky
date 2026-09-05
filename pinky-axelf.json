@@ -361,7 +361,7 @@
         "vibRate": 5.5,
         "vibDelay": 0.35,
         "pitchDrop": 4,
-        "pitchTime": 0.1,
+        "pitchTime": 0.04,
         "noiseBend": 0,
         "voices": 1,
         "detune": 12,

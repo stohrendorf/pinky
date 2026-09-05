@@ -11,15 +11,7 @@ import {
 const toolbar = readFileSync(fileURLToPath(new URL('./TopBar.svelte', import.meta.url)), 'utf8');
 
 describe('TopBar demo selection', () => {
-    it('offers Amber Hours in the bundled demo library', () => {
-        expect(toolbar).toContain('DEMO_LIBRARY');
-    });
-
-    it('offers Prism Circuit as the expressive showcase demo', () => {
-        expect(toolbar).toContain('DEMO_LIBRARY');
-    });
-
-    it('offers Bit Horizon as the chiptune showcase demo', () => {
+    it('offers every bundled demo from the shared library registry', () => {
         expect(toolbar).toContain('DEMO_LIBRARY');
     });
 
