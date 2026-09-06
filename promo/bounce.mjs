@@ -80,7 +80,7 @@ try {
         const score = join(out, 'pinky-promo.score.json');
         writeFileSync(wav, Buffer.from(result.wav, 'base64'));
         writeFileSync(score, JSON.stringify(result.score, null, 1));
-        console.log(`bounce: ${result.score.notes.length} notes, ${result.score.length.toFixed(1)} s, true peak ${result.peakDb.toFixed(1)} dBFS -> ${wav}`);
+        console.log(`bounce: ${result.score.notes.length} notes, ${result.score.length.toFixed(1)} s, sample peak ${result.peakDb.toFixed(1)} dBFS -> ${wav}`);
         if (result.peakDb > 0) {console.warn('bounce: the render clips — lower the demo\'s master volume lane');}
         console.log(`bounce: bar peaks ${result.barPeaksDb.map((v, i) => `${i}:${v.toFixed(1)}`).join(' ')}`);
         console.log(`bounce: ${score}`);

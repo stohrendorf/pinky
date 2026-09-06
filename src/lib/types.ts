@@ -1,3 +1,7 @@
+import type {
+    MixerState
+} from './mixer';
+
 export interface NoteInfo {
     name: string;
     freq: number;
@@ -135,6 +139,7 @@ export interface Instrument {
 
 export interface Project {
     formatVersion: number;
+    mixer?: MixerState;
     instruments: Instrument[];
     patterns: Pattern[];
     arrangement: ArrangementClip[];

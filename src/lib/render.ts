@@ -11,7 +11,14 @@ import {
     get, writable
 } from 'svelte/store';
 
+import type {
+    Project
+} from './types';
+
 import * as eng from './engine';
+import {
+    mixerTailSeconds, resolveMixer
+} from './mixer';
 import {
     playing, project
 } from './project';
@@ -32,8 +39,10 @@ const TAIL = 3; // seconds of room for release tails + reverb
  * section (same as what playback does). Returns null when there is nothing
  * to render. */
 export async function renderSongToWav(): Promise<Blob | null> {
-    const p = get(project);
-    if (!p || !p.arrangement.length) {return null;}
+    const current = get(project);
+    if (!current || !current.arrangement.length) {return null;}
+    if (get(rendering) || eng.isRendering()) {throw new Error('An offline render is already in progress');}
+    const p = JSON.parse(JSON.stringify(current)) as Project;
     // the engine graph is swapped during the render, so live playback has to stop
     if (get(playing)) {stopTransport();}
     const lp = p.loop;
@@ -41,10 +50,14 @@ export async function renderSongToWav(): Promise<Blob | null> {
     const to = lp && lp.end > lp.start ? Math.round(lp.end) : songLengthSteps(p);
     if (to <= from) {return null;}
     const dur = 60 / (p.bpm || 112) / 4;
-    const seconds = (to - from) * dur + TAIL;
+    const release = Math.max(0, ...p.instruments.map(inst => inst.params.rel),
+        ...(p.automation || []).filter(lane => lane.param === 'rel').flatMap(lane => lane.points.map(point => point.value)));
+    const seconds = (to - from) * dur + release * 1.5 + TAIL + mixerTailSeconds(p.mixer);
     rendering.set(true);
     try {
-        const buf = await eng.renderOffline(seconds, RENDER_RATE, () => scheduleRange(p, from, to));
+        const buf = await eng.renderOffline(seconds, RENDER_RATE, () => scheduleRange(p, from, to), {
+            mixer: p.mixer, instrumentIds: p.instruments.map(inst => inst.id), master: resolveMixer(p.mixer, []).master
+        });
         return encodeWav(buf);
     } finally {
         rendering.set(false);
@@ -68,6 +81,6 @@ export async function exportWav(): Promise<string> {
         downloadBlob(blob, 'pinky-song.wav');
         return '';
     } catch (e) {
-        return 'Render failed: ' + ((e as Error)?.message || e);
+        return 'Render failed: ' + (e instanceof Error ? e.message : String(e));
     }
 }

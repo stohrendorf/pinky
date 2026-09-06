@@ -7,8 +7,14 @@ import {
 } from './automation';
 import clockWorkletUrl from './clock-worklet.js?url';
 import {
-    MasterControls
+    MasterControls, type MasterValues
 } from './master-controls';
+import {
+    type MixerMaster, type MixerState, resolveMixer
+} from './mixer';
+import {
+    type ChannelMeter, limiterLatencyFrames, loadLimiter, type MasterMeter, MasterLimiter, MixerAudio
+} from './mixer-audio';
 import {
     NodePool
 } from './node-pool';
@@ -56,22 +62,84 @@ interface EngineObjects {
     lfos?: Map<number, GainNode>;
     clock?: AudioWorkletNode;
     onTick?: (time: number) => void;
+    mixer?: MixerAudio;
+    limiter?: MasterLimiter;
+    legacy?: boolean;
+    mixerMaster?: MixerMaster;
+    mixerSignature?: string;
 }
 
-const engine: EngineObjects = {};
+let engine: EngineObjects = {};
+let liveGraph: EngineObjects | null = null;
 export const SCOPE_FFT_SIZE = 8192;
 
-const masterControls = new MasterControls({
-    values: master,
-    targets: () => engine.master && engine.revSend && engine.tiltLow && engine.tiltHigh ? {
-        volume: engine.master.gain,
-        reverb: engine.revSend.gain,
-        tiltLow: engine.tiltLow.gain,
-        tiltHigh: engine.tiltHigh.gain
-    } : null,
-    currentTime: () => ctx ? ctx.currentTime : 0,
-    rampTo
-});
+function controlsFor(graph: EngineObjects, values: MasterValues): MasterControls {
+    return new MasterControls({
+        values,
+        targets: () => graph.master && graph.revSend && graph.tiltLow && graph.tiltHigh ? {
+            volume: graph.master.gain,
+            reverb: graph.revSend.gain,
+            tiltLow: graph.tiltLow.gain,
+            tiltHigh: graph.tiltHigh.gain
+        } : null,
+        currentTime: () => graph.master?.context.currentTime ?? 0,
+        rampTo: (param, value, at, duration) => rampTo(param, value, at, duration, graph === liveGraph)
+    });
+}
+
+let masterControls = controlsFor(engine, master);
+let liveMasterControls = masterControls;
+
+export interface OfflineMixerConfig {
+    mixer: MixerState | undefined;
+    instrumentIds: string[];
+    master?: MasterValues;
+}
+
+let mixerConfig: OfflineMixerConfig = {mixer: undefined, instrumentIds: []};
+let rendering = false;
+let schedulingOffline = false;
+export const isRendering = (): boolean => rendering;
+
+function copyMixer(mixer: MixerState | undefined, ids: string[]): MixerState | undefined {
+    if (!mixer) {return undefined;}
+    const resolved = resolveMixer(mixer, ids);
+    const channel = <T extends MixerState['channels'][string]>(value: T): T => ({
+        ...value, compressor: {...value.compressor}, sends: value.sends.map(send => ({...send}))
+    });
+    return {
+        channels: Object.fromEntries(Object.entries(resolved.channels).map(([id, value]) => [id, channel(value)])),
+        buses: resolved.buses.map(channel), master: {...resolved.master}
+    };
+}
+
+export function configureMixer(mixer: MixerState | undefined, instrumentIds: string[]): void {
+    const snapshot = copyMixer(mixer, instrumentIds);
+    if (offline && schedulingOffline) {
+        configureGraphMixer(engine, snapshot, masterControls);
+        return;
+    }
+    mixerConfig = {mixer: snapshot, instrumentIds: [...instrumentIds]};
+    const values = snapshot?.master ?? resolveMixer(undefined, []).master;
+    for (const id of ['vol', 'rev', 'tilt'] as const) {
+        if (master[id] !== values[id]) {liveMasterControls.apply(id, values[id]);}
+    }
+    if (liveGraph) {configureGraphMixer(liveGraph, snapshot, liveMasterControls);}
+}
+
+export function mixerMeters(): {master: MasterMeter; channels: Record<string, ChannelMeter>} {
+    return {
+        master: liveGraph?.limiter?.meters() ?? {peak: [0, 0], rms: [0, 0], reduction: 0},
+        channels: liveGraph?.mixer?.meters() ?? {}
+    };
+}
+
+/** Algorithmic limiter latency, in seconds, including bypass. Hardware latency
+ * is intentionally separate; the returned value is also trimmed from exports. */
+export function outputLatency(): number {
+    const rate = liveCtx?.sampleRate ?? ctx?.sampleRate ?? 44100;
+    return limiterLatencyFrames(rate) / rate;
+}
 
 type Voice = ManagedVoice<InstrumentParams>;
 
@@ -221,8 +289,8 @@ const flattens: Flatten[] = [];
 const paramTok = new WeakMap<AudioParam, number>();
 let tokSeq = 0;
 
-function flattenLater(prm: AudioParam, v: number, at: number): void {
-    if (offline) {return;} // the offline graph is thrown away after the bounce
+function flattenLater(prm: AudioParam, v: number, at: number, forceLive = false): void {
+    if (offline && !forceLive) {return;} // the offline graph is thrown away after the bounce
     const tok = ++tokSeq;
     paramTok.set(prm, tok);
     flattens.push({prm, v, at: at + 0.03, tok});
@@ -251,6 +319,7 @@ function startHousekeeping(): void {
 }
 
 function housekeeping(): void {
+    if (offline) {return;} // never recycle live nodes against the offline graph
     const now = liveCtx ? liveCtx.currentTime : 0;
     sweepFlattens(now);
     sweepTeardowns(now);
@@ -391,6 +460,7 @@ function cut(f: () => void): void {
  * governor works with (see the node budget above), reported together with the
  * budget it is being measured against so a readout can show both. */
 export function engineLoad(): { nodes: number; voices: number; budget: number; pooled: number } {
+    if (offline) {return {nodes: 0, voices: 0, budget: nodeBudget, pooled: pooledNodes()};}
     const now = liveCtx ? liveCtx.currentTime : 0;
     voiceCollection.prune(now);
     let nodes = 0;
@@ -400,14 +470,14 @@ export function engineLoad(): { nodes: number; voices: number; budget: number; p
     return {nodes, voices: voiceCollection.liveCount, budget: nodeBudget, pooled: pooledNodes()};
 }
 
-export const audioTime = (): number => ctx ? ctx.currentTime : 0;
-export const getAnalyser = (): AnalyserNode | null => engine.analyser || null;
+export const audioTime = (): number => (offline && !schedulingOffline ? liveCtx : ctx)?.currentTime ?? 0;
+export const getAnalyser = (): AnalyserNode | null => liveGraph?.analyser ?? null;
 export const audioSampleRate = (): number => ctx ? ctx.sampleRate : 44100;
 
 /* What the master section is doing *right now* (automation moves the audio
  * params without touching the slider values) — the scope overlay needs it to
  * predict the spectrum that actually reaches the analyser. */
-export const masterState = (): { vol: number; tilt: number } => masterControls.state();
+export const masterState = (): { vol: number; tilt: number } => liveMasterControls.state();
 
 /* The scope overlay keeps its own time-windowed view of voices. */
 const bandRegistry = new VoiceBandRegistry();
@@ -453,7 +523,9 @@ function reverbImpulse(seconds: number, decay: number): AudioBuffer {
 
 /* The whole signal graph, built into `o` on the context `c` — shared by the
  * live context and the offline render (which needs its own copy of it). */
-function buildGraph(c: BaseAudioContext, o: EngineObjects): void {
+async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: OfflineMixerConfig,
+    values: MasterValues): Promise<void> {
+    await loadLimiter(c);
     // Endless pink noise loop feeding every voice
     o.noise = new AudioBufferSourceNode(c, {
         buffer: pinkNoiseBuffer(4),
@@ -480,12 +552,12 @@ function buildGraph(c: BaseAudioContext, o: EngineObjects): void {
     o.tiltLow = new BiquadFilterNode(c, {
         type: 'lowshelf',
         frequency: 500,
-        gain: -master.tilt
+        gain: -values.tilt
     });
     o.tiltHigh = new BiquadFilterNode(c, {
         type: 'highshelf',
         frequency: 2000,
-        gain: master.tilt
+        gain: values.tilt
     });
     // A safety net against the odd stacked chord, not a mix compressor: only
     // what would clip gets touched. `threshold` is dBFS and the spec caps it at
@@ -496,23 +568,23 @@ function buildGraph(c: BaseAudioContext, o: EngineObjects): void {
         ratio: 4
     });
     o.master = new GainNode(c, {
-        gain: master.vol
+        gain: values.vol
     });
     o.reverb = new ConvolverNode(c, {
         buffer: reverbImpulse(2.2, 3)
     });
     o.revSend = new GainNode(c, {
-        gain: master.rev
+        gain: values.rev
     });
 
     o.voiceBus.connect(o.tiltLow);
     o.tiltLow.connect(o.tiltHigh);
-    o.tiltHigh.connect(o.comp);
-    o.tiltHigh.connect(o.revSend);
-    o.revSend.connect(o.reverb);
-    o.reverb.connect(o.comp);
-    o.comp.connect(o.master);
-    o.master.connect(c.destination);
+    const settings = config.mixer?.master ?? {...resolveMixer(undefined, []).master, ...values};
+    o.limiter = new MasterLimiter(c, settings, !offline);
+    o.master.connect(o.limiter.node);
+    o.limiter.node.connect(c.destination);
+    o.mixer = new MixerAudio(c, o.voiceBus, o.reverb, !offline);
+    configureGraphMixer(o, config.mixer, masterControls, true);
 
     /* Silent sink for filters that are cooling down before they go back into
      * the pool (see `NodePool`). A node is only *processed* while it has a
@@ -526,6 +598,42 @@ function buildGraph(c: BaseAudioContext, o: EngineObjects): void {
     o.lfos = new Map();
 }
 
+function configureGraphMixer(o: EngineObjects, mixer: MixerState | undefined, controls: MasterControls, initial = false): void {
+    if (!o.master || !o.tiltHigh || !o.comp || !o.revSend || !o.reverb || !o.voiceBus) {return;}
+    const signature = JSON.stringify(mixer ?? null);
+    if (o.mixerSignature === signature) {return;}
+    o.mixerSignature = signature;
+    const legacy = !mixer;
+    if (legacy !== o.legacy) {
+        o.tiltHigh.disconnect();
+        o.comp.disconnect();
+        o.revSend.disconnect();
+        o.reverb.disconnect();
+        if (legacy) {
+            // Preserve the exact old compressor/reverb order for legacy songs.
+            o.tiltHigh.connect(o.comp);
+            o.tiltHigh.connect(o.revSend);
+            o.revSend.connect(o.reverb);
+            o.reverb.connect(o.comp);
+            o.comp.connect(o.master);
+        } else {
+            o.tiltHigh.connect(o.master);
+            o.reverb.connect(o.revSend);
+            o.revSend.connect(o.voiceBus);
+        }
+        o.legacy = legacy;
+    }
+    o.mixer?.configure(mixer);
+    const settings = mixer?.master ?? {...resolveMixer(undefined, []).master, ...master};
+    o.limiter?.configure(settings);
+    if (mixer && !initial) {
+        for (const id of ['vol', 'rev', 'tilt'] as const) {
+            if (o.mixerMaster?.[id] !== settings[id]) {controls.apply(id, settings[id]);}
+        }
+    }
+    o.mixerMaster = {...settings};
+}
+
 async function initAudio(): Promise<void> {
     const AudioContextCtor = window.AudioContext;
     if (!AudioContextCtor) {throw new Error('AudioContext is not supported');}
@@ -533,36 +641,39 @@ async function initAudio(): Promise<void> {
     ctx = liveCtx;
     if (!ctx) {throw new Error('Failed to create AudioContext');}
 
-    buildGraph(ctx, engine);
+    liveGraph = engine;
+    await buildGraph(ctx, engine, mixerConfig, master);
+    // Configuration may have changed while the worklet module was loading.
+    configureGraphMixer(engine, mixerConfig.mixer, liveMasterControls);
 
     engine.analyser = new AnalyserNode(ctx, {
         fftSize: SCOPE_FFT_SIZE,
         smoothingTimeConstant: 0
     });
-    engine.master!.connect(engine.analyser);
+    engine.limiter!.node.connect(engine.analyser);
 
     // Sample-accurate clock (AudioWorklet) — replaces setTimeout sequencing
     await ctx.audioWorklet.addModule(clockWorkletUrl);
     engine.clock = new AudioWorkletNode(ctx, 'eq-daw-clock');
     engine.clock.connect(engine.master!); // keep the node alive (it outputs silence)
     engine.clock.port.onmessage = ({data}) => {
-        if (data.type === 'tick' && engine.onTick) {engine.onTick(data.time);}
+        if (!rendering && data.type === 'tick' && liveGraph?.onTick) {liveGraph.onTick(data.time);}
     };
 }
 
 /* ---- clock API ---- */
 export function setTickHandler(fn: (time: number) => void): void {
-    engine.onTick = fn;
+    (liveGraph ?? engine).onTick = fn;
 }
 
 // The clock is a plain wake-up pulse now — the transport decides which steps
 // fall into its scheduling window (see lib/transport.ts).
 export function clockStart(): void {
-    engine.clock?.port.postMessage({type: 'start'});
+    liveGraph?.clock?.port.postMessage({type: 'start'});
 }
 
 export function clockStop(): void {
-    if (engine.clock) {engine.clock.port.postMessage({type: 'stop'});}
+    liveGraph?.clock?.port.postMessage({type: 'stop'});
 }
 
 /* ---- voices ---- */
@@ -577,11 +688,11 @@ export function clockStop(): void {
  * ranks and a chord and the render thread misses its deadline: the crackle.
  * A linear ramp does the same job audibly and then drains from the event list,
  * letting the filter fall back to cheap constant coefficients. */
-function rampTo(prm: AudioParam, v: number, at: number, t: number): void {
+function rampTo(prm: AudioParam, v: number, at: number, t: number, forceLive = false): void {
     prm.cancelScheduledValues(at);
     prm.setValueAtTime(prm.value, at);
     prm.linearRampToValueAtTime(v, at + t);
-    flattenLater(prm, v, at + t); // ... and drop the timeline once it lands
+    flattenLater(prm, v, at + t, forceLive); // ... and drop the timeline once it lands
 }
 
 const differs = (a: number, b: number, eps: number): boolean => Math.abs(a - b) > eps;
@@ -608,6 +719,10 @@ function sweep(param: AudioParam, target: number, when: number, p: InstrumentPar
 function makeRank(track: string, freq: number, when: number, p: InstrumentParams, vel: number,
     panOffset: number): Voice {
     if (!ctx || !engine.noiseBus || !engine.noiseInv || !engine.voiceBus) {throw new Error('Audio not initialized');}
+    const voiceContext = ctx;
+    const voiceOutput = engine.mixer?.voiceInput(track) ?? engine.voiceBus;
+    const voiceNoiseBus = engine.noiseBus;
+    const voiceNoiseInv = engine.noiseInv;
     /* Node budget per rank: `sum` (mixes the inverted dry copy with the filter
      * chain and carries the voice level) + `env` (ADSR) + the biquads. The old
      * layout also had a per-voice dry copy and a -1 inverter — both are now the
@@ -628,11 +743,12 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     let pan: StereoPannerNode | null = null;
 
     function insertPan(v: number): void {
-        if (!ctx || !engine.voiceBus || pan) {return;}
-        pan = takePanner(Math.max(-1, Math.min(1, v)));
+        if (pan) {return;}
+        const value = Math.max(-1, Math.min(1, v));
+        pan = ctx === voiceContext ? takePanner(value) : new StereoPannerNode(voiceContext, {pan: value});
         env.disconnect();
         env.connect(pan);
-        pan.connect(engine.voiceBus);
+        pan.connect(voiceOutput);
     }
 
     // Serial chain of peaking boosts: fundamental + upper harmonics ...
@@ -800,7 +916,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     }, sum);
     formantTail.connect(env);
     if (Math.abs(panWanted) > 0.002) {insertPan(panWanted + (Math.random() - 0.5) * 0.06);}
-    else {env.connect(engine.voiceBus);}
+    else {env.connect(voiceOutput);}
 
     // Amp ADSR (attack -> decay to sustain); ±0.7 dB humanization per hit
     const peak = 0.9 * (0.92 + Math.random() * 0.08);
@@ -897,8 +1013,8 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                         cut(() => vibSource!.disconnect(g));
                     }
                     for (const n of filters) {cut(() => n.disconnect());}
-                    cut(() => engine.noiseBus?.disconnect(noiseTap));
-                    cut(() => engine.noiseInv?.disconnect(sum));
+                    cut(() => voiceNoiseBus.disconnect(noiseTap));
+                    cut(() => voiceNoiseInv.disconnect(sum));
                     // ... and back into the pool: fully detached, so the next
                     // note can play on them instead of adding new nodes to the
                     // graph (which the browser only reclaims on a GC pass).
@@ -1130,47 +1246,78 @@ const noteScheduler = new NoteScheduler<InstrumentParams>({
     releaseTail: TAIL
 });
 
-export const noteOnAt = noteScheduler.noteOnAt.bind(noteScheduler);
-export const automateInstrument = noteScheduler.automateInstrument.bind(noteScheduler);
-export const noteOn = noteScheduler.noteOn.bind(noteScheduler);
-export const noteOffAt = noteScheduler.noteOffAt.bind(noteScheduler);
-export const glideAt = noteScheduler.glideAt.bind(noteScheduler);
-export const noteOff = noteScheduler.noteOff.bind(noteScheduler);
-export const allNotesOff = noteScheduler.allNotesOff.bind(noteScheduler);
+function whileScheduling<T extends unknown[]>(fn: (...args: T) => void): (...args: T) => void {
+    return (...args) => {if (!rendering || schedulingOffline) {fn(...args);}};
+}
+
+export const noteOnAt = whileScheduling(noteScheduler.noteOnAt.bind(noteScheduler));
+export const automateInstrument = whileScheduling(noteScheduler.automateInstrument.bind(noteScheduler));
+export const noteOn = whileScheduling(noteScheduler.noteOn.bind(noteScheduler));
+export const noteOffAt = whileScheduling(noteScheduler.noteOffAt.bind(noteScheduler));
+export const glideAt = (...args: Parameters<typeof noteScheduler.glideAt>): boolean =>
+    (!rendering || schedulingOffline) && noteScheduler.glideAt(...args);
+export const noteOff = whileScheduling(noteScheduler.noteOff.bind(noteScheduler));
+export const allNotesOff = whileScheduling(noteScheduler.allNotesOff.bind(noteScheduler));
 
 /* ---- master FX ---- */
-export const applyMaster = masterControls.apply.bind(masterControls);
-export const automateMaster = masterControls.automate.bind(masterControls);
-export const resetMaster = masterControls.reset.bind(masterControls);
+const selectedMasterControls = (): MasterControls => offline && schedulingOffline ? masterControls : liveMasterControls;
+export const applyMaster = (id: string, value: number): void => selectedMasterControls().apply(id, value);
+export const automateMaster = (id: string, value: number, at: number, ramp: number): void =>
+    selectedMasterControls().automate(id, value, at, ramp);
+export const resetMaster = (): void => selectedMasterControls().reset();
 
 /* ---- offline render (bounce to an AudioBuffer) ----
  * The whole engine talks to the module-level `ctx`/`engine`, so a render just
  * swaps both for an OfflineAudioContext + a fresh graph, lets the caller
  * schedule the song into the future, renders, and puts the live graph back. */
-export async function renderOffline(seconds: number, sampleRate: number, schedule: () => void): Promise<AudioBuffer> {
-    const savedCtx = ctx;
-    const savedEngine: EngineObjects = {...engine};
-    const savedVoices = voiceCollection.snapshot();
-    const savedBands = bandRegistry.take();
-    const clear = (o: Record<string, unknown>) => Object.keys(o).forEach(k => delete o[k]);
-    const oc = new OfflineAudioContext(2, Math.max(1, Math.ceil(seconds * sampleRate)), sampleRate);
+export async function renderOffline(seconds: number, sampleRate: number, schedule: () => void,
+    config: OfflineMixerConfig = mixerConfig): Promise<AudioBuffer> {
+    if (rendering) {throw new Error('An offline render is already in progress');}
+    if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(sampleRate) || sampleRate < 8000 || sampleRate > 96000) {
+        throw new Error('Invalid offline render duration or sample rate');
+    }
+    rendering = true;
     try {
-        ctx = oc;
-        offline = true;
-        masterControls.clearAutomation();
-        clear(engine as unknown as Record<string, unknown>);
-        buildGraph(oc, engine);
-        voiceCollection.reset();
-        schedule();
-        return await oc.startRendering();
+        const snapshot = {mixer: copyMixer(config.mixer, config.instrumentIds), instrumentIds: [...config.instrumentIds]};
+        const values = {...master, ...config.master, ...snapshot.mixer?.master};
+        if (initPromise) {await initPromise;}
+        const frames = Math.max(1, Math.ceil(seconds * sampleRate));
+        const latency = limiterLatencyFrames(sampleRate);
+        const oc = new OfflineAudioContext(2, frames + latency, sampleRate);
+        const savedCtx = ctx;
+        const savedEngine = engine;
+        const savedControls = masterControls;
+        const savedVoices = voiceCollection.snapshot();
+        const savedBands = bandRegistry.take();
+        try {
+            ctx = oc;
+            offline = true;
+            engine = {};
+            masterControls = controlsFor(engine, values);
+            await buildGraph(oc, engine, snapshot, values);
+            voiceCollection.reset();
+            schedulingOffline = true;
+            try {schedule();} finally {schedulingOffline = false;}
+            const rendered = await oc.startRendering();
+            if (engine.limiter?.error) {throw engine.limiter.error;}
+            const trimmed = oc.createBuffer(2, frames, sampleRate);
+            for (let channel = 0; channel < 2; channel++) {
+                trimmed.copyToChannel(rendered.getChannelData(channel).subarray(latency, latency + frames), channel);
+            }
+            return trimmed;
+        } finally {
+            cut(() => engine.mixer?.dispose());
+            cut(() => engine.limiter?.dispose());
+            cut(() => engine.noise?.stop());
+            ctx = savedCtx;
+            offline = false;
+            engine = savedEngine;
+            masterControls = savedControls;
+            voiceCollection.restore(savedVoices);
+            bandRegistry.restore(savedBands);
+        }
     } finally {
-        ctx = savedCtx;
-        offline = false;
-        masterControls.clearAutomation();
-        clear(engine as unknown as Record<string, unknown>);
-        Object.assign(engine, savedEngine);
-        voiceCollection.restore(savedVoices);
-        bandRegistry.restore(savedBands);
+        rendering = false;
     }
 }
 
@@ -1178,7 +1325,22 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
 let initPromise: Promise<void> | null = null;
 
 export function ensureAudio(): Promise<void> {
-    if (!initPromise) {initPromise = initAudio();}
+    if (!initPromise) {
+        if (rendering) {return Promise.reject(new Error('Wait for the offline render before initializing live audio'));}
+        initPromise = initAudio().catch(error => {
+            cut(() => liveGraph?.mixer?.dispose());
+            cut(() => liveGraph?.limiter?.dispose());
+            if (liveCtx) {void liveCtx.close();}
+            engine = {onTick: liveGraph?.onTick};
+            liveGraph = null;
+            liveCtx = null;
+            ctx = null;
+            masterControls = controlsFor(engine, master);
+            liveMasterControls = masterControls;
+            initPromise = null;
+            throw error;
+        });
+    }
     if (liveCtx && liveCtx.state !== 'running') {liveCtx.resume();}
     return initPromise;
 }

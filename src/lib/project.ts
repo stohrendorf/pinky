@@ -19,6 +19,9 @@ import {
     createInstrument, PRESETS
 } from './instruments';
 import {
+    createMixer, isMixerState
+} from './mixer';
+import {
     buildBronzeMonsoon
 } from './monsoon-demo';
 import {
@@ -151,6 +154,7 @@ export function isProject(value: unknown): value is Project {
         && candidate.patterns.every(pattern => isProjectId(pattern?.id))
         && candidate.arrangement.every(clip => isProjectId(clip?.id) && isProjectId(clip.patternId))
         && (candidate.automation?.every(lane => isProjectId(lane?.id)) ?? true)
+        && (candidate.mixer === undefined || isMixerState(candidate.mixer))
         && candidate.instruments.every(instrument => {
             const params = instrument?.params;
             return !!params && typeof params === 'object'
@@ -171,6 +175,7 @@ export function newEmptyProject(): Project {
     const tracks: Track[] = [{name: 'Track 1', color: '#53d8fb'}];
     return {
         formatVersion: PROJECT_FORMAT_VERSION,
+        mixer: createMixer([lead.id]),
         instruments: [lead],
         patterns: [pat],
         arrangement: [{id: createId(), patternId: pat.id, track: 0, start: 0, len: 32}],

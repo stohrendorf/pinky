@@ -3,6 +3,9 @@ import type {
 } from './types';
 
 import {
+    mixDemo
+} from './demo-mixer';
+import {
     DEFAULT_PARAMS, ensurePartials
 } from './instruments';
 import {
@@ -513,10 +516,9 @@ function buildAutomation(sections: PlacedSection[]): AutomationLane[] {
     const borea = at('N il vento Borea');
     const war = at('N tutti li venti');
     const fermata = at('N fermata');
-    // MASTER is where the fullest tutti (the "Forte" close of I, bars 56-63)
-    // true-peaks at -1.5 dBFS through the engine, measured on an offline
-    // bounce — the DAW has no limiter, and at 0.5 the same bars clipped 0.4 %
-    // of their samples
+    // Keep the measured pre-limiter headroom of the fullest tutti (the
+    // "Forte" close of I, bars 56-63): protection is a safety net, not a
+    // reason to flatten the concerto's dynamics.
     const MASTER = 0.28;
     return [
         lane(uuid(7, 1), 'master', 'vol', [
@@ -578,7 +580,7 @@ export function buildWinterDemo(): Project {
     const {patterns, arrangement} = buildPatterns();
     const automation = buildAutomation(sections);
     const tracks: Track[] = LANES.map(({label, color}) => ({name: label, color}));
-    return {
+    return mixDemo({
         formatVersion: PROJECT_FORMAT_VERSION,
         instruments: buildInstruments(),
         patterns,
@@ -590,5 +592,5 @@ export function buildWinterDemo(): Project {
         automationOrder: automation.map(l => l.id),
         automationPositions: {},
         zoom: {seq: {width: 12, height: 14}, arr: {width: 6, height: 32}}
-    };
+    }, 'winter');
 }

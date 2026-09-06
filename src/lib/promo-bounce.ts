@@ -4,6 +4,9 @@ import type {
 
 import * as eng from './engine';
 import {
+    resolveMixer
+} from './mixer';
+import {
     buildPromoDemo, PROMO_ID, type PromoPart
 } from './promo-demo';
 import {
@@ -26,9 +29,9 @@ export interface PromoBounce {
     /** the finished soundtrack, 16-bit PCM WAV, base64 (binary can't cross `page.evaluate`) */
     wav: string;
     score: PromoScore;
-    /** true peak of the float render, dBFS — anything above 0 was clipped by the 16-bit WAV */
+    /** sample peak of the float render, dBFS — anything above 0 was clipped by the 16-bit WAV */
     peakDb: number;
-    /** true peak of every bar, dBFS — for riding the master lane where the mix runs hot */
+    /** sample peak of every bar, dBFS — for riding the master lane where the mix runs hot */
     barPeaksDb: number[];
 }
 
@@ -44,10 +47,14 @@ const base64 = (bytes: Uint8Array): string => {
 async function render(p: Project, seconds: number, sampleRate: number): Promise<AudioBuffer> {
     // the master lanes take over at step 0 anyway — start the graph on their
     // first value so the bounce does not depend on where the UI sliders sit
-    for (const lane of p.automation || []) {
-        if (lane.target === 'master' && lane.points.length) {eng.applyMaster(lane.param, lane.points[0].value);}
+    const master = resolveMixer(p.mixer, []).master;
+    for (const param of ['vol', 'rev', 'tilt'] as const) {
+        const first = p.automation?.find(lane => lane.target === 'master' && lane.param === param)?.points[0];
+        if (first) {master[param] = first.value;}
     }
-    return eng.renderOffline(seconds, sampleRate, () => scheduleRange(p, 0, songLengthSteps(p)));
+    return eng.renderOffline(seconds, sampleRate, () => scheduleRange(p, 0, songLengthSteps(p)), {
+        mixer: p.mixer, instrumentIds: p.instruments.map(inst => inst.id), master
+    });
 }
 
 export async function bouncePromo(sampleRate = 48000): Promise<PromoBounce> {
@@ -89,11 +96,10 @@ export async function measurePromoParts(sampleRate = 48000): Promise<SoloLevel[]
         const p = buildPromoDemo();
         p.automation = [];
         for (const inst of p.instruments) {inst.mute = inst.id !== PROMO_ID[part];}
-        eng.applyMaster('vol', 1);
-        eng.applyMaster('rev', 0);
-        eng.applyMaster('tilt', 0);
         const steps = songLengthSteps(p);
-        const buf = await eng.renderOffline(steps * 60 / p.bpm / 4 + 3, sampleRate, () => scheduleRange(p, 0, steps));
+        const buf = await eng.renderOffline(steps * 60 / p.bpm / 4 + 3, sampleRate, () => scheduleRange(p, 0, steps), {
+            mixer: undefined, instrumentIds: p.instruments.map(inst => inst.id), master: {vol: 1, rev: 0, tilt: 0}
+        });
         const l = buf.getChannelData(0), r = buf.getChannelData(1);
         const win = Math.round(0.05 * sampleRate);
         const rms: number[] = [];

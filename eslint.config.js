@@ -80,7 +80,7 @@ export default tseslint.config(
     },
     {
         // the promo bounce and the score converter are Node CLIs — they report on the console
-        files: ['promo/*.mjs', 'score/**/*.mjs'],
+        files: ['promo/*.mjs', 'score/**/*.mjs', 'scripts/*.mjs'],
         rules: {
             'no-console': 'off'
         }

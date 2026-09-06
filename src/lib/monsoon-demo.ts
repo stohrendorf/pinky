@@ -3,6 +3,9 @@ import type {
 } from './types';
 
 import {
+    mixDemo
+} from './demo-mixer';
+import {
     DEFAULT_PARAMS, ensurePartials
 } from './instruments';
 import {
@@ -647,7 +650,7 @@ export function buildBronzeMonsoon(): Project {
     const end = starts[starts.length - 1] + SECTIONS[SECTIONS.length - 1].len;
     const automation = buildAutomation(starts, end);
     const tracks: Track[] = TRACK_NAMES.map((name, index) => ({name, color: TRACK_COLORS[index]}));
-    return {
+    return mixDemo({
         formatVersion: PROJECT_FORMAT_VERSION,
         instruments: buildInstruments(),
         patterns: buildPatterns(),
@@ -659,5 +662,5 @@ export function buildBronzeMonsoon(): Project {
         automationOrder: automation.map(lane => lane.id),
         automationPositions: {},
         zoom: {seq: {width: 24, height: 14}, arr: {width: 24, height: 32}}
-    };
+    }, 'monsoon');
 }

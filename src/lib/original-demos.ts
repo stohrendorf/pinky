@@ -3,6 +3,9 @@ import type {
 } from './types';
 
 import {
+    mixDemo
+} from './demo-mixer';
+import {
     DEFAULT_PARAMS, ensurePartials
 } from './instruments';
 import {
@@ -332,7 +335,7 @@ export function buildPocketTheory(): Project {
     connect(patterns, 'pp4', 'p7', 6, 9, 'smooth');
     connect(patterns, 'pp4', 'p7', 18, 21, 'ease-out');
     connect(patterns, 'pp4', 'p7', 24, 27, 'smooth');
-    return project(instruments, patterns, arrangeSong('pc', [
+    return mixDemo(project(instruments, patterns, arrangeSong('pc', [
         [['pp1', 0], ['pp2', 1]], [['pp1', 0], ['pp2', 1]], [['pp7', 0], ['pp8', 1]], [['pp1', 0], ['pp9', 2]],
         [['pp3', 2], ['pp4', 4]], [['pp7', 0], ['pp9', 2]], [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp10', 4]],
         [['pp11', 1], ['pp10', 4]], [['pp1', 0], ['pp9', 2]], [['pp3', 2], ['pp4', 4]], [['pp7', 0], ['pp8', 1]],
@@ -397,7 +400,7 @@ export function buildPocketTheory(): Project {
                 value: 0.3
             }]
         }
-    ], 0.16);
+    ], 0.16), 'pocket');
 }
 
 export function buildBitHorizon(): Project {

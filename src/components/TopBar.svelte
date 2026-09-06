@@ -11,11 +11,14 @@
     } from '../lib/project';
 
     import {
-        applyMaster, BUDGET_MAX, BUDGET_MIN, getNodeBudget, master, setNodeBudget
+        BUDGET_MAX, BUDGET_MIN, getNodeBudget, setNodeBudget
     } from '../lib/engine';
     import {
         MASTER_SLIDERS
     } from '../lib/instruments';
+    import {
+        createMixer, ensureMixer
+    } from '../lib/mixer';
     import {
         activeDemo,
         DEMO_LIBRARY,
@@ -42,13 +45,16 @@
     import {
         playPattern, playSong, seekSong, stopTransport
     } from '../lib/transport';
+    import Mixer from './Mixer.svelte';
     import Slider from './Slider.svelte';
     import Button from './ui/Button.svelte';
     import Confirm from './ui/Confirm.svelte';
     import Dialog from './ui/Dialog.svelte';
     import IconButton from './ui/IconButton.svelte';
 
-    let masterParams = $state({...master});
+    const legacyMaster = createMixer([], false).master;
+    const masterParams = $derived({...($project?.mixer?.master ?? legacyMaster)});
+    let showMixer = $state(false);
 
     let showConfirmNew = $state(false);
     let showAlert = $state(false);
@@ -60,8 +66,11 @@
     }
 
     function setMaster(id: MasterId, v: number) {
-        applyMaster(id, v);
-        masterParams = {...masterParams, [id]: v};
+        if (!$project || $rendering || !Number.isFinite(v)) {return;}
+        const slider = MASTER_SLIDERS.find(s => s.id === id);
+        if (!slider) {return;}
+        ensureMixer($project).master[id] = Math.max(slider.min, Math.min(slider.max, v));
+        touch();
     }
 
     function newProject() {
@@ -147,9 +156,9 @@
         <div class="session-group">
             <div class="brand" title="Pinky EQ-only DAW"><i class="fa fa-wave-square"></i> <span>Pinky</span></div>
             <div class="transport-controls">
-                <Button className="compact-button" disabled={$playing} title="Play Pattern" on:click={playPattern}><i class="fa fa-play"></i> Pattern
+                <Button className="compact-button" disabled={$playing || $rendering} title="Play Pattern" on:click={playPattern}><i class="fa fa-play"></i> Pattern
                 </Button>
-                <Button className="compact-button" disabled={$playing} title="Play Song" on:click={playSong}><i class="fa fa-music"></i> Song
+                <Button className="compact-button" disabled={$playing || $rendering} title="Play Song" on:click={playSong}><i class="fa fa-music"></i> Song
                 </Button>
                 <Button
                         className="compact-button"
@@ -168,6 +177,14 @@
             <span class="saved-flash" aria-live="polite">{saved}</span>
         </div>
         <div class="utility-group">
+            <Button
+                    className="mixer-toggle"
+                    pressed={showMixer}
+                    title="Open mixer: channels, routing and master protection"
+                    variant="secondary"
+                    on:click={() => showMixer = true}>
+                <i class="fa fa-sliders" aria-hidden="true"></i> Mixer
+            </Button>
             <a
                     class="repo-link"
                     aria-label="View Pinky on GitHub"
@@ -220,12 +237,14 @@
                 <div class="sidebar-section">
                     <span class="menu-heading">Mix</span>
                     <div class="master-controls" aria-label="Master controls">
+                        <fieldset class="master-editing" disabled={$rendering || !$project}>
                         {#each MASTER_SLIDERS as s (s.id)}
                             <Slider
                                     {...s}
                                     onchange={v => setMaster(s.id as MasterId, v)}
                                     value={masterParams[s.id as MasterId]}/>
                         {/each}
+                        </fieldset>
                     </div>
                 </div>
                 <div class="sidebar-section timing-section" aria-label="Timing controls">
@@ -280,6 +299,12 @@
         </aside>
     {/if}
 </header>
+
+<Dialog height="780px" title="Mixer" width="1180px" bind:show={showMixer}>
+    {#if showMixer}
+        <Mixer/>
+    {/if}
+</Dialog>
 
 <input
         bind:this={fileInput}
@@ -485,6 +510,20 @@
         font-size: 10px;
     }
 
+    .master-editing {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-width: 0;
+    }
+
+    .master-editing:disabled {
+        opacity: .5;
+    }
+
     .bpm-label input {
         width: 56px;
         background: var(--border);
@@ -553,6 +592,21 @@
 
         .sidebar-column {
             gap: 10px;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .topbar-main {
+            flex-wrap: wrap;
+        }
+
+        .session-group {
+            flex-basis: 100%;
+        }
+
+        .utility-group {
+            width: 100%;
+            justify-content: flex-end;
         }
     }
 

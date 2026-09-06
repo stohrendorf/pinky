@@ -169,7 +169,7 @@ function pump(now: number): void {
         if (nextStepTime < now) {nextStepTime = now;}
         const at = nextStepTime + (step % 2 === 1 ? sw * dur : 0);
         scheduleStep(p, step, at, dur, insts);
-        uiQueue.push({step, time: at});
+        uiQueue.push({step, time: at + eng.outputLatency()});
 
         nextStepTime += dur;
         step++;
@@ -178,7 +178,7 @@ function pump(now: number): void {
             if (lp && lp.end > lp.start && step >= lp.end && step - 1 < lp.end) {
                 step = Math.max(0, Math.round(lp.start));
             } else if (maxSteps > 0 && step >= maxSteps) {
-                endTime = nextStepTime; // let the last step ring out, then stop
+                endTime = nextStepTime + eng.outputLatency(); // let the last step reach the output
             }
         }
     }
@@ -232,7 +232,13 @@ export function stopTransport(): void {
 }
 
 export async function playPattern(): Promise<void> {
+    if (eng.isRendering()) {return;}
     await eng.ensureAudio();
+    if (eng.isRendering()) {return;}
+    const p = get(project);
+    if (!p) {return;}
+    if (get(playing)) {stopTransport();}
+    eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
     playPatId = get(selPatId);
     playMode.set('pattern');
     startTransport();
@@ -240,10 +246,13 @@ export async function playPattern(): Promise<void> {
 
 /* ---- song mode ---- */
 export async function playSong(): Promise<void> {
+    if (eng.isRendering()) {return;}
     const p = get(project);
     if (!p || !p.arrangement.length) {return;}
     await eng.ensureAudio();
+    if (eng.isRendering()) {return;}
     if (get(playing)) {stopTransport();}
+    eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
     songMode = true;
     playMode.set('song');
     songPos.set(0);
@@ -267,6 +276,7 @@ export async function playSong(): Promise<void> {
  * during a WAV render, where `audioTime()` is 0, so `time` doubles as the
  * note-off lead. Returns the length of the scheduled range in seconds. */
 export function scheduleRange(p: Project, from: number, to: number): number {
+    eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
     const dur = 60 / (p.bpm || 112) / 4;
     const insts = audibleInstruments(p.instruments);
     const anyLaneSolo = p.tracks.some(t => t.solo);
