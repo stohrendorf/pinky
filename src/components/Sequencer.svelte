@@ -40,8 +40,7 @@
         selectedInstrument,
         selInstId,
         selPatId,
-        touch,
-        trackNotes
+        touch
     } from '../lib/project';
     import {
         createViewportState,
@@ -564,7 +563,7 @@
     }
     const pat = $derived(($project?.patterns.find(p => p.id === $selPatId) || $project?.patterns[0]) as Pattern);
     const steps = $derived(pat.steps || STEPS);
-    const notes = $derived($project && $selInstId ? trackNotes(pat, $selInstId) : []);
+    const notes = $derived($project && $selInstId ? (pat.tracks[$selInstId] ?? []) : []);
     const currentPatternPlayheadStep = $derived(patternPlayheadStep());
     const cellWidth = $derived($project?.zoom.seq.width || 24);
     run(() => {

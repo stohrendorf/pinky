@@ -17,6 +17,10 @@ Human contributors are very welcome to improve this mess.
 Open **Mixer** in the toolbar. Instrument strips are independent of the arranger
 lanes: the same instrument in several patterns always feeds the same strip.
 Its fader/pan are mix controls, separate from the instrument's synthesis gain/pan.
+Balance channels with the vertical faders, pan and M/S buttons. Click a channel
+name (or its output label) for routing and sends; expand **Tone & dynamics** only
+when needed. Master stays visible while the channels scroll. Click **Master**
+for reverb, tone and limiter settings; its limiter switch is always available.
 
 - **Groups:** add a group and choose it in a strip's Output menu. Groups can feed
   other groups. Group mute also cuts its contributors' sends; solo works in place,
@@ -25,7 +29,7 @@ Its fader/pan are mix controls, separate from the instrument's synthesis gain/pa
   Reverb control (and existing `rev` automation) sets that return's level. Keep
   bass dry and send more flute/strings to the hall. Groups default to zero reverb
   send so grouping instruments does not accidentally double their ambience.
-- **Effect channels:** add an Echo return and send a little signal to it. Echo
+- **Effect channels:** click **+ Delay** and send a little signal to it. Echo
   returns are wet-only, with time/feedback controls; routing can include nested
   groups and parallel sends, but feedback cycles are blocked. Removing a bus
   reroutes its outputs to Master and removes sends targeting it.
@@ -53,6 +57,9 @@ mute/solo controls still operate before the mixer.
 Run `npm run test:audio` for isolated browser/UI and native audio routing/limiter
 checks (requires installed Chrome/Edge, or `PINKY_BROWSER`). No dependencies are
 downloaded and it does not modify saved projects.
+Run `node scripts/check-mixer-ui.mjs` for mixer layout, keyboard, history and
+mobile checks in Firefox (`npx playwright-core install firefox` first), or append
+`chromium` for Chrome/Edge. These checks use isolated profiles, not your saved songs.
 
 ### Timeline markers
 

@@ -307,7 +307,7 @@
 
 <ExportProgress/>
 
-<Dialog height="780px" title="Mixer" width="1180px" bind:show={showMixer}>
+<Dialog title="Mixer" width="1180px" bind:show={showMixer}>
     {#if showMixer}
         <Mixer/>
     {/if}

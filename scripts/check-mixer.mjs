@@ -43,10 +43,13 @@ try {
         unsubscribe();
         return {id: p.instruments[0].id, name: p.instruments[0].name, bus: p.mixer.buses[0].id};
     });
+    await dialog.getByRole('button', {name: `${state.name} settings`, exact: true}).click();
     await dialog.getByLabel(`${state.name} output`, {exact: true}).selectOption(state.bus);
     await dialog.getByRole('button', {name: `Mute ${state.name}`, exact: true}).click();
     assert.equal(await dialog.getByRole('button', {name: `Mute ${state.name}`, exact: true}).getAttribute('aria-pressed'), 'true');
+    await dialog.getByRole('button', {name: 'Test group settings', exact: true}).click();
     await dialog.getByRole('button', {name: 'Delete bus', exact: true}).click();
+    await dialog.getByRole('button', {name: `${state.name} settings`, exact: true}).click();
     assert.equal(await dialog.getByLabel(`${state.name} output`, {exact: true}).inputValue(), 'master');
     await page.setViewportSize({width: 580, height: 850});
     const bounds = await dialog.boundingBox();
@@ -198,7 +201,7 @@ try {
     });
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
-    await page.waitForFunction(() => document.querySelector('meter[aria-label="Master L peak"]')?.value > -60);
+    await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
     const meters = await page.evaluate(async () => (await import('/src/lib/engine.ts')).mixerMeters());
     assert.ok(meters.master.peak.some(value => value > 0), 'live master meter responds after offline rendering');
     assert.ok(Object.values(meters.channels).some(channel => channel.peak > 0), 'live channel meter responds');

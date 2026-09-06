@@ -3,8 +3,12 @@
         MixerBus, MixerChannel
     } from '../lib/mixer';
 
+    import MixerFader from './MixerFader.svelte';
+
     interface Props {
         channel: MixerChannel;
+        id: string;
+        color: string;
         name: string;
         kind: string;
         selected: boolean;
@@ -13,12 +17,11 @@
         rms: number;
         onselect: () => void;
         onedit: (change: (channel: MixerChannel) => void) => void;
-        onroute: (target: string) => void;
     }
 
     // Props must keep following project edits, history and live meters.
     // eslint-disable-next-line prefer-const
-    let {channel, name, kind, selected, outputs, peak, rms, onselect, onedit, onroute}: Props = $props();
+    let {channel, name, kind, selected, outputs, peak, rms, onselect, onedit, id, color}: Props = $props();
 
     function level(value: number): string {
         return value > 0 ? (20 * Math.log10(value)).toFixed(1) : '−∞';
@@ -26,57 +29,39 @@
 
     function changeNumber(input: HTMLInputElement, key: 'volume' | 'pan' | 'reverb') {
         const value = input.valueAsNumber;
-        if (!Number.isFinite(value)) {return;}
+        if (!Number.isFinite(value)) {
+            return;
+        }
         const min = key === 'pan' ? -1 : 0;
         const max = key === 'volume' ? 2 : 1;
         onedit(c => c[key] = Math.max(min, Math.min(max, value)));
     }
 </script>
 
-<section class="strip" class:selected aria-label={`${name} ${kind}`}>
+<section
+        style:--strip-color={color}
+        class="strip"
+        class:muted={channel.mute}
+        class:selected
+        aria-label={`${name} ${kind}`}>
     <button
             class="strip-heading"
             aria-controls="mixer-details"
-            aria-pressed={selected}
+            aria-expanded={selected}
+            aria-label={`${name} settings`}
+            data-strip={id}
             onclick={onselect}
-            title={`Edit ${name}: processing and sends`}
+            title={name}
             type="button">
-        <span class="kind">{kind}</span>
+        <span class="kind">{kind === 'Instrument' ? '' : kind}</span>
         <strong title={name}>{name.split('/').at(-1) || name}</strong>
-        <span class="edit-hint">Processing &amp; sends</span>
+        <span class="edit-hint" aria-hidden="true">···</span>
     </button>
-    <div class="switches">
-        <button
-                aria-label={`Mute ${name}`}
-                aria-pressed={channel.mute}
-                onclick={() => onedit(c => c.mute = !c.mute)}
-                type="button">Mute</button>
-        <button
-                aria-label={`Solo ${name}`}
-                aria-pressed={channel.solo}
-                onclick={() => onedit(c => c.solo = !c.solo)}
-                type="button">Solo</button>
-    </div>
-    <div class="channel-meter" aria-label={`${name} level`}>
-        <meter aria-label={`${name} peak`} max="6" min="-60" value={peak > 0 ? 20 * Math.log10(peak) : -60}></meter>
-        <span>Peak {level(peak)} dBFS</span>
-        <span>RMS {level(rms)} dBFS</span>
-    </div>
-    <label>
-        Fader <output>{level(channel.volume)} dB</output>
-        <input
-                aria-label={`${name} fader`}
-                max="2"
-                min="0"
-                oninput={e => changeNumber(e.currentTarget, 'volume')}
-                step="0.01"
-                type="range"
-                value={channel.volume}>
-    </label>
-    <label>
-        Pan <output>{channel.pan === 0 ? 'C' : `${channel.pan < 0 ? 'L' : 'R'} ${Math.round(Math.abs(channel.pan) * 100)}`}</output>
+    <label class="pan">
+        <span>Pan <output>{channel.pan === 0 ? 'C' : `${channel.pan < 0 ? 'L' : 'R'} ${Math.round(Math.abs(channel.pan) * 100)}`}</output></span>
         <input
                 aria-label={`${name} pan`}
+                aria-valuetext={channel.pan === 0 ? 'Center' : `${Math.round(Math.abs(channel.pan) * 100)}% ${channel.pan < 0 ? 'left' : 'right'}`}
                 max="1"
                 min="-1"
                 oninput={e => changeNumber(e.currentTarget, 'pan')}
@@ -84,76 +69,90 @@
                 type="range"
                 value={channel.pan}>
     </label>
-    <label>
-        Reverb send <output>{Math.round(channel.reverb * 100)}%</output>
-        <input
-                aria-label={`${name} shared reverb send`}
-                max="1"
-                min="0"
-                oninput={e => changeNumber(e.currentTarget, 'reverb')}
-                step="0.01"
-                type="range"
-                value={channel.reverb}>
-    </label>
-    <label>
-        Output →
-        <select aria-label={`${name} output`} onchange={e => onroute(e.currentTarget.value)} value={channel.output}>
-            <option value="master">Master</option>
-            {#each outputs as bus (bus.id)}
-                <option value={bus.id}>{bus.name}{bus.effect === 'delay' ? ' (wet delay)' : ''}</option>
-            {/each}
-        </select>
-    </label>
-    <span class="send-count">{channel.sends.length} bus {channel.sends.length === 1 ? 'send' : 'sends'} · post-fader</span>
+    <div class="switches">
+        <button
+                aria-label={`Mute ${name}`}
+                aria-pressed={channel.mute}
+                onclick={() => onedit(c => c.mute = !c.mute)}
+                title="Mute — effect tails decay"
+                type="button">M
+        </button>
+        <button
+                aria-label={`Solo ${name}`}
+                aria-pressed={channel.solo}
+                onclick={() => onedit(c => c.solo = !c.solo)}
+                title="Solo — includes contributing sources and sends"
+                type="button">S
+        </button>
+    </div>
+    <div class="channel-level" title={`Peak ${level(peak)} dBFS · RMS ${level(rms)} dBFS`}>
+        <MixerFader {name} onchange={value => onedit(c => c.volume = value)} peaks={[peak]} value={channel.volume}/>
+    </div>
+    <button
+            class="route"
+            aria-label={`${name} routing and effects`}
+            onclick={onselect}
+            title={`Output: ${outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}`}
+            type="button">
+        → {outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}
+    </button>
 </section>
 
 <style>
     .strip {
         display: flex;
-        flex: 0 0 172px;
+        flex: 0 0 96px;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
         min-width: 0;
-        padding: 12px;
+        padding: 10px 8px;
         border: 1px solid var(--border-subtle);
         border-radius: 3px;
         background: var(--color-surface-raised);
+        border-top: 3px solid var(--strip-color);
     }
 
     .strip.selected {
         border-color: var(--accent);
-        box-shadow: inset 0 2px var(--accent);
+        background: var(--color-surface-hover);
     }
 
     .strip-heading {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 3px;
         padding: 3px;
         border: 0;
         background: transparent;
         text-align: left;
-        min-height: 68px;
+        height: 72px;
+        color: var(--primary-text);
     }
 
     strong {
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 13px;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        line-height: 1.3;
     }
 
     .kind,
-    .edit-hint,
-    .send-count {
+    .edit-hint {
         font-size: 10px;
         color: var(--color-text-muted);
     }
 
     .kind {
-        color: var(--accent2);
+        color: var(--strip-color);
         text-transform: uppercase;
+        min-height: 12px;
+        font-size: 9px;
     }
 
     .switches {
@@ -172,8 +171,11 @@
         border-color: var(--accent);
     }
 
-    label {
-        font-size: 11px;
+    .pan {
+        font-size: 10px;
+        color: var(--color-text-muted);
+        display: grid;
+        gap: 3px;
     }
 
     output {
@@ -182,23 +184,29 @@
         font-variant-numeric: tabular-nums;
     }
 
-    input,
-    select,
-    meter {
+    input {
         width: 100%;
         min-width: 0;
     }
 
-    select {
-        margin-top: 6px;
-        padding: 5px;
+    .route {
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        background: transparent;
+        border: 0;
+        padding: 5px 0;
+        font-size: 10px;
+        color: var(--color-text-muted);
     }
 
-    .channel-meter {
-        display: grid;
-        gap: 3px;
-        font-size: 10px;
-        font-variant-numeric: tabular-nums;
-        color: var(--color-text-muted);
+    .muted .channel-level {
+        opacity: .45;
+    }
+
+    button:focus-visible, input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
     }
 </style>

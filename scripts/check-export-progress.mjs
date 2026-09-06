@@ -121,7 +121,7 @@ try {
     await page.setViewportSize({width: 1000, height: 800});
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
-    await page.waitForFunction(() => document.querySelector('meter[aria-label="Master L peak"]')?.value > -60);
+    await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
     await page.keyboard.press('Escape');
     await page.getByTitle('Stop', {exact: true}).click();
     await page.evaluate(async () => {

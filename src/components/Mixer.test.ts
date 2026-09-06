@@ -14,6 +14,9 @@ import {
     compile
 } from 'svelte/compiler';
 import {
+    render
+} from 'svelte/server';
+import {
     createSourceFile, isFunctionDeclaration, ScriptTarget, transpileModule
 } from 'typescript';
 import {
@@ -33,10 +36,13 @@ import {
 import {
     addMixerBus, canRoute, ensureMixer, MAX_MIXER_BUSES, removeMixerBus, resolveMixer
 } from '../lib/mixer';
+import MixerFader from './MixerFader.svelte';
+import MixerStrip from './MixerStrip.svelte';
 
 const source = (name: string) => readFileSync(fileURLToPath(new URL(`./${name}.svelte`, import.meta.url)), 'utf8');
 const mixer = source('Mixer');
 const strip = source('MixerStrip');
+const fader = source('MixerFader');
 const toolbar = source('TopBar');
 
 interface MixerActions {
@@ -49,6 +55,8 @@ interface MixerActions {
     addSend: (id: string, target: string) => void;
     numeric: (input: {valueAsNumber: number}, min: number, max: number, change: (value: number) => void) => void;
     db: (value: number) => string;
+    toggleStrip: (id: string) => void;
+    closeDetails: () => void;
 }
 
 // Exercise the component's actual handlers without booting the unrelated audio engine.
@@ -68,17 +76,18 @@ function fixture() {
     const scope = {
         $project: p as Project | null, $rendering: false,
         get mixer() {return resolveMixer(p.mixer, p.instruments.map(inst => inst.id));},
-        touch: vi.fn(), ensureMixer, addMixerBus, removeMixerBus, canRoute, tick, selectedId: 'master', details: undefined,
+        touch: vi.fn(), ensureMixer, addMixerBus, removeMixerBus, canRoute, tick, selectedId: '', details: undefined,
+        root: {querySelectorAll: () => []},
         MASTER_SLIDERS
     };
     const actions = handlers<MixerActions>(mixer, scope, [
-        'editChannel', 'masterNumber', 'addBus', 'deleteBus', 'renameBus', 'route', 'addSend', 'numeric', 'db'
+        'editChannel', 'masterNumber', 'addBus', 'deleteBus', 'renameBus', 'route', 'addSend', 'numeric', 'db', 'toggleStrip', 'closeDetails'
     ]);
     return {p, scope, actions, id: p.instruments[0].id};
 }
 
 describe('Mixer component controls', () => {
-    it.each(['Mixer', 'MixerStrip', 'TopBar'])('compiles %s without accessibility diagnostics', name => {
+    it.each(['Mixer', 'MixerStrip', 'MixerFader', 'TopBar'])('compiles %s without accessibility diagnostics', name => {
         const result = compile(source(name), {filename: `${name}.svelte`, generate: 'client'});
         expect(result.js.code.length).toBeGreaterThan(0);
         expect(result.warnings.filter(warning => warning.code.startsWith('a11y'))).toEqual([]);
@@ -88,6 +97,7 @@ describe('Mixer component controls', () => {
         expect(toolbar.indexOf('className="mixer-toggle"')).toBeLessThan(toolbar.indexOf('{#if utilityExpanded}'));
         expect(toolbar).toMatch(/<Dialog[^>]*title="Mixer"[^>]*bind:show=\{showMixer\}>\s*\{#if showMixer\}\s*<Mixer\/>/);
         expect(toolbar).toContain('width="1180px"');
+        expect(toolbar).not.toMatch(/<Dialog[^>]*height=[^>]*title="Mixer"/);
         expect(mixer).toMatch(/onMount\(\(\) => \{[\s\S]*setInterval[\s\S]*1000 \/ 15/);
         expect(mixer).toContain('clearInterval(timer)');
         expect(mixer).toContain('$rendering ? silence : mixerMeters()');
@@ -101,10 +111,62 @@ describe('Mixer component controls', () => {
         expect(mixer).toContain('details?.focus()');
         expect(strip).toContain('aria-pressed={channel.mute}');
         expect(strip).toContain('aria-pressed={channel.solo}');
-        expect(strip).toContain('aria-label={`${name} output`}');
+        expect(mixer).toContain('aria-label={`${selected.name} output`}');
         expect(strip).toContain('let {channel, name, kind, selected, outputs, peak, rms');
         expect(mixer).toContain('$derived(structuredClone(resolveMixer(');
         expect(mixer + strip).not.toContain('e.target');
+    });
+
+    it('opens with only balance controls, discloses one channel at a time and never edits by selection', () => {
+        const {p, scope, actions, id} = fixture();
+        expect(mixer).toContain("let selectedId = $state('')");
+        expect(mixer).toContain("{#if selected || selectedId === 'master'}");
+        expect(mixer).toContain('{#key selectedId}');
+        expect(mixer).toContain('{#if selected.channel.compressor.enabled}');
+        expect(mixer).not.toContain('type="number"');
+        actions.toggleStrip(id);
+        expect(scope.selectedId).toBe(id);
+        actions.toggleStrip('master');
+        expect(scope.selectedId).toBe('master');
+        actions.toggleStrip('master');
+        expect(scope.selectedId).toBe('');
+        expect(p.mixer).toBeUndefined();
+        expect(scope.touch).not.toHaveBeenCalled();
+    });
+
+    it('shows compact labelled balance controls instead of a form on every strip', () => {
+        const channel = resolveMixer(undefined, ['bass']).channels.bass;
+        const html = render(MixerStrip, {props: {
+            id: 'bass', name: 'Bass', color: '#abcdef', kind: 'Instrument', selected: false,
+            channel, outputs: [], peak: 0.5, rms: 0.25, onselect: vi.fn(), onedit: vi.fn()
+        }}).body;
+        expect(html).toContain('aria-label="Bass fader"');
+        expect(html).toContain('aria-label="Bass pan"');
+        expect(html).toContain('aria-label="Mute Bass"');
+        expect(html).toContain('aria-label="Solo Bass"');
+        expect(html).toContain('aria-expanded="false"');
+        expect(html).toContain('→ Master');
+        expect(html).not.toContain('<select');
+        expect(html).not.toContain('Reverb send');
+        expect(html).not.toContain('Processing &amp; sends');
+    });
+
+    it('shares bounded vertical faders and stereo sample meters with Master', () => {
+        const values: number[] = [];
+        const actions = handlers<{change: (input: {valueAsNumber: number}) => void}>(fader,
+            {max: 1, onchange: (value: number) => values.push(value)}, ['change']);
+        for (const valueAsNumber of [NaN, Infinity, -1, 0.75, 2]) {actions.change({valueAsNumber});}
+        expect(values).toEqual([0, 0.75, 1]);
+        const html = render(MixerFader, {props: {name: 'Master', value: 0.5, max: 1, peaks: [0, 2], onchange: vi.fn()}}).body;
+        expect(html).toContain('aria-orientation="vertical"');
+        expect(html).toContain('aria-valuetext="-6.0 dB"');
+        expect(html).toContain('aria-label="Master L peak"');
+        expect(html).toContain('aria-label="Master R peak"');
+        expect(html).toContain('aria-valuenow="-60"');
+        expect(html).toContain('aria-valuenow="6"');
+        expect(html).not.toMatch(/NaN|Infinity/);
+        expect(fader).toContain('writing-mode: vertical-lr');
+        expect(fader).toContain('direction: rtl');
     });
 
     it('persists mixer-only edits and keeps legacy limiter protection off', () => {
@@ -182,7 +244,7 @@ describe('Mixer component controls', () => {
         actions.addSend(id, delay.id);
         actions.addSend(id, 'master');
         expect(p.mixer!.channels[id].sends).toEqual([{busId: delay.id, level: 0.25}]);
-        expect(mixer).toContain('mixer.buses.filter(bus => canRoute(mixer, strip.id, bus.id))');
+        expect(mixer).toContain('mixer.buses.filter(bus => canRoute(mixer, selected.id, bus.id))');
         expect(mixer).toContain('canRoute(mixer, selected.id, bus.id)');
     });
 
@@ -233,6 +295,6 @@ describe('Mixer component controls', () => {
         expect(mixer).not.toMatch(/LUFS|dBTP|true[- ]peak/i);
         expect(mixer).toContain('Post-fader only');
         expect(mixer).toContain('Wet-only delay return');
-        expect(mixer).toContain('Solo-in-place preserves contributing sources and their sends');
+        expect(strip).toContain('Solo — includes contributing sources and sends');
     });
 });
