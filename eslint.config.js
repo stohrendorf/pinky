@@ -79,8 +79,8 @@ export default tseslint.config(
         }
     },
     {
-        // the promo bounce is a Node CLI — it reports on the console
-        files: ['promo/*.mjs'],
+        // the promo bounce and the score converter are Node CLIs — they report on the console
+        files: ['promo/*.mjs', 'score/**/*.mjs'],
         rules: {
             'no-console': 'off'
         }

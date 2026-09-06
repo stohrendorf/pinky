@@ -22,7 +22,8 @@
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "preview": "vite preview",
-    "promo:audio": "node promo/bounce.mjs"
+    "promo:audio": "node promo/bounce.mjs",
+    "score:winter": "node score/winter/build.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

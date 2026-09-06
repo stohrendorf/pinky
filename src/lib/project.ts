@@ -33,6 +33,9 @@ import {
 import {
     createId, isProjectId, PROJECT_FORMAT_VERSION
 } from './types';
+import {
+    buildWinterDemo
+} from './winter-demo';
 
 export function createPattern(name: string, steps = STEPS): Pattern {
     const colors = ['#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#5f27cd', '#0abde3', '#ff6b6b', '#48dbfb'];
@@ -78,10 +81,17 @@ export function selectedInstrument(): Instrument {
 // project IDs cannot drift apart. JSON demos can be updated by exporting them.
 // Every demo earns its place with something the others do not do: the two
 // covers, the noise concept piece, the vocal formant showcase, a funk groove,
-// a chiptune, the trailer score — and the gamelan/taiko/khoomei piece.
+// a chiptune, the trailer score, the gamelan/taiko/khoomei piece — and the
+// concerto, a whole baroque string band playing from the print.
 export const DEMO_LIBRARY = [
     {id: 'axelf', label: 'Axel F', icon: 'fa-headphones', title: 'Axel F (Pinky Mix) — F minor synth-funk'},
     {id: 'toccata', label: 'Toccata', icon: 'fa-landmark', title: 'Toccata & Fugue (Pinky Mix) — BWV 565 goes rock'},
+    {
+        id: 'winter',
+        label: 'Winter',
+        icon: 'fa-snowflake',
+        title: 'Vivaldi: Winter (RV 297) — the whole concerto note for note: solo violin, strings, violone and harpsichord'
+    },
     {
         id: 'monsoon',
         label: 'Bronze Monsoon',
@@ -122,6 +132,7 @@ const projectJson = (value: unknown): Project => {
 const DEMO_SONGS: Record<DemoSong, Project> = {
     axelf: projectJson(axelFSongJson),
     toccata: projectJson(toccataSongJson),
+    winter: buildWinterDemo(),
     monsoon: buildBronzeMonsoon(),
     noise: projectJson(noiseSongJson),
     diva: projectJson(divaSongJson),
