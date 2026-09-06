@@ -34,6 +34,12 @@
         curStep, playMode, playing, project, selPatId, songCursor, touch
     } from '../lib/project';
     import {
+        rendering
+    } from '../lib/render';
+    import {
+        barAt, barsInRange, snapToBeat
+    } from '../lib/timing';
+    import {
         seekSong
     } from '../lib/transport';
     import {
@@ -44,6 +50,7 @@
         handleViewportWheel
     } from '../lib/viewport';
     import AutomationLane from './AutomationLane.svelte';
+    import Conductor from './Conductor.svelte';
     import Button from './ui/Button.svelte';
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
@@ -70,6 +77,7 @@
     let playlistEl: HTMLElement | undefined = $state();
     let scrollLeft = $state(0);
     let scrollTop = $state(0);
+    let viewportWidth = $state(0);
 
 
     function setZoom(w: number, h: number) {
@@ -115,7 +123,6 @@
     let loopDragging = false;
     let loopAnchor = 0;
     let loopPreview: { start: number; end: number } | null = $state(null);
-    const LOOP_SNAP = 4; // loop edges snap to beats
 
 
     function timelineStep(e: MouseEvent): number {
@@ -125,6 +132,7 @@
     }
 
     function handleTimelineMouseDown(e: MouseEvent) {
+        if ($rendering) {return;}
         if (e.button === 2) { // right-click clears the loop
             if ($project?.loop) {
                 $project.loop = null;
@@ -322,6 +330,10 @@
     }
 
     function handleMouseUp() {
+        if ($rendering) {
+            loopDragging = false;
+            loopPreview = null;
+        }
         if (loopDragging) {
             loopDragging = false;
             if (loopPreview) { // a real drag → set the loop region
@@ -366,8 +378,9 @@
 
         if (loopDragging) {
             const s = timelineStep(e);
-            const a = Math.max(0, Math.round(Math.min(loopAnchor, s) / LOOP_SNAP) * LOOP_SNAP);
-            const b = Math.round(Math.max(loopAnchor, s) / LOOP_SNAP) * LOOP_SNAP;
+            const timing = $project ?? {bpm: 112};
+            const a = snapToBeat(timing, Math.min(loopAnchor, s));
+            const b = snapToBeat(timing, Math.max(loopAnchor, s));
             loopPreview = b > a ? {start: a, end: b} : null;
             return;
         }
@@ -672,7 +685,7 @@
     });
     const currentPattern = $derived($project?.patterns.find(pattern => pattern.id === $selPatId));
     const currentPatternClips = $derived($project?.arrangement.filter(clip => clip.patternId === $selPatId) ?? []);
-    const currentPatternLocations = $derived(currentPatternClips.map(clip => `bar ${Math.floor(clip.start / 16) + 1}`).join(', '));
+    const currentPatternLocations = $derived(currentPatternClips.map(clip => `bar ${barAt($project!, clip.start).bar}`).join(', '));
     const selectionRect = $derived(isSelecting ? {
         left: Math.min(selectionStart.s, selectionEnd.s) * cellWidth,
         top: Math.min(rowTopForTrack(selectionStart.t), rowTopForTrack(selectionEnd.t)),
@@ -684,7 +697,13 @@
     const selectedClips = $derived(($project?.arrangement.filter(c => c.selected) || []) as ExtendedClip[]);
     // lane mute/solo — same rule as the scheduler: any soloed lane silences the rest
     const laneSilent = $derived(($project?.tracks || []).map((t, _i, all) => !!t.mute || (all.some(o => o.solo) && !t.solo)));
-    const totalLength = $derived(Math.max(128, ...($project?.arrangement.map(c => c.start + c.len) || [0])) + 64);
+    const totalLength = $derived(Math.max(128,
+        ...($project?.arrangement.map(c => c.start + c.len) ?? []),
+        ...($project?.conductor?.tempos.map(marker => marker.step) ?? []),
+        ...($project?.conductor?.meters.map(marker => marker.step) ?? []),
+        ...($project?.conductor?.sections.map(marker => marker.step) ?? [])) + 64);
+    const visibleBars = $derived($project ? barsInRange($project, scrollLeft / cellWidth,
+        Math.min(totalLength, (scrollLeft + viewportWidth) / cellWidth)) : []);
     const autoLanes = $derived(($project?.automation || []) as Lane[]);
     const arrangerRows = $derived((() => {
         const positions = $project?.automationPositions || {};
@@ -765,8 +784,15 @@
         overflow: hidden;
         display: grid;
         grid-template-columns: 200px minmax(0, 1fr);
-        grid-template-rows: 24px minmax(0, 1fr);
+        grid-template-rows: 24px 28px minmax(0, 1fr);
         position: relative;
+    }
+
+    .conductor-row {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-width: 0;
+        min-height: 0;
     }
 
     .timeline-viewport {
@@ -822,6 +848,8 @@
         border-left: 1px solid var(--border);
         height: 100%;
         box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
     }
 
     .clip.open-pattern {
@@ -830,7 +858,7 @@
 
     .frozen-track-labels {
         grid-column: 1;
-        grid-row: 2;
+        grid-row: 3;
         z-index: 10;
         overflow: hidden;
         min-height: 0;
@@ -863,7 +891,7 @@
 
     .grid-viewport {
         grid-column: 2;
-        grid-row: 2;
+        grid-row: 3;
         min-width: 0;
         min-height: 0;
         overflow: auto;
@@ -1040,10 +1068,16 @@
     .grid-bg {
         display: flex;
         flex-direction: column;
-        background-image: linear-gradient(90deg, var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-        background-size: calc(var(--cell-width) * 16) 100%,
-        var(--cell-width) 100%;
+        background-image: linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+        background-size: var(--cell-width) 100%;
+    }
+
+    .bar-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-left: 1px solid var(--border);
+        pointer-events: none;
     }
 
     .grid-row {
@@ -1374,15 +1408,18 @@ onclick={openAddAuto}
                 </button>
             </div>
         </div>
-        <div class="timeline-viewport">
+        <div style="max-width: {viewportWidth}px;" class="timeline-viewport">
             <div
 style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
 class="timeline"
                  oncontextmenu={preventDefault(bubble('contextmenu'))}
                  onmousedown={handleTimelineMouseDown}>
-                {#each Array.from({length: Math.ceil(totalLength / 16)}) as _, i}
-                    <div style="left: {i * 16 * cellWidth}px" class="time-marker">
-                        {i + 1}
+                {#each visibleBars as bar (bar.start)}
+                    <div
+                            style="left: {bar.start * cellWidth}px; width: {(bar.end - bar.start) * cellWidth}px;"
+                            class="time-marker"
+                            title={`Bar ${bar.bar} · ${bar.numerator}/${bar.denominator} · step ${bar.start}`}>
+                        {bar.bar}
                     </div>
                 {/each}
                 {#if loopRect}
@@ -1391,6 +1428,13 @@ style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.st
                          class="loop-band"></div>
                 {/if}
             </div>
+        </div>
+        <div class="conductor-row">
+            <Conductor
+                    {cellWidth}
+                    {scrollLeft}
+                    {totalLength}
+                    {viewportWidth}/>
         </div>
         <div class="frozen-track-labels">
             <div style="transform: translateY(-{scrollTop}px);" class="track-labels">
@@ -1502,7 +1546,8 @@ bind:this={playlistEl}
              oncontextmenu={preventDefault(bubble('contextmenu'))}
              onmousedown={handlePlaylistMouseDown}
              onscroll={syncFrozenPanes}
-             onwheel={handleWheel}>
+             onwheel={handleWheel}
+             bind:clientWidth={viewportWidth}>
             <div
 style="width: {totalLength * cellWidth}px; height: {gridHeight}px; --cell-width: {cellWidth}px;"
                  class="grid-container">
@@ -1544,6 +1589,10 @@ width={totalLength * cellWidth}
                         {/if}
                     {/each}
                 </div>
+
+                {#each visibleBars as bar (bar.start)}
+                    <div style="left: {bar.start * cellWidth}px;" class="bar-line"></div>
+                {/each}
 
                 <div class="clips-layer">
                     {#if selectionRect}

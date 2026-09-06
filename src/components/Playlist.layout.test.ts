@@ -5,12 +5,43 @@ import {
     fileURLToPath
 } from 'node:url';
 import {
+    runInNewContext
+} from 'node:vm';
+import {
     describe, expect, it
 } from 'vitest';
 
 const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
 
 describe('Playlist frozen track labels', () => {
+    it('shows only bar numbers in the ruler, with meter detail in the tooltip', () => {
+        expect(playlist).toContain('title={`Bar ${bar.bar} · ${bar.numerator}/${bar.denominator} · step ${bar.start}`}');
+        expect(playlist).not.toContain('<span>{bar.numerator}/{bar.denominator}</span>');
+    });
+
+    it('keeps all markers scrollable without extending the musical arrangement', () => {
+        const expression = playlist.match(/const totalLength = \$derived\(([\s\S]*?)\);/)?.[1];
+        expect(expression).toBeTruthy();
+        for (const kind of ['tempos', 'meters', 'sections']) {
+            const p = {arrangement: [{start: 0, len: 96}], conductor: {tempos: [], meters: [], sections: [], [kind]: [{step: 1000000}]}};
+            const before = JSON.stringify(p);
+            expect(runInNewContext(expression!, {$project: p})).toBe(1000064);
+            expect(JSON.stringify(p)).toBe(before);
+        }
+        expect(runInNewContext(expression!, {$project: null})).toBe(192);
+    });
+
+    it('aligns conductor, ruler and clips using one scroll coordinate and viewport width', () => {
+        expect(playlist).toContain('grid-template-rows: 24px 28px minmax(0, 1fr)');
+        expect(playlist).toMatch(/\.frozen-track-labels\s*\{[^}]*grid-row:\s*3;/s);
+        expect(playlist).toMatch(/\.grid-viewport\s*\{[^}]*grid-row:\s*3;/s);
+        expect(playlist).toContain('bind:clientWidth={viewportWidth}');
+        expect(playlist).toMatch(/<Conductor[\s\S]*?\{cellWidth}[\s\S]*?\{scrollLeft}[\s\S]*?\{totalLength}[\s\S]*?\{viewportWidth}/);
+        expect(playlist).toContain('style="max-width: {viewportWidth}px;" class="timeline-viewport"');
+        expect(playlist).toContain('background-size: var(--cell-width) 100%');
+        expect(playlist).toContain('{#each visibleBars as bar (bar.start)}');
+    });
+
     it('keeps labels outside the horizontally scrolling grid pane', () => {
         expect(playlist).toMatch(/class="frozen-track-labels"/);
         expect(playlist).toMatch(/class="grid-viewport"/);

@@ -47,9 +47,69 @@ echo on kora/handpan; Pocket adds subtle slap echo and gentle drum compression.
 The faithful promo and other demos are deliberately left unchanged.
 
 This is a focused mixer, not a plug-in host: no external effects, sidechain input,
-pre-fader sends or tempo/meter markers yet. Existing instrument and arranger
+pre-fader sends yet. Existing instrument and arranger
 mute/solo controls still operate before the mixer.
 
 Run `npm run test:audio` for isolated browser/UI and native audio routing/limiter
 checks (requires installed Chrome/Edge, or `PINKY_BROWSER`). No dependencies are
 downloaded and it does not modify saved projects.
+
+### Timeline markers
+
+One strip below the ruler holds section names, BPM and time-signature markers.
+Click empty space to add one, or **+** to add at the cursor. Click a name, BPM or
+signature to edit that value directly. The ruler shows bar numbers, not repeated
+time signatures. Use the ruler as usual to seek or drag a loop.
+
+The editor shows bar/beat position, with exact-step editing and **Use cursor**
+under the position disclosure. Steps are zero-based sixteenths; bar and beat
+labels are one-based. Save closes the editor; Cancel/Escape discards edits.
+Markers are saved with the
+project and support undo/redo.
+
+- **Tempo:** hold a BPM or ramp linearly in musical position to the next tempo
+  marker. Before the first marker, the Studio BPM is used. Pattern preview always
+  uses that base BPM; song playback, seeking and WAV export use the conductor.
+- **Meter:** regroup the ruler without moving or stretching any notes or clips.
+  A change starts a new bar, shortening the previous bar if placed inside it.
+  Independent polymetric clips keep their own lengths.
+- **Sections:** label passages without changing the audio. Markers beyond the
+  last clip remain scrollable without extending the export.
+
+Stop playback to edit timing: notes already scheduled into the audio graph cannot
+be safely re-timed in place. Tempo ramps share one integrated timing model across
+playback, note releases, portamento, automation and export. Envelope/reverb/echo
+times remain in seconds; delay returns are not tempo-synchronised.
+
+Bronze Monsoon now labels its 4/4 → 7/8 → 4/4 form correctly and has a restrained
+82–90 BPM arc, plus named passages. Its notes, instrument patches, automation and
+polymetric clips are unchanged. Winter has named sections but retains its
+existing expanded note grid and performance; converting that edition to ordinary
+sixteenths needs finer-than-sixteenth editing/scheduling and is not part of this
+change. The faithful promo timing is unchanged.
+
+### WAV export
+
+**Render to WAV** opens a blocking progress dialog with preparation, score
+scheduling, audio rendering and WAV encoding stages. **Cancel** (or Escape) stops
+the export without downloading a partial file; playback and editing are restored
+after cleanup. Audio progress measures processed audio time, not a guessed
+wall-clock ETA. Long release, reverb and routed delay tails are included.
+
+Run `npm run test:production` for isolated native-browser checks of conductor
+editing/history, ruler loops, tempo-mapped WAV duration, export progress,
+cancellation and immediate playback/retry (same browser requirements as
+`test:audio`). Cancellation abandons a suspended offline context because browsers
+provide no offline `close()` operation; memory reclamation is browser-controlled.
+Browsers without offline `suspend()`/`resume()` support (including Firefox) get
+rendering progress from frames processed by the output AudioWorklet, including
+silence and effect tails. The dialog shows a smoothed, approximate time remaining
+in the current stage after collecting enough measurements; encoding is separate.
+In those browsers, cancellation still waits for native rendering to finish,
+discards the result and never downloads a file. If a browser delays worklet
+messages, the indicator waits for actual measurements rather than guessing.
+
+`npm run test:export` checks in-flight progress, ETA, cancellation, playback recovery
+and WAV output in an isolated Firefox profile (`npx playwright-core install firefox`
+first). `npm run test:export -- chromium` checks the same telemetry path with pause
+APIs masked in Chrome/Edge. Neither command touches your regular browser profile.

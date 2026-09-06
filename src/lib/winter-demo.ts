@@ -26,8 +26,8 @@ import {
  * ice — for a period band: solo violin, violins I/II, violas, cellos with a
  * violone an octave below, and a harpsichord continuo.
  *
- * The DAW has one tempo, the concerto has three, so the *grid* changes per
- * movement instead: at 160 BPM one step is a 32nd in the Allegros
+ * This score predates the conductor lane and retains its expanded grid to
+ * preserve the performance: at 160 BPM one step is a 32nd in the Allegros
  * (quarter = 0.75 s, dotted-quarter bar = 1.125 s) and a 64th in the Largo
  * (quarter = 1.5 s). Everything the print says and the MIDI cannot is done
  * here: the solo's trills are written out as 32nd alternations, "Lento" is a
@@ -588,6 +588,14 @@ export function buildWinterDemo(): Project {
         tracks,
         bpm: WINTER_BPM,
         swing: 0,
+        // Navigation without re-quantising the edition's 32nd/64th-note grid.
+        conductor: {
+            tempos: [], meters: [],
+            sections: sections.map((section, index) => ({
+                id: uuid(8, index + 1), step: section.start,
+                name: `${WINTER_MOVEMENTS[section.movement].data.title} · ${section.name}`
+            }))
+        },
         automation,
         automationOrder: automation.map(l => l.id),
         automationPositions: {},

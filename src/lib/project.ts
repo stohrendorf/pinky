@@ -34,6 +34,9 @@ import {
     buildPromoDemo
 } from './promo-demo';
 import {
+    isConductorData
+} from './timing';
+import {
     createId, isProjectId, PROJECT_FORMAT_VERSION
 } from './types';
 import {
@@ -155,6 +158,7 @@ export function isProject(value: unknown): value is Project {
         && candidate.arrangement.every(clip => isProjectId(clip?.id) && isProjectId(clip.patternId))
         && (candidate.automation?.every(lane => isProjectId(lane?.id)) ?? true)
         && (candidate.mixer === undefined || isMixerState(candidate.mixer))
+        && (candidate.conductor === undefined || isConductorData(candidate.conductor))
         && candidate.instruments.every(instrument => {
             const params = instrument?.params;
             return !!params && typeof params === 'object'

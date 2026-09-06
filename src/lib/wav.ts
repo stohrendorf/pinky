@@ -1,5 +1,8 @@
 /* Minimal WAV writer: 16-bit PCM, interleaved, one `data` chunk, no metadata —
  * everything a rendered AudioBuffer needs to leave the app as a file. */
+import {
+    checkAbort, type WorkProgressOptions, yieldExport
+} from './offline-progress';
 
 // Accepts anything AudioBuffer-shaped (that's all the encoder reads)
 export interface PcmSource {
@@ -10,7 +13,7 @@ export interface PcmSource {
     getChannelData(ch: number): Float32Array;
 }
 
-export function encodeWav(buf: PcmSource): Blob {
+function wavWriter(buf: PcmSource) {
     const chans = Math.max(1, Math.min(2, buf.numberOfChannels));
     const frames = buf.length;
     const bytes = 44 + frames * chans * 2;
@@ -42,12 +45,38 @@ export function encodeWav(buf: PcmSource): Blob {
     u32(frames * chans * 2);
     const data: Float32Array[] = [];
     for (let c = 0; c < chans; c++) {data.push(buf.getChannelData(c));}
-    for (let i = 0; i < frames; i++) {
-        for (let c = 0; c < chans; c++) {
-            const s = Math.max(-1, Math.min(1, data[c][i]));
-            out.setInt16(o, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
-            o += 2;
-        }
+    return {
+        write(from: number, to: number) {
+            for (let i = from; i < to; i++) {
+                for (let c = 0; c < chans; c++) {
+                    const s = Math.max(-1, Math.min(1, data[c][i]));
+                    out.setInt16(o, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
+                    o += 2;
+                }
+            }
+        },
+        finish: () => new Blob([out.buffer], {type: 'audio/wav'})
+    };
+}
+
+export function encodeWav(buf: PcmSource): Blob {
+    const writer = wavWriter(buf);
+    writer.write(0, buf.length);
+    return writer.finish();
+}
+
+export async function encodeWavAsync(buf: PcmSource, options: WorkProgressOptions = {}): Promise<Blob> {
+    checkAbort(options.signal);
+    options.onProgress?.(0);
+    await yieldExport(options.signal);
+    const writer = wavWriter(buf);
+    for (let from = 0; from < buf.length; from += 32768) {
+        checkAbort(options.signal);
+        const to = Math.min(buf.length, from + 32768);
+        writer.write(from, to);
+        options.onProgress?.(to / buf.length);
+        await yieldExport(options.signal);
     }
-    return new Blob([out.buffer], {type: 'audio/wav'});
+    checkAbort(options.signal);
+    return writer.finish();
 }

@@ -1,6 +1,9 @@
 import type {
     MixerState
 } from './mixer';
+import type {
+    ConductorData
+} from './timing';
 
 export interface NoteInfo {
     name: string;
@@ -140,6 +143,7 @@ export interface Instrument {
 export interface Project {
     formatVersion: number;
     mixer?: MixerState;
+    conductor?: ConductorData;
     instruments: Instrument[];
     patterns: Pattern[];
     arrangement: ArrangementClip[];

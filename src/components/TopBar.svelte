@@ -45,6 +45,7 @@
     import {
         playPattern, playSong, seekSong, stopTransport
     } from '../lib/transport';
+    import ExportProgress from './ExportProgress.svelte';
     import Mixer from './Mixer.svelte';
     import Slider from './Slider.svelte';
     import Button from './ui/Button.svelte';
@@ -70,6 +71,12 @@
         const slider = MASTER_SLIDERS.find(s => s.id === id);
         if (!slider) {return;}
         ensureMixer($project).master[id] = Math.max(slider.min, Math.min(slider.max, v));
+        touch();
+    }
+
+    function setBpm(input: HTMLInputElement) {
+        if (!$project || $playing || $rendering || !Number.isFinite(input.valueAsNumber)) {return;}
+        $project.bpm = Math.max(30, Math.min(300, input.valueAsNumber));
         touch();
     }
 
@@ -126,11 +133,7 @@
 
     // Offline bounce: renders the song (or the marked loop region) to a WAV file
     async function exportAudio() {
-        const err = await exportWav();
-        if (err) {
-            alertMessage = err;
-            showAlert = true;
-        }
+        await exportWav();
     }
 
     let fileInput: HTMLInputElement | undefined = $state();
@@ -260,11 +263,13 @@
                                 value={swingPct}>
                         <span class="swing-val">{swingPct}%</span>
                     </label>
-                    {#if $project}<label class="bpm-label">BPM <input
-                            max="240"
-                            min="40"
+                    {#if $project}<label class="bpm-label" title="Base tempo for pattern preview and before the first conductor marker. Stop to edit.">BPM <input
+                            disabled={$playing || $rendering}
+                            max="300"
+                            min="30"
+                            onchange={e => setBpm(e.currentTarget)}
                             type="number"
-                            bind:value={$project.bpm}></label>{/if}
+                            value={$project.bpm}></label>{/if}
                 </div>
             </div>
             <div class="sidebar-section library-section">
@@ -299,6 +304,8 @@
         </aside>
     {/if}
 </header>
+
+<ExportProgress/>
 
 <Dialog height="780px" title="Mixer" width="1180px" bind:show={showMixer}>
     {#if showMixer}

@@ -57,21 +57,27 @@ class Buffer {
         this.duration = length / sampleRate;
     }
     getChannelData(channel: number) {return this.data[channel];}
-    copyToChannel(data: Float32Array, channel: number) {this.data[channel].set(data);}
+    copyToChannel(data: Float32Array, channel: number, offset = 0) {this.data[channel].set(data, offset);}
 }
 
 class Context {
     static instances: Context[] = [];
     static render: ((context: Context) => Promise<Buffer>) | null = null;
     static moduleError = false;
+    static moduleLoad: Promise<void> | null = null;
     nodes: Node[] = [];
     destination = new Node(this, 'destination');
     currentTime = 0;
     state = 'running';
-    audioWorklet = {addModule: vi.fn(() => Context.moduleError ? Promise.reject(new Error('module failed')) : Promise.resolve())};
+    audioWorklet = {addModule: vi.fn(() => Context.moduleLoad ??
+        (Context.moduleError ? Promise.reject(new Error('module failed')) : Promise.resolve()))};
     constructor(public channels = 2, public length = 4800, public sampleRate = 48000) {Context.instances.push(this);}
     createBuffer(channels: number, length: number, rate: number) {return new Buffer(channels, length, rate);}
-    resume() {return Promise.resolve();}
+    pause = () => {};
+    suspend = vi.fn((time: number) => new Promise<void>(resolve => {
+        this.pause = () => {this.currentTime = time; this.state = 'suspended'; resolve();};
+    }));
+    resume = vi.fn(() => {this.state = 'running'; return Promise.resolve();});
     close() {return Promise.resolve();}
     startRendering() {
         if (Context.render) {return Context.render(this);}
@@ -87,6 +93,7 @@ beforeEach(() => {
     Context.instances = [];
     Context.render = null;
     Context.moduleError = false;
+    Context.moduleLoad = null;
     vi.useFakeTimers();
     for (const kind of ['GainNode', 'BiquadFilterNode', 'StereoPannerNode', 'DynamicsCompressorNode',
         'DelayNode', 'ChannelSplitterNode', 'AnalyserNode', 'AudioBufferSourceNode', 'ConvolverNode']) {
@@ -243,6 +250,27 @@ describe('persistent mixer audio routing', () => {
         const other = graph(false);
         other.audio.configure(createMixer(['a']));
         expect(other.context.nodes.some(node => node.kind === 'AnalyserNode')).toBe(false);
+    });
+
+    it('bounds offline telemetry for long songs without changing live meters and drops messages after cleanup', () => {
+        const context = new Context();
+        const limiter = new MasterLimiter(context as unknown as BaseAudioContext, createMixer([]).master, true);
+        const listener = vi.fn();
+        const unsubscribe = limiter.trackProgress(48000 * 600, listener);
+        const node = limiter.node as unknown as Node;
+        expect(node.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', intervalFrames: 144000});
+        const receive = node.port.onmessage as unknown as (event: {data: unknown}) => void;
+        const meter = {peak: [0.1, 0.2], rms: [0.05, 0.1], reduction: 3};
+        receive({data: meter});
+        receive({data: {type: 'progress', frames: 128}});
+        expect(limiter.meters()).toEqual(meter);
+        expect(listener).toHaveBeenCalledExactlyOnceWith(128);
+        unsubscribe();
+        receive({data: {type: 'progress', frames: 256}});
+        expect(listener).toHaveBeenCalledOnce();
+        expect(node.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', intervalFrames: 0});
+        limiter.dispose();
+        expect(node.port.onmessage).toBeNull();
     });
 
     it('loads protection once per context, propagates failure, and coalesces limiter updates', async () => {
@@ -437,5 +465,178 @@ describe('engine graph isolation and latency trimming', () => {
             expect(master.gain.value).toBe(1);
         }, {mixer: undefined, instrumentIds: [], master: {vol: 1, rev: 0, tilt: 0}});
         expect(engine.master.vol).toBe(0.2);
+    });
+
+    it('awaits asynchronous scheduling under offline guards and restores after an asynchronous failure', async () => {
+        const engine = await freshEngine();
+        await engine.ensureAudio();
+        engine.applyMaster('vol', 0.37);
+        const saved = {...engine.master};
+        const analyser = engine.getAnalyser();
+        await expect(engine.renderOffline(0.1, 48000, async () => {
+            await Promise.resolve();
+            expect(engine.isRendering()).toBe(true);
+            engine.applyMaster('vol', 0.99);
+            expect(engine.master).toEqual(saved);
+            throw new Error('async schedule failed');
+        })).rejects.toThrow('async schedule failed');
+        expect(engine.master).toEqual(saved);
+        expect(engine.getAnalyser()).toBe(analyser);
+        expect(engine.isRendering()).toBe(false);
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+    });
+
+    it('preserves limiter latency trimming across buffer-copy chunk boundaries', async () => {
+        const engine = await freshEngine();
+        const result = await engine.renderOffline(6, 48000, () => undefined);
+        expect(result.length).toBe(288000);
+        for (const channel of [0, 1]) {
+            for (const frame of [0, 262143, 262144, 287999]) {
+                expect(result.getChannelData(channel)[frame]).toBeCloseTo((frame + 240) / 288240, 6);
+            }
+        }
+    });
+
+    it('aborts a pending worklet load without late graph construction, then allows live use and retry', async () => {
+        const engine = await freshEngine();
+        await engine.ensureAudio();
+        const analyser = engine.getAnalyser();
+        const controller = new AbortController();
+        let loaded!: () => void;
+        Context.moduleLoad = new Promise<void>(resolve => {loaded = resolve;});
+        const schedule = vi.fn();
+        const pending = engine.renderOffline(1, 48000, schedule, undefined, {signal: controller.signal});
+        const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
+        await vi.advanceTimersByTimeAsync(0);
+        const offline = Context.instances[1];
+        expect(offline.nodes).toHaveLength(1);
+        controller.abort();
+        await rejected;
+        expect(engine.isRendering()).toBe(false);
+        expect(engine.getAnalyser()).toBe(analyser);
+        expect(schedule).not.toHaveBeenCalled();
+        loaded();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(offline.nodes).toHaveLength(1);
+        engine.applyMaster('vol', 0.2);
+        expect(engine.masterState().vol).toBe(0.2);
+        Context.moduleLoad = null;
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+    });
+
+    it('can cancel while waiting for live initialization without swapping its unfinished graph', async () => {
+        const engine = await freshEngine();
+        let loaded!: () => void;
+        Context.moduleLoad = new Promise<void>(resolve => {loaded = resolve;});
+        const initializing = engine.ensureAudio();
+        const controller = new AbortController();
+        const schedule = vi.fn();
+        const pending = engine.renderOffline(1, 48000, schedule, undefined, {signal: controller.signal});
+        const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
+        controller.abort();
+        await rejected;
+        expect(engine.isRendering()).toBe(false);
+        expect(Context.instances).toHaveLength(1);
+        expect(schedule).not.toHaveBeenCalled();
+        loaded();
+        await initializing;
+        expect(engine.getAnalyser()).not.toBeNull();
+        Context.moduleLoad = null;
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+    });
+
+    it('keeps engine ownership until a running context suspends on cancellation and disconnects it', async () => {
+        const engine = await freshEngine();
+        await engine.ensureAudio();
+        const analyser = engine.getAnalyser();
+        const saved = {...engine.master};
+        const controller = new AbortController();
+        let fail!: (error: Error) => void;
+        Context.render = () => new Promise((_resolve, reject) => {fail = reject;});
+        const pending = engine.renderOffline(1, 48000, () => undefined, undefined, {signal: controller.signal});
+        const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
+        await vi.advanceTimersByTimeAsync(0);
+        const offline = Context.instances[1];
+        offline.pause();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(offline.resume).toHaveBeenCalledOnce();
+        controller.abort();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(engine.isRendering()).toBe(true);
+        await expect(engine.renderOffline(0.1, 48000, () => undefined)).rejects.toThrow('already in progress');
+        offline.pause();
+        await rejected;
+        expect(offline.state).toBe('suspended');
+        expect(offline.resume).toHaveBeenCalledOnce();
+        expect(offline.nodes.every(node => node.connections.size === 0)).toBe(true);
+        expect(offline.nodes.find(node => node.kind === 'AudioBufferSourceNode')?.stop).toHaveBeenCalled();
+        expect(offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')?.port.close).toHaveBeenCalled();
+        expect(engine.isRendering()).toBe(false);
+        expect(engine.getAnalyser()).toBe(analyser);
+        expect(engine.master).toEqual(saved);
+        fail(new Error('late native rejection'));
+        await vi.advanceTimersByTimeAsync(0);
+        Context.render = null;
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+        await engine.ensureAudio();
+    });
+
+    it('retains and restores the graph when cancellation must wait for a non-suspendable render', async () => {
+        const engine = await freshEngine();
+        await engine.ensureAudio();
+        const analyser = engine.getAnalyser();
+        const saved = {...engine.master};
+        const controller = new AbortController();
+        let finish!: () => void;
+        Context.render = context => new Promise(resolve => {
+            finish = () => {
+                context.state = 'closed';
+                resolve(context.createBuffer(2, context.length, context.sampleRate));
+            };
+        });
+        const progress = vi.fn();
+        const pending = engine.renderOffline(1, 48000, () => {
+            Object.defineProperty(Context.instances[1], 'suspend', {value: undefined});
+        }, undefined, {signal: controller.signal, onProgress: progress});
+        const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
+        await vi.advanceTimersByTimeAsync(0);
+        const offline = Context.instances[1];
+        expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: null, canSuspend: false});
+        const limiter = offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')!;
+        expect(limiter.port.postMessage).toHaveBeenCalledWith({type: 'progress', intervalFrames: 12032});
+        const receive = limiter.port.onmessage as unknown as (event: {data: unknown}) => void;
+        receive({data: {type: 'progress', frames: 12060}});
+        expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: 0.25, canSuspend: false});
+        controller.abort();
+        receive({data: {type: 'progress', frames: 24120}});
+        expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: 0.25, canSuspend: false});
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(engine.isRendering()).toBe(true);
+        expect(offline.nodes.some(node => node.connections.size > 0)).toBe(true);
+        await expect(engine.renderOffline(0.1, 48000, () => undefined)).rejects.toThrow('already in progress');
+        finish();
+        await rejected;
+        expect(offline.nodes.every(node => node.connections.size === 0)).toBe(true);
+        expect(limiter.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', intervalFrames: 0});
+        expect(offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')?.port.close).toHaveBeenCalled();
+        expect(engine.isRendering()).toBe(false);
+        expect(engine.getAnalyser()).toBe(analyser);
+        expect(engine.master).toEqual(saved);
+        Context.render = null;
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+    });
+
+    it('does not start audio work after cancellation during asynchronous scheduling', async () => {
+        const engine = await freshEngine();
+        await engine.ensureAudio();
+        const controller = new AbortController();
+        const start = vi.fn(() => Promise.reject(new Error('must not render')));
+        Context.render = start;
+        await expect(engine.renderOffline(1, 48000, async () => {
+            await Promise.resolve();
+            controller.abort();
+        }, undefined, {signal: controller.signal})).rejects.toMatchObject({name: 'AbortError'});
+        expect(start).not.toHaveBeenCalled();
+        expect(engine.isRendering()).toBe(false);
     });
 });

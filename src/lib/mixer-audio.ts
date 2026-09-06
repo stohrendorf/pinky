@@ -41,6 +41,7 @@ export class MasterLimiter {
     error: Error | null = null;
     private latest: MasterMeter = {peak: [0, 0], rms: [0, 0], reduction: 0};
     private signature: string;
+    private onFrames: ((frames: number) => void) | null = null;
 
     constructor(context: BaseAudioContext, settings: MixerMaster, metering: boolean) {
         const values = this.settings(settings);
@@ -51,9 +52,22 @@ export class MasterLimiter {
             processorOptions: {settings: values, metering}
         });
         this.node.onprocessorerror = () => {this.error = new Error('Master limiter processor failed');};
-        if (metering) {
-            this.node.port.onmessage = ({data}: MessageEvent<MasterMeter>) => {this.latest = data;};
-        }
+        this.node.port.onmessage = ({data}: MessageEvent<MasterMeter | {type: 'progress'; frames: number}>) => {
+            if ('type' in data && data.type === 'progress') {
+                this.onFrames?.(data.frames);
+            } else if (metering && 'peak' in data) {this.latest = data;}
+        };
+    }
+
+    trackProgress(totalFrames: number, listener: (frames: number) => void): () => void {
+        this.onFrames = listener;
+        // At most ~200 updates per bounce, and no more than four per audio second.
+        const intervalFrames = Math.ceil(Math.max(this.node.context.sampleRate / 4, totalFrames / 200) / 128) * 128;
+        this.node.port.postMessage({type: 'progress', intervalFrames});
+        return () => {
+            this.onFrames = null;
+            this.node.port.postMessage({type: 'progress', intervalFrames: 0});
+        };
     }
 
     configure(settings: MixerMaster): void {
@@ -69,6 +83,7 @@ export class MasterLimiter {
     }
 
     dispose(): void {
+        this.onFrames = null;
         this.node.disconnect();
         this.node.port.onmessage = null;
         this.node.port.close();

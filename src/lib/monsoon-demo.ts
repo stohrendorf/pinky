@@ -658,6 +658,33 @@ export function buildBronzeMonsoon(): Project {
         tracks,
         bpm: BPM,
         swing: 0,
+        conductor: {
+            // A little breath, not a new arrangement: settle into the bronze,
+            // lean into the storm, and let the rain slow down after it.
+            tempos: [
+                {id: uuid(8, 1), step: 0, bpm: 84, curve: 'linear'},
+                {id: uuid(8, 2), step: starts[4], bpm: BPM, curve: 'hold'},
+                {id: uuid(8, 3), step: starts[19], bpm: BPM, curve: 'linear'},
+                {id: uuid(8, 4), step: starts[20], bpm: 90, curve: 'hold'},
+                {id: uuid(8, 5), step: starts[29], bpm: 90, curve: 'linear'},
+                {id: uuid(8, 6), step: starts[30], bpm: 86, curve: 'linear'},
+                {id: uuid(8, 7), step: starts[33], bpm: 82, curve: 'hold'}
+            ],
+            meters: [
+                {id: uuid(9, 1), step: 0, numerator: 4, denominator: 4},
+                {id: uuid(9, 2), step: starts[12], numerator: 7, denominator: 8},
+                {id: uuid(9, 3), step: starts[20], numerator: 4, denominator: 4}
+            ],
+            sections: [
+                {id: uuid(10, 1), step: 0, name: 'Rain'},
+                {id: uuid(10, 2), step: starts[4], name: 'Bronze'},
+                {id: uuid(10, 3), step: starts[12], name: 'Seven Rains'},
+                {id: uuid(10, 4), step: starts[20], name: 'Storm'},
+                {id: uuid(10, 5), step: starts[24], name: 'Eye of the storm'},
+                {id: uuid(10, 6), step: starts[25], name: 'Storm returns'},
+                {id: uuid(10, 7), step: starts[30], name: 'After'}
+            ]
+        },
         automation,
         automationOrder: automation.map(lane => lane.id),
         automationPositions: {},

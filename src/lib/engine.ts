@@ -30,6 +30,9 @@ import {
     noteByName
 } from './notes';
 import {
+    abortable, checkAbort, renderWithProgress, supportsOfflineSuspension, yieldExport
+} from './offline-progress';
+import {
     adsrLevel, type BandRecord, type BandSpec, VoiceBandRegistry, type VoiceSnapshot
 } from './voice-band-registry';
 import {
@@ -60,6 +63,7 @@ interface EngineObjects {
     flushBus?: GainNode;
     // Vibrato LFOs, one per distinct rate (see `vibLfo`)
     lfos?: Map<number, GainNode>;
+    lfoSources?: OscillatorNode[];
     clock?: AudioWorkletNode;
     onTick?: (time: number) => void;
     mixer?: MixerAudio;
@@ -94,6 +98,17 @@ export interface OfflineMixerConfig {
     mixer: MixerState | undefined;
     instrumentIds: string[];
     master?: MasterValues;
+}
+
+export interface OfflineRenderProgress {
+    stage: 'preparing' | 'scheduling' | 'rendering';
+    progress: number | null;
+    canSuspend?: boolean;
+}
+
+export interface OfflineRenderOptions {
+    signal?: AbortSignal;
+    onProgress?: (progress: OfflineRenderProgress) => void;
 }
 
 let mixerConfig: OfflineMixerConfig = {mixer: undefined, instrumentIds: []};
@@ -442,6 +457,7 @@ function vibLfo(rate: number): GainNode | null {
         osc.connect(out);
         osc.start();
         engine.lfos.set(r, out);
+        engine.lfoSources?.push(osc);
     }
     return out;
 }
@@ -524,8 +540,9 @@ function reverbImpulse(seconds: number, decay: number): AudioBuffer {
 /* The whole signal graph, built into `o` on the context `c` — shared by the
  * live context and the offline render (which needs its own copy of it). */
 async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: OfflineMixerConfig,
-    values: MasterValues): Promise<void> {
-    await loadLimiter(c);
+    values: MasterValues, signal?: AbortSignal): Promise<void> {
+    await abortable(loadLimiter(c), signal);
+    checkAbort(signal);
     // Endless pink noise loop feeding every voice
     o.noise = new AudioBufferSourceNode(c, {
         buffer: pinkNoiseBuffer(4),
@@ -596,6 +613,7 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
     o.flushBus.connect(c.destination);
 
     o.lfos = new Map();
+    o.lfoSources = [];
 }
 
 function configureGraphMixer(o: EngineObjects, mixer: MixerState | undefined, controls: MasterControls, initial = false): void {
@@ -1270,17 +1288,20 @@ export const resetMaster = (): void => selectedMasterControls().reset();
  * The whole engine talks to the module-level `ctx`/`engine`, so a render just
  * swaps both for an OfflineAudioContext + a fresh graph, lets the caller
  * schedule the song into the future, renders, and puts the live graph back. */
-export async function renderOffline(seconds: number, sampleRate: number, schedule: () => void,
-    config: OfflineMixerConfig = mixerConfig): Promise<AudioBuffer> {
+export async function renderOffline(seconds: number, sampleRate: number, schedule: () => void | number | Promise<void | number>,
+    config: OfflineMixerConfig = mixerConfig, options: OfflineRenderOptions = {}): Promise<AudioBuffer> {
     if (rendering) {throw new Error('An offline render is already in progress');}
     if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(sampleRate) || sampleRate < 8000 || sampleRate > 96000) {
         throw new Error('Invalid offline render duration or sample rate');
     }
     rendering = true;
     try {
+        checkAbort(options.signal);
+        options.onProgress?.({stage: 'preparing', progress: null});
         const snapshot = {mixer: copyMixer(config.mixer, config.instrumentIds), instrumentIds: [...config.instrumentIds]};
         const values = {...master, ...config.master, ...snapshot.mixer?.master};
-        if (initPromise) {await initPromise;}
+        if (initPromise) {await abortable(initPromise, options.signal);}
+        checkAbort(options.signal);
         const frames = Math.max(1, Math.ceil(seconds * sampleRate));
         const latency = limiterLatencyFrames(sampleRate);
         const oc = new OfflineAudioContext(2, frames + latency, sampleRate);
@@ -1294,21 +1315,48 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             offline = true;
             engine = {};
             masterControls = controlsFor(engine, values);
-            await buildGraph(oc, engine, snapshot, values);
             voiceCollection.reset();
+            await buildGraph(oc, engine, snapshot, values, options.signal);
+            checkAbort(options.signal);
+            options.onProgress?.({stage: 'scheduling', progress: 0});
             schedulingOffline = true;
-            try {schedule();} finally {schedulingOffline = false;}
-            const rendered = await oc.startRendering();
+            try {await schedule();} finally {schedulingOffline = false;}
+            checkAbort(options.signal);
+            const canSuspend = supportsOfflineSuspension(oc);
+            const limiter = engine.limiter;
+            options.onProgress?.({stage: 'rendering', progress: 0, canSuspend});
+            const rendered = await renderWithProgress(oc, {
+                signal: options.signal,
+                subscribeFrames: limiter ? listener => limiter.trackProgress(oc.length, listener) : undefined,
+                onProgress: options.onProgress ? progress => {
+                    if (limiter?.error) {throw limiter.error;}
+                    options.onProgress?.({stage: 'rendering', progress, canSuspend});
+                } : undefined
+            });
+            checkAbort(options.signal);
             if (engine.limiter?.error) {throw engine.limiter.error;}
             const trimmed = oc.createBuffer(2, frames, sampleRate);
             for (let channel = 0; channel < 2; channel++) {
-                trimmed.copyToChannel(rendered.getChannelData(channel).subarray(latency, latency + frames), channel);
+                for (let offset = 0; offset < frames; offset += 262144) {
+                    trimmed.copyToChannel(rendered.getChannelData(channel).subarray(latency + offset,
+                        latency + Math.min(frames, offset + 262144)), channel, offset);
+                    if (options.signal || options.onProgress) {await yieldExport(options.signal);}
+                }
             }
             return trimmed;
         } finally {
             cut(() => engine.mixer?.dispose());
             cut(() => engine.limiter?.dispose());
             cut(() => engine.noise?.stop());
+            for (const source of engine.lfoSources ?? []) {
+                cut(() => source.stop());
+                cut(() => source.disconnect());
+            }
+            for (const node of engine.lfos?.values() ?? []) {cut(() => node.disconnect());}
+            for (const key of ['noise', 'noiseBus', 'noiseInv', 'voiceBus', 'tiltLow', 'tiltHigh', 'comp',
+                'master', 'reverb', 'revSend', 'analyser', 'flushBus'] as const) {
+                cut(() => engine[key]?.disconnect());
+            }
             ctx = savedCtx;
             offline = false;
             engine = savedEngine;

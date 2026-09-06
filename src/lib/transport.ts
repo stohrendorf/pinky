@@ -4,6 +4,9 @@ import {
 } from 'svelte/store';
 
 import type {
+    TimingMap
+} from './timing';
+import type {
     Instrument, InstrumentParams, Pattern, Project
 } from './types';
 
@@ -20,6 +23,9 @@ import {
 import {
     curStep, playing, playMode, project, selPatId, songCursor, songLabel, songPos
 } from './project';
+import {
+    barAt, createTimingMap
+} from './timing';
 
 let step = 0;
 let songMode = false;
@@ -53,6 +59,14 @@ const stepDur = (): number => {
     return 60 / (p?.bpm || 112) / 4;
 };
 
+let timingKey = '';
+let songTiming = createTimingMap({bpm: 112});
+function timingFor(p: Project): TimingMap {
+    const key = JSON.stringify([p.bpm, p.conductor?.tempos]);
+    if (timingKey !== key) {timingKey = key; songTiming = createTimingMap(p);}
+    return songTiming;
+}
+
 // Mute/solo: a muted instrument is never scheduled, and as soon as anything is
 // soloed everything that isn't soloed goes quiet (same rule for arranger lanes).
 function audibleInstruments(instruments: Instrument[]): Instrument[] {
@@ -65,7 +79,8 @@ function audibleInstruments(instruments: Instrument[]): Instrument[] {
 // step (a patched copy of the instrument's params, see automation.ts)
 export function schedulePatternNotes(pat: Pattern, patStep: number, time: number, dur: number,
     instruments: Instrument[], transpose = 0,
-    over: Map<string, InstrumentParams> | null = null): void {
+    over: Map<string, InstrumentParams> | null = null,
+    elapsed: (steps: number) => number = steps => steps * dur): void {
     instruments.forEach(inst => {
         const notes = pat.tracks[inst.id];
         if (!notes) {return;}
@@ -86,13 +101,14 @@ export function schedulePatternNotes(pat: Pattern, patStep: number, time: number
                     const targetPitch = transpose ? transposePitch(target.pitch, transpose) : target.pitch;
                     if (!targetPitch) {return;}
                     const glide = legatoTransition(n, target.start, dur, params.legatoCurve);
-                    eng.glideAt(inst.id, pitch, targetPitch, time + n.len * dur, glide.time, glide.curve);
+                    const glideTime = Math.max(0.005, elapsed(target.start - n.start) - elapsed(n.len));
+                    eng.glideAt(inst.id, pitch, targetPitch, time + elapsed(n.len), glideTime, glide.curve);
                     return;
                 }
                 // A terminal linked note owns the release for the complete
                 // chain. Ordinary notes retain the slightly early release that
                 // prevents stacked same-pitch notes from clicking together.
-                eng.noteOffAt(inst.id, pitch, time + n.len * dur * (incoming ? 1 : 0.9));
+                eng.noteOffAt(inst.id, pitch, time + elapsed(n.len * (incoming ? 1 : 0.9)));
             }
         });
     });
@@ -120,29 +136,34 @@ export function songLengthSteps(p: Project): number {
 // One 16th step, scheduled to sound at `at` (absolute audio time)
 function scheduleStep(p: Project, s: number, at: number, dur: number, insts: Instrument[]): void {
     if (songMode) {
-        // Automation lanes are read once per step and drive both the notes
-        // starting here and the master FX.
-        const over = instrumentOverrides(p, s);
-        playMasterAutomation(p, s, at, dur);
-        playInstrumentAutomation(over, at, dur);
-        const anyLaneSolo = p.tracks.some(t => t.solo);
-        p.arrangement.forEach(clip => {
-            const lane = p.tracks[clip.track];
-            if (lane && (lane.mute || (anyLaneSolo && !lane.solo))) {return;}
-            const relStep = s - clip.start;
-            if (relStep >= 0 && relStep < clip.len) {
-                const pat = p.patterns.find(pt => pt.id === clip.patternId);
-                if (!pat) {return;}
-                const patStep = relStep % (pat.steps || STEPS);
-                schedulePatternNotes(pat, patStep, at, dur, insts, clip.transpose || 0, over);
-            }
-        });
+        scheduleSongStep(p, s, at, dur, insts, timingFor(p));
     } else {
         const pat = p.patterns.find(pt => pt.id === playPatId) || p.patterns[0];
         const patSteps = pat.steps || STEPS;
         schedulePatternNotes(pat, s % patSteps, at, dur, insts);
     }
 }
+
+function scheduleSongStep(p: Project, s: number, at: number, dur: number, insts: Instrument[], timing: TimingMap): void {
+    const over = instrumentOverrides(p, s);
+    playMasterAutomation(p, s, at, dur);
+    playInstrumentAutomation(over, at, dur);
+    const anyLaneSolo = p.tracks.some(t => t.solo);
+    const position = s + swingOffset(p, s);
+    const elapsed = (steps: number) => timing.secondsBetween(position, position + steps);
+    p.arrangement.forEach(clip => {
+        const lane = p.tracks[clip.track];
+        if (lane && (lane.mute || (anyLaneSolo && !lane.solo))) {return;}
+        const relStep = s - clip.start;
+        if (relStep >= 0 && relStep < clip.len) {
+            const pat = p.patterns.find(pt => pt.id === clip.patternId);
+            if (!pat) {return;}
+            schedulePatternNotes(pat, relStep % (pat.steps || STEPS), at, dur, insts, clip.transpose || 0, over, elapsed);
+        }
+    });
+}
+
+const swingOffset = (p: Project, s: number): number => s % 2 === 1 ? Math.max(0, Math.min(1, p.swing || 0)) / 3 : 0;
 
 // Called on every clock pulse: queue everything that starts within the window.
 function pump(now: number): void {
@@ -153,12 +174,11 @@ function pump(now: number): void {
         songLabel.set('Song finished');
         return;
     }
-    const dur = stepDur();
+    const timing = timingFor(p);
     const insts = audibleInstruments(p.instruments);
     // Swing/shuffle: every 2nd 16th is pushed late (`swing` 1 = a triplet, 2:1
     // feel). Applied to the scheduled note times — the grid itself stays
     // rock-steady, so the groove is sample-accurate.
-    const sw = Math.max(0, Math.min(1, p.swing || 0)) / 3;
     const maxSteps = songMode ? songLengthSteps(p) : 0;
     const horizon = now + LOOKAHEAD;
     let guard = 256; // never spin, whatever the tempo/BPM edit does
@@ -167,7 +187,9 @@ function pump(now: number): void {
         // fell behind (tab was frozen, tempo raised): re-anchor instead of
         // dumping a burst of steps at once
         if (nextStepTime < now) {nextStepTime = now;}
-        const at = nextStepTime + (step % 2 === 1 ? sw * dur : 0);
+        const dur = songMode ? timing.secondsBetween(step, step + 1) : stepDur();
+        const offset = swingOffset(p, step);
+        const at = nextStepTime + (songMode ? timing.secondsBetween(step, step + offset) : offset * dur);
         scheduleStep(p, step, at, dur, insts);
         uiQueue.push({step, time: at + eng.outputLatency()});
 
@@ -194,6 +216,12 @@ function uiFrame(): void {
     if (s >= 0 && s !== uiStep) {
         uiStep = s;
         curStep.set(s);
+        const p = get(project);
+        if (songMode && p) {
+            const pos = barAt(p, s);
+            const name = p.conductor?.sections.findLast(marker => marker.step <= s)?.name;
+            songLabel.set(`${name ? name + ' · ' : ''}${pos.bar}:${pos.beat} · ${timingFor(p).bpmAt(s).toFixed(1)} BPM`);
+        }
     }
     if (endTime !== null && now >= endTime) {
         stopTransport();
@@ -276,28 +304,40 @@ export async function playSong(): Promise<void> {
  * during a WAV render, where `audioTime()` is 0, so `time` doubles as the
  * note-off lead. Returns the length of the scheduled range in seconds. */
 export function scheduleRange(p: Project, from: number, to: number): number {
+    const range = rangeScheduler(p, from, to);
+    for (let s = from; s < to; s++) {range.schedule(s);}
+    return range.seconds;
+}
+
+function rangeScheduler(p: Project, from: number, to: number) {
     eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
-    const dur = 60 / (p.bpm || 112) / 4;
-    const insts = audibleInstruments(p.instruments);
-    const anyLaneSolo = p.tracks.some(t => t.solo);
-    const sw = Math.max(0, Math.min(1, p.swing || 0)) / 3;
-    for (let s = from; s < to; s++) {
-        const time = (s - from) * dur + (s % 2 === 1 ? sw * dur : 0);
-        const over = instrumentOverrides(p, s);
-        playMasterAutomation(p, s, time, dur);
-        playInstrumentAutomation(over, time, dur);
-        p.arrangement.forEach(clip => {
-            const lane = p.tracks[clip.track];
-            if (lane && (lane.mute || (anyLaneSolo && !lane.solo))) {return;}
-            const relStep = s - clip.start;
-            if (relStep >= 0 && relStep < clip.len) {
-                const pat = p.patterns.find(pt => pt.id === clip.patternId);
-                if (!pat) {return;}
-                schedulePatternNotes(pat, relStep % (pat.steps || STEPS), time, dur, insts, clip.transpose || 0, over);
-            }
-        });
+    const timing = createTimingMap(p), insts = audibleInstruments(p.instruments);
+    return {
+        seconds: Math.max(0, timing.secondsBetween(from, to)),
+        schedule(s: number): void {
+            const time = timing.secondsBetween(from, s + swingOffset(p, s));
+            scheduleSongStep(p, s, time, timing.secondsBetween(s, s + 1), insts, timing);
+        }
+    };
+}
+
+/** Same score as scheduleRange, with event-loop checkpoints so a long export
+ * can paint progress and stop before allocating the remaining voice graph. */
+export async function scheduleRangeAsync(p: Project, from: number, to: number,
+    options: {signal?: AbortSignal; onProgress?: (progress: number) => void} = {}): Promise<number> {
+    const check = () => {if (options.signal?.aborted) {throw new DOMException('Export cancelled', 'AbortError');}};
+    check();
+    const range = rangeScheduler(p, from, to);
+    options.onProgress?.(0);
+    for (let start = from; start < to; start += 32) {
+        check();
+        const end = Math.min(start + 32, to);
+        for (let s = start; s < end; s++) {range.schedule(s);}
+        options.onProgress?.((end - from) / (to - from));
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
     }
-    return Math.max(0, to - from) * dur;
+    check();
+    return range.seconds;
 }
 
 // Place the playback cursor; jumps there live when the song is playing.

@@ -21,6 +21,8 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:audio": "node scripts/check-mixer.mjs",
+    "test:production": "node scripts/check-production.mjs",
+    "test:export": "node scripts/check-export-progress.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "preview": "vite preview",
     "promo:audio": "node promo/bounce.mjs",
