@@ -15,4 +15,23 @@ describe('Keyboard live preview', () => {
         expect(keyboard).toContain("target instanceof HTMLInputElement && target.type !== 'range'");
         expect(keyboard).toContain("if (e.key === ' ' && !isTextEntry(e))");
     });
+
+    it('uses physical positions for pitch and learns the active layout labels from Firefox events', () => {
+        expect(keyboard).toContain('bindingForCode(e.code, octave)');
+        expect(keyboard).toContain('learnKeyboardLabel(computerLabels, e.code, e.key)');
+        expect(keyboard).toContain('computerKeySource(e.key, e.code)');
+        expect(keyboard).toContain('loadKeyboardLayout');
+        expect(keyboard).not.toContain('bindingForCharacter(e.key');
+    });
+
+    it('releases every held source on range changes, blur, and teardown', () => {
+        expect(keyboard).toMatch(/function changeOctave[\s\S]*releaseAll\(\)/);
+        expect(keyboard).toContain('onblur={releaseAll}');
+        expect(keyboard).toContain('onDestroy(releaseAll)');
+    });
+
+    it('tracks character key-up by source so octave changes cannot release the wrong note', () => {
+        expect(keyboard).toContain('releaseSource(computerKeySource(e.key, e.code))');
+        expect(keyboard).toContain('press(POINTER_SOURCE, name)');
+    });
 });

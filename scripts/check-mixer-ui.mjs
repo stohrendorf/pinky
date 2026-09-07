@@ -42,10 +42,55 @@ try {
         return {name: p.instruments[0].name, id: p.instruments[0].id, volume: p.mixer.channels[p.instruments[0].id].volume,
             mixer: JSON.stringify(p.mixer), instruments: JSON.stringify(p.instruments)};
     });
+
+    const appMenu = page.getByRole('button', {name: 'Pinky application menu', exact: true});
+    await appMenu.click();
+    const utilities = page.getByRole('complementary', {name: 'Application utilities', exact: true});
+    await utilities.waitFor();
+    await page.locator('.scope-toggle').click();
+    await utilities.waitFor({state: 'hidden'});
+    await appMenu.click();
+    await page.keyboard.press('Escape');
+    assert.equal(await appMenu.evaluate(node => node === document.activeElement), true, 'Escape closes the application menu and restores focus');
+
+    await page.getByRole('button', {name: 'Edit instrument', exact: true}).click();
+    const instrumentEditor = page.getByRole('dialog', {name: 'Instrument editor', exact: true});
+    await instrumentEditor.waitFor();
+    assert.equal(await instrumentEditor.getByText('Range C4–B6', {exact: true}).count(), 1);
+    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {key: 'y', code: 'KeyZ', bubbles: true})));
+    await page.waitForFunction(async id => ((await import('/src/lib/engine.ts')).mixerMeters().channels[id]?.peak ?? 0) > 0.0001,
+        initial.id, {timeout: 5000});
+    assert.equal((await instrumentEditor.getByRole('button', {name: 'Play C5', exact: true}).locator('kbd').textContent())?.toLowerCase(), 'y',
+        'QWERTZ keeps the lowest note on the first physical key');
+    assert.equal((await instrumentEditor.getByRole('button', {name: 'Play A6', exact: true}).locator('kbd').textContent())?.toLowerCase(), 'z',
+        'learning one swapped key updates its paired label');
+    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', {key: 'y', code: 'KeyZ', bubbles: true})));
+    await instrumentEditor.getByRole('button', {name: 'Octave up', exact: true}).click();
+    assert.equal(await instrumentEditor.getByText('Range C5–B7', {exact: true}).count(), 1);
+    await page.keyboard.press('Escape');
+    await instrumentEditor.waitFor({state: 'hidden'});
+
+    await page.getByRole('button', {name: 'Add automation lane', exact: true}).click();
+    const automation = page.getByRole('dialog', {name: 'Add Automation Lane', exact: true});
+    assert.equal(await automation.getByRole('tree').count(), 1, 'instrument targets use the shared tree view');
+    await automation.getByRole('tab', {name: 'Mixer', exact: true}).click();
+    assert.equal(await automation.getByRole('tree').count(), 1, 'mixer channels and buses use the tree view');
+    await automation.getByRole('button', {name: 'Volume', exact: true}).click();
+    await automation.getByRole('button', {name: 'Add lane', exact: true}).click();
+    assert.deepEqual(await page.evaluate(id => {
+        const lane = window.mixerSong.automation.at(-1);
+        return {mixerTarget: lane.target.startsWith('mixer|channel|'), param: lane.param, value: lane.points[0].value,
+            channelValue: window.mixerSong.mixer.channels[id].volume};
+    }, initial.id), {mixerTarget: true, param: 'volume', value: initial.volume, channelValue: initial.volume});
+    await page.getByRole('button', {name: 'Add automation lane', exact: true}).click();
+    await automation.getByRole('tab', {name: 'Global FX', exact: true}).click();
+    assert.equal(await automation.getByRole('button', {name: 'Master FX', exact: true}).count(), 1);
+    await page.keyboard.press('Escape');
+
     const opener = page.getByRole('button', {name: 'Mixer', exact: true});
     await opener.click();
     const dialog = page.getByRole('dialog', {name: 'Mixer', exact: true});
-    assert.equal(await dialog.locator('#mixer-details').count(), 0, 'settings are closed initially');
+    assert.equal(await dialog.locator('#mixer-details.inspector-empty').count(), 1, 'the closed inspector explains how to continue');
     assert.equal(await dialog.locator('select').count(), 0, 'no routing dropdown repeated on every channel');
     assert.equal(await dialog.locator('input[type=number]').count(), 0, 'no spreadsheet of numbers');
     assert.equal(await page.evaluate(() => JSON.stringify(window.mixerSong.mixer)), initial.mixer, 'opening changes no sound');
@@ -92,7 +137,7 @@ try {
     await panel.getByRole('button', {name: 'Close channel settings', exact: true}).click();
     assert.equal(await heading.evaluate(el => el === document.activeElement), true, 'closing returns focus to its channel');
 
-    await dialog.getByRole('button', {name: '+ Delay', exact: true}).click();
+    await dialog.getByRole('button', {name: '+ Delay return', exact: true}).click();
     await panel.getByRole('textbox', {name: 'Bus name', exact: true}).fill('Test echo');
     await page.keyboard.press('Tab');
     const bus = await page.evaluate(() => window.mixerSong.mixer.buses.at(-1).id);
@@ -128,24 +173,19 @@ try {
     assert.equal(await summary.evaluate(el => el === document.activeElement), true);
     await panel.getByRole('button', {name: 'Close channel settings', exact: true}).click();
 
-    await page.setViewportSize({width: 390, height: 720});
-    const mobileBounds = await dialog.boundingBox();
-    assert.ok(mobileBounds.x >= 0 && mobileBounds.width <= 390);
     const master = dialog.getByRole('region', {name: 'Master strip', exact: true});
     const before = await master.boundingBox();
     await dialog.locator('.strips').evaluate(el => {el.scrollLeft = el.scrollWidth;});
     assert.deepEqual(await master.boundingBox(), before, 'master stays fixed while scrolling channels');
-    assert.ok(before.x >= mobileBounds.x && before.x + before.width <= mobileBounds.x + mobileBounds.width);
     await dialog.getByRole('button', {name: 'Master settings', exact: true}).click();
     assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), true, 'settings do not overflow horizontally');
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'mixer-mobile-check.png')});}
     assert.equal(await page.evaluate(() => JSON.stringify(window.mixerSong.instruments)), initial.instruments, 'no patch changes');
     await page.keyboard.press('Escape');
     await dialog.waitFor({state: 'hidden'});
     assert.equal(await opener.evaluate(el => el === document.activeElement), true);
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({browser: browserName, version: browser.version(), initialHeight: initialBounds.height,
-        checks: 'compact default, vertical faders, mute/solo, history, disclosure, sends, routing, delay, limiter, focus, mobile, unchanged patches'}));
+        checks: 'preview audio, QWERTZ layout, logo menu, automation trees/mixer lane, compact mixer, faders, mute/solo, history, routing, delay, limiter, focus'}));
 } finally {
     await browser?.close();
     await server.close();

@@ -58,7 +58,7 @@
     .fader {
         display: grid;
         justify-items: center;
-        gap: 10px;
+        gap: 7px;
     }
 
     .travel {
@@ -66,7 +66,7 @@
         align-items: stretch;
         justify-content: center;
         gap: 8px;
-        height: 160px;
+        height: 132px;
     }
 
     input[type=range] {

@@ -134,6 +134,9 @@ describe('Conductor component', () => {
         for (const text of ['Exact step', 'Use cursor', 'Marker type', 'Jump here', 'Loop section', 'Clear loop', '<details', 'class="marker-lane"']) {
             expect(source).not.toContain(text);
         }
+        expect(source).not.toContain('Add marker at cursor');
+        expect(source).toMatch(/<div class="conductor-label">\s*<span>Markers<\/span>\s*<\/div>/);
+        expect(source).toContain('aria-label="Add marker here"');
         expect(source).toContain('onpointercancel={cancelDrag}');
         expect(source).toContain('onlostpointercapture={cancelDrag}');
         expect(source).toContain('onblur={cancelDrag}');

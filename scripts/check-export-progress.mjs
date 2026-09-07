@@ -71,7 +71,7 @@ try {
     // Initialize and later verify the same live engine survives an export.
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByTitle('Stop', {exact: true}).click();
-    await page.getByRole('button', {name: 'Studio', exact: true}).click();
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     const exportButton = page.getByRole('button', {name: 'Render WAV', exact: true});
     const dialog = page.getByRole('dialog', {name: 'Export WAV', exact: true});
     const downloadEvent = page.waitForEvent('download', {timeout: 120000});
@@ -82,9 +82,6 @@ try {
     assert.match(await dialog.innerText(), /Approx\. .* left in this stage/);
     assert.match(await dialog.innerText(), /Cancellation waits for rendering to finish/);
     assert.notEqual(await dialog.locator('progress').getAttribute('value'), null);
-    await page.setViewportSize({width: 390, height: 720});
-    const box = await dialog.boundingBox();
-    assert.ok(box && box.x >= 0 && box.width <= 390, 'ETA and progress fit on mobile');
     const download = await downloadEvent;
     await dialog.waitFor({state: 'hidden'});
     const chunks = [];
@@ -105,6 +102,7 @@ try {
     assert.equal(downloads.length, 1);
 
     await page.evaluate(() => {window.testProgress = [];});
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await exportButton.click();
     await page.waitForFunction(() => window.testProgress.some(state => state.stage === 'rendering' && state.progress > 0.01));
     await page.keyboard.press('Escape');
@@ -118,7 +116,6 @@ try {
     }));
     assert.deepEqual(cancelled, {state: 'closed', busy: false, encoded: false, cancelled: true});
     assert.equal(downloads.length, 1, 'cancellation never downloads');
-    await page.setViewportSize({width: 1000, height: 800});
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
     await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
@@ -132,6 +129,7 @@ try {
     });
     const retry = page.waitForEvent('download', {timeout: 60000});
     void retry.catch(() => {});
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await exportButton.click();
     await retry;
     await dialog.waitFor({state: 'hidden'});
@@ -139,7 +137,7 @@ try {
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({browser: browserName, version: browser.version(), updates: values.length,
         etaSamples: rendered.filter(state => state.etaSeconds > 0).length, wavBytes: wav.length,
-        cancelled, checks: 'in-flight frames, ETA, mobile, WAV duration/audio, Escape, no cancelled download, playback, retry'}, null, 2));
+        cancelled, checks: 'in-flight frames, ETA, WAV duration/audio, Escape, no cancelled download, playback, retry'}, null, 2));
 } catch (error) {
     console.error('Export progress browser check failed:', error);
     const page = browser?.contexts()[0]?.pages()[0];

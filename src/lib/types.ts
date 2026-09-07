@@ -63,10 +63,9 @@ export interface ArrangementClip {
 }
 
 /* ---- automation ----
- * A lane draws one numeric parameter over the song timeline: either an
- * instrument param (`target` = instrument id) or a master FX param
- * (`target` = 'master'). Values are linearly interpolated between the points
- * and read by the scheduler at every 16th step. */
+ * A lane draws one numeric parameter over the song timeline. Existing plain
+ * instrument ids and the `master` target remain valid; mixer channel and bus
+ * targets use the collision-safe encoding from automation.ts. */
 export interface AutomationPoint {
     step: number;  // position on the arranger timeline (steps)
     value: number; // parameter value in its own unit
@@ -75,8 +74,8 @@ export interface AutomationPoint {
 
 export interface AutomationLane {
     id: string;
-    target: string; // instrument id, or 'master'
-    param: string;  // key of InstrumentParams, or 'vol' | 'rev' | 'tilt'
+    target: string; // instrument id, 'master', or encoded mixer channel/bus target
+    param: string;  // numeric parameter valid for that target
     points: AutomationPoint[];
 }
 

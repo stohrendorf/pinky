@@ -41,12 +41,12 @@ describe('TopBar demo selection', () => {
     it('keeps the top bar groups shrinkable within the viewport', () => {
         expect(toolbar).toMatch(/\.topbar-main\s*\{[\s\S]*min-width:\s*0;[\s\S]*overflow:\s*hidden;/s);
         expect(toolbar).toMatch(/\.session-group\s*\{[\s\S]*flex:\s*1 1 auto;/s);
-        expect(toolbar).toContain('ariaControls="topbar-utilities"');
+        expect(toolbar).toContain('aria-controls="topbar-utilities"');
     });
 
     it('shows save confirmation in the persistent top bar rather than the Studio sidebar', () => {
         expect(toolbar).toMatch(/<span class="song-label">\{\$songLabel\}<\/span>\s*<span class="saved-flash" aria-live="polite">\{saved\}<\/span>/);
-        expect(toolbar).toContain('<Button variant="secondary" on:click={saveProject}><i class="fa fa-save"></i> Save</Button>');
+        expect(toolbar).toContain('<Button variant="secondary" on:click={() => runUtilityAction(saveProject)}><i class="fa fa-save"></i> Save</Button>');
         expect(toolbar).not.toContain('Save<span class="saved-flash">');
     });
 
@@ -62,6 +62,40 @@ describe('TopBar demo selection', () => {
         expect(toolbar).not.toContain('class="menu-bar"');
         expect(toolbar).not.toContain('class="topbar-menu"');
         expect(toolbar).toMatch(/\.utility-sidebar\s*\{[\s\S]*max-height:\s*calc\(100dvh - 56px\);/s);
+    });
+
+    it('uses the Pinky brand as the accessible application-menu button', () => {
+        expect(toolbar).toMatch(/<button[\s\S]*class="brand"[\s\S]*aria-controls="topbar-utilities"[\s\S]*aria-expanded=\{utilityExpanded\}/);
+        expect(toolbar).toContain('aria-label="Pinky application menu"');
+        expect(toolbar).toContain("'Open Pinky application menu'");
+        expect(toolbar).not.toContain('<span>Studio</span>');
+        expect(toolbar).not.toContain('className="utility-toggle"');
+        expect(toolbar).toContain('fa-caret-down');
+        expect(toolbar).toMatch(/\.brand\s*\{[\s\S]*border:\s*1px solid var\(--border\);[\s\S]*background:\s*var\(--color-surface-raised\);/s);
+        expect(toolbar).toMatch(/\.brand:hover[\s\S]*border-color:\s*var\(--accent\);/s);
+    });
+
+    it('uses one desktop layout without mobile-only breakpoints', () => {
+        expect(toolbar).not.toContain('@media (max-width:');
+    });
+
+    it('uses a distinct equalizer-style icon for the Mixer', () => {
+        expect(toolbar).toMatch(/className="mixer-toggle"[\s\S]*fa-chart-simple[\s\S]*Mixer/);
+        expect(toolbar).not.toMatch(/className="mixer-toggle"[\s\S]*fa-sliders[\s\S]*Mixer/);
+    });
+
+    it('dismisses the application menu cleanly while preserving control interactions', () => {
+        expect(toolbar).toContain("document.addEventListener('pointerdown', handleOutsidePointer)");
+        expect(toolbar).toContain("document.addEventListener('click', handleOutsidePointer)");
+        expect(toolbar).toContain("document.addEventListener('keydown', handleMenuKeydown)");
+        expect(toolbar).toContain("document.removeEventListener('pointerdown', handleOutsidePointer)");
+        expect(toolbar).toContain("document.removeEventListener('click', handleOutsidePointer)");
+        expect(toolbar).toContain("document.removeEventListener('keydown', handleMenuKeydown)");
+        expect(toolbar).toContain('utilityMenu?.contains(target)');
+        expect(toolbar).toContain("event.key !== 'Escape'");
+        expect(toolbar).toContain('closeUtilities(true)');
+        expect(toolbar).toContain('runUtilityAction(saveProject)');
+        expect(toolbar).toContain('runUtilityAction(() => demo(d.id))');
     });
 
     it('keeps the sidebar compact and orders sections by relevance', () => {

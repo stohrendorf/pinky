@@ -71,7 +71,6 @@
         show = false;
         void tick().then(() => {
             if (opener?.isConnected) {opener.focus();}
-            else {document.querySelector<HTMLButtonElement>('[aria-label="Add marker at cursor"]')?.focus();}
         });
     }
 
@@ -275,12 +274,6 @@
 <div class="conductor">
     <div class="conductor-label">
         <span>Markers</span>
-        <button
-                aria-label="Add marker at cursor"
-                disabled={locked}
-                onclick={() => newMarker()}
-                title={$playing ? 'Stop playback to add a marker' : 'Add marker at cursor'}
-                type="button">+</button>
     </div>
     <div style="max-width: {viewportWidth}px;" class="conductor-viewport">
         <div style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);" class="conductor-lanes">
@@ -374,9 +367,8 @@ bind:value={tempoBpm}/>
 
 <style>
     .conductor {position: relative; display: grid; grid-template-columns: 200px minmax(0, 1fr); height: 100%; min-width: 0; background: var(--color-surface); border-bottom: 1px solid var(--border); box-sizing: border-box;}
-    .conductor-label {display: flex; gap: 4px; align-items: center; min-width: 0; padding: 1px 6px; border-right: 1px solid var(--border);}
-    .conductor-label span {flex: 1; font-size: 11px; color: var(--secondary-text);}
-    .conductor-label button {height: 24px; width: 28px; padding: 0; font-size: 16px;}
+    .conductor-label {display: flex; align-items: center; min-width: 0; padding: 1px 6px; border-right: 1px solid var(--border);}
+    .conductor-label span {font-size: 11px; color: var(--secondary-text);}
     .conductor-viewport {overflow: clip; min-width: 0;}
     .conductor-lanes {position: relative; height: 100%; will-change: transform;}
     button, input {font-family: inherit; font-size: 11px; color: var(--primary-text); background: var(--color-surface-input); border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; box-sizing: border-box;}

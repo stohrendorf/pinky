@@ -127,16 +127,12 @@ try {
     await conductor.getByRole('button', {name: 'Save', exact: true}).click();
     await conductor.getByRole('alert').waitFor();
     await conductor.getByLabel('Title', {exact: true}).fill('Unsaved');
-    await page.setViewportSize({width: 390, height: 720});
-    const markerBox = await conductor.boundingBox();
-    assert.ok(markerBox && markerBox.width <= 358 && markerBox.height < 480 && markerBox.x >= 0, 'small editor fits a narrow screen');
     if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'marker-editor-check.png')});}
     await conductor.getByRole('button', {name: 'Save', exact: true}).focus();
     await page.keyboard.press('Tab');
     assert.equal(await conductor.evaluate(node => node.contains(document.activeElement)), true, 'marker editor traps Tab');
     await page.keyboard.press('Escape');
     assert.equal(await placeholder.evaluate(node => node === document.activeElement), true, 'Escape restores focus');
-    await page.setViewportSize({width: 1440, height: 1000});
     await page.getByTitle('Bar 2 · 7/8 · step 14', {exact: true}).waitFor();
     const firstBar = await page.getByTitle('Bar 1 · 7/8 · step 0', {exact: true}).boundingBox();
     const secondBar = await page.getByTitle('Bar 2 · 7/8 · step 14', {exact: true}).boundingBox();
@@ -177,7 +173,7 @@ try {
         long.arrangement[0].len = 512;
         project.set(long);
     });
-    await page.getByRole('button', {name: /Studio/}).click();
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     const exportButton = page.getByRole('button', {name: 'Render WAV', exact: true});
     await exportButton.click();
     const exporting = page.getByRole('dialog', {name: 'Export WAV', exact: true});
@@ -186,9 +182,6 @@ try {
     assert.equal(await exporting.evaluate(node => node.contains(document.activeElement)), true, 'export owns keyboard focus');
     await page.keyboard.press('Tab');
     assert.equal(await exporting.evaluate(node => node.contains(document.activeElement)), true, 'Tab remains in export');
-    await page.setViewportSize({width: 390, height: 720});
-    const box = await exporting.boundingBox();
-    assert.ok(box && box.width <= 390 && box.x >= 0, 'export modal fits narrow screen');
     if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'export-check.png')});}
     const cancelStarted = Date.now();
     await page.keyboard.press('Escape');
@@ -203,7 +196,6 @@ try {
     });
     assert.deepEqual(stopped, {...stopped, state: 'suspended', later: stopped.at, rendering: false});
     assert.equal(downloads.length, 0, 'cancel must never download a partial file');
-    await page.setViewportSize({width: 1440, height: 1000});
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
     await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
@@ -219,6 +211,7 @@ try {
         const p = window.testSong;
         return Math.ceil((createTimingMap(p).secondsBetween(0, 32) + 3 + 1.5 * p.instruments[0].params.rel) * 44100);
     });
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     const downloadEvent = page.waitForEvent('download', {timeout: 30000});
     await exportButton.click();
     const download = await downloadEvent;
@@ -258,6 +251,7 @@ try {
         p.arrangement[0].len = 128;
         (await import('/src/lib/project.ts')).project.set(p);
     });
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await exportButton.click();
     await page.waitForFunction(() => window.testProgress.some(state => state.stage === 'rendering' && state.progress > 0 && state.progress < 1));
     assert.notEqual(await exporting.locator('progress').getAttribute('value'), null, 'worklet reports progress without pause APIs');
@@ -281,6 +275,7 @@ try {
         window.testProgress = [];
         (await import('/src/lib/project.ts')).project.set(JSON.parse(JSON.stringify(window.testSong)));
     });
+    await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     const fallbackDownloadEvent = page.waitForEvent('download', {timeout: 30000});
     await exportButton.click();
     const fallbackDownload = await fallbackDownloadEvent;
@@ -299,7 +294,6 @@ try {
     assert.equal(downloads.length, 2, 'only successful renders download files');
     await page.evaluate(() => {window.testNoOfflinePause = false;});
 
-    await page.getByRole('button', {name: 'Studio', exact: true}).click();
     await page.evaluate(async () => (await import('/src/lib/project.ts')).loadDemoProject('monsoon'));
     const seven = page.getByRole('button', {name: /^Edit Seven Rains/});
     await page.locator('.grid-viewport').evaluate(async node => {
@@ -317,7 +311,7 @@ try {
     console.log(JSON.stringify({browser: browser.version(), conductor: 'direct lane editing, no picker/repeated meters, real 7/8 ruler, ruler loop, history, playback lock and scrolling passed',
         export: {cancelMs, stopped, frames: expectedFrames, wavBytes: wav.length, stages: [...new Set(stages.map(state => state.stage))],
             downloads: downloads.length, fallback: {stopped: fallbackStopped, progress: fallbackProgress, wavBytes: fallbackWav.length},
-            checks: 'native suspension, missing pause APIs, focus, Escape, mobile, live playback recovery, retry, encoding cancel'}}, null, 2));
+            checks: 'native suspension, missing pause APIs, focus, Escape, live playback recovery, retry, encoding cancel'}}, null, 2));
 } finally {
     await browser?.close();
     await server.close();

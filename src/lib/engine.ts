@@ -149,6 +149,15 @@ export function mixerMeters(): {master: MasterMeter; channels: Record<string, Ch
     };
 }
 
+export function automateMixer(id: string, param: string, value: number, at: number, ramp: number): boolean {
+    const mixer = offline && schedulingOffline ? engine.mixer : liveGraph?.mixer;
+    return !!mixer?.automate(id, param, value, at, ramp);
+}
+
+export function resetMixer(): void {
+    if (mixerConfig.mixer) {liveGraph?.mixer?.reset(mixerConfig.mixer);}
+}
+
 /** Algorithmic limiter latency, in seconds, including bypass. Hardware latency
  * is intentionally separate; the returned value is also trimmed from exports. */
 export function outputLatency(): number {

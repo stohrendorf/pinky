@@ -561,26 +561,4 @@ on:confirm={onConfirmDelete}/>
         letter-spacing: 1px;
     }
 
-
-    @media (max-width: 620px) {
-        .tab-content {
-            grid-template-columns: 1fr;
-        }
-
-        .sound-overview {
-            padding: 12px 0 0;
-            border-top: 1px solid var(--border);
-            border-left: 0;
-        }
-
-        .instrument-actions {
-            margin-left: 0;
-        }
-
-        .guided-path {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-    }
 </style>

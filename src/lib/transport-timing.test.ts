@@ -9,7 +9,13 @@ import type {
     Project
 } from './types';
 
+import {
+    mixerTarget
+} from './automation';
 import * as engine from './engine';
+import {
+    createMixer
+} from './mixer';
 import {
     newEmptyProject, playing, project, selPatId, songCursor
 } from './project';
@@ -26,7 +32,8 @@ import {
 const clock = vi.hoisted(() => ({now: 0, tick: null as null | ((time: number) => void)}));
 vi.mock('./engine', () => ({
     configureMixer: vi.fn(), noteOnAt: vi.fn(), noteOffAt: vi.fn(), glideAt: vi.fn(),
-    automateMaster: vi.fn(), automateInstrument: vi.fn(), allNotesOff: vi.fn(), resetMaster: vi.fn(),
+    automateMaster: vi.fn(), automateInstrument: vi.fn(), automateMixer: vi.fn(), allNotesOff: vi.fn(),
+    resetMaster: vi.fn(), resetMixer: vi.fn(),
     isRendering: () => false, ensureAudio: vi.fn(async () => {}), outputLatency: () => 0.005,
     audioTime: () => clock.now, clockStart: vi.fn(), clockStop: vi.fn(),
     setTickHandler: (callback: (time: number) => void) => {clock.tick = callback;}
@@ -50,6 +57,11 @@ function score(): Project {
         {id: createId(), step: 24, bpm: 120, curve: 'hold'}
     ];
     p.automation = [{id: createId(), target: 'master', param: 'vol', points: [{step: 0, value: 0.5}, {step: 32, value: 0.8}]}];
+    p.mixer = createMixer([id]);
+    p.automation.push({
+        id: createId(), target: mixerTarget('channel', id), param: 'pan',
+        points: [{step: 0, value: -0.5}, {step: 32, value: 0.5}]
+    });
     return p;
 }
 
@@ -74,6 +86,7 @@ describe('conductor-aware scheduling', () => {
         const automation = vi.mocked(engine.automateMaster).mock.calls[8];
         expect(automation[2]).toBe(1);
         expect(automation[3]).toBeCloseTo(timing.secondsBetween(8, 9) / 3, 10);
+        expect(engine.automateMixer).toHaveBeenCalledWith(id, 'pan', -0.25, 1, automation[3]);
     });
 
     it('maps both ends of slides, including a terminal linked note after a tempo change', () => {

@@ -32,7 +32,7 @@
             id: bus.id,
             name: bus.name,
             color: 'var(--accent2)',
-            kind: bus.effect === 'delay' ? 'Delay' : 'Group',
+            kind: bus.effect === 'delay' ? 'Delay return' : 'Group bus',
             channel: bus
         }))
     ]);
@@ -194,32 +194,63 @@
     <fieldset class="mixer-editing" disabled={$rendering || !$project}>
         <legend class="sr-only">Mixer controls</legend>
         <div class="mixer-actions">
-            <span>Channels</span>
+            <div class="flow-heading">
+                <strong>Channels</strong>
+                <span>Signal flows left to right into Master</span>
+            </div>
             <div class="bus-actions">
-                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('none')} type="button">+
-                    Group
+                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('none')} title="Add a routing bus" type="button">+
+                    Group bus
                 </button>
-                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('delay')} type="button">+
-                    Delay
+                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('delay')} title="Add a wet-only delay return" type="button">+
+                    Delay return
                 </button>
             </div>
         </div>
         <div class="console">
-            <div class="strips" aria-label="Mixer channel strips" role="region">
-                {#each strips as strip (strip.id)}
-                    <MixerStrip
-                            id={strip.id}
-                            name={strip.name}
-                            channel={strip.channel}
-                            color={strip.color}
-                            kind={strip.kind}
-                            onedit={change => editChannel(strip.id, change)}
-                            onselect={() => toggleStrip(strip.id)}
-                            outputs={mixer.buses}
-                            peak={meters.channels[strip.id]?.peak ?? 0}
-                            rms={meters.channels[strip.id]?.rms ?? 0}
-                            selected={selected?.id === strip.id}/>
-                {/each}
+            <div class="strips" aria-label="Mixer channels, horizontally scrollable" role="region">
+                <section class="strip-bank" aria-labelledby="instrument-bank-heading">
+                    <div id="instrument-bank-heading" class="bank-heading">Instruments</div>
+                    <div class="strip-row">
+                        {#each strips.filter(strip => strip.kind === 'Instrument') as strip (strip.id)}
+                            <MixerStrip
+                                    id={strip.id}
+                                    name={strip.name}
+                                    channel={strip.channel}
+                                    color={strip.color}
+                                    kind={strip.kind}
+                                    onedit={change => editChannel(strip.id, change)}
+                                    onselect={() => toggleStrip(strip.id)}
+                                    outputs={mixer.buses}
+                                    peak={meters.channels[strip.id]?.peak ?? 0}
+                                    rms={meters.channels[strip.id]?.rms ?? 0}
+                                    selected={selected?.id === strip.id}/>
+                        {/each}
+                    </div>
+                </section>
+                <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
+                    <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
+                    {#if mixer.buses.length}
+                        <div class="strip-row">
+                            {#each strips.filter(strip => strip.kind !== 'Instrument') as strip (strip.id)}
+                                <MixerStrip
+                                        id={strip.id}
+                                        name={strip.name}
+                                        channel={strip.channel}
+                                        color={strip.color}
+                                        kind={strip.kind}
+                                        onedit={change => editChannel(strip.id, change)}
+                                        onselect={() => toggleStrip(strip.id)}
+                                        outputs={mixer.buses}
+                                        peak={meters.channels[strip.id]?.peak ?? 0}
+                                        rms={meters.channels[strip.id]?.rms ?? 0}
+                                        selected={selected?.id === strip.id}/>
+                            {/each}
+                        </div>
+                    {:else}
+                        <p class="empty-bank">Add a bus for submixes or delay.</p>
+                    {/if}
+                </section>
             </div>
             <section class="master-strip" class:selected={selectedId === 'master'} aria-label="Master strip">
                 <button
@@ -230,7 +261,7 @@
                         data-strip="master"
                         onclick={() => toggleStrip('master')}
                         type="button">
-                    <strong>Master</strong><span aria-hidden="true">···</span>
+                    <span class="master-kind">Final output</span><strong>Master</strong><span aria-hidden="true">···</span>
                 </button>
                 <button
                         class="limiter-toggle"
@@ -249,7 +280,7 @@
                             onchange={value => masterNumber('vol', value)}
                             peaks={meters.master.peak}
                             value={mixer.master.vol}/>
-                <span class="output-label">Stereo out</span>
+                <span class="output-label">→ Stereo out</span>
             </section>
         </div>
         {#if selected || selectedId === 'master'}
@@ -260,17 +291,20 @@
                     aria-label={selected ? `${selected.name} settings` : 'Master settings'}
                     tabindex="-1">
                 <div class="details-heading">
-                    {#if selectedBus}
-                        <label class="bus-identity"><span class="sr-only">Bus name</span>
-                            <input
-                                    maxlength="80"
-                                    onchange={e => renameBus(selectedBus.id, e.currentTarget)}
-                                    type="text"
-                                    value={selectedBus.name}>
-                        </label>
-                    {:else}
-                        <h4>{selected?.name ?? 'Master'}</h4>
-                    {/if}
+                    <div class="inspector-title">
+                        <span>Channel inspector</span>
+                        {#if selectedBus}
+                            <label class="bus-identity"><span class="sr-only">Bus name</span>
+                                <input
+                                        maxlength="80"
+                                        onchange={e => renameBus(selectedBus.id, e.currentTarget)}
+                                        type="text"
+                                        value={selectedBus.name}>
+                            </label>
+                        {:else}
+                            <h4>{selected?.name ?? 'Master'}</h4>
+                        {/if}
+                    </div>
                     <button aria-label="Close channel settings" onclick={closeDetails} type="button">×</button>
                 </div>
                 {#key selectedId}
@@ -389,6 +423,11 @@
                     {/if}
                 {/key}
             </section>
+        {:else}
+            <section id="mixer-details" class="inspector-empty" aria-label="Channel inspector">
+                <strong>Channel inspector</strong>
+                <span>Select a strip to edit routing, sends and processing.</span>
+            </section>
         {/if}
     </fieldset>
 </div>
@@ -432,8 +471,14 @@
         margin-bottom: 12px;
     }
 
-    .mixer-actions > span {
+    .flow-heading {
+        display: grid;
+        gap: 3px;
+    }
+
+    .flow-heading span {
         color: var(--color-text-muted);
+        font-size: 10px;
     }
 
     .bus-actions button {
@@ -449,24 +494,67 @@
 
     .strips {
         display: flex;
-        gap: 4px;
+        align-items: stretch;
+        gap: 12px;
         flex: 1;
         min-width: 0;
         overflow-x: auto;
         padding-bottom: 10px;
+        scrollbar-gutter: stable;
+    }
+
+    .strip-bank {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 4px;
+        background: var(--color-surface-input);
+    }
+
+    .bus-bank {
+        min-width: 112px;
+        background: var(--color-surface-deep);
+    }
+
+    .strip-row {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .bank-heading {
+        color: var(--color-text-muted);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .empty-bank {
+        width: 100px;
+        margin: auto 0;
+        color: var(--color-text-muted);
+        font-size: 10px;
+        line-height: 1.4;
     }
 
     .master-strip {
         display: flex;
+        position: sticky;
+        right: 0;
+        z-index: 2;
         flex: 0 0 96px;
         flex-direction: column;
-        gap: 10px;
-        padding: 10px 8px;
+        gap: 8px;
+        padding: 8px;
         margin-bottom: 10px;
         border: 1px solid var(--border);
         border-top: 3px solid var(--accent);
         border-radius: 3px;
         background: var(--color-surface-deep);
+        box-shadow: -8px 0 12px color-mix(in srgb, var(--color-surface-deep) 70%, transparent);
     }
 
     .master-strip.selected {
@@ -478,7 +566,7 @@
         flex-direction: column;
         justify-content: center;
         gap: 10px;
-        height: 72px;
+        height: 56px;
         padding: 3px;
         background: transparent;
         border: 0;
@@ -486,6 +574,12 @@
 
     .master-heading span {
         color: var(--color-text-muted);
+    }
+
+    .master-heading .master-kind {
+        color: var(--accent);
+        font-size: 9px;
+        text-transform: uppercase;
     }
 
     .limiter-toggle {
@@ -531,9 +625,36 @@
     }
 
     .details {
-        border-top: 1px solid var(--border);
-        padding-top: 14px;
-        margin-top: 4px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 14px;
+        margin-top: 8px;
+        background: var(--color-surface-deep);
+    }
+
+    .inspector-title {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .inspector-title > span,
+    .inspector-empty > strong {
+        color: var(--accent);
+        font-size: 9px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .inspector-empty {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        padding: 12px 14px;
+        border-top: 1px solid var(--border-subtle);
+        color: var(--color-text-muted);
+        font-size: 11px;
     }
 
     .details-heading h4 {
@@ -661,17 +782,4 @@
         white-space: nowrap;
     }
 
-    @media (max-width: 520px) {
-        .console {
-            gap: 6px;
-        }
-
-        .master-strip {
-            flex-basis: 72px;
-        }
-
-        .channel-controls {
-            grid-template-columns: 1fr;
-        }
-    }
 </style>

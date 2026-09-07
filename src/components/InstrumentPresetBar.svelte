@@ -141,13 +141,4 @@ bind:value={savePresetValue}
         text-transform: none;
     }
 
-    @media (max-width: 620px) {
-        label span {
-            display: none;
-        }
-
-        select {
-            width: min(160px, 42vw);
-        }
-    }
 </style>

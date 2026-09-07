@@ -14,8 +14,8 @@ import {
 class Param {
     cancelScheduledValues = vi.fn();
     constructor(public value = 0) {}
-    setValueAtTime(value: number) {this.value = value;}
-    linearRampToValueAtTime(value: number) {this.value = value;}
+    setValueAtTime = vi.fn((value: number) => {this.value = value;});
+    linearRampToValueAtTime = vi.fn((value: number) => {this.value = value;});
 }
 
 class Node {
@@ -135,6 +135,17 @@ const bus = (id: string, effect: MixerBus['effect'] = 'none'): MixerBus => ({
 });
 
 describe('persistent mixer audio routing', () => {
+    it('routes live preview scope keys through their plain instrument mixer channel', () => {
+        const {audio, master} = graph();
+        audio.configure(createMixer(['lead']));
+
+        const tap = audio.voiceInput('live-lead') as unknown as Node;
+
+        expect(tap.connections.has(audio.input('lead') as unknown as Node)).toBe(true);
+        expect(tap.connections.has(master)).toBe(false);
+        expect(audio.voiceInput('live-lead')).toBe(tap);
+    });
+
     it('keeps held voices connected when activating the mixer or restoring a strip', () => {
         const {audio, master} = graph();
         const tap = audio.voiceInput('a') as unknown as Node;
@@ -171,6 +182,32 @@ describe('persistent mixer audio routing', () => {
         const writes = volume.gain.cancelScheduledValues.mock.calls.length;
         audio.configure(mixer);
         expect(volume.gain.cancelScheduledValues).toHaveBeenCalledTimes(writes);
+    });
+
+    it('schedules smooth strip ramps without reconfiguration and restores persisted values', () => {
+        const {audio, context} = graph();
+        const mixer = createMixer(['a']);
+        mixer.channels.a.volume = 0.7;
+        mixer.buses = [bus('echo', 'delay')];
+        audio.configure(mixer);
+        const before = context.nodes.length;
+        const a = strip(audio.input('a'));
+        const echoInput = audio.input('echo') as unknown as Node;
+        const delay = [...echoInput.connections][0];
+
+        expect(audio.automate('a', 'volume', 0.25, 2, 0.1)).toBe(true);
+        expect(a.volume.gain.setValueAtTime).toHaveBeenLastCalledWith(0.7, 2);
+        expect(a.volume.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(0.25, 2.1);
+        expect(audio.automate('echo', 'delayTime', 0.5, 2, 0.1)).toBe(true);
+        expect(delay.delayTime.linearRampToValueAtTime).toHaveBeenLastCalledWith(0.5, 2.1);
+        expect(audio.automate('removed', 'volume', 1, 2, 0.1)).toBe(false);
+        expect(audio.automate('a', 'mute', 1, 2, 0.1)).toBe(false);
+        expect(context.nodes.length).toBe(before);
+
+        audio.reset(mixer);
+        expect(a.volume.gain.cancelScheduledValues).toHaveBeenLastCalledWith(0);
+        expect(a.volume.gain.value).toBe(0.7);
+        expect(delay.delayTime.value).toBe(0.2);
     });
 
     it('routes nested buses and post-fader sends; mute gates dry, reverb and every send together', () => {

@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 import {
-    instrumentOverrides, masterAutomation
+    instrumentOverrides, masterAutomation, mixerAutomation
 } from './automation';
 import * as eng from './engine';
 import {
@@ -120,6 +120,10 @@ function playMasterAutomation(p: Project, step: number, time: number, dur: numbe
     masterAutomation(p, step).forEach(m => eng.automateMaster(m.param, m.value, time, dur / 3));
 }
 
+function playMixerAutomation(p: Project, step: number, time: number, dur: number): void {
+    mixerAutomation(p, step).forEach(m => eng.automateMixer(m.target.id, m.param, m.value, time, dur / 3));
+}
+
 // Instrument automation: the notes starting on this step are played with the
 // patched params (`over`), and everything of that instrument that is *already*
 // sounding is re-tuned to the same values — otherwise a sweep under a held pad
@@ -147,6 +151,7 @@ function scheduleStep(p: Project, s: number, at: number, dur: number, insts: Ins
 function scheduleSongStep(p: Project, s: number, at: number, dur: number, insts: Instrument[], timing: TimingMap): void {
     const over = instrumentOverrides(p, s);
     playMasterAutomation(p, s, at, dur);
+    playMixerAutomation(p, s, at, dur);
     playInstrumentAutomation(over, at, dur);
     const anyLaneSolo = p.tracks.some(t => t.solo);
     const position = s + swingOffset(p, s);
@@ -253,6 +258,7 @@ export function stopTransport(): void {
     }
     eng.clockStop();
     eng.resetMaster(); // undo whatever the automation lanes did to the master FX
+    eng.resetMixer();
     curStep.set(-1);
     songPos.set(-1);
     songLabel.set('');

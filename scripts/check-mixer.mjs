@@ -51,11 +51,7 @@ try {
     await dialog.getByRole('button', {name: 'Delete bus', exact: true}).click();
     await dialog.getByRole('button', {name: `${state.name} settings`, exact: true}).click();
     assert.equal(await dialog.getByLabel(`${state.name} output`, {exact: true}).inputValue(), 'master');
-    await page.setViewportSize({width: 580, height: 850});
-    const bounds = await dialog.boundingBox();
-    assert.ok(bounds && bounds.width <= 580 && bounds.x >= 0, 'mixer fits narrow viewport');
     await page.keyboard.press('Escape');
-    await page.setViewportSize({width: 1440, height: 1000});
 
     const result = await page.evaluate(async () => {
         const engine = await import('/src/lib/engine.ts');
@@ -211,7 +207,7 @@ try {
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
     if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'mixer-check.png')});}
     assert.deepEqual(errors, [], 'browser runtime errors');
-    console.log(JSON.stringify({browser: browser.version(), ui: 'routing, mute, delete, narrow viewport and live meters passed', audio: result}, null, 2));
+    console.log(JSON.stringify({browser: browser.version(), ui: 'routing, mute, delete and live meters passed', audio: result}, null, 2));
 } finally {
     await browser?.close();
     await server.close();

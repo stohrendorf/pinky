@@ -41,6 +41,8 @@
 <section
         style:--strip-color={color}
         class="strip"
+        class:bus={kind !== 'Instrument'}
+        class:delay-return={kind === 'Delay return'}
         class:muted={channel.mute}
         class:selected
         aria-label={`${name} ${kind}`}>
@@ -53,7 +55,7 @@
             onclick={onselect}
             title={name}
             type="button">
-        <span class="kind">{kind === 'Instrument' ? '' : kind}</span>
+        <span class="kind">{kind}</span>
         <strong title={name}>{name.split('/').at(-1) || name}</strong>
         <span class="edit-hint" aria-hidden="true">···</span>
     </button>
@@ -71,18 +73,22 @@
     </label>
     <div class="switches">
         <button
+                class="channel-toggle"
+                class:active={channel.mute}
                 aria-label={`Mute ${name}`}
                 aria-pressed={channel.mute}
                 onclick={() => onedit(c => c.mute = !c.mute)}
                 title="Mute — effect tails decay"
-                type="button">M
+                type="button"><i class="fa fa-volume-xmark" aria-hidden="true"></i>
         </button>
         <button
+                class="channel-toggle"
+                class:active={channel.solo}
                 aria-label={`Solo ${name}`}
                 aria-pressed={channel.solo}
                 onclick={() => onedit(c => c.solo = !c.solo)}
                 title="Solo — includes contributing sources and sends"
-                type="button">S
+                type="button"><i class="fa fa-headphones" aria-hidden="true"></i>
         </button>
     </div>
     <div class="channel-level" title={`Peak ${level(peak)} dBFS · RMS ${level(rms)} dBFS`}>
@@ -94,7 +100,7 @@
             onclick={onselect}
             title={`Output: ${outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}`}
             type="button">
-        → {outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}
+        Out → {outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}
     </button>
 </section>
 
@@ -103,9 +109,9 @@
         display: flex;
         flex: 0 0 96px;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         min-width: 0;
-        padding: 10px 8px;
+        padding: 8px;
         border: 1px solid var(--border-subtle);
         border-radius: 3px;
         background: var(--color-surface-raised);
@@ -115,6 +121,21 @@
     .strip.selected {
         border-color: var(--accent);
         background: var(--color-surface-hover);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .strip.bus {
+        background: var(--color-surface-deep);
+        border-top-color: var(--accent2);
+    }
+
+    .strip.bus.selected {
+        border-color: var(--accent);
+        background: var(--color-surface-hover);
+    }
+
+    .strip.delay-return {
+        border-top-style: dashed;
     }
 
     .strip-heading {
@@ -125,7 +146,7 @@
         border: 0;
         background: transparent;
         text-align: left;
-        height: 72px;
+        height: 56px;
         color: var(--primary-text);
     }
 
@@ -157,15 +178,26 @@
 
     .switches {
         display: flex;
-        gap: 6px;
+        justify-content: center;
+        gap: 4px;
     }
 
-    .switches button {
-        flex: 1;
-        padding: 6px;
+    .channel-toggle {
+        width: 30px;
+        height: 28px;
+        padding: 4px;
+        border-color: transparent;
+        background: transparent;
+        color: var(--color-text-muted);
     }
 
-    .switches button[aria-pressed=true] {
+    .channel-toggle:hover {
+        color: var(--primary-text);
+        background: var(--color-surface-hover);
+    }
+
+    .channel-toggle.active,
+    .channel-toggle[aria-pressed=true] {
         background: var(--accent);
         color: var(--action-text);
         border-color: var(--accent);

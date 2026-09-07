@@ -61,10 +61,61 @@
     let showAlert = $state(false);
     let alertMessage = $state('');
     let utilityExpanded = $state(false);
+    let utilityButton: HTMLButtonElement | undefined = $state();
+    let utilityMenu: HTMLElement | undefined = $state();
 
     function toggleUtilities() {
-        utilityExpanded = !utilityExpanded;
+        if (utilityExpanded) {
+            closeUtilities();
+            return;
+        }
+        utilityExpanded = true;
     }
+
+    function closeUtilities(restoreFocus = false) {
+        if (!utilityExpanded) {
+            return;
+        }
+        utilityExpanded = false;
+        if (restoreFocus) {
+            queueMicrotask(() => utilityButton?.focus());
+        }
+    }
+
+    function runUtilityAction(action: () => void | Promise<void>, restoreFocus = true) {
+        closeUtilities(restoreFocus);
+        void action();
+    }
+
+    function handleOutsidePointer(event: Event) {
+        const target = event.target;
+        if (target instanceof Node && (utilityButton?.contains(target) || utilityMenu?.contains(target))) {
+            return;
+        }
+        closeUtilities(true);
+    }
+
+    function handleMenuKeydown(event: KeyboardEvent) {
+        if (event.key !== 'Escape') {
+            return;
+        }
+        event.preventDefault();
+        closeUtilities(true);
+    }
+
+    $effect(() => {
+        if (!utilityExpanded) {
+            return;
+        }
+        document.addEventListener('pointerdown', handleOutsidePointer);
+        document.addEventListener('click', handleOutsidePointer);
+        document.addEventListener('keydown', handleMenuKeydown);
+        return () => {
+            document.removeEventListener('pointerdown', handleOutsidePointer);
+            document.removeEventListener('click', handleOutsidePointer);
+            document.removeEventListener('keydown', handleMenuKeydown);
+        };
+    });
 
     function setMaster(id: MasterId, v: number) {
         if (!$project || $rendering || !Number.isFinite(v)) {return;}
@@ -157,7 +208,19 @@
 <header class="topbar">
     <div class="topbar-main">
         <div class="session-group">
-            <div class="brand" title="Pinky EQ-only DAW"><i class="fa fa-wave-square"></i> <span>Pinky</span></div>
+            <button
+                    bind:this={utilityButton}
+                    class="brand"
+                    aria-controls="topbar-utilities"
+                    aria-expanded={utilityExpanded}
+                    aria-label="Pinky application menu"
+                    onclick={toggleUtilities}
+                    title={utilityExpanded ? 'Close Pinky application menu' : 'Open Pinky application menu'}
+                    type="button">
+                <i class="fa fa-wave-square" aria-hidden="true"></i>
+                <span>Pinky</span>
+                <i class="fa fa-caret-down menu-caret" aria-hidden="true"></i>
+            </button>
             <div class="transport-controls">
                 <Button className="compact-button" disabled={$playing || $rendering} title="Play Pattern" on:click={playPattern}><i class="fa fa-play"></i> Pattern
                 </Button>
@@ -186,7 +249,7 @@
                     title="Open mixer: channels, routing and master protection"
                     variant="secondary"
                     on:click={() => showMixer = true}>
-                <i class="fa fa-sliders" aria-hidden="true"></i> Mixer
+                <i class="fa fa-chart-simple" aria-hidden="true"></i> Mixer
             </Button>
             <a
                     class="repo-link"
@@ -202,29 +265,19 @@
                     title="Keyboard shortcuts (?)"
                     variant="ghost"
                     on:click={() => showShortcuts.set(true)}></IconButton>
-            <Button
-                    ariaControls="topbar-utilities"
-                    className="utility-toggle"
-                    expanded={utilityExpanded}
-                    pressed={utilityExpanded}
-                    title="Show application utilities"
-                    variant="ghost"
-                    on:click={toggleUtilities}>
-                <i class="fa fa-sliders"></i><span>Studio</span>
-            </Button>
         </div>
     </div>
 
     {#if utilityExpanded}
-        <aside id="topbar-utilities" class="utility-sidebar" aria-label="Application utilities">
+        <aside bind:this={utilityMenu} id="topbar-utilities" class="utility-sidebar" aria-label="Application utilities">
             <div class="sidebar-column">
                 <div class="sidebar-section">
                     <span class="menu-heading">Project</span>
-                    <Button variant="secondary" on:click={saveProject}><i class="fa fa-save"></i> Save</Button>
-                    <Button variant="secondary" on:click={exportProject}><i class="fa fa-download"></i> Export</Button>
-                    <Button variant="secondary" on:click={() => fileInput?.click()}><i class="fa fa-upload"></i> Import
+                    <Button variant="secondary" on:click={() => runUtilityAction(saveProject)}><i class="fa fa-save"></i> Save</Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(exportProject)}><i class="fa fa-download"></i> Export</Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(() => fileInput?.click())}><i class="fa fa-upload"></i> Import
                     </Button>
-                    <Button variant="secondary" on:click={newProject}><i class="fa fa-add"></i> New</Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(newProject, false)}><i class="fa fa-add"></i> New</Button>
                 </div>
                 <div class="sidebar-section">
                     <span class="menu-heading">Render</span>
@@ -232,7 +285,7 @@
                             disabled={$rendering}
                             title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
                             variant="secondary"
-                            on:click={exportAudio}>
+                            on:click={() => runUtilityAction(exportAudio)}>
                         <i class="fa fa-file-audio"></i> {$rendering ? 'Rendering…' : 'Render WAV'}</Button>
                 </div>
             </div>
@@ -280,7 +333,7 @@
                                 pressed={$activeDemo === d.id}
                                 title={d.title}
                                 variant={$activeDemo === d.id ? 'primary' : 'secondary'}
-                                on:click={() => demo(d.id)}><i class="fa {d.icon}"></i> {d.label}
+                                on:click={() => runUtilityAction(() => demo(d.id))}><i class="fa {d.icon}"></i> {d.label}
                         </Button>
                     {/each}
                 </div>
@@ -391,10 +444,34 @@
         align-items: center;
         gap: 7px;
         flex: 0 0 auto;
+        padding: 5px 7px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--color-surface-raised);
         color: var(--accent);
+        cursor: pointer;
+        font-family: inherit;
         font-size: 15px;
         font-weight: 700;
         letter-spacing: .12em;
+    }
+
+    .brand:hover,
+    .brand:focus-visible,
+    .brand[aria-expanded="true"] {
+        border-color: var(--accent);
+        background: var(--color-surface-input);
+        color: var(--primary-text);
+    }
+
+    .menu-caret {
+        color: var(--color-text-muted);
+        font-size: 10px;
+        transition: transform .12s ease;
+    }
+
+    .brand[aria-expanded="true"] .menu-caret {
+        transform: rotate(180deg);
     }
 
     .transport-controls {
@@ -408,10 +485,6 @@
         min-width: 0;
     }
 
-    .utility-toggle {
-        min-width: 36px;
-    }
-
     .help-button {
         min-width: 36px;
     }
@@ -419,7 +492,7 @@
     .utility-sidebar {
         position: absolute;
         top: calc(100% + 8px);
-        right: 16px;
+        left: 16px;
         z-index: 1;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -574,47 +647,6 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 6px;
         margin-top: 8px;
-    }
-
-    @media (max-width: 760px) {
-        .brand span,
-        .song-label {
-            display: none;
-        }
-
-        .utility-group {
-            gap: 4px;
-        }
-
-        .topbar-main {
-            gap: 4px;
-            padding-inline: 8px;
-        }
-
-        .utility-sidebar {
-            grid-template-columns: 1fr;
-            right: 8px;
-            width: calc(100vw - 16px);
-        }
-
-        .sidebar-column {
-            gap: 10px;
-        }
-    }
-
-    @media (max-width: 520px) {
-        .topbar-main {
-            flex-wrap: wrap;
-        }
-
-        .session-group {
-            flex-basis: 100%;
-        }
-
-        .utility-group {
-            width: 100%;
-            justify-content: flex-end;
-        }
     }
 
 </style>

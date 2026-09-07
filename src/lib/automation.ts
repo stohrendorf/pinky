@@ -13,6 +13,29 @@ import {
 } from './instruments';
 
 export const MASTER_TARGET = 'master';
+const MIXER_TARGET_PREFIX = 'mixer|';
+
+export type MixerTargetKind = 'channel' | 'bus';
+export interface ParsedMixerTarget {
+    kind: MixerTargetKind;
+    id: string;
+}
+
+export function mixerTarget(kind: MixerTargetKind, id: string): string {
+    return `${MIXER_TARGET_PREFIX}${kind}|${encodeURIComponent(id)}`;
+}
+
+export function parseMixerTarget(target: string): ParsedMixerTarget | null {
+    const match = /^mixer\|(channel|bus)\|(.+)$/.exec(target);
+    if (!match) {return null;}
+    try {
+        const id = decodeURIComponent(match[2]);
+        return id && mixerTarget(match[1] as MixerTargetKind, id) === target
+            ? {kind: match[1] as MixerTargetKind, id} : null;
+    } catch {
+        return null;
+    }
+}
 
 export const CURVE_SHAPES: { id: CurveShape; label: string }[] = [
     {id: 'hold', label: 'Hold'},
@@ -47,12 +70,34 @@ export interface AutoParamDef {
     unit?: string;
 }
 
-// Everything the instrument panel exposes as a slider can be automated
-export const INSTRUMENT_AUTO_PARAMS: AutoParamDef[] = INSTRUMENT_PANELS.flatMap(g =>
-    g.sliders.map(s => ({param: s.id, label: s.label, min: s.min, max: s.max, step: s.step, unit: s.unit})));
+export interface AutoParamGroup {
+    title: string;
+    params: AutoParamDef[];
+}
+
+// Preserve the instrument editor's logical panels in the automation chooser.
+export const INSTRUMENT_AUTO_GROUPS: AutoParamGroup[] = INSTRUMENT_PANELS.map(group => ({
+    title: group.title,
+    params: group.sliders.map(s => ({param: s.id, label: s.label, min: s.min, max: s.max, step: s.step, unit: s.unit}))
+}));
+export const INSTRUMENT_AUTO_PARAMS: AutoParamDef[] = INSTRUMENT_AUTO_GROUPS.flatMap(group => group.params);
 
 export const MASTER_AUTO_PARAMS: AutoParamDef[] = MASTER_SLIDERS.map(s =>
     ({param: s.id, label: s.label, min: s.min, max: s.max, step: s.step, unit: s.unit}));
+
+export const MIXER_CHANNEL_AUTO_PARAMS: AutoParamDef[] = [
+    {param: 'volume', label: 'Volume', min: 0, max: 2, step: 0.01},
+    {param: 'pan', label: 'Pan', min: -1, max: 1, step: 0.01},
+    {param: 'reverb', label: 'Reverb Send', min: 0, max: 1, step: 0.01},
+    {param: 'highpass', label: 'High-pass', min: 20, max: 1000, step: 1, unit: 'Hz'},
+    {param: 'tilt', label: 'Tilt', min: -12, max: 12, step: 0.1, unit: 'dB'}
+];
+
+export const MIXER_BUS_AUTO_PARAMS: AutoParamDef[] = [
+    ...MIXER_CHANNEL_AUTO_PARAMS,
+    {param: 'delayTime', label: 'Delay Time', min: 0.02, max: 2, step: 0.01, unit: 's'},
+    {param: 'feedback', label: 'Delay Feedback', min: 0, max: 0.8, step: 0.01}
+];
 
 type NumericInstrumentParam = {
     [K in keyof InstrumentParams]: InstrumentParams[K] extends number ? K : never
@@ -69,7 +114,11 @@ function isNumericInstrumentParam(param: string): param is NumericInstrumentPara
 }
 
 export function autoParams(target: string): AutoParamDef[] {
-    return target === MASTER_TARGET ? MASTER_AUTO_PARAMS : INSTRUMENT_AUTO_PARAMS;
+    if (target === MASTER_TARGET) {return MASTER_AUTO_PARAMS;}
+    const mixer = parseMixerTarget(target);
+    if (mixer?.kind === 'channel') {return MIXER_CHANNEL_AUTO_PARAMS;}
+    if (mixer?.kind === 'bus') {return MIXER_BUS_AUTO_PARAMS;}
+    return target.startsWith(MIXER_TARGET_PREFIX) ? [] : INSTRUMENT_AUTO_PARAMS;
 }
 
 export function autoParamDef(lane: AutomationLane): AutoParamDef | null {
@@ -130,16 +179,39 @@ export function setAutomationPointValue(lane: AutomationLane, pt: AutomationPoin
 }
 
 // Human-readable "Bass · Pitch Bend"
+export function laneTargetTitle(p: Project, lane: AutomationLane): string {
+    const mixer = parseMixerTarget(lane.target);
+    if (lane.target === MASTER_TARGET) {return 'Master';}
+    else if (mixer?.kind === 'channel') {
+        return `${p.instruments.find(i => i.id === mixer.id)?.name || 'Unknown'} channel`;
+    } else if (mixer?.kind === 'bus') {
+        return `${p.mixer?.buses.find(bus => bus.id === mixer.id)?.name || 'Unknown'} bus`;
+    }
+    return p.instruments.find(i => i.id === lane.target)?.name || '?';
+}
+
 export function laneTitle(p: Project, lane: AutomationLane): string {
-    const who = lane.target === MASTER_TARGET
-        ? 'Master'
-        : (p.instruments.find(i => i.id === lane.target)?.name || '?');
-    return who + ' · ' + (autoParamDef(lane)?.label || lane.param);
+    return laneTargetTitle(p, lane) + ' · ' + (autoParamDef(lane)?.label || lane.param);
 }
 
 export function laneColor(p: Project, lane: AutomationLane): string {
     if (lane.target === MASTER_TARGET) {return '#ffd166';}
+    const mixer = parseMixerTarget(lane.target);
+    if (mixer?.kind === 'channel') {return p.instruments.find(i => i.id === mixer.id)?.color || '#53d8fb';}
+    if (mixer?.kind === 'bus') {return '#a29bfe';}
     return p.instruments.find(i => i.id === lane.target)?.color || '#53d8fb';
+}
+
+export function automationCurrentValue(p: Project, target: string, param: string,
+    fallbackMaster?: Record<string, number>): number | null {
+    let values: object | undefined;
+    const mixer = parseMixerTarget(target);
+    if (target === MASTER_TARGET) {values = p.mixer?.master ?? fallbackMaster;}
+    else if (mixer?.kind === 'channel') {values = p.mixer?.channels[mixer.id];}
+    else if (mixer?.kind === 'bus') {values = p.mixer?.buses.find(bus => bus.id === mixer.id);}
+    else if (!target.startsWith(MIXER_TARGET_PREFIX)) {values = p.instruments.find(i => i.id === target)?.params;}
+    const value = values && (values as Record<string, unknown>)[param];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 const activeLanes = (p: Project): AutomationLane[] => (p.automation || []).filter(l => l.points.length > 0);
@@ -150,7 +222,7 @@ const activeLanes = (p: Project): AutomationLane[] => (p.automation || []).filte
 export function instrumentOverrides(p: Project, step: number): Map<string, InstrumentParams> | null {
     let out: Map<string, InstrumentParams> | null = null;
     for (const lane of activeLanes(p)) {
-        if (lane.target === MASTER_TARGET) {continue;}
+        if (lane.target === MASTER_TARGET || parseMixerTarget(lane.target) || lane.target.startsWith(MIXER_TARGET_PREFIX)) {continue;}
         const d = autoParamDef(lane);
         if (!d) {continue;}
         const inst = p.instruments.find(i => i.id === lane.target);
@@ -169,6 +241,26 @@ export function masterAutomation(p: Project, step: number): { param: string; val
         if (lane.target !== MASTER_TARGET) {continue;}
         const d = autoParamDef(lane);
         if (d) {out.push({param: lane.param, value: clampTo(d, laneValueAt(lane, step))});}
+    }
+    return out;
+}
+
+export interface MixerAutomationValue {
+    target: ParsedMixerTarget;
+    param: string;
+    value: number;
+}
+
+export function mixerAutomation(p: Project, step: number): MixerAutomationValue[] {
+    const out: MixerAutomationValue[] = [];
+    for (const lane of activeLanes(p)) {
+        const target = parseMixerTarget(lane.target);
+        if (!target) {continue;}
+        const exists = target.kind === 'channel'
+            ? !!p.mixer?.channels[target.id]
+            : !!p.mixer?.buses.find(bus => bus.id === target.id);
+        const d = autoParamDef(lane);
+        if (exists && d) {out.push({target, param: lane.param, value: clampTo(d, laneValueAt(lane, step))});}
     }
     return out;
 }

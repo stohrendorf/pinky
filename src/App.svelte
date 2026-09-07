@@ -290,21 +290,4 @@ bind:show={showInstrumentEditor}>
         border-bottom: 0;
     }
 
-    @media (max-width: 680px) {
-        .workspace-main {
-            gap: 6px;
-            padding: 6px 8px;
-        }
-
-        .scope-tray :global(.scope-wrap) {
-            padding-inline: 8px;
-        }
-
-        .editor-with-tree > :global(.pattern-tree-panel),
-        .editor-with-tree > :global(.instrument-tree-panel) {
-            flex-basis: 250px;
-            width: 250px;
-            min-width: 250px;
-        }
-    }
 </style>

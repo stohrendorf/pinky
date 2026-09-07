@@ -5,7 +5,7 @@
 
     const bubble = createBubbler();
     import type {
-        ArrangementClip, AutomationLane as Lane, AutomationPoint, InstrumentParams
+        ArrangementClip, AutomationLane as Lane, AutomationPoint
     } from '../lib/types';
 
     import {
@@ -21,10 +21,11 @@
     import {
         autoParamDef,
         autoParams,
+        automationCurrentValue,
         laneColor,
+        laneTargetTitle,
         laneTitle,
         laneValueAt,
-        MASTER_TARGET,
         newLane
     } from '../lib/automation';
     import {
@@ -50,6 +51,7 @@
         handleViewportWheel
     } from '../lib/viewport';
     import AutomationLane from './AutomationLane.svelte';
+    import AutomationPicker from './AutomationPicker.svelte';
     import Conductor from './Conductor.svelte';
     import Button from './ui/Button.svelte';
     import ColorPicker from './ui/ColorPicker.svelte';
@@ -625,26 +627,20 @@
     let showAddAuto = $state(false);
     let showRemoveAutoLane = $state(false);
     let autoLaneToRemove: Lane | null = null;
-    let addTarget = $state(MASTER_TARGET);
-    let addParam = $state('vol');
 
 
     function openAddAuto() {
         if (!$project) {return;}
-        addTarget = $project.instruments[0]?.id || MASTER_TARGET;
         showAddAuto = true;
     }
 
-    function addAutoLane() {
+    function addAutoLane(target: string, param: string) {
         if (!$project) {return;}
-        const def = addParamList.find(d => d.param === addParam);
+        if (autoLanes.some(lane => lane.target === target && lane.param === param)) {return;}
+        const def = autoParams(target).find(candidate => candidate.param === param);
         if (!def) {return;}
-        // seed the lane with the parameter's current value
-        const instrumentParams = $project.instruments.find(i => i.id === addTarget)?.params;
-        const cur = addTarget === MASTER_TARGET
-            ? (master as Record<string, number>)[addParam]
-            : instrumentParams?.[addParam as keyof InstrumentParams];
-        const lane = newLane(addTarget, addParam, typeof cur === 'number' ? cur : def.min);
+        const cur = automationCurrentValue($project, target, param, master);
+        const lane = newLane(target, param, cur ?? def.min);
         $project.automation = [...autoLanes, lane];
         $project.automationOrder = [...($project.automationOrder || autoLanes.map(l => l.id)), lane.id];
         $project.automationPositions = {...($project.automationPositions || {}), [lane.id]: $project.tracks.length};
@@ -720,11 +716,6 @@
     // the value a lane is feeding the engine right now (playhead, else cursor)
     const autoStep = $derived($playing && $curStep >= 0 ? $curStep : $songCursor);
     const gridHeight = $derived(arrangerRows.reduce((height, row) => height + (row.kind === 'track' ? cellHeight : LANE_H), 0));
-    const addParamList = $derived(autoParams(addTarget));
-    // keep the param picker valid when the target switches instrument <-> master
-    run(() => {
-        if (!addParamList.some(d => d.param === addParam)) {addParam = addParamList[0].param;}
-    });
 </script>
 
 <style>
@@ -1522,7 +1513,7 @@ ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, ro
                              ondrop={stopPropagation((event) => dropAutomationLane(event as DragEvent, lane))}
                              title="{laneTitle($project!, lane)} — click the curve to add a point, drag to move, right-click a point to remove">
                             <div class="auto-name" title={laneTitle($project!, lane)}>
-                                <span class="auto-target">{lane.target === MASTER_TARGET ? 'Master' : ($project!.instruments.find(instrument => instrument.id === lane.target)?.name || '?')}</span>
+                                <span class="auto-target">{laneTargetTitle($project!, lane)}</span>
                                 <span class="auto-param">{autoParamDef(lane)?.label || lane.param}</span>
                             </div>
                             <div
@@ -1658,33 +1649,10 @@ style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.st
     </div>
 </div>
 
-<Dialog title="Add Automation Lane" bind:show={showAddAuto}>
-    <div class="auto-form">
-        <label>Target
-            <select bind:value={addTarget}>
-                <option value={MASTER_TARGET}>Master FX</option>
-                {#each $project!.instruments as i (i.id)}
-                    <option value={i.id}>{i.name}</option>
-                {/each}
-            </select>
-        </label>
-        <label>Parameter
-            <select bind:value={addParam}>
-                {#each addParamList as d (d.param)}
-                    <option value={d.param}>{d.label}</option>
-                {/each}
-            </select>
-        </label>
-        <div class="tip">The lane starts at the parameter's current value — click the curve to add points, drag them
-            around, double-click a point to type its value, and right-click one to remove it. The curve is read every
-            16th step: master FX are swept continuously,
-            instrument params are applied both to the notes starting there and to the ones already sounding (level,
-            panning and the EQ bands follow live; envelope times and the partial set only shape the next note).
-        </div>
-        <div class="actions">
-            <button onclick={addAutoLane}>Add lane</button>
-        </div>
-    </div>
+<Dialog title="Add Automation Lane" width="720px" bind:show={showAddAuto}>
+    {#if $project}
+        <AutomationPicker onadd={addAutoLane} project={$project}/>
+    {/if}
 </Dialog>
 <Prompt
 label="New Name"

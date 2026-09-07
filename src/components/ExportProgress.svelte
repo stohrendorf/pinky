@@ -208,8 +208,4 @@
         cursor: wait;
     }
 
-    @media (max-width: 360px) {
-        dialog {padding: 16px;}
-        ol {grid-template-columns: 1fr;}
-    }
 </style>

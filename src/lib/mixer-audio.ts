@@ -124,6 +124,7 @@ const bounded = (v: number, min: number, max: number): number => Number.isFinite
 export class MixerAudio {
     private readonly strips = new Map<string, Strip>();
     private readonly values = new WeakMap<AudioParam, number>();
+    private readonly scheduled = new WeakMap<AudioParam, { at: number; value: number }>();
     private readonly voiceInputs = new Map<string, GainNode>();
     private readonly voiceTargets = new Map<string, AudioNode>();
     private mixed = false;
@@ -148,7 +149,8 @@ export class MixerAudio {
     }
 
     private routeVoice(id: string, tap: GainNode): void {
-        const target = this.mixed ? this.input(id) : this.master;
+        const channelId = this.strips.has(id) ? id : id.startsWith('live-') ? id.slice(5) : id;
+        const target = this.mixed ? this.input(channelId) : this.master;
         if (this.voiceTargets.get(id) === target) {return;}
         tap.disconnect();
         this.voiceTargets.delete(id);
@@ -205,6 +207,17 @@ export class MixerAudio {
         for (const [id, tap] of this.voiceInputs) {this.routeVoice(id, tap);}
     }
 
+    reset(mixer: MixerState): void {
+        const audible = audibleMixerIds(mixer);
+        const entries: [string, MixerChannel | MixerBus][] = [
+            ...Object.entries(mixer.channels), ...mixer.buses.map(bus => [bus.id, bus] as [string, MixerBus])
+        ];
+        for (const [id, settings] of entries) {
+            const strip = this.strips.get(id);
+            if (strip) {this.update(strip, settings, audible.has(id), true);}
+        }
+    }
+
     meters(): Record<string, ChannelMeter> {
         const result: Record<string, ChannelMeter> = {};
         for (const [id, strip] of this.strips) {
@@ -220,6 +233,35 @@ export class MixerAudio {
             result[id] = {peak, rms: Math.sqrt(squares / Math.max(1, strip.samples.length * strip.analysers.length))};
         }
         return result;
+    }
+
+    /** Schedule only automatable strip values. Structural mixer configuration
+     * remains untouched so lookahead ramps are not cancelled between steps. */
+    automate(id: string, param: string, value: number, at: number, ramp: number): boolean {
+        const strip = this.strips.get(id);
+        if (!strip || !Number.isFinite(value) || !Number.isFinite(at) || !Number.isFinite(ramp)) {return false;}
+        const schedule = (audioParam: AudioParam | null, next: number): boolean => {
+            if (!audioParam) {return false;}
+            const previous = this.scheduled.get(audioParam);
+            const from = previous && previous.at <= at ? previous.value : audioParam.value;
+            audioParam.cancelScheduledValues(at);
+            audioParam.setValueAtTime(from, at);
+            audioParam.linearRampToValueAtTime(next, at + Math.max(0, ramp));
+            this.scheduled.set(audioParam, {at: at + Math.max(0, ramp), value: next});
+            this.values.set(audioParam, next);
+            return true;
+        };
+        if (param === 'volume') {return schedule(strip.volume.gain, bounded(value, 0, 2));}
+        if (param === 'pan') {return schedule(strip.pan.pan, bounded(value, -1, 1));}
+        if (param === 'reverb') {return schedule(strip.reverb.gain, bounded(value, 0, 1));}
+        if (param === 'highpass') {return schedule(strip.highpass.frequency, bounded(value, 20, 1000));}
+        if (param === 'tilt') {
+            const next = bounded(value, -12, 12);
+            return schedule(strip.low.gain, -next) && schedule(strip.high.gain, next);
+        }
+        if (param === 'delayTime') {return schedule(strip.delay?.delayTime ?? null, bounded(value, 0.02, 2));}
+        if (param === 'feedback') {return schedule(strip.feedback?.gain ?? null, bounded(value, 0, 0.8));}
+        return false;
     }
 
     dispose(): void {
@@ -259,7 +301,7 @@ export class MixerAudio {
         return strip;
     }
 
-    private update(strip: Strip, settings: MixerChannel | MixerBus, audible: boolean): void {
+    private update(strip: Strip, settings: MixerChannel | MixerBus, audible: boolean, force = false): void {
         const delay = 'effect' in settings && settings.effect === 'delay';
         if (delay !== !!strip.delay) {
             strip.input.disconnect();
@@ -274,8 +316,8 @@ export class MixerAudio {
             } else {strip.input.connect(strip.highpass);}
         }
         if (strip.delay && strip.feedback && 'delayTime' in settings) {
-            this.set(strip.delay.delayTime, bounded(settings.delayTime, 0.02, 2));
-            this.set(strip.feedback.gain, bounded(settings.feedback, 0, 0.8));
+            this.set(strip.delay.delayTime, bounded(settings.delayTime, 0.02, 2), force);
+            this.set(strip.feedback.gain, bounded(settings.feedback, 0, 0.8), force);
         }
         if (settings.compressor.enabled !== !!strip.compressor) {
             strip.high.disconnect();
@@ -287,22 +329,23 @@ export class MixerAudio {
             else {strip.high.connect(strip.volume);}
         }
         if (strip.compressor) {
-            this.set(strip.compressor.threshold, bounded(settings.compressor.threshold, -60, 0));
-            this.set(strip.compressor.ratio, bounded(settings.compressor.ratio, 1, 20));
+            this.set(strip.compressor.threshold, bounded(settings.compressor.threshold, -60, 0), force);
+            this.set(strip.compressor.ratio, bounded(settings.compressor.ratio, 1, 20), force);
         }
-        this.set(strip.highpass.frequency, bounded(settings.highpass, 20, 1000));
-        this.set(strip.low.gain, -bounded(settings.tilt, -12, 12));
-        this.set(strip.high.gain, bounded(settings.tilt, -12, 12));
-        this.set(strip.volume.gain, bounded(settings.volume, 0, 2));
-        this.set(strip.pan.pan, bounded(settings.pan, -1, 1));
+        this.set(strip.highpass.frequency, bounded(settings.highpass, 20, 1000), force);
+        this.set(strip.low.gain, -bounded(settings.tilt, -12, 12), force);
+        this.set(strip.high.gain, bounded(settings.tilt, -12, 12), force);
+        this.set(strip.volume.gain, bounded(settings.volume, 0, 2), force);
+        this.set(strip.pan.pan, bounded(settings.pan, -1, 1), force);
         // Immediate gate silences direct output AND every post-fader wet send.
-        this.set(strip.gate.gain, audible ? 1 : 0);
-        this.set(strip.reverb.gain, bounded(settings.reverb, 0, 1));
+        this.set(strip.gate.gain, audible ? 1 : 0, force);
+        this.set(strip.reverb.gain, bounded(settings.reverb, 0, 1), force);
     }
 
-    private set(param: AudioParam, value: number): void {
-        if (this.values.get(param) === value) {return;}
+    private set(param: AudioParam, value: number, force = false): void {
+        if (!force && this.values.get(param) === value) {return;}
         this.values.set(param, value);
+        this.scheduled.delete(param);
         // Mixer edits are infrequent and constant: do not leave filter automation
         // events making native biquads recompute coefficients on every sample.
         param.cancelScheduledValues(0);

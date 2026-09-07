@@ -117,6 +117,20 @@ describe('Mixer component controls', () => {
         expect(mixer + strip).not.toContain('e.target');
     });
 
+    it('makes channel roles, signal flow and the selected inspector immediately clear', () => {
+        expect(mixer).toContain('Instruments');
+        expect(mixer).toContain('Buses / FX');
+        expect(mixer).toContain('Signal flows left to right into Master');
+        expect(mixer).toContain('Group bus');
+        expect(mixer).toContain('Delay return');
+        expect(mixer).toContain('Channel inspector');
+        expect(mixer).toContain('Select a strip to edit routing, sends and processing.');
+        expect(mixer).toContain('position: sticky');
+        expect(mixer).toContain('right: 0');
+        expect(strip).toContain("kind !== 'Instrument'");
+        expect(strip).toContain('Out →');
+    });
+
     it('opens with only balance controls, discloses one channel at a time and never edits by selection', () => {
         const {p, scope, actions, id} = fixture();
         expect(mixer).toContain("let selectedId = $state('')");
@@ -144,8 +158,11 @@ describe('Mixer component controls', () => {
         expect(html).toContain('aria-label="Bass pan"');
         expect(html).toContain('aria-label="Mute Bass"');
         expect(html).toContain('aria-label="Solo Bass"');
+        expect(html).toContain('fa fa-volume-xmark');
+        expect(html).toContain('fa fa-headphones');
         expect(html).toContain('aria-expanded="false"');
-        expect(html).toContain('→ Master');
+        expect(html).toContain('Out → Master');
+        expect(html).not.toMatch(/>M<|>S</);
         expect(html).not.toContain('<select');
         expect(html).not.toContain('Reverb send');
         expect(html).not.toContain('Processing &amp; sends');
