@@ -61,47 +61,47 @@ try {
         });
     });
     const conductor = page.getByRole('dialog', {name: /^(Add|Edit) marker$/});
-    const addMarker = async (kind, step) => {
-        await page.getByRole('button', {name: 'Add marker at cursor', exact: true}).click();
-        assert.equal(await conductor.getByLabel('Exact step (0-based)', {exact: true}).isVisible(), false, 'exact positioning is optional');
-        await conductor.getByRole('button', {name: {section: 'Section', tempo: 'Tempo', meter: 'Time signature'}[kind], exact: true}).click();
-        await conductor.locator('summary').click();
-        await conductor.getByLabel('Exact step (0-based)', {exact: true}).fill(String(step));
+    const addMarker = async step => {
+        const marker = page.locator(`.conductor button[data-step="${step}"]`);
+        if (!await marker.count()) {
+            const lane = await page.locator('.conductor-lanes').boundingBox();
+            const width = await page.evaluate(async () => {
+                const {project} = await import('/src/lib/project.ts');
+                let p; project.subscribe(value => {p = value;})();
+                return p.zoom.arr.width;
+            });
+            await page.mouse.click(lane.x + step * width, lane.y + 12);
+            assert.equal(await conductor.count(), 0, 'adding places a placeholder without opening a dialog');
+        }
+        await marker.click();
+        assert.equal(await conductor.getByLabel('Exact step (0-based)', {exact: true}).count(), 0);
     };
     const saveMarker = async () => {
-        await conductor.getByRole('button', {name: 'Add', exact: true}).click();
+        await conductor.getByRole('button', {name: 'Save', exact: true}).click();
         await conductor.waitFor({state: 'hidden'});
     };
-    await addMarker('tempo', 0);
-    await conductor.getByLabel('Tempo (BPM)', {exact: true}).fill('120');
+    await addMarker(0);
+    await conductor.getByLabel('Title', {exact: true}).fill('First rain');
+    await conductor.getByLabel('BPM', {exact: true}).fill('120');
+    await conductor.getByLabel('Time signature', {exact: true}).fill('7/8');
     await conductor.getByLabel('Gradually change to the next tempo').check();
     await saveMarker();
-    await addMarker('tempo', 16);
-    await conductor.getByLabel('Tempo (BPM)', {exact: true}).fill('60');
+    await addMarker(16);
+    await conductor.getByLabel('Title', {exact: true}).fill('');
+    await conductor.getByLabel('BPM', {exact: true}).fill('60');
     await saveMarker();
-    await addMarker('meter', 0);
-    await conductor.getByLabel('Beats per bar', {exact: true}).fill('7');
-    await conductor.getByLabel('Beat unit', {exact: true}).selectOption('8');
-    await saveMarker();
-    await addMarker('section', 0);
-    await conductor.getByLabel('Section name').fill('First rain');
-    await saveMarker();
-    await addMarker('section', 14);
-    await conductor.getByLabel('Section name').fill('Seven steps');
+    await addMarker(14);
+    await conductor.getByLabel('Title', {exact: true}).fill('Seven steps');
     await saveMarker();
     assert.equal(await page.locator('.conductor').evaluate(node => node.getBoundingClientRect().height), 28, 'one compact strip replaces the three lanes');
     assert.equal(await page.locator('.conductor .marker').count(), 3, 'coincident markers share one flag');
     assert.equal(await page.locator('.conductor select').count(), 0, 'no marker picker');
     assert.equal(await page.locator('.time-marker span').count(), 0, 'the ruler does not repeat time signatures');
-    await page.getByRole('button', {name: /^Edit 120 BPM/}).click();
-    assert.equal(await conductor.getByLabel('Tempo (BPM)', {exact: true}).inputValue(), '120');
-    assert.equal(await conductor.getByLabel('Gradually change to the next tempo').isChecked(), true);
-    await page.keyboard.press('Escape');
-    await page.getByRole('button', {name: /^Edit 7\/8/}).click();
-    assert.equal(await conductor.getByLabel('Beats per bar', {exact: true}).inputValue(), '7');
-    await page.keyboard.press('Escape');
     await page.getByRole('button', {name: /^Edit First rain/}).click();
-    assert.equal(await conductor.getByLabel('Section name').inputValue(), 'First rain');
+    assert.equal(await conductor.getByLabel('BPM', {exact: true}).inputValue(), '120');
+    assert.equal(await conductor.getByLabel('Gradually change to the next tempo').isChecked(), true);
+    assert.equal(await conductor.getByLabel('Time signature', {exact: true}).inputValue(), '7/8');
+    assert.equal(await conductor.getByLabel('Title', {exact: true}).inputValue(), 'First rain');
     assert.equal(await conductor.getByRole('button', {name: /Jump here|Loop section|Clear loop/}).count(), 0);
     assert.equal(await conductor.getByRole('group', {name: 'Markers at this position'}).count(), 0, 'no second marker selector inside the editor');
     await page.keyboard.press('Escape');
@@ -117,26 +117,25 @@ try {
     const lane = await page.locator('.conductor-lanes').boundingBox();
     const barWidth = (await page.getByTitle('Bar 1 · 7/8 · step 0', {exact: true}).boundingBox()).width;
     await page.mouse.click(lane.x + barWidth * 2, lane.y + 12);
-    await conductor.locator('summary').click();
-    assert.equal(await conductor.getByLabel('Exact step (0-based)', {exact: true}).inputValue(), '28', 'click empty lane to add at that step');
-    await page.keyboard.press('Escape');
-    await conductor.waitFor({state: 'hidden'});
-    await page.getByRole('button', {name: 'Add marker at cursor', exact: true}).click();
-    assert.equal(await conductor.getByRole('button', {name: 'Section', exact: true}).getAttribute('aria-pressed'), 'true');
+    const placeholder = page.locator('.conductor button[data-step="28"]');
+    await placeholder.waitFor();
+    assert.equal(await conductor.count(), 0, 'clicking the lane only creates a placeholder');
+    await placeholder.click();
     await page.waitForFunction(() => document.querySelector('.conductor-editor .marker-value') === document.activeElement);
-    assert.equal(await conductor.getByLabel('Section name').evaluate(node => node === document.activeElement), true, 'focus starts on the useful field');
-    await conductor.getByRole('button', {name: 'Add', exact: true}).click();
+    assert.equal(await conductor.getByLabel('Title', {exact: true}).evaluate(node => node === document.activeElement), true, 'focus starts on the useful field');
+    await conductor.getByLabel('BPM', {exact: true}).fill('29');
+    await conductor.getByRole('button', {name: 'Save', exact: true}).click();
     await conductor.getByRole('alert').waitFor();
-    await conductor.getByLabel('Section name').fill('Unsaved');
+    await conductor.getByLabel('Title', {exact: true}).fill('Unsaved');
     await page.setViewportSize({width: 390, height: 720});
     const markerBox = await conductor.boundingBox();
     assert.ok(markerBox && markerBox.width <= 358 && markerBox.height < 480 && markerBox.x >= 0, 'small editor fits a narrow screen');
     if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'marker-editor-check.png')});}
-    await conductor.getByRole('button', {name: 'Add', exact: true}).focus();
+    await conductor.getByRole('button', {name: 'Save', exact: true}).focus();
     await page.keyboard.press('Tab');
     assert.equal(await conductor.evaluate(node => node.contains(document.activeElement)), true, 'marker editor traps Tab');
     await page.keyboard.press('Escape');
-    assert.equal(await page.getByRole('button', {name: 'Add marker at cursor', exact: true}).evaluate(node => node === document.activeElement), true, 'Escape restores focus');
+    assert.equal(await placeholder.evaluate(node => node === document.activeElement), true, 'Escape restores focus');
     await page.setViewportSize({width: 1440, height: 1000});
     await page.getByTitle('Bar 2 · 7/8 · step 14', {exact: true}).waitFor();
     const firstBar = await page.getByTitle('Bar 1 · 7/8 · step 0', {exact: true}).boundingBox();
@@ -155,7 +154,7 @@ try {
     await page.getByTitle('Play Song', {exact: true}).click();
     await page.waitForFunction(() => document.querySelector('button[title="Stop"]')?.disabled === false);
     await page.getByRole('button', {name: /^Edit First rain/}).click();
-    assert.equal(await conductor.getByLabel('Section name').isDisabled(), true);
+    assert.equal(await conductor.getByLabel('Title', {exact: true}).isDisabled(), true);
     assert.equal(await conductor.getByRole('button', {name: 'Save', exact: true}).isDisabled(), true);
     await page.keyboard.press('Escape');
     await page.getByTitle('Stop', {exact: true}).click();
@@ -207,7 +206,7 @@ try {
     await page.setViewportSize({width: 1440, height: 1000});
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
-    await page.waitForFunction(() => document.querySelector('meter[aria-label="Master L peak"]')?.value > -60);
+    await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
     await page.keyboard.press('Escape');
     await page.getByTitle('Stop', {exact: true}).click();
 
@@ -275,7 +274,7 @@ try {
     assert.equal(downloads.length, 1, 'fallback cancellation discards the completed render');
     await page.getByTitle('Play Pattern', {exact: true}).click();
     await page.getByRole('button', {name: 'Mixer', exact: true}).click();
-    await page.waitForFunction(() => document.querySelector('meter[aria-label="Master L peak"]')?.value > -60);
+    await page.waitForFunction(() => Number(document.querySelector('[role="meter"][aria-label="Master L peak"]')?.getAttribute('aria-valuenow') ?? -60) > -60);
     await page.keyboard.press('Escape');
     await page.getByTitle('Stop', {exact: true}).click();
     await page.evaluate(async () => {
@@ -309,10 +308,8 @@ try {
         node.scrollLeft = 384 * p.zoom.arr.width - 40;
     });
     await seven.click();
-    assert.equal(await conductor.getByLabel('Section name').inputValue(), 'Seven Rains');
-    await page.keyboard.press('Escape');
-    await page.getByRole('button', {name: /^Edit 7\/8/}).click();
-    assert.equal(await conductor.getByLabel('Beats per bar', {exact: true}).inputValue(), '7');
+    assert.equal(await conductor.getByLabel('Title', {exact: true}).inputValue(), 'Seven Rains');
+    assert.equal(await conductor.getByLabel('Time signature', {exact: true}).inputValue(), '7/8');
     await page.keyboard.press('Escape');
     await page.mouse.move(20, 20);
     if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'conductor-check.png')});}

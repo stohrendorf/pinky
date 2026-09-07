@@ -63,16 +63,21 @@ mobile checks in Firefox (`npx playwright-core install firefox` first), or appen
 
 ### Timeline markers
 
-One strip below the ruler holds section names, BPM and time-signature markers.
-Click empty space to add one, or **+** to add at the cursor. Click a name, BPM or
-signature to edit that value directly. The ruler shows bar numbers, not repeated
-time signatures. Use the ruler as usual to seek or drag a loop.
+One strip below the ruler holds section names, BPM and time signatures. Changes
+at the same position appear as one marker: click it to edit all three together.
+Blank timing fields mean no change; clear a field to remove just that change.
+The ruler shows bar numbers, not repeated signatures. Use it as usual to seek or
+drag a loop.
 
-The editor shows bar/beat position, with exact-step editing and **Use cursor**
-under the position disclosure. Steps are zero-based sixteenths; bar and beat
-labels are one-based. Save closes the editor; Cancel/Escape discards edits.
-Markers are saved with the
-project and support undo/redo.
+Click empty lane space to place a **Marker** placeholder, or **+** to place one at
+the cursor. Drag to move it; all its fields travel together. Moves snap to
+sixteenths; arrow keys nudge by one step, or one beat with Shift. Escape cancels a
+drag. A conflicting drop leaves both markers intact; non-conflicting fields can
+share a position. Save closes the editor; Cancel/Escape discards unsaved field
+edits. Delete removes the whole marker. Markers support saving and undo/redo.
+
+Run `node scripts/check-markers.mjs firefox` (or `chromium`) for isolated browser
+checks of grouped editing, dragging, cancellation, history and save/reload.
 
 - **Tempo:** hold a BPM or ramp linearly in musical position to the next tempo
   marker. Before the first marker, the Studio BPM is used. Pattern preview always

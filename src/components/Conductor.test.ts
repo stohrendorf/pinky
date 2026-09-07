@@ -24,30 +24,42 @@ import {
 } from 'vitest';
 
 import type {
-    MeterMarker, SectionMarker, TempoMarker
-} from '../lib/timing';
+    MarkerPoint
+} from '../lib/conductor-markers';
 import type {
     Project
 } from '../lib/types';
 
 import {
-    barAt, barsInRange, createTimingMap, ensureConductor
+    markerPoints, moveMarkerAt, removeMarkerAt, updateMarkerAt
+} from '../lib/conductor-markers';
+import {
+    barAt, barsInRange, createTimingMap
 } from '../lib/timing';
 
 const source = readFileSync(fileURLToPath(new URL('./Conductor.svelte', import.meta.url)), 'utf8');
 const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
-type Kind = 'tempo' | 'meter' | 'section';
 
+interface Drag {
+    id: string; pointer: number; x: number; scroll: number; from: number; to: number;
+    moved: boolean; problem: string; snapshot: string;
+}
 interface Actions {
-    newMarker: (kind?: Kind, at?: number) => void;
+    newMarker: (at?: number) => void;
     addAtPointer: (event: MouseEvent) => void;
     closeDialog: () => void;
     positionLabel: (step: number) => string;
-    timelineMarkers: () => {step: number; entries: {kind: Kind; marker: TempoMarker | MeterMarker | SectionMarker}[]}[];
-    editMarker: (kind: Kind, id: string) => void;
-    useCursor: () => void;
+    markerLabel: (point: MarkerPoint) => string;
+    editMarker: (id: string) => void;
     saveMarker: () => void;
-    deleteMarker: (kind: Kind, id: string) => void;
+    deleteMarker: () => void;
+    movePoint: (id: string, to: number) => void;
+    startDrag: (event: PointerEvent, point: MarkerPoint) => void;
+    updateDrag: (event: PointerEvent) => void;
+    finishDrag: (event: PointerEvent) => void;
+    cancelDrag: () => void;
+    clickMarker: (event: MouseEvent, id: string) => void;
+    markerKey: (event: KeyboardEvent, point: MarkerPoint) => void;
     handleDialogKey: (event: KeyboardEvent, dialog: HTMLElement) => void;
     dialogKeyboard: (node: HTMLElement) => {destroy: () => void};
 }
@@ -58,388 +70,324 @@ function handlers(scope: object): Actions {
     const parsed = createSourceFile('component.ts', script, ScriptTarget.Latest, true);
     const functions = parsed.statements.filter(isFunctionDeclaration).map(node => node.getText(parsed)).join('\n');
     const js = transpileModule(functions, {compilerOptions: {target: ScriptTarget.ES2022}}).outputText;
-    return runInNewContext(`${js}\n({newMarker, addAtPointer, closeDialog, positionLabel, timelineMarkers, editMarker, useCursor, saveMarker, deleteMarker, handleDialogKey, dialogKeyboard})`, scope) as Actions;
+    return runInNewContext(`${js}\n({newMarker, addAtPointer, closeDialog, positionLabel, markerLabel, editMarker,
+        saveMarker, deleteMarker, movePoint, startDrag, updateDrag, finishDrag, cancelDrag, clickMarker,
+        markerKey, handleDialogKey, dialogKeyboard})`, scope) as Actions;
 }
 
-function fixture() {
+function fixture(grouped = false) {
     const p: Project = {
         formatVersion: 1, bpm: 120, instruments: [], patterns: [], tracks: [],
         arrangement: [{id: randomUUID(), patternId: 'polymeter', start: 0, len: 96, track: 0}],
-        zoom: {seq: {width: 24, height: 32}, arr: {width: 24, height: 32}}
+        zoom: {seq: {width: 24, height: 32}, arr: {width: 24, height: 32}},
+        loop: {start: 32, end: 64}
     };
+    if (grouped) {
+        p.conductor = {
+            sections: [{id: randomUUID(), step: 0, name: 'Rain'}],
+            tempos: [{id: randomUUID(), step: 0, bpm: 90, curve: 'linear'}],
+            meters: [{id: randomUUID(), step: 0, numerator: 7, denominator: 8}]
+        };
+    }
     const scope = {
         $project: p as Project | null, $playing: false, $rendering: false, $songCursor: 19.3,
-        get conductor() {return p.conductor ?? {tempos: [], meters: [], sections: []};},
-        get groups() {
-            return [
-                {kind: 'section', markers: p.conductor?.sections ?? []},
-                {kind: 'tempo', markers: p.conductor?.tempos ?? []},
-                {kind: 'meter', markers: p.conductor?.meters ?? []}
-            ];
-        },
-        cellWidth: 24,
-        markerKind: 'tempo' as Kind, editingId: null as string | null, markerStep: 0 as number | undefined,
-        tempoBpm: 120 as number | undefined, tempoCurve: 'hold' as TempoMarker['curve'],
-        meterNumerator: 4 as number | undefined, meterDenominator: 4 as MeterMarker['denominator'],
-        sectionName: '', error: '', show: false, positionOpen: false,
+        get conductor() {return this.$project?.conductor ?? {tempos: [], meters: [], sections: []};},
+        get points() {return markerPoints(this.conductor);},
+        cellWidth: 24, scrollLeft: 0, totalLength: 128,
+        editingId: null as string | null, selectedId: null as string | null, markerStep: 0,
+        tempoBpm: undefined as number | undefined, tempoCurve: 'hold', signature: '',
+        sectionName: '', error: '', show: false, laneMessage: '', suppressClick: false,
+        drag: null as Drag | null, dragProject: null as Project | null,
+        editorProject: null as Project | null, editorSnapshot: '',
         opener: {focus: vi.fn(), isConnected: true},
         document: {activeElement: null as unknown, querySelector: vi.fn()}, HTMLElement: class {},
-        touch: vi.fn(),
-        ensureConductor, createTimingMap, barAt, tick, crypto: {randomUUID}
+        touch: vi.fn(), markerPoints, moveMarkerAt, removeMarkerAt, updateMarkerAt, createTimingMap, barAt, tick
     };
     return {p, scope, actions: handlers(scope)};
 }
 
 function keyboard(key: string, shiftKey = false) {
-    return {key, shiftKey, preventDefault: vi.fn(), stopPropagation: vi.fn()};
+    return {key, shiftKey, preventDefault: vi.fn(), stopPropagation: vi.fn()} as unknown as KeyboardEvent;
+}
+function pointer(clientX: number, pointerId = 1) {
+    return {clientX, pointerId, button: 0, stopPropagation: vi.fn(),
+        currentTarget: {setPointerCapture: vi.fn()}} as unknown as PointerEvent;
+}
+function click(detail = 1) {
+    return {detail, stopPropagation: vi.fn()} as unknown as MouseEvent;
 }
 
 describe('Conductor component', () => {
-    it('compiles native labelled controls without accessibility warnings', () => {
+    it('compiles labelled controls and pointer interaction without accessibility warnings', () => {
         const result = compile(source, {filename: 'Conductor.svelte', generate: 'client'});
         expect(result.js.code.length).toBeGreaterThan(0);
         expect(result.warnings.filter(warning => warning.code.startsWith('a11y'))).toEqual([]);
         expect(compile(playlist, {filename: 'Playlist.svelte', generate: 'client'}).js.code.length).toBeGreaterThan(0);
     });
 
-    it('initializes at the rounded cursor without mutating legacy projects', () => {
-        const {p, scope, actions} = fixture();
-        actions.newMarker();
-        expect(scope.markerStep).toBe(19);
-        expect(scope.markerKind).toBe('section');
-        expect(scope.positionOpen).toBe(false);
-        expect(scope.tempoBpm).toBe(120);
-        expect(scope.tempoCurve).toBe('hold');
-        expect(scope.meterNumerator).toBe(4);
-        expect(scope.meterDenominator).toBe(4);
-        expect(scope.show).toBe(true);
-        expect(p.conductor).toBeUndefined();
-        expect(scope.touch).not.toHaveBeenCalled();
-        scope.$songCursor = 30.9;
-        actions.useCursor();
-        expect(scope.markerStep).toBe(31);
-    });
-
-    it('uses one compact strip and a single editor with optional exact positioning', () => {
+    it('keeps one compact strip and all fields together, without numeric position or type pickers', () => {
         expect(playlist).toContain('grid-template-rows: 24px 28px minmax(0, 1fr)');
-        expect(source).not.toContain('class="marker-lane"');
-        expect(source).not.toContain('class="marker-lists"');
         expect(source).toContain('width="360px"');
-        expect(source).toMatch(/<details bind:open=\{positionOpen}>[\s\S]*Exact step \(0-based\)[\s\S]*<\/details>/);
-        expect(source).not.toContain('Find marker');
-        expect(source).not.toContain('Jump here');
-        expect(source).not.toContain('Loop section');
-        expect(source).not.toContain('Clear loop');
-        expect(source).not.toContain('class="nearby"');
-        expect(source).not.toContain('class="empty-lane"');
-        expect(source).toContain('onclick={() => editMarker(entry.kind, entry.marker.id)}');
-        expect(source).toContain('aria-label="Marker type"');
-        expect(source).not.toContain('<select aria-label="Type"');
+        expect(source).toContain('<label>Title');
+        expect(source).toContain('<label>BPM');
+        expect(source).toContain('<label>Time signature');
+        for (const text of ['Exact step', 'Use cursor', 'Marker type', 'Jump here', 'Loop section', 'Clear loop', '<details', 'class="marker-lane"']) {
+            expect(source).not.toContain(text);
+        }
+        expect(source).toContain('onpointercancel={cancelDrag}');
+        expect(source).toContain('onlostpointercapture={cancelDrag}');
+        expect(source).toContain('onblur={cancelDrag}');
+        expect(source).toContain('.conductor-viewport {overflow: clip;');
     });
 
-    it('adds at the clicked musical position, including a scrolled lane', () => {
-        const {p, scope, actions} = fixture();
-        actions.addAtPointer({clientX: 260, currentTarget: {getBoundingClientRect: () => ({left: -220})}} as unknown as MouseEvent);
-        expect(scope.markerStep).toBe(20);
-        expect(scope.markerKind).toBe('section');
-        expect(scope.show).toBe(true);
-        expect(p.conductor).toBeUndefined();
-        expect(scope.touch).not.toHaveBeenCalled();
-    });
-
-    it('groups coincident markers without losing their identity or off-screen markers', () => {
-        const {p, actions} = fixture();
-        p.conductor = {
-            tempos: [{id: randomUUID(), step: 0, bpm: 90, curve: 'linear'}],
-            meters: [{id: randomUUID(), step: 0, numerator: 7, denominator: 8}],
-            sections: [{id: randomUUID(), step: 0, name: 'Rain'}, {id: randomUUID(), step: 1000000, name: 'Later'}]
-        };
-        const before = JSON.stringify(p);
-        const points = actions.timelineMarkers();
-        expect(points.map(point => point.step)).toEqual([0, 1000000]);
-        expect(points[0].entries.map(entry => entry.kind)).toEqual(['section', 'tempo', 'meter']);
-        expect(points[0].entries.map(entry => entry.marker.id)).toEqual([
-            p.conductor.sections[0].id, p.conductor.tempos[0].id, p.conductor.meters[0].id
-        ]);
-        expect(JSON.stringify(p)).toBe(before);
-        expect(actions.positionLabel(14)).toBe('Bar 2 · beat 1');
-        expect(actions.positionLabel(17)).toBe('Bar 2 · beat 2 + 1 step');
-    });
-
-    it('closes after save, preserves fields on validation failure, and cancels without saving', () => {
+    it('adds an immediately draggable placeholder at the cursor without opening a dialog or changing timing', () => {
         const {p, scope, actions} = fixture();
         actions.newMarker();
-        actions.saveMarker();
-        expect(scope.show).toBe(true);
-        expect(scope.error).toContain('Section name');
-        scope.sectionName = 'Rain';
-        actions.saveMarker();
+        expect(p.conductor?.sections[0]).toMatchObject({step: 19, name: 'Marker'});
+        expect(p.conductor?.tempos).toEqual([]);
+        expect(p.conductor?.meters).toEqual([]);
+        expect(scope.selectedId).toBe(p.conductor?.sections[0].id);
         expect(scope.show).toBe(false);
-        expect(p.conductor?.sections[0].name).toBe('Rain');
-        actions.editMarker('section', scope.editingId!);
-        scope.sectionName = 'Not saved';
-        actions.closeDialog();
-        expect(p.conductor?.sections[0].name).toBe('Rain');
+        expect(scope.touch).toHaveBeenCalledTimes(1);
+        actions.newMarker();
+        expect(p.conductor?.sections).toHaveLength(1);
         expect(scope.touch).toHaveBeenCalledTimes(1);
     });
 
-    it('defaults new tempo and meter fields to the timing at the cursor', () => {
+    it('places at the clicked step with a scrolled/zoomed lane and clamps the start', () => {
         const {p, scope, actions} = fixture();
-        p.conductor = {
-            tempos: [{id: randomUUID(), step: 8, bpm: 90, curve: 'hold'}],
-            meters: [{id: randomUUID(), step: 10, numerator: 7, denominator: 8}], sections: []
-        };
-        actions.newMarker('meter');
-        expect(scope.tempoBpm).toBe(90);
-        expect(scope.meterNumerator).toBe(7);
-        expect(scope.meterDenominator).toBe(8);
+        scope.cellWidth = 12;
+        actions.addAtPointer({clientX: 260, currentTarget: {getBoundingClientRect: () => ({left: -220})}} as unknown as MouseEvent);
+        expect(p.conductor?.sections[0].step).toBe(40);
+        actions.newMarker(-12);
+        expect(p.conductor?.sections.map(marker => marker.step)).toEqual([0, 40]);
+        expect(scope.show).toBe(false);
     });
 
-    it('adds sorted atomic markers, keeps UUIDs unique across types and leaves music untouched', () => {
-        const {p, scope, actions} = fixture();
-        const music = JSON.stringify({arrangement: p.arrangement, patterns: p.patterns, bpm: p.bpm});
-        actions.newMarker('tempo');
-        scope.markerStep = 32;
-        scope.tempoBpm = 180;
-        scope.tempoCurve = 'linear';
+    it('loads and saves title, tempo/ramp and signature together in one edit, preserving IDs and music', () => {
+        const {p, scope, actions} = fixture(true);
+        const ids = scope.points[0];
+        const before = JSON.stringify({...p, conductor: undefined});
+        actions.editMarker(ids.id);
+        expect([scope.sectionName, scope.tempoBpm, scope.tempoCurve, scope.signature]).toEqual(['Rain', 90, 'linear', '7/8']);
+        scope.sectionName = '  Bronze  ';
+        scope.tempoBpm = 108;
+        scope.signature = '3/4';
         actions.saveMarker();
-        actions.newMarker('tempo');
-        scope.markerStep = 0;
-        scope.tempoBpm = 90;
-        actions.saveMarker();
-        actions.newMarker('meter');
-        scope.markerStep = 0;
-        scope.meterNumerator = 7;
-        scope.meterDenominator = 8;
-        actions.saveMarker();
-        actions.newMarker('section');
-        scope.markerStep = 0;
-        scope.sectionName = '  Verse  ';
-        actions.saveMarker();
-        expect(p.conductor?.tempos.map(marker => marker.step)).toEqual([0, 32]);
-        expect(p.conductor?.tempos[1]).toMatchObject({step: 32, bpm: 180, curve: 'linear'});
-        expect(p.conductor?.meters[0]).toMatchObject({step: 0, numerator: 7, denominator: 8});
-        expect(p.conductor?.sections[0].name).toBe('Verse');
-        const markers = [...scope.conductor.tempos, ...scope.conductor.meters, ...scope.conductor.sections];
-        expect(new Set(markers.map(marker => marker.id)).size).toBe(4);
-        for (const marker of markers) {
-            expect(marker.id).toMatch(/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i);
-        }
-        expect(Object.keys(scope.conductor.sections[0]).sort()).toEqual(['id', 'name', 'step']);
-        expect(scope.touch).toHaveBeenCalledTimes(4);
-        expect(JSON.stringify({arrangement: p.arrangement, patterns: p.patterns, bpm: p.bpm})).toBe(music);
+        expect(scope.show).toBe(false);
+        expect(scope.points[0]).toMatchObject({id: ids.id,
+            section: {id: ids.section!.id, name: 'Bronze'}, tempo: {id: ids.tempo!.id, bpm: 108, curve: 'linear'},
+            meter: {id: ids.meter!.id, numerator: 3, denominator: 4}});
+        expect(scope.touch).toHaveBeenCalledTimes(1);
+        expect(JSON.stringify({...p, conductor: undefined})).toBe(before);
     });
 
-    it.each(['tempo', 'meter', 'section'] as const)('edits and deletes %s without duplicating its ID or touching clips', kind => {
+    it('does not insert implicit tempo or meter changes when editing only a title', () => {
         const {p, scope, actions} = fixture();
-        const clips = JSON.stringify(p.arrangement);
-        actions.newMarker(kind);
+        actions.newMarker();
+        actions.editMarker(scope.points[0].id);
+        expect(scope.tempoBpm).toBeUndefined();
+        expect(scope.signature).toBe('');
         scope.sectionName = 'Opening';
         actions.saveMarker();
-        const id = scope.editingId!;
-        actions.editMarker(kind, id);
-        scope.markerStep = 6;
-        scope.tempoBpm = 135;
-        scope.tempoCurve = 'linear';
-        scope.meterNumerator = 3;
-        scope.meterDenominator = 8;
-        scope.sectionName = 'Revised';
-        actions.saveMarker();
-        const data = scope.conductor;
-        const list = kind === 'tempo' ? data.tempos : kind === 'meter' ? data.meters : data.sections;
-        expect(list).toHaveLength(1);
-        expect(list[0]).toMatchObject({id, step: 6});
-        if (kind === 'tempo') {expect(data.tempos[0]).toMatchObject({bpm: 135, curve: 'linear'});}
-        if (kind === 'meter') {expect(data.meters[0]).toMatchObject({numerator: 3, denominator: 8});}
-        if (kind === 'section') {expect(data.sections[0].name).toBe('Revised');}
-        actions.deleteMarker(kind, id);
-        expect([...scope.conductor.tempos, ...scope.conductor.meters, ...scope.conductor.sections]).toEqual([]);
-        expect(scope.touch).toHaveBeenCalledTimes(3);
-        expect(JSON.stringify(p.arrangement)).toBe(clips);
+        expect(p.conductor?.tempos).toEqual([]);
+        expect(p.conductor?.meters).toEqual([]);
+        actions.editMarker(scope.points[0].id);
+        scope.sectionName = 'Unsaved';
+        actions.closeDialog();
+        expect(p.conductor?.sections[0].name).toBe('Opening');
     });
 
-    it.each(['tempo', 'meter', 'section'] as const)('rejects duplicate %s steps for additions and edits atomically', kind => {
-        const {p, scope, actions} = fixture();
-        actions.newMarker(kind);
-        scope.sectionName = 'A';
-        scope.markerStep = 0;
+    it('clears individual timing changes and deletes all remaining fields together', () => {
+        const {p, scope, actions} = fixture(true);
+        actions.editMarker(scope.points[0].id);
+        scope.tempoBpm = undefined;
+        scope.signature = '';
         actions.saveMarker();
-        actions.newMarker(kind);
-        scope.sectionName = 'B';
-        scope.markerStep = 16;
-        actions.saveMarker();
-        const before = JSON.stringify(p);
-        scope.markerStep = 0;
-        actions.saveMarker();
-        expect(scope.error).toContain('already exists');
-        expect(JSON.stringify(p)).toBe(before);
-        actions.newMarker(kind);
-        scope.sectionName = 'C';
-        scope.markerStep = 0;
-        actions.saveMarker();
-        expect(scope.error).toContain('already exists');
-        expect(JSON.stringify(p)).toBe(before);
+        expect(p.conductor?.tempos).toEqual([]);
+        expect(p.conductor?.meters).toEqual([]);
+        expect(p.conductor?.sections[0].name).toBe('Rain');
+        actions.editMarker(scope.points[0].id);
+        actions.deleteMarker();
+        expect(scope.points).toEqual([]);
         expect(scope.touch).toHaveBeenCalledTimes(2);
     });
 
-    it.each([undefined, NaN, Infinity, -1, 0.5, 1000001])('rejects invalid step %s without creating conductor data', step => {
-        const {p, scope, actions} = fixture();
-        scope.markerStep = step;
+    it.each([{tempoBpm: 29}, {signature: '7/3'}, {sectionName: 'x'.repeat(81)}, {tempoCurve: 'exponential'}])('rejects an invalid field atomically: %j', invalid => {
+        const {p, scope, actions} = fixture(true);
+        actions.editMarker(scope.points[0].id);
+        const before = JSON.stringify(p);
+        Object.assign(scope, {sectionName: 'Not saved', ...invalid});
         actions.saveMarker();
-        expect(scope.error).toContain('whole number');
-        expect(p.conductor).toBeUndefined();
+        expect(scope.error).not.toBe('');
+        expect(scope.show).toBe(true);
+        expect(JSON.stringify(p)).toBe(before);
         expect(scope.touch).not.toHaveBeenCalled();
     });
 
-    it.each([undefined, NaN, Infinity, 29, 301])('rejects invalid BPM %s', bpm => {
-        const {p, scope, actions} = fixture();
-        scope.tempoBpm = bpm;
-        actions.saveMarker();
-        expect(scope.error).toContain('30 to 300');
-        expect(p.conductor).toBeUndefined();
+    it('moves the entire group only on drop and suppresses the following click, not the next deliberate click', () => {
+        const {p, scope, actions} = fixture(true);
+        const point = scope.points[0];
+        const before = JSON.stringify(p);
+        const down = pointer(300);
+        actions.startDrag(down, point);
+        expect((down.currentTarget as HTMLElement).setPointerCapture).toHaveBeenCalledWith(1);
+        actions.updateDrag(pointer(300 + 24 * 8));
+        expect(scope.drag?.to).toBe(8);
+        expect(JSON.stringify(p)).toBe(before);
+        expect(scope.touch).not.toHaveBeenCalled();
+        actions.finishDrag(pointer(300 + 24 * 8));
+        expect(scope.points[0]).toMatchObject({id: point.id, step: 8, section: {step: 8}, tempo: {step: 8}, meter: {step: 8}});
+        expect(scope.touch).toHaveBeenCalledTimes(1);
+        actions.clickMarker(click(), point.id);
+        expect(scope.show).toBe(false);
+        actions.startDrag(pointer(500), scope.points[0]);
+        actions.finishDrag(pointer(502));
+        actions.clickMarker(click(), point.id);
+        expect(scope.show).toBe(true);
+    });
+
+    it('accounts for scrolling during drag, zoom, pointer identity and integer snapping', () => {
+        const {scope, actions} = fixture(true);
+        scope.cellWidth = 10;
+        scope.scrollLeft = 200;
+        actions.startDrag(pointer(300), scope.points[0]);
+        actions.updateDrag(pointer(800, 2));
+        expect(scope.drag?.to).toBe(0);
+        scope.scrollLeft = 220;
+        actions.updateDrag(pointer(326));
+        expect(scope.drag?.to).toBe(5);
+        actions.finishDrag(pointer(326));
+        expect(scope.points[0].step).toBe(5);
+    });
+
+    it.each(['escape', 'cancel'] as const)('cancels a drag via %s without mutating the project', how => {
+        const {p, scope, actions} = fixture(true);
+        const before = JSON.stringify(p);
+        const point = scope.points[0];
+        actions.startDrag(pointer(300), point);
+        actions.updateDrag(pointer(600));
+        if (how === 'escape') {actions.markerKey(keyboard('Escape'), point);}
+        else {actions.cancelDrag();}
+        actions.finishDrag(pointer(600));
+        actions.clickMarker(click(), point.id);
+        expect(scope.drag).toBeNull();
+        expect(scope.show).toBe(false);
+        expect(JSON.stringify(p)).toBe(before);
         expect(scope.touch).not.toHaveBeenCalled();
     });
 
-    it.each([undefined, 0, 1.5, 33, NaN])('rejects invalid meter numerator %s', numerator => {
-        const {p, scope, actions} = fixture();
-        scope.markerKind = 'meter';
-        scope.meterNumerator = numerator;
-        actions.saveMarker();
-        expect(scope.error).toContain('Time signature');
-        expect(p.conductor).toBeUndefined();
-    });
-
-    it('rejects unsupported meter units and tempo curves', () => {
-        const {p, scope, actions} = fixture();
-        Object.assign(scope, {markerKind: 'meter', meterDenominator: 3});
-        actions.saveMarker();
-        expect(scope.error).toContain('denominator');
-        Object.assign(scope, {markerKind: 'tempo', tempoCurve: 'exponential'});
-        actions.saveMarker();
-        expect(scope.error).toContain('Linear ramp');
-        expect(p.conductor).toBeUndefined();
+    it('rejects occupied same-kind drops and keeps every source/destination field', () => {
+        const {p, scope, actions} = fixture(true);
+        p.conductor!.tempos.push({id: randomUUID(), step: 8, bpm: 160, curve: 'hold'});
+        const before = JSON.stringify(p);
+        actions.startDrag(pointer(300), scope.points[0]);
+        actions.updateDrag(pointer(492));
+        expect(scope.drag?.problem).not.toBe('');
+        actions.finishDrag(pointer(492));
+        expect(JSON.stringify(p)).toBe(before);
         expect(scope.touch).not.toHaveBeenCalled();
     });
 
-    it.each(['', '   ', 'x'.repeat(81)])('rejects invalid section name length %s', name => {
+    it('merges disjoint marker fields when dropped on the same step', () => {
         const {p, scope, actions} = fixture();
-        scope.markerKind = 'section';
-        scope.sectionName = name;
-        actions.saveMarker();
-        expect(scope.error).toContain('1–80');
-        expect(p.conductor).toBeUndefined();
+        actions.newMarker(0);
+        p.conductor!.tempos.push({id: randomUUID(), step: 8, bpm: 160, curve: 'hold'});
+        actions.movePoint(scope.points[0].id, 8);
+        expect(scope.points).toHaveLength(1);
+        expect(scope.points[0]).toMatchObject({step: 8, section: {name: 'Marker'}, tempo: {bpm: 160}});
     });
 
-    it('accepts boundary values and keeps a far-away section from extending song length', () => {
-        const {p, scope, actions} = fixture();
-        for (const bpm of [30, 300]) {
-            actions.newMarker('tempo');
-            scope.markerStep = bpm;
-            scope.tempoBpm = bpm;
-            actions.saveMarker();
-        }
-        for (const denominator of [1, 2, 4, 8, 16] as const) {
-            actions.newMarker('meter');
-            scope.markerStep = denominator;
-            scope.meterNumerator = denominator === 1 ? 1 : 32;
-            scope.meterDenominator = denominator;
-            actions.saveMarker();
-        }
-        actions.newMarker('section');
-        scope.markerStep = 1000000;
-        scope.sectionName = 'x'.repeat(80);
-        actions.saveMarker();
-        expect(scope.error).toBe('');
-        expect(p.conductor?.sections[0].step).toBe(1000000);
-        expect(Math.max(...p.arrangement.map(clip => clip.start + clip.len))).toBe(96);
-        expect(scope.touch).toHaveBeenCalledTimes(8);
+    it('supports keyboard nudging, beat nudging, start clamping, and keyboard editing after drag', () => {
+        const {scope, actions} = fixture(true);
+        actions.markerKey(keyboard('ArrowLeft'), scope.points[0]);
+        expect(scope.touch).not.toHaveBeenCalled();
+        actions.markerKey(keyboard('ArrowRight', true), scope.points[0]);
+        expect(scope.points[0].step).toBe(2);
+        actions.markerKey(keyboard('ArrowRight'), scope.points[0]);
+        expect(scope.points[0].step).toBe(3);
+        scope.suppressClick = true;
+        actions.clickMarker(click(0), scope.points[0].id);
+        expect(scope.show).toBe(true);
+        expect(scope.$songCursor).toBe(19.3);
     });
 
-    it.each(['$playing', '$rendering'] as const)('blocks every marker mutation when %s changes after opening', lock => {
-        const {p, scope, actions} = fixture();
-        actions.newMarker('tempo');
-        actions.saveMarker();
-        const id = scope.editingId!;
+    it.each(['$playing', '$rendering'] as const)('blocks mutations if %s changes during editing/dragging', lock => {
+        const {p, scope, actions} = fixture(true);
+        const point = scope.points[0];
+        actions.editMarker(point.id);
+        actions.startDrag(pointer(300), point);
+        actions.updateDrag(pointer(600));
         const before = JSON.stringify(p);
         scope[lock] = true;
+        actions.finishDrag(pointer(600));
         scope.tempoBpm = 200;
         actions.saveMarker();
-        actions.deleteMarker('tempo', id);
-        actions.newMarker('section');
+        actions.deleteMarker();
+        actions.newMarker(80);
+        actions.movePoint(point.id, 20);
+        actions.startDrag(pointer(300), point);
+        expect(scope.drag).toBeNull();
         expect(JSON.stringify(p)).toBe(before);
-        expect(scope.touch).toHaveBeenCalledTimes(1);
-    });
-
-    it('opens existing markers read-only during playback without moving the cursor', () => {
-        const {scope, actions} = fixture();
-        actions.newMarker('tempo');
-        actions.saveMarker();
-        scope.$playing = true;
-        actions.editMarker('tempo', scope.editingId!);
-        expect(scope.show).toBe(true);
-        expect(scope.markerKind).toBe('tempo');
-        expect(scope.$songCursor).toBe(19.3);
-    });
-
-    it('ignores stale deleted markers rather than resurrecting them on save', () => {
-        const {p, scope, actions} = fixture();
-        scope.editingId = randomUUID();
-        actions.saveMarker();
-        expect(scope.error).toContain('no longer exists');
-        expect(p.conductor).toBeUndefined();
         expect(scope.touch).not.toHaveBeenCalled();
     });
 
-    it('keeps marker editing independent of the ruler cursor and loop', () => {
-        const {p, scope, actions} = fixture();
-        const section = {id: randomUUID(), step: 0, name: 'Intro'};
-        p.conductor = {tempos: [], meters: [], sections: [section]};
-        p.loop = {start: 32, end: 64};
-        actions.editMarker('section', section.id);
-        scope.sectionName = 'Opening';
-        actions.saveMarker();
-        actions.deleteMarker('section', section.id);
+    it('opens existing markers read-only while playing, but not while exporting', () => {
+        const {scope, actions} = fixture(true);
+        scope.$playing = true;
+        actions.editMarker(scope.points[0].id);
+        expect(scope.show).toBe(true);
+        actions.closeDialog();
         scope.$rendering = true;
-        actions.newMarker('section');
-        actions.addAtPointer({clientX: 480, currentTarget: {getBoundingClientRect: () => ({left: 0})}} as unknown as MouseEvent);
+        actions.editMarker(scope.points[0].id);
         expect(scope.show).toBe(false);
-        expect(p.loop).toEqual({start: 32, end: 64});
         expect(scope.$songCursor).toBe(19.3);
-        expect(scope.touch).toHaveBeenCalledTimes(2);
     });
 
-    it('traps focus, ignores disabled or hidden controls, and shields input keys from app shortcuts', () => {
+    it.each(['deleted', 'replaced'] as const)('does not resurrect stale markers when the project is %s', change => {
+        const {p, scope, actions} = fixture(true);
+        const point = scope.points[0];
+        actions.editMarker(point.id);
+        actions.startDrag(pointer(300), point);
+        if (change === 'deleted') {p.conductor = {sections: [], tempos: [], meters: []};}
+        else {scope.$project = structuredClone(p);}
+        const before = JSON.stringify(scope.$project);
+        actions.saveMarker();
+        actions.deleteMarker();
+        actions.finishDrag(pointer(600));
+        expect(scope.error).toContain('changed');
+        expect(JSON.stringify(scope.$project)).toBe(before);
+        expect(scope.touch).not.toHaveBeenCalled();
+    });
+
+    it('traps focus, filters hidden/disabled controls and shields input from app shortcuts', () => {
         const {scope, actions} = fixture();
-        const control = (disabled = false, visible = true) => ({
-            focus: vi.fn(), matches: () => disabled, getClientRects: () => visible ? [{}] : []
-        });
-        const first = control();
-        const last = control();
+        const control = (disabled = false, visible = true) => ({focus: vi.fn(), matches: () => disabled, getClientRects: () => visible ? [{}] : []});
+        const first = control(), last = control();
         const dialog = {querySelectorAll: () => [first, control(true), control(false, false), last], focus: vi.fn()};
         scope.document.activeElement = last;
         const forward = keyboard('Tab');
-        actions.handleDialogKey(forward as unknown as KeyboardEvent, dialog as unknown as HTMLElement);
+        actions.handleDialogKey(forward, dialog as unknown as HTMLElement);
         expect(first.focus).toHaveBeenCalledTimes(1);
         expect(forward.preventDefault).toHaveBeenCalled();
         scope.document.activeElement = first;
-        const backward = keyboard('Tab', true);
-        actions.handleDialogKey(backward as unknown as KeyboardEvent, dialog as unknown as HTMLElement);
+        actions.handleDialogKey(keyboard('Tab', true), dialog as unknown as HTMLElement);
         expect(last.focus).toHaveBeenCalledTimes(1);
         for (const key of [' ', 'Delete', 'Backspace', 'z', 'Enter']) {
             const event = keyboard(key);
-            actions.handleDialogKey(event as unknown as KeyboardEvent, dialog as unknown as HTMLElement);
+            actions.handleDialogKey(event, dialog as unknown as HTMLElement);
             expect(event.stopPropagation).toHaveBeenCalled();
             expect(event.preventDefault).not.toHaveBeenCalled();
         }
     });
 
-    it('closes on Escape with focus restoration and removes dialog listeners on teardown', async () => {
+    it('closes on Escape with focus restoration and removes dialog listeners', async () => {
         const {scope, actions} = fixture();
         const dialog = {addEventListener: vi.fn(), removeEventListener: vi.fn()};
         const action = actions.dialogKeyboard({closest: () => dialog} as unknown as HTMLElement);
         expect(dialog.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
         scope.show = true;
-        actions.handleDialogKey(keyboard('Escape') as unknown as KeyboardEvent, dialog as unknown as HTMLElement);
+        actions.handleDialogKey(keyboard('Escape'), dialog as unknown as HTMLElement);
         expect(scope.show).toBe(false);
         await tick();
         expect(scope.opener.focus).toHaveBeenCalledTimes(1);
@@ -447,17 +395,15 @@ describe('Conductor component', () => {
         expect(dialog.removeEventListener).toHaveBeenCalledWith('keydown', dialog.addEventListener.mock.calls[0][1]);
     });
 
-    it('uses actual bar boundaries for mixed meters including a shortened preceding bar', () => {
-        const {p, scope, actions} = fixture();
-        actions.newMarker('meter');
-        scope.markerStep = 10;
-        scope.meterNumerator = 7;
-        scope.meterDenominator = 8;
-        actions.saveMarker();
+    it('retains actual mixed-meter bar boundaries and useful position labels', () => {
+        const {p, scope, actions} = fixture(true);
+        expect(actions.markerLabel(scope.points[0])).toBe('Rain · 90 BPM ↗ · 7/8');
+        expect(actions.positionLabel(14)).toBe('Bar 2 · beat 1');
+        expect(actions.positionLabel(17)).toBe('Bar 2 · beat 2 + 1 step');
+        actions.movePoint(scope.points[0].id, 10);
         expect(barsInRange(p, 0, 39).map(bar => [bar.bar, bar.start, bar.end])).toEqual([
             [1, 0, 10], [2, 10, 24], [3, 24, 38], [4, 38, 52]
         ]);
-        expect(barAt(p, 24).bar).toBe(3);
         expect(playlist).toContain('barsInRange($project, scrollLeft / cellWidth,');
         expect(playlist).toContain('barAt($project!, clip.start).bar');
         expect(playlist).toContain('class="bar-line"');
