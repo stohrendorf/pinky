@@ -93,7 +93,7 @@ function controlsFor(graph: EngineObjects, values: MasterValues): MasterControls
             tiltHigh: graph.tiltHigh.gain
         } : null,
         currentTime: () => graph.master?.context.currentTime ?? 0,
-        rampTo: (param, value, at, duration) => rampTo(param, value, at, duration, graph === liveGraph)
+        rampTo: (param, value, at, duration, from) => rampTo(param, value, at, duration, graph === liveGraph, from)
     });
 }
 
@@ -748,9 +748,9 @@ export function clockStop(): void {
  * ranks and a chord and the render thread misses its deadline: the crackle.
  * A linear ramp does the same job audibly and then drains from the event list,
  * letting the filter fall back to cheap constant coefficients. */
-function rampTo(prm: AudioParam, v: number, at: number, t: number, forceLive = false): void {
+function rampTo(prm: AudioParam, v: number, at: number, t: number, forceLive = false, from?: number): void {
     prm.cancelScheduledValues(at);
-    prm.setValueAtTime(prm.value, at);
+    prm.setValueAtTime(from ?? prm.value, at);
     prm.linearRampToValueAtTime(v, at + t);
     flattenLater(prm, v, at + t, forceLive); // ... and drop the timeline once it lands
 }

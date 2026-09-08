@@ -17,7 +17,7 @@ export interface MasterControlsOptions {
     values: MasterValues;
     targets: () => MasterTargets | null;
     currentTime: () => number;
-    rampTo: (param: AudioParam, value: number, at: number, duration: number) => void;
+    rampTo: (param: AudioParam, value: number, at: number, duration: number, from?: number) => void;
 }
 
 const EPSILON: Record<MasterId, number> = {vol: 0.004, rev: 0.004, tilt: 0.05};
@@ -30,6 +30,8 @@ export class MasterControls {
     private readonly targets: () => MasterTargets | null;
     private readonly currentTime: () => number;
     private readonly rampTo: MasterControlsOptions['rampTo'];
+    // AudioParam.value remains at the graph's base value while a whole offline
+    // timeline is queued. Keep each future endpoint so the next ramp is continuous.
     private readonly lastAutomated: Partial<Record<MasterId, number>> = {};
 
     constructor(options: MasterControlsOptions) {
@@ -50,7 +52,7 @@ export class MasterControls {
         const previous = this.lastAutomated[id];
         if (previous !== undefined && Math.abs(value - previous) <= EPSILON[id]) {return;}
         this.lastAutomated[id] = value;
-        this.applyAt(id, value, at, Math.max(0.005, ramp));
+        this.applyAt(id, value, at, Math.max(0.005, ramp), previous ?? this.values[id]);
     }
 
     reset(): void {
@@ -73,14 +75,14 @@ export class MasterControls {
         };
     }
 
-    private applyAt(id: MasterId, value: number, at: number, ramp: number): void {
+    private applyAt(id: MasterId, value: number, at: number, ramp: number, from?: number): void {
         const targets = this.targets();
         if (!targets) {return;}
-        if (id === 'vol') {this.rampTo(targets.volume, value, at, ramp);}
-        else if (id === 'rev') {this.rampTo(targets.reverb, value, at, ramp);}
+        if (id === 'vol') {this.rampTo(targets.volume, value, at, ramp, from);}
+        else if (id === 'rev') {this.rampTo(targets.reverb, value, at, ramp, from);}
         else {
-            this.rampTo(targets.tiltLow, -value, at, ramp);
-            this.rampTo(targets.tiltHigh, value, at, ramp);
+            this.rampTo(targets.tiltLow, -value, at, ramp, from === undefined ? undefined : -from);
+            this.rampTo(targets.tiltHigh, value, at, ramp, from);
         }
     }
 }

@@ -34,8 +34,8 @@ describe('MasterControls', () => {
         instance.apply('tilt', 3);
 
         expect(values.tilt).toBe(3);
-        expect(rampTo).toHaveBeenNthCalledWith(1, expect.anything(), -3, 4, 0.02);
-        expect(rampTo).toHaveBeenNthCalledWith(2, expect.anything(), 3, 4, 0.02);
+        expect(rampTo).toHaveBeenNthCalledWith(1, expect.anything(), -3, 4, 0.02, undefined);
+        expect(rampTo).toHaveBeenNthCalledWith(2, expect.anything(), 3, 4, 0.02, undefined);
     });
 
     it('coalesces small automation changes and enforces a minimum ramp', () => {
@@ -46,7 +46,16 @@ describe('MasterControls', () => {
         instance.automate('vol', 0.51, 12, 0.1);
 
         expect(rampTo).toHaveBeenCalledTimes(2);
-        expect(rampTo).toHaveBeenLastCalledWith(expect.anything(), 0.51, 12, 0.1);
+        expect(rampTo).toHaveBeenLastCalledWith(expect.anything(), 0.51, 12, 0.1, 0.5);
+    });
+
+    it('continues offline automation from the prior scheduled value', () => {
+        const {instance, rampTo} = controls();
+
+        instance.automate('vol', 0.6, 10, 0.05);
+        instance.automate('vol', 0.5, 11, 0.05);
+
+        expect(rampTo).toHaveBeenLastCalledWith(expect.anything(), 0.5, 11, 0.05, 0.6);
     });
 
     it('keeps value state and command calls isolated when targets are absent', () => {
