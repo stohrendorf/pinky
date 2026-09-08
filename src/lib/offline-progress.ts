@@ -7,6 +7,7 @@ interface OfflineProgressOptions {
     signal?: AbortSignal;
     onProgress?: (progress: number | null) => void;
     subscribeFrames?: (listener: (frames: number) => void) => () => void;
+    onAbandon?: (completion: Promise<void>) => void;
 }
 
 export function supportsOfflineSuspension(context: OfflineAudioContext): boolean {
@@ -39,17 +40,22 @@ export async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Prom
 
 /** OfflineAudioContext has no close/cancel primitive. Stop at an actual render
  * quantum and abandon the suspended context; never resume it after an abort.
- * Without suspend/resume support, wait for completion and discard on abort.
- * The caller may release its graph only once this function settles. */
+ * Without suspend/resume support, the caller may abandon its graph and clean it
+ * up when native rendering finishes. */
 export async function renderWithProgress(context: OfflineAudioContext, options: OfflineProgressOptions): Promise<AudioBuffer> {
     const {signal, onProgress} = options;
     checkAbort(signal);
     // Legacy callers need neither checkpoints nor event-loop yields.
     if (!signal && !onProgress) {return context.startRendering();}
-    if (!supportsOfflineSuspension(context)) {
-        // Firefox cannot suspend offline contexts, but the output worklet can
-        // report completed frames. Retain ownership until native work finishes.
-        onProgress?.(null);
+    const hasFrameProgress = !!options.subscribeFrames;
+    const canSuspend = supportsOfflineSuspension(context);
+    if (hasFrameProgress || !canSuspend) {
+        /* The output worklet reports exact completed frames without stopping
+         * Chromium's offline renderer. Suspension is much more expensive than
+         * those messages on dense graphs, so reserve it for contexts that have
+         * no frame source. Retain ownership until native work finishes either
+         * way: an uninterrupted render cannot be cancelled mid-pass. */
+        if (!canSuspend) {onProgress?.(null);}
         checkAbort(signal);
         let active = true, last = 0, observerFailed = false;
         let observerError: unknown;
@@ -64,7 +70,19 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
             catch (error) {observerFailed = true; observerError = error;}
         }) : undefined;
         try {
-            const buffer = await context.startRendering();
+            const native = context.startRendering();
+            let abort = () => {};
+            const aborted = options.onAbandon && signal ? new Promise<never>((_resolve, reject) => {
+                abort = () => {
+                    try {options.onAbandon?.(native.then(() => undefined, () => undefined));}
+                    finally {reject(new DOMException('Export cancelled', 'AbortError'));}
+                };
+                signal.addEventListener('abort', abort, {once: true});
+                if (signal.aborted) {abort();}
+            }) : undefined;
+            let buffer: AudioBuffer;
+            try {buffer = await (aborted ? Promise.race([native, aborted]) : native);}
+            finally {signal?.removeEventListener('abort', abort);}
             checkAbort(signal);
             if (observerFailed) {throw observerError;}
             onProgress?.(1);

@@ -5,6 +5,9 @@ import type {
 import {
     DEFAULT_PARAMS, ensurePartials, genPartials
 } from './instruments';
+import {
+    createMixer
+} from './mixer';
 
 /* ---- Pinky Promo ----
  * The soundtrack of promo/out/pinky-promo.mp4, note for note: a trailer-shaped
@@ -329,12 +332,16 @@ const LANES: {name: string; label: string; color: string; parts: PromoPart[]}[] 
 
 const MASTER_VOL_LANE = '5c02ba01-71ab-435d-9337-1450f2573001';
 const MASTER_REV_LANE = '5c02ba01-71ab-435d-9337-1450f2573002';
-// the master at the hits and the climax (the bounce measured +8.3 dBFS at 1.0)
+// the master at the hits and the climax; its mixer limiter protects transient peaks
 const FULL = 0.34;
 const dB = (base: number, delta: number): number => Math.round(base * 10 ** (delta / 20) * 1000) / 1000;
 
 export function buildPromoDemo(): Project {
     const score = compose();
+    const instruments = buildInstruments();
+    const mixer = createMixer(instruments.map(instrument => instrument.id));
+    mixer.master.vol = dB(FULL, -11);
+    mixer.master.rev = 0.74;
     const patterns: Pattern[] = [];
     const arrangement = SECTIONS.flatMap(section => LANES.flatMap((lane, track) => {
         const notes = score.tracks.get(section) || {};
@@ -359,17 +366,17 @@ export function buildPromoDemo(): Project {
 
     return {
         formatVersion: 1,
-        instruments: buildInstruments(),
+        instruments,
         patterns,
         arrangement,
         tracks: LANES.map(({name, color}) => ({name, color})),
         bpm: BPM,
         loop: {start: 0, end: PROMO_LENGTH_STEPS},
+        mixer,
         automation: [
             // the trailer arc: whisper (-11 dB), swell (-6), and the title hit opens
             // the master up; the break drops it 3 dB until the climax hits. FULL is
-            // where the climax true-peaks at -1 dBFS through the engine — the DAW
-            // has no limiter to lean on, so the master is the only ceiling.
+            // where the master limiter catches the climax at its -1 dBFS ceiling.
             {id: MASTER_VOL_LANE, target: 'master', param: 'vol', points: [
                 {step: 0, value: dB(FULL, -11), curve: 'hold'}, {step: 32, value: dB(FULL, -6), curve: 'ease-in'},
                 {step: 63, value: dB(FULL, -3), curve: 'hold'}, {step: 64, value: FULL},

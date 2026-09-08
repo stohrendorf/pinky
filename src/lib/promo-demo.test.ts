@@ -109,9 +109,10 @@ describe('Pinky Promo demo', () => {
         expect(db(at(63))).toBeCloseTo(-3, 0);   // ... into the title hit
         expect(db(at(226))).toBeCloseTo(-3, 0);  // the break drops 3 dB
         expect(at(256)).toBe(full);              // the climax opens it up again
-        // the engine has no limiter: the master has to leave headroom for the climax
+        // The normal master limiter absorbs transient peaks without turning down the whole song.
         expect(full).toBeLessThan(0.5);
-        expect(full).toBeGreaterThan(0.25);
+        expect(full).toBeCloseTo(0.34, 3);
+        expect(promo.mixer?.master).toMatchObject({limiter: true, ceilingDb: -1});
         expect(promo.automation?.find(lane => lane.param === 'rev')?.points[0].value).toBeCloseTo(0.74, 6);
     });
 });

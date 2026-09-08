@@ -31,9 +31,8 @@ export interface VoiceCollectionSnapshot<Params = unknown> {
 }
 
 export interface VoiceCollectionOptions {
-    maxVoices?: number;
+    maxVoices?: () => number;
     maxNodes: () => number;
-    isOffline: () => boolean;
 }
 
 /** Owns voice identity, lifecycle bookkeeping, and polyphony policy. */
@@ -41,15 +40,13 @@ export class VoiceCollection<Params = unknown> {
     readonly active = new Map<string, ManagedVoice<Params>>();
     private readonly live: LiveVoice<Params>[] = [];
     private readonly lastOnTrack = new Map<string, LastVoice<Params>>();
-    private readonly maxVoices: number;
+    private readonly maxVoices: () => number;
     private readonly maxNodes: () => number;
-    private readonly isOffline: () => boolean;
     private currentLoad = 0;
 
     constructor(options: VoiceCollectionOptions) {
-        this.maxVoices = options.maxVoices ?? 96;
+        this.maxVoices = options.maxVoices ?? (() => 96);
         this.maxNodes = options.maxNodes;
-        this.isOffline = options.isOffline;
     }
 
     get load(): number {
@@ -88,7 +85,7 @@ export class VoiceCollection<Params = unknown> {
             if (live.voice.stopAt > at) {held++;}
         }
 
-        while (!this.isOffline() && (held >= this.maxVoices || cost > this.maxNodes())) {
+        while (held >= this.maxVoices() || cost > this.maxNodes()) {
             let victim: ManagedVoice<Params> | null = null;
             let quietest = Infinity;
             for (const live of this.live) {

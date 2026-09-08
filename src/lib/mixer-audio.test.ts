@@ -582,43 +582,44 @@ describe('engine graph isolation and latency trimming', () => {
         expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
     });
 
-    it('keeps engine ownership until a running context suspends on cancellation and disconnects it', async () => {
+    it('keeps engine ownership until a continuous suspendable render finishes after cancellation', async () => {
         const engine = await freshEngine();
         await engine.ensureAudio();
         const analyser = engine.getAnalyser();
         const saved = {...engine.master};
         const controller = new AbortController();
-        let fail!: (error: Error) => void;
-        Context.render = () => new Promise((_resolve, reject) => {fail = reject;});
+        let finish!: () => void;
+        Context.render = context => new Promise(resolve => {
+            finish = () => {
+                context.state = 'closed';
+                resolve(context.createBuffer(2, context.length, context.sampleRate));
+            };
+        });
         const pending = engine.renderOffline(1, 48000, () => undefined, undefined, {signal: controller.signal});
         const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
         await vi.advanceTimersByTimeAsync(0);
         const offline = Context.instances[1];
-        offline.pause();
-        await vi.advanceTimersByTimeAsync(1);
-        expect(offline.resume).toHaveBeenCalledOnce();
+        expect(offline.suspend).not.toHaveBeenCalled();
         controller.abort();
         await vi.advanceTimersByTimeAsync(1);
         expect(engine.isRendering()).toBe(true);
         await expect(engine.renderOffline(0.1, 48000, () => undefined)).rejects.toThrow('already in progress');
-        offline.pause();
+        finish();
         await rejected;
-        expect(offline.state).toBe('suspended');
-        expect(offline.resume).toHaveBeenCalledOnce();
+        expect(offline.state).toBe('closed');
+        expect(offline.resume).not.toHaveBeenCalled();
         expect(offline.nodes.every(node => node.connections.size === 0)).toBe(true);
         expect(offline.nodes.find(node => node.kind === 'AudioBufferSourceNode')?.stop).toHaveBeenCalled();
         expect(offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')?.port.close).toHaveBeenCalled();
         expect(engine.isRendering()).toBe(false);
         expect(engine.getAnalyser()).toBe(analyser);
         expect(engine.master).toEqual(saved);
-        fail(new Error('late native rejection'));
-        await vi.advanceTimersByTimeAsync(0);
         Context.render = null;
         expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
         await engine.ensureAudio();
     });
 
-    it('retains and restores the graph when cancellation must wait for a non-suspendable render', async () => {
+    it('restores the live graph immediately and defers disposal after a non-suspendable render is cancelled', async () => {
         const engine = await freshEngine();
         await engine.ensureAudio();
         const analyser = engine.getAnalyser();
@@ -647,20 +648,21 @@ describe('engine graph isolation and latency trimming', () => {
         controller.abort();
         receive({data: {type: 'progress', frames: 24120}});
         expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: 0.25, canSuspend: false});
-        await vi.advanceTimersByTimeAsync(1000);
-        expect(engine.isRendering()).toBe(true);
-        expect(offline.nodes.some(node => node.connections.size > 0)).toBe(true);
-        await expect(engine.renderOffline(0.1, 48000, () => undefined)).rejects.toThrow('already in progress');
-        finish();
         await rejected;
+        expect(engine.isRendering()).toBe(false);
+        expect(offline.nodes.some(node => node.connections.size > 0)).toBe(true);
+        expect(engine.getAnalyser()).toBe(analyser);
+        expect(engine.master).toEqual(saved);
+        Context.render = null;
+        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
+        finish();
+        await vi.advanceTimersByTimeAsync(0);
         expect(offline.nodes.every(node => node.connections.size === 0)).toBe(true);
         expect(limiter.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', intervalFrames: 0});
         expect(offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')?.port.close).toHaveBeenCalled();
         expect(engine.isRendering()).toBe(false);
         expect(engine.getAnalyser()).toBe(analyser);
         expect(engine.master).toEqual(saved);
-        Context.render = null;
-        expect((await engine.renderOffline(0.1, 48000, () => undefined)).length).toBe(4800);
     });
 
     it('does not start audio work after cancellation during asynchronous scheduling', async () => {

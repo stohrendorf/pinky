@@ -21,6 +21,13 @@ describe('yielding WAV encoder', () => {
         expect(progress).toEqual([0, 32768 / 70000, 65536 / 70000, 1]);
     });
 
+    it('rejects a non-finite rendered sample instead of silently encoding it as silence', () => {
+        const source = pcm(3);
+        source.getChannelData(0)[1] = Number.NaN;
+
+        expect(() => encodeWav(source)).toThrow('non-finite audio sample');
+    });
+
     it('rejects an early abort before accessing channel samples', async () => {
         const controller = new AbortController();
         controller.abort();

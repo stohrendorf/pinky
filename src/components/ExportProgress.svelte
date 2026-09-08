@@ -11,6 +11,7 @@
     } from '../lib/render';
 
     let dialog = $state<HTMLDialogElement>();
+    let confirmCancel = $state(false);
     const visible = $derived($exportProgress !== null);
     const failed = $derived($exportProgress?.stage === 'error');
     const stages = [
@@ -21,13 +22,18 @@
     ];
     const label = $derived(stages.find(stage => stage.id === $exportProgress?.stage)?.label ?? 'Export failed');
     const percent = $derived(typeof $exportProgress?.progress === 'number' ? Math.floor($exportProgress.progress * 100) : null);
-    const waitsForRender = $derived($exportProgress?.stage === 'rendering' && $exportProgress.canSuspend === false);
     const eta = $derived(!$exportProgress?.cancelling && percent !== null && percent < 100
         ? formatStageEta($exportProgress?.etaSeconds) : null);
 
     function cancel() {
         if (failed) {dismissExportError();}
-        else {cancelExport();}
+        else if (confirmCancel) {confirmCancel = false;}
+        else if (!$exportProgress?.cancelling) {confirmCancel = true;}
+    }
+
+    function confirmCancellation() {
+        confirmCancel = false;
+        cancelExport();
     }
 
     function handleKey(event: KeyboardEvent) {
@@ -63,8 +69,11 @@
     });
 
     $effect(() => {
-        if (!visible) {return;}
-        const target = failed ? 'button' : 'button[aria-disabled]';
+        if (!visible) {
+            confirmCancel = false;
+            return;
+        }
+        const target = failed || confirmCancel ? 'button' : 'button[aria-disabled]';
         void tick().then(() => dialog?.querySelector<HTMLButtonElement>(target)?.focus());
     });
 </script>
@@ -75,7 +84,7 @@
         aria-labelledby="export-title"
         aria-modal="true"
         oncancel={event => {event.preventDefault(); cancel();}}>
-    <h2 id="export-title">{failed ? 'WAV export failed' : 'Export WAV'}</h2>
+    <h2 id="export-title">{failed ? 'WAV export failed' : confirmCancel ? 'Cancel export?' : 'Export WAV'}</h2>
     {#if $exportProgress}
         {#if failed}
             <p id="export-description" role="alert">{$exportProgress.error}</p>
@@ -85,36 +94,40 @@
             </div>
         {:else}
             <p id="export-description">Exporting a snapshot of your song. Editing and playback resume when this dialog closes.</p>
-            <ol aria-label="Export stages">
-                {#each stages as stage (stage.id)}
-                    <li aria-current={$exportProgress.stage === stage.id ? 'step' : undefined}>{stage.label}</li>
-                {/each}
-            </ol>
-            <p class="status" aria-live="polite" role="status">
-                {$exportProgress.cancelling
-                    ? (waitsForRender
-                        ? 'Cancelling — waiting for this browser to finish rendering…'
-                        : 'Cancelling — waiting for audio to stop…')
-                    : label}
-            </p>
-            {#if percent === null}
-                <progress aria-label={label} max="100"></progress>
+            {#if confirmCancel}
+                <p class="status" aria-live="polite" role="status">Cancel export?</p>
+                <p class="detail">The current render will be discarded and must start over.</p>
+                <div class="actions">
+                    <button onclick={() => {confirmCancel = false;}} type="button">Keep rendering</button>
+                    <button onclick={confirmCancellation} type="button">Abort export</button>
+                </div>
             {:else}
-                <progress aria-label={label} max="100" value={percent}></progress>
+                <ol aria-label="Export stages">
+                    {#each stages as stage (stage.id)}
+                        <li aria-current={$exportProgress.stage === stage.id ? 'step' : undefined}>{stage.label}</li>
+                    {/each}
+                </ol>
+                <p class="status" aria-live="polite" role="status">
+                    {$exportProgress.cancelling ? 'Cancelling…' : label}
+                </p>
+                {#if percent === null}
+                    <progress aria-label={label} max="100"></progress>
+                {:else}
+                    <progress aria-label={label} max="100" value={percent}></progress>
+                {/if}
+                <p class="detail">{percent === null
+                    ? ($exportProgress.stage === 'rendering'
+                        ? 'Waiting for audio progress…'
+                        : 'Initializing the audio graph…')
+                    : `${percent}% of this stage`}</p>
+                {#if eta}<p class="detail">{eta}</p>{/if}
+                <div class="actions">
+                    <button aria-disabled={$exportProgress.cancelling} onclick={cancel} type="button">
+                        {$exportProgress.cancelling ? 'Cancelling…' : 'Cancel export'}
+                    </button>
+                </div>
+                <p class="hint">Escape asks to cancel. No file is downloaded after cancellation.</p>
             {/if}
-            <p class="detail">{percent === null
-                ? ($exportProgress.stage === 'rendering'
-                    ? 'Waiting for audio progress…'
-                    : 'Initializing the audio graph…')
-                : `${percent}% of this stage`}</p>
-            {#if eta}<p class="detail">{eta}</p>{/if}
-            {#if waitsForRender}<p class="hint">Cancellation waits for rendering to finish.</p>{/if}
-            <div class="actions">
-                <button aria-disabled={$exportProgress.cancelling} onclick={cancelExport} type="button">
-                    {$exportProgress.cancelling ? 'Cancelling…' : 'Cancel export'}
-                </button>
-            </div>
-            <p class="hint">Escape cancels. No file is downloaded after cancellation.</p>
         {/if}
     {/if}
 </dialog>

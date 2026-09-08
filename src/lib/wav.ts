@@ -49,7 +49,9 @@ function wavWriter(buf: PcmSource) {
         write(from: number, to: number) {
             for (let i = from; i < to; i++) {
                 for (let c = 0; c < chans; c++) {
-                    const s = Math.max(-1, Math.min(1, data[c][i]));
+                    const sample = data[c][i];
+                    if (!Number.isFinite(sample)) {throw new Error('Cannot encode non-finite audio sample');}
+                    const s = Math.max(-1, Math.min(1, sample));
                     out.setInt16(o, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
                     o += 2;
                 }

@@ -3,6 +3,9 @@ import type {
 } from './types';
 
 import {
+    createAudioRandom
+} from './audio-random';
+import {
     segmentProgress
 } from './automation';
 import clockWorkletUrl from './clock-worklet.js?url';
@@ -35,6 +38,9 @@ import {
 import {
     adsrLevel, type BandRecord, type BandSpec, VoiceBandRegistry, type VoiceSnapshot
 } from './voice-band-registry';
+import {
+    capacityForRender
+} from './voice-capacity';
 import {
     type ManagedVoice, VoiceCollection
 } from './voice-collection';
@@ -204,8 +210,9 @@ export function setNodeBudget(n: number): void {
     }
 }
 
-const partialShedNodes = (): number => nodeBudget * 0.85;
-const softLiveNodes = (): number => nodeBudget * 0.6;
+const voiceCapacity = () => capacityForRender(nodeBudget, offline);
+const partialShedNodes = (): number => voiceCapacity().nodes * 0.85;
+const softLiveNodes = (): number => voiceCapacity().nodes * 0.6;
 const MIN_BAND_DB = 0.5;    // a partial boosted less than this is inaudible
 // Formant boost span in dB at level 1. These bands sit *after* the dry-noise
 // cancellation (see makeRank), so they shape a signal instead of creating one —
@@ -220,8 +227,8 @@ const TAIL = 1.5;
 let offline = false;        // true while bouncing into an OfflineAudioContext
 
 const voiceCollection = new VoiceCollection<InstrumentParams>({
-    maxNodes: () => nodeBudget,
-    isOffline: () => offline
+    maxNodes: () => voiceCapacity().nodes,
+    maxVoices: () => voiceCapacity().voices
 });
 
 // Kept as a compatibility export for code that needs to inspect or clear
@@ -481,6 +488,21 @@ function cut(f: () => void): void {
     }
 }
 
+function disposeOfflineGraph(graph: EngineObjects): void {
+    cut(() => graph.mixer?.dispose());
+    cut(() => graph.limiter?.dispose());
+    cut(() => graph.noise?.stop());
+    for (const source of graph.lfoSources ?? []) {
+        cut(() => source.stop());
+        cut(() => source.disconnect());
+    }
+    for (const node of graph.lfos?.values() ?? []) {cut(() => node.disconnect());}
+    for (const key of ['noise', 'noiseBus', 'noiseInv', 'voiceBus', 'tiltLow', 'tiltHigh', 'comp',
+        'master', 'reverb', 'revSend', 'analyser', 'flushBus'] as const) {
+        cut(() => graph[key]?.disconnect());
+    }
+}
+
 /* How much of the graph is running right now, in nodes — the number the load
  * governor works with (see the node budget above), reported together with the
  * budget it is being measured against so a readout can show both. */
@@ -506,6 +528,17 @@ export const masterState = (): { vol: number; tilt: number } => liveMasterContro
 
 /* The scope overlay keeps its own time-windowed view of voices. */
 const bandRegistry = new VoiceBandRegistry();
+const audioRandoms = new WeakMap<BaseAudioContext, () => number>();
+
+function audioRandom(): number {
+    if (!ctx) {throw new Error('Audio not initialized');}
+    let random = audioRandoms.get(ctx);
+    if (!random) {
+        random = createAudioRandom();
+        audioRandoms.set(ctx, random);
+    }
+    return random();
+}
 
 export function activeVoiceBands(): VoiceSnapshot[] {
     const c = ctx;
@@ -521,7 +554,7 @@ function pinkNoiseBuffer(seconds: number): AudioBuffer {
         const d = buf.getChannelData(ch);
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
         for (let i = 0; i < len; i++) {
-            const w = Math.random() * 2 - 1;
+            const w = audioRandom() * 2 - 1;
             b0 = 0.99886 * b0 + w * 0.0555179;
             b1 = 0.99332 * b1 + w * 0.0750759;
             b2 = 0.96900 * b2 + w * 0.1538520;
@@ -541,7 +574,7 @@ function reverbImpulse(seconds: number, decay: number): AudioBuffer {
     const buf = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) {
         const d = buf.getChannelData(ch);
-        for (let i = 0; i < len; i++) {d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);}
+        for (let i = 0; i < len; i++) {d[i] = (audioRandom() * 2 - 1) * Math.pow(1 - i / len, decay);}
     }
     return buf;
 }
@@ -814,7 +847,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
      * partials instead of the whole voice being stolen or the render deadline
      * being missed. The chain's magnitude response doesn't care about the
      * order of the bands, so the loudest ones can simply be kept. */
-    if (!offline && voiceCollection.load > partialShedNodes() && used.length > 4) {
+    if (voiceCollection.load > partialShedNodes() && used.length > 4) {
         const keep = Math.max(4, Math.round(used.length * partialShedNodes() / voiceCollection.load));
         used = used.slice().sort((a, b) => b.level - a.level).slice(0, keep);
     }
@@ -942,11 +975,11 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
         return fb.bq;
     }, sum);
     formantTail.connect(env);
-    if (Math.abs(panWanted) > 0.002) {insertPan(panWanted + (Math.random() - 0.5) * 0.06);}
+    if (Math.abs(panWanted) > 0.002) {insertPan(panWanted + (audioRandom() - 0.5) * 0.06);}
     else {env.connect(voiceOutput);}
 
     // Amp ADSR (attack -> decay to sustain); ±0.7 dB humanization per hit
-    const peak = 0.9 * (0.92 + Math.random() * 0.08);
+    const peak = 0.9 * (0.92 + audioRandom() * 0.08);
     env.gain.setValueAtTime(0, when);
     env.gain.linearRampToValueAtTime(peak, when + p.att);
     env.gain.setTargetAtTime(p.sus * peak, when + p.att, Math.max(0.01, p.dec / 3));
@@ -1225,9 +1258,7 @@ function makeVoice(track: string, freq: number, when: number, p: InstrumentParam
      * and 3 detuned ranks instead of 4 is far less audible than losing the top
      * partials of every note. Held chords keep what they were born with; only
      * new voices are thinned. */
-    // (never while bouncing to WAV — an offline render has no deadline to miss,
-    // so it gets the patch exactly as it was written)
-    if (!offline && n > 2 && voiceCollection.load > softLiveNodes()) {
+    if (n > 2 && voiceCollection.load > softLiveNodes()) {
         n = Math.max(2, Math.round(n * softLiveNodes() / voiceCollection.load));
     }
     if (n === 1 || p.detune <= 0) {return makeRank(track, freq, when, p, vel, 0);}
@@ -1319,10 +1350,13 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
         const savedControls = masterControls;
         const savedVoices = voiceCollection.snapshot();
         const savedBands = bandRegistry.take();
+        let offlineEngine: EngineObjects | null = null;
+        let abandoned = false;
         try {
             ctx = oc;
             offline = true;
             engine = {};
+            offlineEngine = engine;
             masterControls = controlsFor(engine, values);
             voiceCollection.reset();
             await buildGraph(oc, engine, snapshot, values, options.signal);
@@ -1337,6 +1371,10 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             const rendered = await renderWithProgress(oc, {
                 signal: options.signal,
                 subscribeFrames: limiter ? listener => limiter.trackProgress(oc.length, listener) : undefined,
+                onAbandon: canSuspend ? undefined : completion => {
+                    abandoned = true;
+                    void completion.then(() => {if (offlineEngine) {disposeOfflineGraph(offlineEngine);}});
+                },
                 onProgress: options.onProgress ? progress => {
                     if (limiter?.error) {throw limiter.error;}
                     options.onProgress?.({stage: 'rendering', progress, canSuspend});
@@ -1354,18 +1392,7 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             }
             return trimmed;
         } finally {
-            cut(() => engine.mixer?.dispose());
-            cut(() => engine.limiter?.dispose());
-            cut(() => engine.noise?.stop());
-            for (const source of engine.lfoSources ?? []) {
-                cut(() => source.stop());
-                cut(() => source.disconnect());
-            }
-            for (const node of engine.lfos?.values() ?? []) {cut(() => node.disconnect());}
-            for (const key of ['noise', 'noiseBus', 'noiseInv', 'voiceBus', 'tiltLow', 'tiltHigh', 'comp',
-                'master', 'reverb', 'revSend', 'analyser', 'flushBus'] as const) {
-                cut(() => engine[key]?.disconnect());
-            }
+            if (!abandoned) {disposeOfflineGraph(offlineEngine ?? engine);}
             ctx = savedCtx;
             offline = false;
             engine = savedEngine;

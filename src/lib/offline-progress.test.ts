@@ -34,6 +34,27 @@ beforeEach(() => {vi.useFakeTimers();});
 afterEach(() => {vi.useRealTimers();});
 
 describe('offline render checkpoints', () => {
+    it('uses worklet frame progress without interrupting a render that supports suspension', async () => {
+        const context = new OfflineContext();
+        const progress: number[] = [];
+        let frames!: (value: number) => void;
+        const unsubscribe = vi.fn();
+
+        const pending = renderWithProgress(context.native(), {
+            onProgress: value => {if (value !== null) {progress.push(value);}},
+            subscribeFrames: listener => {frames = listener; return unsubscribe;}
+        });
+
+        expect(context.startRendering).toHaveBeenCalledOnce();
+        expect(context.suspend).not.toHaveBeenCalled();
+        frames(12000);
+        expect(progress).toEqual([0.25]);
+        context.finish({} as AudioBuffer);
+        await pending;
+        expect(progress).toEqual([0.25, 1]);
+        expect(unsubscribe).toHaveBeenCalledOnce();
+    });
+
     it('reports only actual rendered time, monotonically, with no timer interpolation', async () => {
         const context = new OfflineContext();
         const progress: (number | null)[] = [];
@@ -189,19 +210,23 @@ describe('offline rendering without suspension support', () => {
         expect(progress).toEqual([null, 1]);
     });
 
-    it('waits for native completion before acknowledging cancellation and discards the buffer', async () => {
+    it('acknowledges cancellation immediately and defers native cleanup to its owner', async () => {
         const context = without('suspend');
         const controller = new AbortController();
         const progress = vi.fn();
-        let settled = false;
-        const pending = renderWithProgress(context.native(), {signal: controller.signal, onProgress: progress});
-        const result = pending.catch(error => {settled = true; return error as Error;});
+        let complete!: Promise<void>;
+        const pending = renderWithProgress(context.native(), {
+            signal: controller.signal, onProgress: progress, onAbandon: completion => {complete = completion;}
+        });
         controller.abort();
+        await expect(pending).rejects.toMatchObject({name: 'AbortError'});
+        expect(context.state).toBe('running');
+        let settled = false;
+        void complete.then(() => {settled = true;});
         await vi.advanceTimersByTimeAsync(10000);
         expect(settled).toBe(false);
-        expect(context.state).toBe('running');
         context.finish({} as AudioBuffer);
-        expect(await result).toMatchObject({name: 'AbortError'});
+        await complete;
         expect(progress.mock.calls).toEqual([[null]]);
         expect(context.resume).not.toHaveBeenCalled();
     });

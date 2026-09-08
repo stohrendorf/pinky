@@ -21,6 +21,7 @@ import type {
 import ExportProgress from './ExportProgress.svelte';
 
 const current = vi.hoisted(() => ({value: null as ExportProgressState | null}));
+const source = readFileSync(fileURLToPath(new URL('./ExportProgress.svelte', import.meta.url)), 'utf8');
 vi.mock('../lib/render', () => ({
     exportProgress: {subscribe: (run: (value: ExportProgressState | null) => void) => {
         run(current.value);
@@ -36,25 +37,31 @@ function markup(state: ExportProgressState): string {
 
 describe('export progress modal', () => {
     it('compiles the native modal without accessibility warnings', () => {
-        const source = readFileSync(fileURLToPath(new URL('./ExportProgress.svelte', import.meta.url)), 'utf8');
         const result = compile(source, {filename: 'ExportProgress.svelte', generate: 'client'});
         expect(result.js.code.length).toBeGreaterThan(0);
         expect(result.warnings.filter(warning => warning.code.startsWith('a11y'))).toEqual([]);
     });
 
-    it.each([null, 0, 0.45, 1])('explains non-suspendable cancellation at progress %s', progress => {
+    it('requires an explicit second choice before cancelling an active export', () => {
+        expect(source).toContain('let confirmCancel = $state(false);');
+        expect(source).toContain('confirmCancel = true;');
+        expect(source).toContain('Cancel export?');
+        expect(source).toContain('Keep rendering');
+        expect(source).toContain('Abort export');
+    });
+
+    it.each([null, 0, 0.45, 1])('cancels non-suspendable renders without waiting for native completion at progress %s', progress => {
         const state: ExportProgressState = {stage: 'rendering', progress, cancelling: false, canSuspend: false};
         const active = markup(state);
-        expect(active).toContain('Cancellation waits for rendering to finish.');
-        expect(active).not.toContain('cannot pause rendering or report');
+        expect(active).not.toContain('Cancellation waits for rendering to finish.');
         const cancelled = markup({...state, cancelling: true});
-        expect(cancelled).toContain('Cancelling — waiting for this browser to finish rendering…');
+        expect(cancelled).toContain('Cancelling…');
         expect(cancelled).toContain('No file is downloaded after cancellation.');
     });
 
     it.each([true, undefined])('does not infer suspension support from null progress (%s)', canSuspend => {
         const html = markup({stage: 'rendering', progress: null, cancelling: true, canSuspend});
-        expect(html).toContain('Cancelling — waiting for audio to stop…');
+        expect(html).toContain('Cancelling…');
         expect(html).not.toContain('Cancellation waits for rendering to finish.');
     });
 

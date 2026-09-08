@@ -29,7 +29,7 @@ export interface PromoBounce {
     /** the finished soundtrack, 16-bit PCM WAV, base64 (binary can't cross `page.evaluate`) */
     wav: string;
     score: PromoScore;
-    /** sample peak of the float render, dBFS — anything above 0 was clipped by the 16-bit WAV */
+    /** sample peak of the float render after master limiting, dBFS */
     peakDb: number;
     /** sample peak of every bar, dBFS — for riding the master lane where the mix runs hot */
     barPeaksDb: number[];

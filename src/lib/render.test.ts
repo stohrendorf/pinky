@@ -156,7 +156,7 @@ describe('mixer WAV export integration', () => {
         expect(get(rendering)).toBe(false);
     });
 
-    it('keeps numeric non-suspendable progress and cancellation visible until native rendering finishes', async () => {
+    it('clears a non-suspendable cancellation as soon as the engine releases its graph', async () => {
         project.set(newEmptyProject());
         const download = vi.fn();
         vi.stubGlobal('document', {createElement: download});
@@ -165,12 +165,15 @@ describe('mixer WAV export integration', () => {
         let finish!: () => void;
         let lateProgress!: () => void;
         audio.renderOffline.mockImplementation((_seconds, _rate, _schedule, _config,
-            options: {onProgress: (value: {stage: string; progress: number; canSuspend: boolean}) => void}) => {
+            options: {signal: AbortSignal; onProgress: (value: {stage: string; progress: number; canSuspend: boolean}) => void}) => {
             options.onProgress({stage: 'rendering', progress: 0, canSuspend: false});
             time += 1000;
             options.onProgress({stage: 'rendering', progress: 0.45, canSuspend: false});
             lateProgress = () => options.onProgress({stage: 'rendering', progress: 0.9, canSuspend: false});
-            return new Promise(resolve => {finish = () => resolve({});});
+            return new Promise((resolve, reject) => {
+                options.signal.addEventListener('abort', () => reject(new DOMException('cancelled', 'AbortError')), {once: true});
+                finish = () => resolve({});
+            });
         });
         const pending = exportWav();
         await vi.waitFor(() => expect(audio.renderOffline).toHaveBeenCalled());
@@ -178,13 +181,9 @@ describe('mixer WAV export integration', () => {
         cancelExport();
         const cancelled = get(exportProgress);
         const locked = get(rendering);
-        try {
-            expect(lateProgress).toThrow('Export cancelled');
-            expect(get(exportProgress)).toBe(cancelled);
-        } finally {
-            finish();
-            expect(await pending).toBe('');
-        }
+        expect(lateProgress).toThrow('Export cancelled');
+        expect(get(exportProgress)).toBe(cancelled);
+        expect(await pending).toBe('');
         expect(active).toMatchObject({stage: 'rendering', progress: 0.45, canSuspend: false, cancelling: false});
         expect(active?.etaSeconds).toBeGreaterThan(0);
         expect(cancelled).toMatchObject({stage: 'rendering', progress: 0.45, canSuspend: false, cancelling: true, etaSeconds: null});
@@ -193,6 +192,7 @@ describe('mixer WAV export integration', () => {
         expect(download).not.toHaveBeenCalled();
         expect(get(exportProgress)).toBeNull();
         expect(get(rendering)).toBe(false);
+        finish();
     });
 
     it('suppresses a late encoder result after cancellation and allows immediate retry', async () => {

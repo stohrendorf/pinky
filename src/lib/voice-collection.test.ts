@@ -7,19 +7,20 @@ import {
 } from './voice-collection';
 
 function voice(cost: number, level: number): ManagedVoice {
-    return {
+    const result: ManagedVoice = {
         cost,
         stopAt: Infinity,
         dead: false,
         loudness: () => level,
-        stop: vi.fn(),
+        stop: vi.fn((at: number) => {result.stopAt = Math.min(result.stopAt, at);}),
         glide: vi.fn(),
         setParams: vi.fn()
     };
+    return result;
 }
 
-function collection(maxNodes = 100): VoiceCollection {
-    return new VoiceCollection({maxNodes: () => maxNodes, isOffline: () => false});
+function collection(maxNodes = 100, maxVoices = 96): VoiceCollection {
+    return new VoiceCollection({maxNodes: () => maxNodes, maxVoices: () => maxVoices});
 }
 
 describe('VoiceCollection', () => {
@@ -33,6 +34,21 @@ describe('VoiceCollection', () => {
         expect(voices.prepare(1)).toBe(3);
         expect(quiet.stop).toHaveBeenCalledWith(1);
         expect(loud.stop).not.toHaveBeenCalled();
+    });
+
+    it('enforces a configured voice cap as well as its node cap', () => {
+        const voices = collection(10, 2);
+        const first = voice(1, 0.1);
+        const second = voice(1, 0.8);
+        const third = voice(1, 0.5);
+        voices.register('first', 'first:C4', 0, first, 1);
+        voices.register('second', 'second:E4', 0, second, 1);
+        voices.register('third', 'third:G4', 0, third, 1);
+
+        expect(voices.prepare(1)).toBe(1);
+        expect(first.stop).toHaveBeenCalledWith(1);
+        expect(second.stop).not.toHaveBeenCalled();
+        expect(third.stop).toHaveBeenCalledWith(1);
     });
 
 
