@@ -72,4 +72,66 @@ describe('VoiceCollection', () => {
         expect(held.glide).toHaveBeenNthCalledWith(2, 293.66, 1.1, 0.015, 'linear');
         expect(voices.active).toEqual(new Map([['preview:D4', held]]));
     });
+
+    it('supports the writable load contract used by the note scheduler', () => {
+        const voices = collection();
+
+        voices.load = 7;
+
+        expect(voices.load).toBe(7);
+    });
+
+    it('stops an active note before replacing its key', () => {
+        const voices = collection();
+        const replaced = voice(1, 1);
+        voices.register('lead', 'lead:C4', 0, replaced, 1);
+
+        voices.replaceActive('lead:C4', 1);
+
+        expect(replaced.stop).toHaveBeenCalledWith(1);
+    });
+
+    it('releases and forgets an active note on note-off', () => {
+        const voices = collection();
+        const released = voice(1, 1);
+        voices.register('lead', 'lead:D4', 0, released, 1);
+
+        voices.noteOff('lead:D4', 1.5);
+
+        expect(released.stop).toHaveBeenCalledWith(1.5);
+        expect(voices.active.has('lead:D4')).toBe(false);
+    });
+
+    it('automates every live voice belonging to an instrument', () => {
+        const voices = collection();
+        const sequenced = voice(1, 1);
+        const preview = voice(1, 1);
+        const other = voice(1, 1);
+        const params = { gain: 0.5 };
+        voices.register('lead', 'lead:C4', 0, sequenced, 1);
+        voices.register('live-lead', 'live-lead:D4', 0, preview, 1);
+        voices.register('bass', 'bass:C2', 0, other, 1);
+
+        voices.automate('lead', params, 1, 0.1);
+
+        expect(sequenced.setParams).toHaveBeenCalledWith(params, 1, 0.1);
+        expect(preview.setParams).toHaveBeenCalledWith(params, 1, 0.1);
+        expect(other.setParams).not.toHaveBeenCalled();
+    });
+
+    it('stops and forgets every voice on an all-notes-off command', () => {
+        const voices = collection();
+        const first = voice(2, 1);
+        const second = voice(3, 1);
+        voices.register('lead', 'lead:C4', 0, first, 1);
+        voices.register('bass', 'bass:C2', 0, second, 1);
+
+        voices.allNotesOff(2);
+
+        expect(first.stop).toHaveBeenCalledWith(2);
+        expect(second.stop).toHaveBeenCalledWith(2);
+        expect(voices.active.size).toBe(0);
+        expect(voices.liveCount).toBe(0);
+        expect(voices.load).toBe(0);
+    });
 });

@@ -51,6 +51,10 @@ export class VoiceCollection<Params = unknown> {
         return this.currentLoad;
     }
 
+    set load(value: number) {
+        this.currentLoad = value;
+    }
+
     get liveCount(): number {
         return this.live.length;
     }
@@ -127,6 +131,10 @@ export class VoiceCollection<Params = unknown> {
         return true;
     }
 
+    replaceActive(key: string, at: number): void {
+        this.active.get(key)?.stop(at);
+    }
+
     register(
         track: string,
         key: string,
@@ -138,6 +146,34 @@ export class VoiceCollection<Params = unknown> {
         this.lastOnTrack.set(track, { voice, key, start: at });
         this.live.push({ inst: track.startsWith('live-') ? track.slice(5) : track, voice, tail });
         this.currentLoad += voice.cost;
+    }
+
+    noteOff(key: string, at: number): void {
+        const voice = this.active.get(key);
+        if (!voice) {
+            return;
+        }
+        voice.stop(at);
+        this.active.delete(key);
+    }
+
+    automate(inst: string, params: Params, at: number, ramp: number): void {
+        this.prune(at);
+        for (const live of this.live) {
+            if (live.inst !== inst || live.voice.stopAt <= at) {
+                continue;
+            }
+            live.voice.setParams(params, at, ramp);
+        }
+    }
+
+    allNotesOff(at: number): void {
+        this.active.forEach(voice => voice.stop(at));
+        this.active.clear();
+        this.live.forEach(live => live.voice.stop(at));
+        this.live.length = 0;
+        this.lastOnTrack.clear();
+        this.currentLoad = 0;
     }
 
     snapshot(): VoiceCollectionSnapshot<Params> {

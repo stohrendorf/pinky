@@ -378,7 +378,7 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
      * the vibrato is what stops it from sounding like an organ pipe. The
      * resonance is high on purpose for the glottal source; the fixed formants
      * below are broader, so they colour neighbouring harmonics like a tract. */
-    'Voice - Soprano (ah)': {
+    'Voice — Soprano (ah)': {
         tone: 0.95,
         q: 42,
         formant: 0.9,
@@ -409,7 +409,7 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
             { ratio: 8, level: 0.09 },
         ],
     },
-    'Voice - Choir (oo)': {
+    'Voice — Choir (oo)': {
         tone: 0.82,
         q: 36,
         formant: 0.85,
