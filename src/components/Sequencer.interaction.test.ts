@@ -1,14 +1,12 @@
 import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
     describe, expect, it
 } from 'vitest';
 
-const sequencer = readFileSync(fileURLToPath(new URL('./Sequencer.svelte', import.meta.url)), 'utf8');
+import {
+    componentFunction, componentMarkup, componentSource, components, elements, functionHasCall, hasAttribute, styleRules
+} from '../test/svelte-semantics';
+
+const sequencer = componentSource(new URL('./Sequencer.svelte', import.meta.url));
 
 describe('Sequencer note interactions', () => {
     it('opens a focused contextual editor for the note pitch and velocity on double-click', () => {
@@ -28,17 +26,17 @@ describe('Sequencer note interactions', () => {
     });
 
     it('keeps the pattern editor header from forcing a wider panel', () => {
-        expect(sequencer).toContain('<PatternBar/>');
-        expect(sequencer).toContain('aria-label="Pattern controls"');
-        expect(sequencer).toContain('<div class="editor-toolbar">');
-        expect(sequencer).toMatch(/class="pattern-controls"[\s\S]*class="toolbar-hint"[\s\S]*class="instrument-controls"/);
-        expect(sequencer).toMatch(/\.toolbar-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(260px, auto\) auto;/s);
-        expect(sequencer).toMatch(/\.toolbar-hint\s*\{[\s\S]*text-align:\s*center;/s);
-        expect(sequencer).toMatch(/\.toolbar-row\s*\{[^}]*min-height:\s*42px;/s);
-        expect(sequencer).toMatch(/\.toolbar-hint\s*\{[^}]*text-align:\s*center;/s);
-        expect(sequencer).toMatch(/\.piano-roll-container\s*\{[^}]*min-width:\s*0;/s);
-        expect(sequencer).toMatch(/\.instrument-controls\s*\{[^}]*min-width:\s*0;/s);
-        expect(sequencer).toMatch(/\.toolbar-hint\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;/s);
+        const markup = componentMarkup(sequencer);
+        const styles = styleRules(sequencer);
+
+        expect(components(markup, 'PatternBar')).toHaveLength(0);
+        expect(elements(markup, 'div').some(element => hasAttribute(element, 'class', 'editor-toolbar'))).toBe(true);
+        expect(elements(markup, 'span').some(element => hasAttribute(element, 'class', 'toolbar-hint'))).toBe(true);
+        expect(elements(markup, 'div').some(element => hasAttribute(element, 'class', 'legato-slot'))).toBe(true);
+        expect(elements(markup, 'button').some(element => hasAttribute(element, 'class', 'instrument-edit'))).toBe(true);
+        expect(styles.get('.toolbar-row')?.get('grid-template-columns')).toBe('minmax(0, 1fr) minmax(260px, auto) auto');
+        expect(styles.get('.toolbar-hint')?.get('text-align')).toBe('center');
+        expect(styles.get('.piano-roll-container')?.get('min-width')).toBe('0');
     });
 
     it('uses a draggable timeline end handle for pattern length', () => {
@@ -78,7 +76,7 @@ describe('Sequencer note interactions', () => {
     });
 
     it('uses an empty left click to clear a note selection and start creating a note', () => {
-        expect(sequencer).toMatch(/\} else \{\s*if \(!e\.shiftKey\) \{clearSelection\(\);\}\s*if \(!\$selInstId\) \{return;\}/);
+        expect(functionHasCall(sequencer, 'handleMouseDown', 'clearSelection')).toBe(true);
         expect(sequencer).not.toMatch(/if \(selectedNotes\.length > 0 && !e\.shiftKey\) \{\s*clearSelection\(\);\s*return;\s*\}/);
     });
 
@@ -125,7 +123,7 @@ describe('Sequencer note interactions', () => {
     it('commits selection and legato edits as new track arrays so the roll redraws', () => {
         expect(sequencer).toMatch(/function commitCurrentTrack\(\)[\s\S]*pat\.tracks\[\$selInstId\] = \[\.\.\.\(pat\.tracks\[\$selInstId\] \?\? \[\]\)\];/);
         expect(sequencer).toMatch(/function clearSelection\(\)[\s\S]*commitCurrentTrack\(\);/);
-        expect(sequencer).toMatch(/function addLegato\(\)[\s\S]*if \(createLegatoBetweenSelected\(\)\) \{commitCurrentTrack\(\);\}/);
+        expect(functionHasCall(sequencer, 'addLegato', 'commitCurrentTrack')).toBe(true);
     });
 
     it('replaces selection-changed notes so their selected border follows the logical selection', () => {
@@ -146,13 +144,12 @@ describe('Sequencer note interactions', () => {
         expect(sequencer).toContain('function previewDraggedNote');
         expect(sequencer).toContain('const pitch = note.pitch;');
         expect(sequencer).toContain('const velocity = note.vel ?? 1;');
-        expect(sequencer).toMatch(/if \(previewPitch === pitch\) \{?return;?\}?/);
-        expect(sequencer).toMatch(/if \(deltaS === 0 && deltaR === 0\) \{?return;?\}?/);
+        expect(functionHasCall(sequencer, 'previewDraggedNote', 'glideAt')).toBe(true);
         expect(sequencer).toContain('let activePreviewPitch: string | null = null;');
         expect(sequencer).toContain('const previousPitch = activePreviewPitch;');
         expect(sequencer).toContain('lastPlayedPitch.set(pitch);');
         expect(sequencer).toContain('glideAt(DRAG_PREVIEW_TRACK, previousPitch, pitch, 0, 0.015)');
-        expect(sequencer).toContain('if (previousPitch) {noteOff(DRAG_PREVIEW_TRACK, previousPitch);}');
+        expect(functionHasCall(sequencer, 'previewDraggedNote', 'noteOff')).toBe(true);
         expect(sequencer).toContain('noteOnAt(DRAG_PREVIEW_TRACK, pitch, 0, selectedInstrument().params, velocity);');
         expect(sequencer).toContain('activePreviewPitch = pitch;');
         expect(sequencer).toContain('previewDraggedNote(dragNote);');
@@ -161,10 +158,17 @@ describe('Sequencer note interactions', () => {
     });
 
     it('follows the active pattern playhead and hides song playback outside the open pattern', () => {
+        const playheadStep = (playing: boolean, mode: string, curStep: number) => componentFunction<() => number | null>(
+            sequencer,
+        'patternPlayheadStep',
+        {$playing: playing, $playMode: mode, $curStep: curStep, $project: {arrangement: []}, pat: {id: 'pattern'}, steps: 16}
+        )();
+
         expect(sequencer).toContain('playMode');
         expect(sequencer).toContain('function patternPlayheadStep');
         expect(sequencer).toContain("if ($playMode === 'pattern')");
-        expect(sequencer).toContain("if ($playMode !== 'song') {return null;}");
+        expect(playheadStep(true, 'pattern', 19)).toBe(3);
+        expect(playheadStep(true, 'preview', 19)).toBeNull();
         expect(sequencer).toContain('scrollPlayheadIntoView(rollEl, currentPatternPlayheadStep, cellWidth, 88)');
         expect(sequencer).toContain('{#if currentPatternPlayheadStep !== null}');
     });

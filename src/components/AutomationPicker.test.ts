@@ -1,22 +1,19 @@
 import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
     describe, expect, it
 } from 'vitest';
 
-const picker = readFileSync(fileURLToPath(new URL('./AutomationPicker.svelte', import.meta.url)), 'utf8');
-const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
+import {
+    componentMarkup, componentSource, elements, hasAttribute, textContent
+} from '../test/svelte-semantics';
+
+const picker = componentSource(new URL('./AutomationPicker.svelte', import.meta.url));
+const playlist = componentSource(new URL('./Playlist.svelte', import.meta.url));
 
 describe('automation lane chooser', () => {
     it('uses accessible target tabs and the shared slash-name tree visual', () => {
-        expect(picker).toContain('role="tablist"');
-        for (const tab of ['Instruments', 'Mixer', 'Global FX']) {
-            expect(picker).toContain(`>${tab}</button>`);
-        }
+        const tabs = elements(componentMarkup(picker), 'button').filter(tab => hasAttribute(tab, 'role', 'tab'));
+
+        expect(tabs.map(textContent)).toEqual(['Instruments', 'Mixer', 'Global FX']);
         expect(picker).toContain("import TreeView from './ui/TreeView.svelte'");
         expect(picker).toContain('<TreeView items={project.instruments}');
         expect(picker).toContain('title="Channels and buses"');

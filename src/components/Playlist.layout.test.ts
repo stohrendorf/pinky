@@ -11,6 +11,10 @@ import {
     describe, expect, it
 } from 'vitest';
 
+import {
+    ifConditionForElement
+} from '../test/svelte-semantics';
+
 const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
 
 describe('Playlist frozen track labels', () => {
@@ -71,8 +75,10 @@ describe('Playlist frozen track labels', () => {
     });
 
     it('hides the arranger playhead while previewing one pattern', () => {
-        expect(playlist).toContain('curStep, playMode, playing, project');
-        expect(playlist).toContain('{#if $playing && $playMode === \'song\'}');
+        const condition = ifConditionForElement(playlist, 'div', 'playhead');
+
+        expect(condition?.identifiers).toEqual(expect.arrayContaining(['$playing', '$playMode']));
+        expect(condition?.strings).toContain('song');
     });
 
     it('uses the timeline corner for the automation action and retains a stable selection toolbar', () => {

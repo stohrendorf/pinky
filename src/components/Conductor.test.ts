@@ -36,6 +36,9 @@ import {
 import {
     barAt, barsInRange, createTimingMap
 } from '../lib/timing';
+import {
+    styleRules
+} from '../test/svelte-semantics';
 
 const source = readFileSync(fileURLToPath(new URL('./Conductor.svelte', import.meta.url)), 'utf8');
 const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
@@ -157,7 +160,7 @@ describe('Conductor component', () => {
         expect(source).toContain('onpointercancel={cancelDrag}');
         expect(source).toContain('onlostpointercapture={cancelDrag}');
         expect(source).toContain('onblur={cancelDrag}');
-        expect(source).toContain('.conductor-viewport {overflow: clip;');
+        expect(styleRules(source).get('.conductor-viewport')?.get('overflow')).toBe('clip');
     });
 
     it('adds an immediately draggable placeholder at the cursor without opening a dialog or changing timing', () => {

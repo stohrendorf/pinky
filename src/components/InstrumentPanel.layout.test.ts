@@ -1,19 +1,20 @@
 import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
     describe, expect, it
 } from 'vitest';
 
-const panel = readFileSync(fileURLToPath(new URL('./InstrumentPanel.svelte', import.meta.url)), 'utf8');
-const slider = readFileSync(fileURLToPath(new URL('./Slider.svelte', import.meta.url)), 'utf8');
+import {
+    componentMarkup, componentSource, eachBlocks, elements, hasAttribute
+} from '../test/svelte-semantics';
+
+const panel = componentSource(new URL('./InstrumentPanel.svelte', import.meta.url));
+const slider = componentSource(new URL('./Slider.svelte', import.meta.url));
 
 describe('InstrumentPanel guided editing', () => {
     it('keeps slider value labels reactive after an instrument parameter changes', () => {
-        expect(slider).toContain('let {');
+        const range = elements(componentMarkup(slider), 'input').find(input => hasAttribute(input, 'type', 'range'));
+
+        expect(range).toBeDefined();
+        expect(hasAttribute(range!, 'value')).toBe(true);
         expect(slider).toContain('onchange(parseFloat((event.target as HTMLInputElement).value));');
         expect(slider).toContain('{value}{unit}');
         expect(slider).toContain('{value}>');
@@ -46,9 +47,12 @@ describe('InstrumentPanel guided editing', () => {
     });
 
     it('keeps every focused help topic concise while offering an optional deeper explanation', () => {
+        const deepDive = elements(componentMarkup(panel), 'details').find(element => hasAttribute(element, 'class', 'contextual-deep-dive'));
+
         expect(panel).toContain('class="contextual-deep-dive"');
         expect(panel).toContain('{CONTROL_HELP[contextualHelp].deepTitle}');
-        expect(panel).toContain('{#each CONTROL_HELP[contextualHelp].deep as paragraph}');
+        expect(deepDive).toBeDefined();
+        expect(eachBlocks([deepDive!]).flatMap(block => elements(block.body?.nodes ?? [], 'p'))).toHaveLength(1);
         expect(panel).toContain('Go deeper: how a filter can suggest a voice');
         expect(panel).toContain('Go deeper: noise, impact, and pitch motion');
         expect(panel).toContain('Go deeper: why the same sound can feel like a different instrument');

@@ -8,6 +8,10 @@ import {
     describe, expect, it
 } from 'vitest';
 
+import {
+    functionHasAssignment
+} from '../test/svelte-semantics';
+
 const lane = readFileSync(fileURLToPath(new URL('./AutomationLane.svelte', import.meta.url)), 'utf8');
 
 describe('AutomationLane contextual node editing', () => {
@@ -37,7 +41,7 @@ describe('AutomationLane contextual node editing', () => {
         expect(lane).toContain('selectedPoint?: AutomationPoint | null');
         expect(lane).toMatch(/selectedPoint === p \|\| editingPoint === p/);
         expect(lane).toMatch(/contextualEditor !== editorKey && editingPoint/);
-        expect(lane).toMatch(/if \(contextualEditor !== editorKey\) \{?contextualEditor = null;?\}?/);
+        expect(functionHasAssignment(lane, 'onDown', 'contextualEditor')).toBe(true);
         expect(lane).toContain('onselect(point)');
     });
 

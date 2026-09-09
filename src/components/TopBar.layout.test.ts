@@ -1,14 +1,12 @@
 import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
     describe, expect, it
 } from 'vitest';
 
-const toolbar = readFileSync(fileURLToPath(new URL('./TopBar.svelte', import.meta.url)), 'utf8');
+import {
+    componentMarkup, componentSource, components, hasAttribute, textContent
+} from '../test/svelte-semantics';
+
+const toolbar = componentSource(new URL('./TopBar.svelte', import.meta.url));
 
 describe('TopBar demo selection', () => {
     it('offers every bundled demo from the shared library registry', () => {
@@ -44,9 +42,12 @@ describe('TopBar demo selection', () => {
         expect(toolbar).toContain('aria-controls="topbar-utilities"');
     });
 
-    it('shows save confirmation in the persistent top bar rather than the Studio sidebar', () => {
+    it('keeps save confirmation persistent while placing the save action in project utilities', () => {
+        const saveAction = components(componentMarkup(toolbar), 'Button').find(button => textContent(button) === 'Save');
+
         expect(toolbar).toMatch(/<span class="song-label">\{\$songLabel\}<\/span>\s*<span class="saved-flash" aria-live="polite">\{saved\}<\/span>/);
-        expect(toolbar).toContain('<Button variant="secondary" on:click={() => runUtilityAction(saveProject)}><i class="fa fa-save"></i> Save</Button>');
+        expect(saveAction).toBeDefined();
+        expect(hasAttribute(saveAction!, 'variant', 'secondary')).toBe(true);
         expect(toolbar).not.toContain('Save<span class="saved-flash">');
     });
 
