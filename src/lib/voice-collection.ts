@@ -1,6 +1,4 @@
-import type {
-    CurveShape
-} from './types';
+import type { CurveShape } from './types';
 
 export interface ManagedVoice<Params = unknown> {
     stopAt: number;
@@ -109,8 +107,15 @@ export class VoiceCollection<Params = unknown> {
         return cost;
     }
 
-
-    glide(track: string, fromKey: string, toKey: string, at: number, frequency: number, time: number, curve: CurveShape = 'linear'): boolean {
+    glide(
+        track: string,
+        fromKey: string,
+        toKey: string,
+        at: number,
+        frequency: number,
+        time: number,
+        curve: CurveShape = 'linear',
+    ): boolean {
         const voice = this.active.get(fromKey);
         if (!voice || voice.dead || voice.stopAt <= at + 0.005) {
             return false;
@@ -118,14 +123,20 @@ export class VoiceCollection<Params = unknown> {
         voice.glide(frequency, at, time, curve);
         this.active.delete(fromKey);
         this.active.set(toKey, voice);
-        this.lastOnTrack.set(track, {voice, key: toKey, start: at});
+        this.lastOnTrack.set(track, { voice, key: toKey, start: at });
         return true;
     }
 
-    register(track: string, key: string, at: number, voice: ManagedVoice<Params>, tail: number): void {
+    register(
+        track: string,
+        key: string,
+        at: number,
+        voice: ManagedVoice<Params>,
+        tail: number,
+    ): void {
         this.active.set(key, voice);
-        this.lastOnTrack.set(track, {voice, key, start: at});
-        this.live.push({inst: track.startsWith('live-') ? track.slice(5) : track, voice, tail});
+        this.lastOnTrack.set(track, { voice, key, start: at });
+        this.live.push({ inst: track.startsWith('live-') ? track.slice(5) : track, voice, tail });
         this.currentLoad += voice.cost;
     }
 
@@ -133,7 +144,7 @@ export class VoiceCollection<Params = unknown> {
         return {
             active: new Map(this.active),
             last: new Map(this.lastOnTrack),
-            live: this.live.slice()
+            live: this.live.slice(),
         };
     }
 

@@ -1,11 +1,7 @@
 <script lang="ts">
-    import type {
-        Snippet
-    } from 'svelte';
+    import type { Snippet } from 'svelte';
 
-    import {
-        flattenNameTree, type NamedTreeItem
-    } from '../../lib/name-tree';
+    import { flattenNameTree, type NamedTreeItem } from '../../lib/name-tree';
     import ContextMenu from './ContextMenu.svelte';
 
     interface Props {
@@ -30,19 +26,14 @@
         headerActions,
         itemActions = [],
         items = [],
-        onaction = () => {
-        },
-        onfolderaction = () => {
-        },
-        onmute = () => {
-        },
-        onselect = () => {
-        },
-        onsolo = () => {
-        },
+        onaction = () => {},
+        onfolderaction = () => {},
+        onmute = () => {},
+        onselect = () => {},
+        onsolo = () => {},
         selectedId = null,
         showMuteSolo = false,
-        title = 'Items'
+        title = 'Items',
     }: Props = $props();
 
     let collapsedFolders = $state(new Set<string>());
@@ -50,7 +41,9 @@
     let menuAnchor: HTMLElement | null = $state(null);
 
     const entries = $derived(flattenNameTree(items));
-    const visibleEntries = $derived(entries.filter(entry => entry.ancestors.every(path => !collapsedFolders.has(path))));
+    const visibleEntries = $derived(
+        entries.filter(entry => entry.ancestors.every(path => !collapsedFolders.has(path))),
+    );
 
     function toggleFolder(path: string) {
         const next = new Set(collapsedFolders);
@@ -100,63 +93,82 @@
             {#each visibleEntries as entry (entry.kind === 'folder' ? `folder-${entry.path}` : entry.item.id)}
                 {#if entry.kind === 'folder'}
                     <div
-                            style="--indent: {entry.depth * 16}px"
-                            class="tree-row folder-row"
-                            aria-expanded={!collapsedFolders.has(entry.path)}
-                            aria-level={entry.depth + 1}
-                            role="treeitem">
-                        <button class="row-main" type="button" on:click={() => toggleFolder(entry.path)}>
+                        style="--indent: {entry.depth * 16}px"
+                        class="tree-row folder-row"
+                        aria-expanded={!collapsedFolders.has(entry.path)}
+                        aria-level={entry.depth + 1}
+                        role="treeitem"
+                    >
+                        <button
+                            class="row-main"
+                            type="button"
+                            on:click={() => toggleFolder(entry.path)}
+                        >
                             <span
-                                    class="folder-chevron"
-                                    class:collapsed={collapsedFolders.has(entry.path)}
-                                    aria-hidden="true"></span><i class="fa fa-folder"></i><span>{entry.label}</span><span
+                                class="folder-chevron"
+                                class:collapsed={collapsedFolders.has(entry.path)}
+                                aria-hidden="true"
+                            ></span><i class="fa fa-folder"></i><span>{entry.label}</span><span
                                 class="folder-count"
-                                aria-label={`${entry.itemCount} items`}>{entry.itemCount}</span>
+                                aria-label={`${entry.itemCount} items`}>{entry.itemCount}</span
+                            >
                         </button>
                         {#if folderActions.length}
                             <button
-                                    class="dots"
-                                    aria-label="Folder actions"
-                                    type="button"
-                                    on:click={(event) => toggleMenu(`folder:${entry.path}`, event)}><i class="fa fa-ellipsis-vertical"></i></button>
+                                class="dots"
+                                aria-label="Folder actions"
+                                type="button"
+                                on:click={event => toggleMenu(`folder:${entry.path}`, event)}
+                                ><i class="fa fa-ellipsis-vertical"></i></button
+                            >
                         {/if}
                     </div>
                 {:else}
                     <div
-                            style="--indent: {entry.depth * 16}px"
-                            class="tree-row item-row"
-                            class:selected={entry.item.id === selectedId}
-                            aria-level={entry.depth + 1}
-                            aria-selected={entry.item.id === selectedId}
-                            role="treeitem">
+                        style="--indent: {entry.depth * 16}px"
+                        class="tree-row item-row"
+                        class:selected={entry.item.id === selectedId}
+                        aria-level={entry.depth + 1}
+                        aria-selected={entry.item.id === selectedId}
+                        role="treeitem"
+                    >
                         <button class="row-main" type="button" on:click={() => select(entry.item)}>
                             {#if entry.item.color}<span
                                     style="background: {entry.item.color}"
-                                    class="color-tag"></span>{:else}<span class="item-icon"><i class="fa fa-music"></i></span>{/if}
+                                    class="color-tag"
+                                ></span>{:else}<span class="item-icon"
+                                    ><i class="fa fa-music"></i></span
+                                >{/if}
                             <span>{entry.label}</span>
                         </button>
                         {#if showMuteSolo}
                             <button
-                                    class="toggle"
-                                    class:active={entry.item.mute}
-                                    aria-label="{entry.label} mute"
-                                    aria-pressed={entry.item.mute}
-                                    type="button"
-                                    on:click={() => onmute(entry.item)}><i class="fa fa-volume-xmark"></i></button>
+                                class="toggle"
+                                class:active={entry.item.mute}
+                                aria-label="{entry.label} mute"
+                                aria-pressed={entry.item.mute}
+                                type="button"
+                                on:click={() => onmute(entry.item)}
+                                ><i class="fa fa-volume-xmark"></i></button
+                            >
                             <button
-                                    class="toggle"
-                                    class:active={entry.item.solo}
-                                    aria-label="{entry.label} solo"
-                                    aria-pressed={entry.item.solo}
-                                    type="button"
-                                    on:click={() => onsolo(entry.item)}><i class="fa fa-headphones"></i></button>
+                                class="toggle"
+                                class:active={entry.item.solo}
+                                aria-label="{entry.label} solo"
+                                aria-pressed={entry.item.solo}
+                                type="button"
+                                on:click={() => onsolo(entry.item)}
+                                ><i class="fa fa-headphones"></i></button
+                            >
                         {/if}
                         {#if itemActions.length}
                             <button
-                                    class="dots"
-                                    aria-label="{entry.label} actions"
-                                    type="button"
-                                    on:click={(event) => toggleMenu(entry.item.id, event)}><i class="fa fa-ellipsis-vertical"></i></button>
+                                class="dots"
+                                aria-label="{entry.label} actions"
+                                type="button"
+                                on:click={event => toggleMenu(entry.item.id, event)}
+                                ><i class="fa fa-ellipsis-vertical"></i></button
+                            >
                         {/if}
                     </div>
                 {/if}
@@ -168,17 +180,21 @@
 </div>
 
 <ContextMenu
-        actions={openMenu?.startsWith('folder:') ? folderActions : itemActions}
-        anchor={menuAnchor}
-        onclose={closeMenu}
-        onselect={(actionId) => {
-            if (openMenu?.startsWith('folder:')) {folderAction(actionId, openMenu.slice('folder:'.length));}
-            else {
-                const item = items.find(candidate => candidate.id === openMenu);
-                if (item) {action(actionId, item);}
+    actions={openMenu?.startsWith('folder:') ? folderActions : itemActions}
+    anchor={menuAnchor}
+    onclose={closeMenu}
+    onselect={actionId => {
+        if (openMenu?.startsWith('folder:')) {
+            folderAction(actionId, openMenu.slice('folder:'.length));
+        } else {
+            const item = items.find(candidate => candidate.id === openMenu);
+            if (item) {
+                action(actionId, item);
             }
-        }}
-        open={openMenu !== null}/>
+        }
+    }}
+    open={openMenu !== null}
+/>
 
 <style>
     .tree-view {
@@ -202,7 +218,7 @@
         color: var(--color-text-muted);
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
         border-bottom: 1px solid var(--border);
     }
 
@@ -336,7 +352,8 @@
         cursor: pointer;
     }
 
-    .toggle:hover, .toggle.active {
+    .toggle:hover,
+    .toggle.active {
         color: var(--accent);
     }
 

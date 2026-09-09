@@ -8,7 +8,7 @@ export function createViewportState(): ViewportState {
     return {
         isPanning: false,
         isZooming: false,
-        lastMousePos: {x: 0, y: 0}
+        lastMousePos: { x: 0, y: 0 },
     };
 }
 
@@ -26,7 +26,14 @@ export interface ViewportOptions {
 export function handleViewportWheel(e: WheelEvent, options: ViewportOptions) {
     if (e.ctrlKey) {
         e.preventDefault();
-        const {getContainer, getZoom, setZoom, sidebarWidth, minWidth = 4, maxWidth = 200} = options;
+        const {
+            getContainer,
+            getZoom,
+            setZoom,
+            sidebarWidth,
+            minWidth = 4,
+            maxWidth = 200,
+        } = options;
         const container = getContainer();
         const zoom = getZoom();
 
@@ -51,7 +58,7 @@ export function handleViewportWheel(e: WheelEvent, options: ViewportOptions) {
 export function handleViewportMouseDown(e: MouseEvent, state: ViewportState) {
     if (e.button === 1) {
         e.preventDefault();
-        state.lastMousePos = {x: e.clientX, y: e.clientY};
+        state.lastMousePos = { x: e.clientX, y: e.clientY };
         if (e.ctrlKey) {
             state.isZooming = true;
         } else {
@@ -62,17 +69,28 @@ export function handleViewportMouseDown(e: MouseEvent, state: ViewportState) {
     return false;
 }
 
-export function handleViewportMouseMove(e: MouseEvent, state: ViewportState, options: ViewportOptions) {
+export function handleViewportMouseMove(
+    e: MouseEvent,
+    state: ViewportState,
+    options: ViewportOptions,
+) {
     if (state.isPanning) {
         const container = options.getContainer();
         container.scrollLeft -= e.clientX - state.lastMousePos.x;
         container.scrollTop -= e.clientY - state.lastMousePos.y;
-        state.lastMousePos = {x: e.clientX, y: e.clientY};
+        state.lastMousePos = { x: e.clientX, y: e.clientY };
         return true;
     }
 
     if (state.isZooming) {
-        const {getZoom, setZoom, minWidth = 4, maxWidth = 200, minHeight = 4, maxHeight = 100} = options;
+        const {
+            getZoom,
+            setZoom,
+            minWidth = 4,
+            maxWidth = 200,
+            minHeight = 4,
+            maxHeight = 100,
+        } = options;
         const zoom = getZoom();
         const dx = e.clientX - state.lastMousePos.x;
         const dy = e.clientY - state.lastMousePos.y;
@@ -96,7 +114,7 @@ export function handleViewportMouseMove(e: MouseEvent, state: ViewportState, opt
         nh = Math.max(minHeight, Math.min(maxHeight, nh));
 
         setZoom(nw, nh);
-        state.lastMousePos = {x: e.clientX, y: e.clientY};
+        state.lastMousePos = { x: e.clientX, y: e.clientY };
         return true;
     }
 

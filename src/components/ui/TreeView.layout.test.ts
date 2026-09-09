@@ -1,15 +1,12 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    describe, expect, it
-} from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const treeView = readFileSync(fileURLToPath(new URL('./TreeView.svelte', import.meta.url)), 'utf8');
-const contextMenu = readFileSync(fileURLToPath(new URL('./ContextMenu.svelte', import.meta.url)), 'utf8');
+const contextMenu = readFileSync(
+    fileURLToPath(new URL('./ContextMenu.svelte', import.meta.url)),
+    'utf8',
+);
 
 describe('TreeView contextual menus and folders', () => {
     it('dismisses menus globally and keeps one menu state per tree view', () => {
@@ -23,7 +20,9 @@ describe('TreeView contextual menus and folders', () => {
     it('renders folder state and recursive item counts', () => {
         expect(treeView).toContain('let collapsedFolders = $state(new Set<string>());');
         expect(treeView).toContain('const next = new Set(collapsedFolders);');
-        expect(treeView).toMatch(/class="folder-chevron"[\s\S]*class:collapsed=\{collapsedFolders\.has\(entry\.path\)\}/);
+        expect(treeView).toMatch(
+            /class="folder-chevron"[\s\S]*class:collapsed=\{collapsedFolders\.has\(entry\.path\)\}/,
+        );
         expect(treeView).toContain('.folder-chevron.collapsed');
         expect(treeView).toContain('aria-expanded={!collapsedFolders.has(entry.path)}');
         expect(treeView).not.toContain('collapsedPaths');

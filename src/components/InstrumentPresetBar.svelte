@@ -1,10 +1,6 @@
 <script lang="ts">
-    import type {
-        PresetBank
-    } from '../lib/instruments';
-    import type {
-        Instrument, InstrumentParams
-    } from '../lib/types';
+    import type { PresetBank } from '../lib/instruments';
+    import type { Instrument, InstrumentParams } from '../lib/types';
 
     import {
         createInstrument,
@@ -13,11 +9,9 @@
         ensurePartials,
         loadUserPresets,
         PRESETS,
-        saveUserPreset
+        saveUserPreset,
     } from '../lib/instruments';
-    import {
-        project, selInstId, touch
-    } from '../lib/project';
+    import { project, selInstId, touch } from '../lib/project';
     import IconButton from './ui/IconButton.svelte';
     import Prompt from './ui/Prompt.svelte';
 
@@ -26,12 +20,18 @@
     let savePresetValue = $state('');
 
     let userPresets: PresetBank = $state(loadUserPresets());
-    const allPresets = $derived({...PRESETS, ...userPresets} as PresetBank);
+    const allPresets = $derived({ ...PRESETS, ...userPresets } as PresetBank);
     const isUserPreset = $derived(presetName in userPresets);
-    const inst = $derived(($project?.instruments.find(i => i.id === $selInstId) || $project?.instruments[0]) as Instrument);
+    const inst = $derived(
+        ($project?.instruments.find(i => i.id === $selInstId) ||
+            $project?.instruments[0]) as Instrument,
+    );
 
     function applyPreset() {
-        inst.params = ensurePartials({...DEFAULT_PARAMS, ...allPresets[presetName]} as InstrumentParams);
+        inst.params = ensurePartials({
+            ...DEFAULT_PARAMS,
+            ...allPresets[presetName],
+        } as InstrumentParams);
         touch();
     }
 
@@ -86,35 +86,40 @@
         </select>
     </label>
     <IconButton
-            ariaLabel="Apply selected preset"
-            icon="fa-check"
-            title="Apply selected preset"
-            on:click={applyPreset}/>
+        ariaLabel="Apply selected preset"
+        icon="fa-check"
+        title="Apply selected preset"
+        on:click={applyPreset}
+    />
     <IconButton
-            ariaLabel="Save selected instrument as a preset"
-            icon="fa-floppy-disk"
-            title="Save selected instrument as a preset"
-            on:click={openSavePreset}/>
+        ariaLabel="Save selected instrument as a preset"
+        icon="fa-floppy-disk"
+        title="Save selected instrument as a preset"
+        on:click={openSavePreset}
+    />
     {#if isUserPreset}
         <IconButton
-                ariaLabel="Delete selected preset"
-                icon="fa-xmark"
-                title="Delete selected preset"
-                on:click={removePreset}/>
+            ariaLabel="Delete selected preset"
+            icon="fa-xmark"
+            title="Delete selected preset"
+            on:click={removePreset}
+        />
     {/if}
     <IconButton
-            ariaLabel="Create an instrument from this preset"
-            icon="fa-add"
-            title="Create an instrument from this preset"
-            on:click={createFromPreset}/>
+        ariaLabel="Create an instrument from this preset"
+        icon="fa-add"
+        title="Create an instrument from this preset"
+        on:click={createFromPreset}
+    />
 </div>
 
 <Prompt
-        label="Preset Name"
-        title="Save Preset"
-        bind:show={showSavePreset}
-        bind:value={savePresetValue}
-        on:submit={onSavePreset}/>
+    label="Preset Name"
+    title="Save Preset"
+    bind:show={showSavePreset}
+    bind:value={savePresetValue}
+    on:submit={onSavePreset}
+/>
 
 <style>
     .preset-title-controls {
@@ -132,7 +137,7 @@
         color: var(--accent2);
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
     }
 
     select {
@@ -146,5 +151,4 @@
         font-size: 12px;
         text-transform: none;
     }
-
 </style>

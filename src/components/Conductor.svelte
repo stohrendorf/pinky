@@ -1,30 +1,19 @@
 <script lang="ts">
-    import {
-        tick
-    } from 'svelte';
+    import { tick } from 'svelte';
 
-    import type {
-        MarkerPoint
-    } from '../lib/conductor-markers';
-    import type {
-        ConductorData, TempoMarker
-    } from '../lib/timing';
-    import type {
-        Project
-    } from '../lib/types';
+    import type { MarkerPoint } from '../lib/conductor-markers';
+    import type { ConductorData, TempoMarker } from '../lib/timing';
+    import type { Project } from '../lib/types';
 
     import {
-        markerPoints, moveMarkerAt, removeMarkerAt, updateMarkerAt
+        markerPoints,
+        moveMarkerAt,
+        removeMarkerAt,
+        updateMarkerAt,
     } from '../lib/conductor-markers';
-    import {
-        playing, project, songCursor, touch
-    } from '../lib/project';
-    import {
-        rendering
-    } from '../lib/render';
-    import {
-        barAt, createTimingMap
-    } from '../lib/timing';
+    import { playing, project, songCursor, touch } from '../lib/project';
+    import { rendering } from '../lib/render';
+    import { barAt, createTimingMap } from '../lib/timing';
     import Dialog from './ui/Dialog.svelte';
 
     interface Props {
@@ -34,13 +23,17 @@
         viewportWidth: number;
     }
 
-    const {cellWidth, totalLength, scrollLeft, viewportWidth}: Props = $props();
+    const { cellWidth, totalLength, scrollLeft, viewportWidth }: Props = $props();
     // touch() publishes in-place edits; copy the marker lists to invalidate the strip and editor.
-    const conductor: ConductorData = $derived(structuredClone($project?.conductor ?? {
-        tempos: [],
-        meters: [],
-        sections: []
-    }));
+    const conductor: ConductorData = $derived(
+        structuredClone(
+            $project?.conductor ?? {
+                tempos: [],
+                meters: [],
+                sections: [],
+            },
+        ),
+    );
     const points = $derived(markerPoints(conductor));
     const locked = $derived($playing || $rendering || !$project);
     let show = $state(false);
@@ -59,15 +52,26 @@
     let dragProject: Project | null = null;
     let suppressClick = false;
     let drag = $state<{
-        id: string; pointer: number; x: number; scroll: number; from: number; to: number;
-        moved: boolean; problem: string; snapshot: string;
+        id: string;
+        pointer: number;
+        x: number;
+        scroll: number;
+        from: number;
+        to: number;
+        moved: boolean;
+        problem: string;
+        snapshot: string;
     } | null>(null);
-    const inheritedTempo = $derived($project ? String(Math.round(createTimingMap($project).bpmAt(markerStep) * 100) / 100) : '120');
-    const inheritedMeter = $derived(barAt($project ?? {bpm: 120}, markerStep));
+    const inheritedTempo = $derived(
+        $project
+            ? String(Math.round(createTimingMap($project).bpmAt(markerStep) * 100) / 100)
+            : '120',
+    );
+    const inheritedMeter = $derived(barAt($project ?? { bpm: 120 }, markerStep));
 
     function positionLabel(step: number): string {
-        const position = barAt($project ?? {bpm: 120}, step);
-        const offset = step - position.start - (position.beat - 1) * 16 / position.denominator;
+        const position = barAt($project ?? { bpm: 120 }, step);
+        const offset = step - position.start - ((position.beat - 1) * 16) / position.denominator;
         return `Bar ${position.bar} · beat ${position.beat}${offset ? ` + ${offset} step${offset === 1 ? '' : 's'}` : ''}`;
     }
 
@@ -81,18 +85,24 @@
     }
 
     function focusEditor(node: HTMLElement) {
-        const frame = requestAnimationFrame(() => node.querySelector<HTMLInputElement>('.marker-value')?.focus());
+        const frame = requestAnimationFrame(() =>
+            node.querySelector<HTMLInputElement>('.marker-value')?.focus(),
+        );
         return {
             destroy() {
                 cancelAnimationFrame(frame);
-            }
+            },
         };
     }
 
     function markerLabel(point: MarkerPoint): string {
-        return [point.section?.name,
+        return [
+            point.section?.name,
             point.tempo && `${point.tempo.bpm} BPM${point.tempo.curve === 'linear' ? ' ↗' : ''}`,
-            point.meter && `${point.meter.numerator}/${point.meter.denominator}`].filter(Boolean).join(' · ');
+            point.meter && `${point.meter.numerator}/${point.meter.denominator}`,
+        ]
+            .filter(Boolean)
+            .join(' · ');
     }
 
     function openDialog() {
@@ -104,7 +114,9 @@
 
     function focusMarker(id: string) {
         selectedId = id;
-        void tick().then(() => document.querySelector<HTMLButtonElement>(`[data-marker-id="${id}"]`)?.focus());
+        void tick().then(() =>
+            document.querySelector<HTMLButtonElement>(`[data-marker-id="${id}"]`)?.focus(),
+        );
     }
 
     function boundedStep(at: number): number {
@@ -126,7 +138,7 @@
                 name: 'Marker',
                 bpm: undefined,
                 curve: 'hold',
-                signature: ''
+                signature: '',
             });
             $project.conductor = data;
             touch();
@@ -164,8 +176,11 @@
     }
 
     function editorIsCurrent(): boolean {
-        if ($project !== editorProject || JSON.stringify(conductor) !== editorSnapshot
-            || !points.some(point => point.id === editingId && point.step === markerStep)) {
+        if (
+            $project !== editorProject ||
+            JSON.stringify(conductor) !== editorSnapshot ||
+            !points.some(point => point.id === editingId && point.step === markerStep)
+        ) {
             error = 'This marker has changed. Close and reopen it to edit.';
             return false;
         }
@@ -180,8 +195,12 @@
             return;
         }
         try {
-            $project.conductor = updateMarkerAt(conductor, markerStep,
-                {name: sectionName, bpm: tempoBpm, curve: tempoCurve, signature});
+            $project.conductor = updateMarkerAt(conductor, markerStep, {
+                name: sectionName,
+                bpm: tempoBpm,
+                curve: tempoCurve,
+                signature,
+            });
             touch();
             closeDialog();
         } catch (cause) {
@@ -227,8 +246,15 @@
         laneMessage = '';
         dragProject = $project;
         drag = {
-            id: point.id, pointer: event.pointerId, x: event.clientX, scroll: scrollLeft,
-            from: point.step, to: point.step, moved: false, problem: '', snapshot: JSON.stringify(conductor)
+            id: point.id,
+            pointer: event.pointerId,
+            x: event.clientX,
+            scroll: scrollLeft,
+            from: point.step,
+            to: point.step,
+            moved: false,
+            problem: '',
+            snapshot: JSON.stringify(conductor),
         };
         (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     }
@@ -237,7 +263,12 @@
         if (!drag || event.pointerId !== drag.pointer) {
             return;
         }
-        if ($playing || $rendering || $project !== dragProject || JSON.stringify(conductor) !== drag.snapshot) {
+        if (
+            $playing ||
+            $rendering ||
+            $project !== dragProject ||
+            JSON.stringify(conductor) !== drag.snapshot
+        ) {
             cancelDrag();
             return;
         }
@@ -246,7 +277,9 @@
         }
         drag.moved = true;
         suppressClick = true;
-        drag.to = boundedStep(drag.from + (event.clientX - drag.x + scrollLeft - drag.scroll) / cellWidth);
+        drag.to = boundedStep(
+            drag.from + (event.clientX - drag.x + scrollLeft - drag.scroll) / cellWidth,
+        );
         try {
             moveMarkerAt(conductor, drag.from, drag.to);
             drag.problem = '';
@@ -293,8 +326,13 @@
         }
         if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
             event.preventDefault();
-            const beat = 16 / barAt($project ?? {bpm: 120}, point.step).denominator;
-            movePoint(point.id, boundedStep(point.step + (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? beat : 1)));
+            const beat = 16 / barAt($project ?? { bpm: 120 }, point.step).denominator;
+            movePoint(
+                point.id,
+                boundedStep(
+                    point.step + (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? beat : 1),
+                ),
+            );
         }
     }
 
@@ -316,17 +354,26 @@
         if (event.key !== 'Tab') {
             return;
         }
-        const controls = [...dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, summary, [tabindex="0"]')]
-            .filter(el => !el.matches(':disabled') && el.getClientRects().length > 0);
+        const controls = [
+            ...dialog.querySelectorAll<HTMLElement>(
+                'button, input, select, textarea, summary, [tabindex="0"]',
+            ),
+        ].filter(el => !el.matches(':disabled') && el.getClientRects().length > 0);
         const first = controls[0];
         const last = controls.at(-1);
         if (!first) {
             event.preventDefault();
             dialog.focus();
-        } else if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+        } else if (
+            event.shiftKey &&
+            (document.activeElement === first || document.activeElement === dialog)
+        ) {
             event.preventDefault();
             last?.focus();
-        } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog)) {
+        } else if (
+            !event.shiftKey &&
+            (document.activeElement === last || document.activeElement === dialog)
+        ) {
             event.preventDefault();
             first.focus();
         }
@@ -343,12 +390,12 @@
         return {
             destroy() {
                 dialog?.removeEventListener('keydown', handleKey);
-            }
+            },
         };
     }
 </script>
 
-<svelte:window onblur={cancelDrag} onkeydown={dragKey}/>
+<svelte:window onblur={cancelDrag} onkeydown={dragKey} />
 
 <div class="conductor">
     <div class="conductor-label">
@@ -356,41 +403,53 @@
     </div>
     <div style="max-width: {viewportWidth}px;" class="conductor-viewport">
         <div
-style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
-             class="conductor-lanes">
+            style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
+            class="conductor-lanes"
+        >
             <button
-                    class="add-at-position"
-                    aria-label="Add marker here"
-                    disabled={locked}
-                    onclick={addAtPointer}
-                    tabindex="-1"
-                    title="Add marker"
-                    type="button"></button>
+                class="add-at-position"
+                aria-label="Add marker here"
+                disabled={locked}
+                onclick={addAtPointer}
+                tabindex="-1"
+                title="Add marker"
+                type="button"
+            ></button>
             {#each points as point, index (point.id)}
                 {#if point.step < totalLength}
                     {@const label = markerLabel(point)}
                     {@const moving = drag?.id === point.id && drag.moved}
                     {@const step = moving ? drag!.to : point.step}
                     <div
-                            style="left: {step * cellWidth}px; max-width: {Math.max(1, Math.min(320, ((points[index + 1]?.step ?? totalLength) - point.step) * cellWidth - 2))}px;"
-                            class="marker"
-                            class:dragging={moving}
-                            class:invalid={moving && !!drag?.problem}
-                            class:selected={selectedId === point.id}
-                            title={`${label} · ${positionLabel(step)}. Drag to move; arrow keys to nudge (Shift: beat).`}>
+                        style="left: {step * cellWidth}px; max-width: {Math.max(
+                            1,
+                            Math.min(
+                                320,
+                                ((points[index + 1]?.step ?? totalLength) - point.step) *
+                                    cellWidth -
+                                    2,
+                            ),
+                        )}px;"
+                        class="marker"
+                        class:dragging={moving}
+                        class:invalid={moving && !!drag?.problem}
+                        class:selected={selectedId === point.id}
+                        title={`${label} · ${positionLabel(step)}. Drag to move; arrow keys to nudge (Shift: beat).`}
+                    >
                         <button
-                                aria-label={`Edit ${label}. ${positionLabel(step)}`}
-                                data-marker-id={point.id}
-                                data-step={step}
-                                disabled={$rendering}
-                                onclick={event => clickMarker(event, point.id)}
-                                onkeydown={event => markerKey(event, point)}
-                                onlostpointercapture={cancelDrag}
-                                onpointercancel={cancelDrag}
-                                onpointerdown={event => startDrag(event, point)}
-                                onpointermove={updateDrag}
-                                onpointerup={finishDrag}
-                                type="button">{label}</button>
+                            aria-label={`Edit ${label}. ${positionLabel(step)}`}
+                            data-marker-id={point.id}
+                            data-step={step}
+                            disabled={$rendering}
+                            onclick={event => clickMarker(event, point.id)}
+                            onkeydown={event => markerKey(event, point)}
+                            onlostpointercapture={cancelDrag}
+                            onpointercancel={cancelDrag}
+                            onpointerdown={event => startDrag(event, point)}
+                            onpointermove={updateDrag}
+                            onpointerup={finishDrag}
+                            type="button">{label}</button
+                        >
                     </div>
                 {/if}
             {/each}
@@ -402,42 +461,57 @@ style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px
 <Dialog title="Edit marker" width="360px" bind:show>
     {#if show}
         <div class="conductor-editor" use:dialogKeyboard use:focusEditor>
-            {#if locked}<p
-class="notice"
-                           role="status">{$rendering ? 'Export in progress.' : 'Stop playback to edit.'}</p>{/if}
-            <form novalidate onsubmit={event => {event.preventDefault(); saveMarker();}}>
+            {#if locked}<p class="notice" role="status">
+                    {$rendering ? 'Export in progress.' : 'Stop playback to edit.'}
+                </p>{/if}
+            <form
+                novalidate
+                onsubmit={event => {
+                    event.preventDefault();
+                    saveMarker();
+                }}
+            >
                 <fieldset disabled={locked}>
-                    <label>Title
+                    <label
+                        >Title
                         <input
-                                class="marker-value"
-                                maxlength="80"
-                                placeholder="Marker"
-                                type="text"
-                                bind:value={sectionName}/>
+                            class="marker-value"
+                            maxlength="80"
+                            placeholder="Marker"
+                            type="text"
+                            bind:value={sectionName}
+                        />
                     </label>
                     <div class="timing-fields">
-                        <label>BPM
+                        <label
+                            >BPM
                             <input
-                                    max="300"
-                                    min="30"
-                                    placeholder={inheritedTempo}
-                                    step="any"
-                                    type="number"
-                                    bind:value={tempoBpm}/>
+                                max="300"
+                                min="30"
+                                placeholder={inheritedTempo}
+                                step="any"
+                                type="number"
+                                bind:value={tempoBpm}
+                            />
                         </label>
-                        <label>Time signature
+                        <label
+                            >Time signature
                             <input
-placeholder={`${inheritedMeter.numerator}/${inheritedMeter.denominator}`}
-type="text"
-                                   bind:value={signature}/>
+                                placeholder={`${inheritedMeter.numerator}/${inheritedMeter.denominator}`}
+                                type="text"
+                                bind:value={signature}
+                            />
                         </label>
                     </div>
                     {#if tempoBpm !== undefined}
                         <label class="check">
                             <input
-checked={tempoCurve === 'linear'}
-                                   onchange={event => {tempoCurve = event.currentTarget.checked ? 'linear' : 'hold';}}
-                                   type="checkbox"/>
+                                checked={tempoCurve === 'linear'}
+                                onchange={event => {
+                                    tempoCurve = event.currentTarget.checked ? 'linear' : 'hold';
+                                }}
+                                type="checkbox"
+                            />
                             Gradually change to the next tempo
                         </label>
                     {/if}
@@ -445,7 +519,9 @@ checked={tempoCurve === 'linear'}
                 <p class="hint">Leave timing blank for no change.</p>
                 {#if error}<p class="error" role="alert">{error}</p>{/if}
                 <div class="form-actions">
-                    <button class="delete" disabled={locked} onclick={deleteMarker} type="button">Delete</button>
+                    <button class="delete" disabled={locked} onclick={deleteMarker} type="button"
+                        >Delete</button
+                    >
                     <button class="cancel" onclick={closeDialog} type="button">Cancel</button>
                     <button class="primary" disabled={locked} type="submit">Save</button>
                 </div>
@@ -490,7 +566,8 @@ checked={tempoCurve === 'linear'}
         will-change: transform;
     }
 
-    button, input {
+    button,
+    input {
         font-family: inherit;
         font-size: 11px;
         color: var(--primary-text);
@@ -506,7 +583,7 @@ checked={tempoCurve === 'linear'}
     }
 
     button:disabled {
-        opacity: .45;
+        opacity: 0.45;
         cursor: default;
     }
 
@@ -514,12 +591,14 @@ checked={tempoCurve === 'linear'}
         background: var(--color-surface-hover);
     }
 
-    button:focus-visible, input:focus-visible {
+    button:focus-visible,
+    input:focus-visible {
         outline: 2px solid var(--accent2);
         outline-offset: -2px;
     }
 
-    .add-at-position, .add-at-position:hover:not(:disabled) {
+    .add-at-position,
+    .add-at-position:hover:not(:disabled) {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -540,7 +619,9 @@ checked={tempoCurve === 'linear'}
         background: var(--color-surface);
     }
 
-    .marker:hover, .marker:focus-within, .marker.dragging {
+    .marker:hover,
+    .marker:focus-within,
+    .marker.dragging {
         max-width: none !important;
         z-index: 2;
     }
@@ -642,7 +723,8 @@ checked={tempoCurve === 'linear'}
         color: var(--accent);
     }
 
-    .notice, .error {
+    .notice,
+    .error {
         font-size: 11px;
         line-height: 1.5;
     }

@@ -1,13 +1,11 @@
-import {
-    describe, expect, it, vi
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import type {
-    ManagedVoice
-} from './voice-collection';
+import type { ManagedVoice } from './voice-collection';
 
 import {
-    NoteScheduler, type NoteSchedulingCollection, type NoteSchedulingParams
+    NoteScheduler,
+    type NoteSchedulingCollection,
+    type NoteSchedulingParams,
 } from './note-scheduler';
 
 interface TestParams extends NoteSchedulingParams {
@@ -22,7 +20,7 @@ function voice(cost = 3): ManagedVoice<TestParams> {
         loudness: () => 1,
         stop: vi.fn(),
         glide: vi.fn(),
-        setParams: vi.fn()
+        setParams: vi.fn(),
     };
 }
 
@@ -43,26 +41,28 @@ function scheduler(now: number | null = 2) {
         register: vi.fn(),
         noteOff: vi.fn(),
         automate: vi.fn(),
-        allNotesOff: vi.fn()
+        allNotesOff: vi.fn(),
     };
     const created = voice();
     const createVoice = vi.fn(() => created);
-    const findNote = vi.fn(name => name === 'C4' ? {freq: 261.63} : name === 'D4' ? {freq: 293.66} : undefined);
+    const findNote = vi.fn(name =>
+        name === 'C4' ? { freq: 261.63 } : name === 'D4' ? { freq: 293.66 } : undefined,
+    );
     const instance = new NoteScheduler<TestParams>({
         findNote,
         currentTime: () => now,
         voices,
         createVoice,
-        releaseTail: 1.5
+        releaseTail: 1.5,
     });
-    return {instance, voices, createVoice, created, loadWrites, findNote};
+    return { instance, voices, createVoice, created, loadWrites, findNote };
 }
 
-const params: TestParams = {rel: 2, label: 'test'};
+const params: TestParams = { rel: 2, label: 'test' };
 
 describe('NoteScheduler', () => {
     it('creates a voice through injected collaborators and clamps its start time', () => {
-        const {instance, voices, createVoice, created, loadWrites} = scheduler(2);
+        const { instance, voices, createVoice, created, loadWrites } = scheduler(2);
 
         instance.noteOnAt('lead', 'C4', 1, params, 0.75);
 
@@ -73,17 +73,24 @@ describe('NoteScheduler', () => {
         expect(voices.register).toHaveBeenCalledWith('lead', 'lead:C4', 2, created, 3.1);
     });
 
-
     it('glides the explicitly named source voice', () => {
-        const {instance, voices} = scheduler(2);
+        const { instance, voices } = scheduler(2);
 
         expect(instance.glideAt('lead', 'C4', 'D4', 3, 0.2)).toBe(true);
 
-        expect(voices.glide).toHaveBeenCalledWith('lead', 'lead:C4', 'lead:D4', 3, 293.66, 0.2, 'linear');
+        expect(voices.glide).toHaveBeenCalledWith(
+            'lead',
+            'lead:C4',
+            'lead:D4',
+            3,
+            293.66,
+            0.2,
+            'linear',
+        );
     });
 
     it('delegates absolute and relative release commands with the current-time guard', () => {
-        const {instance, voices} = scheduler(2);
+        const { instance, voices } = scheduler(2);
 
         instance.noteOffAt('lead', 'C4', 1);
         instance.noteOff('lead', 'C4', 0.5);
@@ -102,7 +109,7 @@ describe('NoteScheduler', () => {
         expect(unknown.findNote).toHaveBeenCalledWith('H9');
         expect(unknown.createVoice).not.toHaveBeenCalled();
 
-        const {instance, voices, createVoice} = scheduler(null);
+        const { instance, voices, createVoice } = scheduler(null);
 
         instance.noteOnAt('lead', 'C4', 0, params);
         instance.noteOffAt('lead', 'C4', 0);

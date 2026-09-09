@@ -1,12 +1,10 @@
 <script lang="ts">
     /* Global key handling + the "?" cheat sheet */
-    import {
-        handleShortcut, SHORTCUT_GROUPS, showShortcuts
-    } from '../lib/shortcuts';
+    import { handleShortcut, SHORTCUT_GROUPS, showShortcuts } from '../lib/shortcuts';
     import Dialog from './ui/Dialog.svelte';
 </script>
 
-<svelte:window onkeydown={handleShortcut}/>
+<svelte:window onkeydown={handleShortcut} />
 
 <Dialog title="Keyboard Shortcuts" width="520px" bind:show={$showShortcuts}>
     <div class="groups">
@@ -47,7 +45,7 @@
     }
 
     .row span {
-        opacity: .7;
+        opacity: 0.7;
     }
 
     kbd {

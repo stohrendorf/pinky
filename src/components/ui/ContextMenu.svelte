@@ -1,10 +1,6 @@
 <script lang="ts">
-    import {
-        onMount, tick
-    } from 'svelte';
-    import {
-        run
-    } from 'svelte/legacy';
+    import { onMount, tick } from 'svelte';
+    import { run } from 'svelte/legacy';
 
     interface Props {
         open?: boolean;
@@ -18,14 +14,12 @@
         open = false,
         anchor = null,
         actions = [],
-        onselect = () => {
-        },
-        onclose = () => {
-        }
+        onselect = () => {},
+        onclose = () => {},
     }: Props = $props();
 
     let menuEl: HTMLDivElement | undefined = $state();
-    let position = $state({top: 0, left: 0});
+    let position = $state({ top: 0, left: 0 });
 
     async function updatePosition() {
         if (!anchor) {
@@ -37,12 +31,19 @@
         const menuHeight = menuEl?.offsetHeight || actions.length * 30 + 8;
         position = {
             top: Math.max(4, Math.min(bounds.bottom + 2, window.innerHeight - menuHeight - 4)),
-            left: Math.max(4, Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 4))
+            left: Math.max(
+                4,
+                Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 4),
+            ),
         };
     }
 
     function handleWindowClick(event: MouseEvent) {
-        if (!open || menuEl?.contains(event.target as Node) || anchor?.contains(event.target as Node)) {
+        if (
+            !open ||
+            menuEl?.contains(event.target as Node) ||
+            anchor?.contains(event.target as Node)
+        ) {
             return;
         }
         onclose();
@@ -71,12 +72,22 @@
     });
 </script>
 
-<svelte:window onclickcapture={handleWindowClick} onkeydown={handleKeydown}/>
+<svelte:window onclickcapture={handleWindowClick} onkeydown={handleKeydown} />
 
 {#if open}
-    <div bind:this={menuEl} style="top: {position.top}px; left: {position.left}px;" class="context-menu" role="menu">
+    <div
+        bind:this={menuEl}
+        style="top: {position.top}px; left: {position.left}px;"
+        class="context-menu"
+        role="menu"
+    >
         {#each actions as menu (menu.id)}
-            <button disabled={menu.disabled} onclick={() => onselect(menu.id)} role="menuitem" type="button">
+            <button
+                disabled={menu.disabled}
+                onclick={() => onselect(menu.id)}
+                role="menuitem"
+                type="button"
+            >
                 <i class="fa {menu.icon || ''}" aria-hidden="true"></i>{menu.label}
             </button>
         {/each}
@@ -92,7 +103,7 @@
         background: var(--color-surface-raised);
         border: 1px solid var(--border);
         border-radius: 4px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     }
 
     .context-menu button {
@@ -115,7 +126,7 @@
     }
 
     .context-menu button:disabled {
-        opacity: .35;
+        opacity: 0.35;
         cursor: default;
     }
 

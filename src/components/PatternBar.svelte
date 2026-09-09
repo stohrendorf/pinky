@@ -1,38 +1,31 @@
 <script lang="ts">
-    import type {
-        NamedTreeItem
-    } from '../lib/name-tree';
-    import type {
-        Pattern
-    } from '../lib/types';
+    import type { NamedTreeItem } from '../lib/name-tree';
+    import type { Pattern } from '../lib/types';
 
-    import {
-        STEPS
-    } from '../lib/notes';
-    import {
-        createPattern, project, selPatId, touch
-    } from '../lib/project';
+    import { STEPS } from '../lib/notes';
+    import { createPattern, project, selPatId, touch } from '../lib/project';
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
     import Dialog from './ui/Dialog.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
 
-    const pat = $derived(($project?.patterns.find(p => p.id === $selPatId) || $project?.patterns[0]) as Pattern);
+    const pat = $derived(
+        ($project?.patterns.find(p => p.id === $selPatId) || $project?.patterns[0]) as Pattern,
+    );
 
     let showRename = $state(false);
     let renameValue = $state('');
-
 
     let showConfirmDelete = $state(false);
     let showColor = $state(false);
 
     const itemActions = [
-        {id: 'rename', label: 'Rename', icon: 'fa-pencil'},
-        {id: 'color', label: 'Pattern color', icon: 'fa-palette'},
-        {id: 'duplicate', label: 'Duplicate', icon: 'fa-clone'},
-        {id: 'clear', label: 'Clear notes', icon: 'fa-broom'},
-        {id: 'delete', label: 'Delete', icon: 'fa-trash'}
+        { id: 'rename', label: 'Rename', icon: 'fa-pencil' },
+        { id: 'color', label: 'Pattern color', icon: 'fa-palette' },
+        { id: 'duplicate', label: 'Duplicate', icon: 'fa-clone' },
+        { id: 'clear', label: 'Clear notes', icon: 'fa-broom' },
+        { id: 'delete', label: 'Delete', icon: 'fa-trash' },
     ];
 
     function add() {
@@ -49,7 +42,9 @@
             return;
         }
         const np = createPattern(pat.name + ' copy', pat.steps || STEPS);
-        np.tracks = Object.fromEntries(Object.entries(pat.tracks).map(([id, notes]) => [id, notes.map(n => ({...n}))]));
+        np.tracks = Object.fromEntries(
+            Object.entries(pat.tracks).map(([id, notes]) => [id, notes.map(n => ({ ...n }))]),
+        );
         $project.patterns = [...$project.patterns, np];
         selPatId.set(np.id);
     }
@@ -87,7 +82,6 @@
         $project.patterns = $project.patterns.filter(p => p.id !== id);
         selPatId.set($project.patterns[0].id);
     }
-
 
     function openColor() {
         showColor = true;
@@ -153,40 +147,50 @@
 
 <div class="pattern-tree-panel">
     <TreeView
-            folderActions={[{id: 'rename', label: 'Rename folder', icon: 'fa-pencil'}]}
-            itemActions={itemActions}
-            items={$project?.patterns ?? []}
-            onaction={onTreeAction}
-            onfolderaction={onFolderAction}
-            onselect={id => selPatId.set(id)}
-            selectedId={pat?.id}
-            title="Patterns">
+        folderActions={[{ id: 'rename', label: 'Rename folder', icon: 'fa-pencil' }]}
+        {itemActions}
+        items={$project?.patterns ?? []}
+        onaction={onTreeAction}
+        onfolderaction={onFolderAction}
+        onselect={id => selPatId.set(id)}
+        selectedId={pat?.id}
+        title="Patterns"
+    >
         {#snippet headerActions()}
             <button
-                    class="header-add"
-                    aria-label="New pattern"
-                    onclick={add}
-                    title="New pattern"
-                    type="button"><i class="fa fa-add"></i></button>
+                class="header-add"
+                aria-label="New pattern"
+                onclick={add}
+                title="New pattern"
+                type="button"><i class="fa fa-add"></i></button
+            >
         {/snippet}
     </TreeView>
 </div>
 
 <Prompt
-        label="New Name"
-        title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
-        bind:show={showRename}
-        bind:value={renameValue}
-        on:submit={onRenameSubmit}/>
+    label="New Name"
+    title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
+    bind:show={showRename}
+    bind:value={renameValue}
+    on:submit={onRenameSubmit}
+/>
 <Confirm
-        confirmLabel="Delete pattern"
-        destructive
-        message={`Are you sure you want to delete "${pat.name}"? It will be removed from the song arrangement.`}
-        title="Delete Pattern"
-        bind:show={showConfirmDelete}
-        on:confirm={onConfirmDelete}/>
+    confirmLabel="Delete pattern"
+    destructive
+    message={`Are you sure you want to delete "${pat.name}"? It will be removed from the song arrangement.`}
+    title="Delete Pattern"
+    bind:show={showConfirmDelete}
+    on:confirm={onConfirmDelete}
+/>
 <Dialog title="Pattern Color" bind:show={showColor}>
-    <ColorPicker value={pat.color} on:change={(e) => { pat.color = e.detail; touch(); }}/>
+    <ColorPicker
+        value={pat.color}
+        on:change={e => {
+            pat.color = e.detail;
+            touch();
+        }}
+    />
 </Dialog>
 
 <style>

@@ -1,20 +1,10 @@
 <script lang="ts">
-    import type {
-        NumericParam
-    } from '../lib/instruments';
-    import type {
-        Instrument, InstrumentParams
-    } from '../lib/types';
+    import type { NumericParam } from '../lib/instruments';
+    import type { Instrument, InstrumentParams } from '../lib/types';
 
-    import {
-        CURVE_SHAPES
-    } from '../lib/automation';
-    import {
-        ensurePartials, INSTRUMENT_PANELS
-    } from '../lib/instruments';
-    import {
-        lastPlayedPitch, project, selInstId, touch
-    } from '../lib/project';
+    import { CURVE_SHAPES } from '../lib/automation';
+    import { ensurePartials, INSTRUMENT_PANELS } from '../lib/instruments';
+    import { lastPlayedPitch, project, selInstId, touch } from '../lib/project';
     import FilterPreview from './FilterPreview.svelte';
     import HarmonicsEditor from './HarmonicsEditor.svelte';
     import Slider from './Slider.svelte';
@@ -28,65 +18,96 @@
     const STARTER_PANEL_TITLES = ['EQ Voice', 'Envelope', 'Mix'];
     const ADVANCED_PANEL_TITLES = ['Percussion', 'Formants (vowel)', 'Vibrato', 'Unison', 'Legato'];
     const EDITOR_TABS = [
-        {id: 'voice', label: 'Sound'},
-        {id: 'advanced', label: 'Motion'},
-        {id: 'harmonics', label: 'Harmonics'}
+        { id: 'voice', label: 'Sound' },
+        { id: 'advanced', label: 'Motion' },
+        { id: 'harmonics', label: 'Harmonics' },
     ];
-    const CONTROL_HELP: Record<string, { title: string; text: string; deepTitle: string; deep: string[] }> = {
+    const CONTROL_HELP: Record<
+        string,
+        { title: string; text: string; deepTitle: string; deep: string[] }
+    > = {
         'EQ Voice': {
             title: 'Tone and resonance',
             text: 'Tone Level controls the pitched, harmonic part of the sound. Resonance focuses those harmonics more tightly: lower values are broader and gentler, while higher values make the sound more focused and pronounced.',
             deepTitle: 'Go deeper: filtering the raw sound',
-            deep: ['Your harmonics create a raw spectrum; the filter decides which parts of it are most audible. Lower Tone Level leaves fewer upper frequencies, so a sound feels darker or farther away. Raising it exposes more high partials and makes the sound feel brighter or closer.', 'Resonance boosts the frequencies around the filter’s focus. A small amount adds character; a high amount creates a whistle-like peak that can become part of the pitch. Try changing Tone Level first, then add resonance only when you want the filter itself to be clearly heard.']
+            deep: [
+                'Your harmonics create a raw spectrum; the filter decides which parts of it are most audible. Lower Tone Level leaves fewer upper frequencies, so a sound feels darker or farther away. Raising it exposes more high partials and makes the sound feel brighter or closer.',
+                'Resonance boosts the frequencies around the filter’s focus. A small amount adds character; a high amount creates a whistle-like peak that can become part of the pitch. Try changing Tone Level first, then add resonance only when you want the filter itself to be clearly heard.',
+            ],
         },
         Envelope: {
             title: 'Envelope',
             text: 'Attack is how quickly a note arrives, Decay is how quickly it falls to Sustain, and Release is how long it rings after you let go. Short attack and decay suit percussion; longer attack and release make pads and strings bloom.',
             deepTitle: 'Go deeper: why the same sound can feel like a different instrument',
-            deep: ['The first few milliseconds tell the ear a great deal about an instrument. A fast, bright beginning suggests a pluck, hammer, or strike; a gradual beginning suggests a bowed, blown, or swelling sound. The envelope can therefore change a familiar harmonic spectrum into something that feels entirely different.', 'Sustain is the level held while a key remains down, rather than a duration. A piano-like sound falls toward little or no sustain; an organ holds steady. Release belongs to the sound after the key is released, so longer releases create space but can cloud fast passages.']
+            deep: [
+                'The first few milliseconds tell the ear a great deal about an instrument. A fast, bright beginning suggests a pluck, hammer, or strike; a gradual beginning suggests a bowed, blown, or swelling sound. The envelope can therefore change a familiar harmonic spectrum into something that feels entirely different.',
+                'Sustain is the level held while a key remains down, rather than a duration. A piano-like sound falls toward little or no sustain; an organ holds steady. Release belongs to the sound after the key is released, so longer releases create space but can cloud fast passages.',
+            ],
         },
         Mix: {
             title: 'Level and pan',
             text: 'Level places this instrument in the mix. Pan places it between the left and right speakers. Set the sound first, then use these controls to make room for the other instruments.',
             deepTitle: 'Go deeper: making room instead of making everything louder',
-            deep: ['A mix is a balance of frequency, time, and stereo position. If two parts compete, lowering one slightly is often more effective than raising the other. Parts with different octaves, envelopes, or harmonic brightness can coexist even when they play at the same time.', 'Pan is most useful for supporting parts: keep the musical anchor—often kick, bass, and lead—near the center, then place percussion, chords, and answers around it. Extreme panning is an effect; modest offsets usually create width without making the arrangement feel lopsided.']
+            deep: [
+                'A mix is a balance of frequency, time, and stereo position. If two parts compete, lowering one slightly is often more effective than raising the other. Parts with different octaves, envelopes, or harmonic brightness can coexist even when they play at the same time.',
+                'Pan is most useful for supporting parts: keep the musical anchor—often kick, bass, and lead—near the center, then place percussion, chords, and answers around it. Extreme panning is an effect; modest offsets usually create width without making the arrangement feel lopsided.',
+            ],
         },
         Percussion: {
             title: 'Percussion and impact',
             text: 'Percussion adds a wide noise band alongside the pitched sound. It creates the air of hats, the snap of snares, and the strike of kicks or bells. Noise Frequency chooses its brightness; Pitch Drop sweeps the pitch at a note’s start for kick, tom, and riser motion.',
             deepTitle: 'Go deeper: noise, impact, and pitch motion',
-            deep: ['Noise contains many frequencies at once, unlike a pitched oscillator. A very short bright burst suggests the stick or beater hitting an object; a longer, darker burst can suggest a snare body, wind, or mechanical texture. Noise Frequency changes which area of that broad energy stands out.', 'Pitch Drop is a fast fall in pitch after the note begins. On a kick it imitates a stretched drumhead settling after impact; on a tom it makes the hit feel larger; reversing the musical idea with a rising pitch can make a riser. Keep the time short for drums and longer for obvious effects.']
+            deep: [
+                'Noise contains many frequencies at once, unlike a pitched oscillator. A very short bright burst suggests the stick or beater hitting an object; a longer, darker burst can suggest a snare body, wind, or mechanical texture. Noise Frequency changes which area of that broad energy stands out.',
+                'Pitch Drop is a fast fall in pitch after the note begins. On a kick it imitates a stretched drumhead settling after impact; on a tom it makes the hit feel larger; reversing the musical idea with a rising pitch can make a riser. Keep the time short for drums and longer for obvious effects.',
+            ],
         },
         'Formants (vowel)': {
             title: 'Formants',
             text: 'Formants are the fixed resonances made by a voice’s throat and mouth. They stay at fixed frequencies while the note changes, which creates vowel-like color. Formant Level blends them in; F1, F2, and F3 set the resonances; Formant Q makes them broad and gentle or narrow and obvious.',
             deepTitle: 'Go deeper: how a filter can suggest a voice',
-            deep: ['Vocal cords make a complex buzzing source, while the throat and mouth amplify selected fixed frequency regions. Those regions are formants. As you change a vowel, you mostly reshape the resonant spaces rather than changing the vocal-cord pitch.', 'Because Pinky’s formants stay fixed while notes move, different notes pass through the same resonant bands—much like a human voice. Move F1 and F2 to explore vowel changes; use F3 more gently for presence. Narrow Q makes the effect more synthetic and explicit, while wider Q blends it into the instrument.']
+            deep: [
+                'Vocal cords make a complex buzzing source, while the throat and mouth amplify selected fixed frequency regions. Those regions are formants. As you change a vowel, you mostly reshape the resonant spaces rather than changing the vocal-cord pitch.',
+                'Because Pinky’s formants stay fixed while notes move, different notes pass through the same resonant bands—much like a human voice. Move F1 and F2 to explore vowel changes; use F3 more gently for presence. Narrow Q makes the effect more synthetic and explicit, while wider Q blends it into the instrument.',
+            ],
         },
         Vibrato: {
             title: 'Vibrato',
             text: 'Vibrato is a repeating pitch movement. Depth controls how far it bends, Rate controls how fast it moves, and Delay lets a held note begin straight before the vibrato fades in. It is especially effective on leads, strings, and vocal-like sounds.',
             deepTitle: 'Go deeper: movement needs a reason',
-            deep: ['Players naturally vary pitch as they sustain a note, but usually not at the exact instant it begins. Delay lets the note establish its pitch before the movement arrives, which reads as expressive rather than mechanical.', 'Depth and rate work together: gentle, slower movement suggests a singer or string player; faster or wider movement becomes a deliberate synth effect. Use vibrato on longer notes where the ear has time to notice it, and keep fast rhythmic parts steadier.']
+            deep: [
+                'Players naturally vary pitch as they sustain a note, but usually not at the exact instant it begins. Delay lets the note establish its pitch before the movement arrives, which reads as expressive rather than mechanical.',
+                'Depth and rate work together: gentle, slower movement suggests a singer or string player; faster or wider movement becomes a deliberate synth effect. Use vibrato on longer notes where the ear has time to notice it, and keep fast rhythmic parts steadier.',
+            ],
         },
         Unison: {
             title: 'Unison',
             text: 'Unison stacks several slightly detuned copies of the same note. More voices and a wider detune create width and chorus-like movement, but can blur the pitch and use more mix space. Keep it subtle for a natural sound.',
             deepTitle: 'Go deeper: why detuning creates width',
-            deep: ['Nearly identical pitches drift in and out of alignment, creating slow beating that our ears interpret as movement and thickness. Spreading those copies also keeps them from occupying exactly the same place, which makes the sound feel wider.', 'This effect is strongest on sustained chords, pads, and leads. It is less useful on bass, tight percussion, and already-busy arrangements because the same detuning can soften the pitch center and consume space needed by other parts. Start with few voices and a small spread.']
+            deep: [
+                'Nearly identical pitches drift in and out of alignment, creating slow beating that our ears interpret as movement and thickness. Spreading those copies also keeps them from occupying exactly the same place, which makes the sound feel wider.',
+                'This effect is strongest on sustained chords, pads, and leads. It is less useful on bass, tight percussion, and already-busy arrangements because the same detuning can soften the pitch center and consume space needed by other parts. Start with few voices and a small spread.',
+            ],
         },
         Legato: {
             title: 'Legato curves',
             text: 'Link two notes in the piano roll to glide from the source note’s end to the target note’s start. The empty gap sets the glide time, and the curve sets its shape. This default curve is used for new links; each existing link can be changed individually.',
             deepTitle: 'Go deeper: shaping a slide in time',
-            deep: ['The source note’s end and target note’s start define the whole slide, so widening the empty gap slows it down. This makes slide timing visible and musical: you compose the gesture directly in the piano roll instead of choosing an unrelated duration.', 'Linear moves evenly. Ease-in stays near the source pitch before accelerating; ease-out arrives early and settles; smooth eases at both ends; hold waits until the final jump. Use a curve when its motion supports the phrase, rather than adding slides to every connection.']
+            deep: [
+                'The source note’s end and target note’s start define the whole slide, so widening the empty gap slows it down. This makes slide timing visible and musical: you compose the gesture directly in the piano roll instead of choosing an unrelated duration.',
+                'Linear moves evenly. Ease-in stays near the source pitch before accelerating; ease-out arrives early and settles; smooth eases at both ends; hold waits until the final jump. Use a curve when its motion supports the phrase, rather than adding slides to every connection.',
+            ],
         },
         Harmonics: {
             title: 'Harmonics',
             text: 'Harmonics are the quieter frequencies above a note’s fundamental. Their ratios and levels are the raw fingerprint of a sound: whole-number ratios make familiar pitched timbres, organ drawbars emphasize selected octaves and fifths, and inharmonic ratios create bells and metal.',
             deepTitle: 'Go deeper: why instruments sound different',
-            deep: ['Every pitched instrument starts with a fundamental: the frequency we hear as the note. It also produces partials above it. When their ratios are whole numbers, they repeat in a regular pattern and reinforce the same musical pitch. The ear uses the balance of those partials—its spectrum—to recognize the instrument even when two instruments play the same note.', 'A flute-like sound has few, gentle upper partials, so it feels smooth. A clarinet-like sound emphasizes odd partials, which gives it a hollow character. A bowed string or brass sound has many strong upper partials, giving it brightness and bite. An organ does not need a vibrating string or tube: its drawbars deliberately mix octave and fifth partials, recreating the spectral ingredients of several pipe ranks.', 'In Pinky, ratios choose where those ingredients sit and levels choose how much of each you hear. Start with a 1:1 fundamental, then add one partial at a time while holding the same note. Listen for the point where the sound gains identity rather than simply becoming brighter. Non-whole ratios no longer reinforce one clear pitch in the same way; that tension is what gives bells, metal, and struck objects their shimmer.']
-        }
+            deep: [
+                'Every pitched instrument starts with a fundamental: the frequency we hear as the note. It also produces partials above it. When their ratios are whole numbers, they repeat in a regular pattern and reinforce the same musical pitch. The ear uses the balance of those partials—its spectrum—to recognize the instrument even when two instruments play the same note.',
+                'A flute-like sound has few, gentle upper partials, so it feels smooth. A clarinet-like sound emphasizes odd partials, which gives it a hollow character. A bowed string or brass sound has many strong upper partials, giving it brightness and bite. An organ does not need a vibrating string or tube: its drawbars deliberately mix octave and fifth partials, recreating the spectral ingredients of several pipe ranks.',
+                'In Pinky, ratios choose where those ingredients sit and levels choose how much of each you hear. Start with a 1:1 fundamental, then add one partial at a time while holding the same note. Listen for the point where the sound gains identity rather than simply becoming brighter. Non-whole ratios no longer reinforce one clear pitch in the same way; that tension is what gives bells, metal, and struck objects their shimmer.',
+            ],
+        },
     };
 
     let showRename = $state(false);
@@ -95,10 +116,17 @@
     let contextualHelp: keyof typeof CONTROL_HELP | null = $state(null);
     let activeTab = $state('voice');
 
-    const starterPanels = $derived(INSTRUMENT_PANELS.filter(panel => STARTER_PANEL_TITLES.includes(panel.title)));
-    const advancedPanels = $derived(INSTRUMENT_PANELS.filter(panel => ADVANCED_PANEL_TITLES.includes(panel.title)));
+    const starterPanels = $derived(
+        INSTRUMENT_PANELS.filter(panel => STARTER_PANEL_TITLES.includes(panel.title)),
+    );
+    const advancedPanels = $derived(
+        INSTRUMENT_PANELS.filter(panel => ADVANCED_PANEL_TITLES.includes(panel.title)),
+    );
 
-    const inst = $derived(($project?.instruments.find(i => i.id === $selInstId) || $project?.instruments[0]) as Instrument);
+    const inst = $derived(
+        ($project?.instruments.find(i => i.id === $selInstId) ||
+            $project?.instruments[0]) as Instrument,
+    );
 
     const clone = (p: InstrumentParams): InstrumentParams => JSON.parse(JSON.stringify(p));
 
@@ -126,16 +154,23 @@
         touch();
     }
 
-
     function setParam(id: NumericParam, v: number) {
         const instrumentId = inst.id;
-        project.update(current => current ? {
-            ...current,
-            instruments: current.instruments.map(instrument => instrument.id === instrumentId ? {
-                ...instrument,
-                params: {...instrument.params, [id]: v}
-            } : instrument)
-        } : current);
+        project.update(current =>
+            current
+                ? {
+                      ...current,
+                      instruments: current.instruments.map(instrument =>
+                          instrument.id === instrumentId
+                              ? {
+                                    ...instrument,
+                                    params: { ...instrument.params, [id]: v },
+                                }
+                              : instrument,
+                      ),
+                  }
+                : current,
+        );
     }
 
     function setLegatoCurve(curve: string) {
@@ -154,7 +189,6 @@
         i.solo = !i.solo;
         touch();
     }
-
 
     function openRename() {
         renameValue = inst.name;
@@ -194,44 +228,55 @@
     <div class="instrument-toolbar" aria-label="Selected instrument controls">
         <div class="instrument-picker">
             <HierarchicalSelect
-                    ariaLabel="Select instrument"
-                    items={$project?.instruments ?? []}
-                    minimal
-                    onselect={id => selInstId.set(id)}
-                    selectedId={inst?.id}/>
+                ariaLabel="Select instrument"
+                items={$project?.instruments ?? []}
+                minimal
+                onselect={id => selInstId.set(id)}
+                selectedId={inst?.id}
+            />
         </div>
         <div class="selected-instrument-actions" aria-label="Selected instrument playback controls">
             <Button
-                    compact
-                    pressed={inst.mute}
-                    title="Mute"
-                    variant={inst.mute ? 'danger' : 'secondary'}
-                    on:click={() => toggleMute(inst)}><i class="fa fa-volume-xmark"></i></Button>
+                compact
+                pressed={inst.mute}
+                title="Mute"
+                variant={inst.mute ? 'danger' : 'secondary'}
+                on:click={() => toggleMute(inst)}><i class="fa fa-volume-xmark"></i></Button
+            >
             <Button
-                    compact
-                    pressed={inst.solo}
-                    title="Solo"
-                    variant={inst.solo ? 'primary' : 'secondary'}
-                    on:click={() => toggleSolo(inst)}><i class="fa fa-headphones"></i></Button>
+                compact
+                pressed={inst.solo}
+                title="Solo"
+                variant={inst.solo ? 'primary' : 'secondary'}
+                on:click={() => toggleSolo(inst)}><i class="fa fa-headphones"></i></Button
+            >
         </div>
         <div class="instrument-actions" aria-label="Selected instrument identity controls">
-            <IconButton ariaLabel="Rename Instrument" icon="fa-pencil" title="Rename Instrument" on:click={openRename}/>
             <IconButton
-                    ariaLabel="Delete Instrument"
-                    disabled={($project?.instruments.length ?? 0) <= 1}
-                    icon="fa-trash"
-                    title="Delete Instrument"
-                    on:click={remove}/>
+                ariaLabel="Rename Instrument"
+                icon="fa-pencil"
+                title="Rename Instrument"
+                on:click={openRename}
+            />
+            <IconButton
+                ariaLabel="Delete Instrument"
+                disabled={($project?.instruments.length ?? 0) <= 1}
+                icon="fa-trash"
+                title="Delete Instrument"
+                on:click={remove}
+            />
         </div>
     </div>
     <div class="audition-actions">
-        <Button title="Park the current settings in slot B" variant="secondary" on:click={copyToB}><i class="fa fa-copy"></i> Copy → B
+        <Button title="Park the current settings in slot B" variant="secondary" on:click={copyToB}
+            ><i class="fa fa-copy"></i> Copy → B
         </Button>
         <Button
-                disabled={!slotB[inst.id]}
-                title="Swap the current settings with slot B"
-                variant="secondary"
-                on:click={swapAB}><i class="fa fa-right-left"></i> A/B
+            disabled={!slotB[inst.id]}
+            title="Swap the current settings with slot B"
+            variant="secondary"
+            on:click={swapAB}
+            ><i class="fa fa-right-left"></i> A/B
         </Button>
         {#if slotB[inst.id]}
             <span class="ab-side">showing {side[inst.id] || 'A'}</span>
@@ -242,10 +287,11 @@
         <div class="editor-tabs" aria-label="Instrument settings" role="tablist">
             {#each EDITOR_TABS as tab (tab.id)}
                 <button
-                        class:sel={activeTab === tab.id}
-                        aria-selected={activeTab === tab.id}
-                        onclick={() => activeTab = tab.id}
-                        role="tab">{tab.label}</button>
+                    class:sel={activeTab === tab.id}
+                    aria-selected={activeTab === tab.id}
+                    onclick={() => (activeTab = tab.id)}
+                    role="tab">{tab.label}</button
+                >
             {/each}
         </div>
     </div>
@@ -259,14 +305,20 @@
                             <div class="group-heading">
                                 <h4>{panel.title}</h4>
                                 <button
-                                        class="control-help"
-                                        aria-label={`Learn about ${panel.title}`}
-                                        onclick={() => openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
-                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i>
+                                    class="control-help"
+                                    aria-label={`Learn about ${panel.title}`}
+                                    onclick={() =>
+                                        openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
+                                    title={`Learn about ${panel.title}`}
+                                    ><i class="fa fa-circle-question"></i>
                                 </button>
                             </div>
                             {#each panel.sliders as s (s.id)}
-                                <Slider {...s} onchange={v => setParam(s.id, v)} value={inst.params[s.id]}/>
+                                <Slider
+                                    {...s}
+                                    onchange={v => setParam(s.id, v)}
+                                    value={inst.params[s.id]}
+                                />
                             {/each}
                         </div>
                     {/each}
@@ -279,21 +331,30 @@
                             <div class="group-heading">
                                 <h4>{panel.title}</h4>
                                 <button
-                                        class="control-help"
-                                        aria-label={`Learn about ${panel.title}`}
-                                        onclick={() => openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
-                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i>
+                                    class="control-help"
+                                    aria-label={`Learn about ${panel.title}`}
+                                    onclick={() =>
+                                        openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
+                                    title={`Learn about ${panel.title}`}
+                                    ><i class="fa fa-circle-question"></i>
                                 </button>
                             </div>
                             {#each panel.sliders as s (s.id)}
-                                <Slider {...s} onchange={v => setParam(s.id, v)} value={inst.params[s.id]}/>
+                                <Slider
+                                    {...s}
+                                    onchange={v => setParam(s.id, v)}
+                                    value={inst.params[s.id]}
+                                />
                             {/each}
                             {#if panel.title === 'Legato'}
-                                <label class="legato-default">Default curve
+                                <label class="legato-default"
+                                    >Default curve
                                     <select
-                                            aria-label="Default legato curve"
-                                            onchange={event => setLegatoCurve(event.currentTarget.value)}
-                                            value={inst.params.legatoCurve}>
+                                        aria-label="Default legato curve"
+                                        onchange={event =>
+                                            setLegatoCurve(event.currentTarget.value)}
+                                        value={inst.params.legatoCurve}
+                                    >
                                         {#each CURVE_SHAPES as shape (shape.id)}
                                             <option value={shape.id}>{shape.label}</option>
                                         {/each}
@@ -304,38 +365,46 @@
                     {/each}
                 </div>
             {:else if activeTab === 'harmonics'}
-                <div class="tab-intro">Draw the partials that define this instrument.
+                <div class="tab-intro">
+                    Draw the partials that define this instrument.
                     <button
-                            class="control-help"
-                            aria-label="Learn about Harmonics"
-                            onclick={() => openControlHelp('Harmonics')}
-                            title="Learn about Harmonics"><i class="fa fa-circle-question"></i></button>
+                        class="control-help"
+                        aria-label="Learn about Harmonics"
+                        onclick={() => openControlHelp('Harmonics')}
+                        title="Learn about Harmonics"><i class="fa fa-circle-question"></i></button
+                    >
                 </div>
-                <HarmonicsEditor onchange={touch} params={inst.params}/>
+                <HarmonicsEditor onchange={touch} params={inst.params} />
             {/if}
         </div>
         <aside class="sound-overview">
-            <FilterPreview note={$lastPlayedPitch} params={inst.params}/>
+            <FilterPreview note={$lastPlayedPitch} params={inst.params} />
         </aside>
     </div>
-
 </div>
 
 <Prompt
-        label="New Name"
-        title="Rename Instrument"
-        bind:show={showRename}
-        bind:value={renameValue}
-        on:submit={onRename}/>
+    label="New Name"
+    title="Rename Instrument"
+    bind:show={showRename}
+    bind:value={renameValue}
+    on:submit={onRename}
+/>
 <Confirm
-        confirmLabel="Delete instrument"
-        destructive
-        message={`Are you sure you want to delete instrument "${inst.name}"? All its notes in all patterns will be removed.`}
-        title="Delete Instrument"
-        bind:show={showConfirmDelete}
-        on:confirm={onConfirmDelete}/>
+    confirmLabel="Delete instrument"
+    destructive
+    message={`Are you sure you want to delete instrument "${inst.name}"? All its notes in all patterns will be removed.`}
+    title="Delete Instrument"
+    bind:show={showConfirmDelete}
+    on:confirm={onConfirmDelete}
+/>
 {#if contextualHelp}
-    <Dialog show={true} title={CONTROL_HELP[contextualHelp].title} width="440px" on:close={() => contextualHelp = null}>
+    <Dialog
+        show={true}
+        title={CONTROL_HELP[contextualHelp].title}
+        width="440px"
+        on:close={() => (contextualHelp = null)}
+    >
         <p class="contextual-help-text">{CONTROL_HELP[contextualHelp].text}</p>
         <details class="contextual-deep-dive">
             <summary>{CONTROL_HELP[contextualHelp].deepTitle}</summary>
@@ -377,7 +446,6 @@
         margin-left: auto;
     }
 
-
     .audition-actions {
         display: flex;
         flex-wrap: wrap;
@@ -388,9 +456,8 @@
     .ab-side {
         align-self: center;
         font-size: 11px;
-        opacity: .6;
+        opacity: 0.6;
     }
-
 
     .inst-sliders {
         display: grid;
@@ -403,7 +470,6 @@
         padding-left: 16px;
         border-left: 1px solid var(--border);
     }
-
 
     .inst-panel {
         display: grid;
@@ -545,5 +611,4 @@
         color: var(--accent2);
         letter-spacing: 1px;
     }
-
 </style>

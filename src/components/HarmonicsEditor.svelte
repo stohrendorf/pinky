@@ -1,20 +1,14 @@
 <script lang="ts">
-    import {
-        preventDefault, run
-    } from 'svelte/legacy';
+    import { preventDefault, run } from 'svelte/legacy';
 
-    import type {
-        InstrumentParams, PartialSpec
-    } from '../lib/types';
+    import type { InstrumentParams, PartialSpec } from '../lib/types';
 
     /* Harmonics editor — the harmonic profile of an instrument, always visible.
-* Every partial has its own ratio (× fundamental) and level, which is what
-* actually defines a timbre: organ registration (1 2 3 4 6 8, no 5th),
-* odd-only (clarinet), inharmonic (bell). The initial set of values comes
-* from the "Generate" dialog; everything here is free hand-editing. */
-    import {
-        clampPartialLevel, ensurePartials, MAX_PARTIALS
-    } from '../lib/instruments';
+     * Every partial has its own ratio (× fundamental) and level, which is what
+     * actually defines a timbre: organ registration (1 2 3 4 6 8, no 5th),
+     * odd-only (clarinet), inharmonic (bell). The initial set of values comes
+     * from the "Generate" dialog; everything here is free hand-editing. */
+    import { clampPartialLevel, ensurePartials, MAX_PARTIALS } from '../lib/instruments';
     import HarmonicsDialog from './HarmonicsDialog.svelte';
     import Button from './ui/Button.svelte';
 
@@ -23,21 +17,17 @@
         onchange?: () => void;
     }
 
-    let {
-        params = $bindable(), onchange = () => {
-        }
-    }: Props = $props();
+    let { params = $bindable(), onchange = () => {} }: Props = $props();
 
     let showGen = $state(false);
     let list: PartialSpec[] = $state([]);
     let bound: InstrumentParams | null = $state(null);
     let source: PartialSpec[] | undefined = $state(); // the array currently mirrored in `list`
 
-
     function read(p: InstrumentParams) {
         bound = p;
         source = ensurePartials(p).partials;
-        list = (source as PartialSpec[]).map(x => ({...x}));
+        list = (source as PartialSpec[]).map(x => ({ ...x }));
     }
 
     function set(next: PartialSpec[]) {
@@ -52,7 +42,7 @@
             return;
         }
         const last = list[list.length - 1];
-        set([...list, {ratio: Math.round(last.ratio) + 1, level: 0.5}]);
+        set([...list, { ratio: Math.round(last.ratio) + 1, level: 0.5 }]);
     }
 
     function removePartial() {
@@ -67,7 +57,7 @@
         if (top <= 0) {
             return;
         }
-        set(list.map(p => ({...p, level: Math.round(p.level / top * 100) / 100})));
+        set(list.map(p => ({ ...p, level: Math.round((p.level / top) * 100) / 100 })));
     }
 
     function setLevel(i: number, level: number) {
@@ -75,7 +65,7 @@
             return;
         }
         const next = [...list];
-        next[i] = {...next[i], level: clampPartialLevel(level)};
+        next[i] = { ...next[i], level: clampPartialLevel(level) };
         set(next);
     }
 
@@ -84,7 +74,10 @@
             return;
         }
         const next = [...list];
-        next[i] = {...next[i], ratio: Math.max(0.1, Math.min(24, Math.round(ratio * 1000) / 1000))};
+        next[i] = {
+            ...next[i],
+            ratio: Math.max(0.1, Math.min(24, Math.round(ratio * 1000) / 1000)),
+        };
         set(next);
     }
 
@@ -132,13 +125,14 @@
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-            style="--n: {list.length}"
-            class="bars"
-            oncontextmenu={preventDefault(mute)}
-            onpointercancel={() => dragging = false}
-            onpointerdown={down}
-            onpointermove={move}
-            onpointerup={() => dragging = false}>
+        style="--n: {list.length}"
+        class="bars"
+        oncontextmenu={preventDefault(mute)}
+        onpointercancel={() => (dragging = false)}
+        onpointerdown={down}
+        onpointermove={move}
+        onpointerup={() => (dragging = false)}
+    >
         {#each list as p, i (i)}
             <div class="col" title="partial {i + 1}: ×{p.ratio}, level {p.level}">
                 <div class="drawbar-track">
@@ -153,48 +147,70 @@
         {#each list as p, i (i)}
             <div class="cell">
                 <input
-                        class="level-input"
-                        aria-label="level of partial {i + 1} (0 to 1)"
-                        max="1"
-                        min="0"
-                        onchange={e => setLevel(i, parseFloat((e.target as HTMLInputElement).value))}
-                        step="0.01"
-                        title="level of partial {i + 1} (0 to 1)"
-                        type="number"
-                        value={p.level}>
+                    class="level-input"
+                    aria-label="level of partial {i + 1} (0 to 1)"
+                    max="1"
+                    min="0"
+                    onchange={e => setLevel(i, parseFloat((e.target as HTMLInputElement).value))}
+                    step="0.01"
+                    title="level of partial {i + 1} (0 to 1)"
+                    type="number"
+                    value={p.level}
+                />
                 <input
-                        class="ratio-input"
-                        aria-label="frequency ratio of partial {i + 1}"
-                        max="24"
-                        min="0.1"
-                        onchange={e => setRatio(i, parseFloat((e.target as HTMLInputElement).value))}
-                        step="0.001"
-                        title="frequency ratio of partial {i + 1} (× the note)"
-                        type="number"
-                        value={p.ratio}>
+                    class="ratio-input"
+                    aria-label="frequency ratio of partial {i + 1}"
+                    max="24"
+                    min="0.1"
+                    onchange={e => setRatio(i, parseFloat((e.target as HTMLInputElement).value))}
+                    step="0.001"
+                    title="frequency ratio of partial {i + 1} (× the note)"
+                    type="number"
+                    value={p.ratio}
+                />
             </div>
         {/each}
     </div>
 
     <div class="row">
         <Button
-                title="Generate a new profile from a timbre shape, partial count, falloff and stretch"
-                variant="secondary"
-                on:click={() => showGen = true}>
+            title="Generate a new profile from a timbre shape, partial count, falloff and stretch"
+            variant="secondary"
+            on:click={() => (showGen = true)}
+        >
             <i class="fa fa-wand-magic-sparkles"></i> Generate…
         </Button>
-        <Button title="Scale the loudest partial to 1" variant="secondary" on:click={normalize}><i class="fa fa-maximize"></i> Normalize
+        <Button title="Scale the loudest partial to 1" variant="secondary" on:click={normalize}
+            ><i class="fa fa-maximize"></i> Normalize
         </Button>
-        <Button disabled={list.length <= 1} title="Remove last partial" variant="secondary" on:click={removePartial}><i class="fa fa-minus"></i></Button>
-        <Button disabled={list.length >= MAX_PARTIALS} title="Add partial" variant="secondary" on:click={addPartial}><i class="fa fa-plus"></i></Button>
+        <Button
+            disabled={list.length <= 1}
+            title="Remove last partial"
+            variant="secondary"
+            on:click={removePartial}><i class="fa fa-minus"></i></Button
+        >
+        <Button
+            disabled={list.length >= MAX_PARTIALS}
+            title="Add partial"
+            variant="secondary"
+            on:click={addPartial}><i class="fa fa-plus"></i></Button
+        >
     </div>
-    <div class="note">Drag across the bars to draw each partial's level, right-click one to switch it off. The number
-        under a bar is its frequency ratio (× the played note) — that ratio set is what makes an organ an organ and a
-        bell a bell.
+    <div class="note">
+        Drag across the bars to draw each partial's level, right-click one to switch it off. The
+        number under a bar is its frequency ratio (× the played note) — that ratio set is what makes
+        an organ an organ and a bell a bell.
     </div>
 </div>
 
-<HarmonicsDialog onapply={() => {read(params); onchange();}} {params} bind:show={showGen}/>
+<HarmonicsDialog
+    onapply={() => {
+        read(params);
+        onchange();
+    }}
+    {params}
+    bind:show={showGen}
+/>
 
 <style>
     .harm {
@@ -211,7 +227,7 @@
         color: var(--color-text-subtle);
         font-size: 9px;
         font-weight: 500;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
     }
 
     .row {
@@ -245,7 +261,12 @@
         flex: 1;
         align-items: flex-end;
         min-width: 0;
-        background: linear-gradient(90deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, .055), rgba(255, 255, 255, .02));
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.02),
+            rgba(255, 255, 255, 0.055),
+            rgba(255, 255, 255, 0.02)
+        );
     }
 
     .drawbar-fill {
@@ -253,7 +274,7 @@
         width: 100%;
         min-height: 1px;
         background: linear-gradient(to top, #8d4249, var(--color-accent));
-        opacity: .9;
+        opacity: 0.9;
     }
 
     .drawbar-cap {
@@ -263,7 +284,7 @@
         left: -3px;
         height: 4px;
         background: var(--color-playhead);
-        box-shadow: 0 1px 5px rgba(255, 244, 244, .24);
+        box-shadow: 0 1px 5px rgba(255, 244, 244, 0.24);
     }
 
     .ratios {
@@ -315,6 +336,6 @@
 
     .note {
         font-size: 11px;
-        opacity: .5;
+        opacity: 0.5;
     }
 </style>

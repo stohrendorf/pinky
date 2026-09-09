@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        flattenNameTree, type NamedTreeItem
-    } from '../../lib/name-tree';
+    import { flattenNameTree, type NamedTreeItem } from '../../lib/name-tree';
 
     interface Props {
         items?: NamedTreeItem[];
@@ -18,8 +16,7 @@
         ariaLabel = 'Select item',
         emptyLabel = 'No items',
         minimal = false,
-        onselect = () => {
-        }
+        onselect = () => {},
     }: Props = $props();
 
     let open = $state(false);
@@ -27,7 +24,9 @@
 
     const entries = $derived(flattenNameTree(items));
     const selected = $derived(items.find(item => item.id === selectedId) || items[0]);
-    const visibleEntries = $derived(entries.filter(entry => entry.ancestors.every(path => !collapsedPaths.has(path))));
+    const visibleEntries = $derived(
+        entries.filter(entry => entry.ancestors.every(path => !collapsedPaths.has(path))),
+    );
 
     function choose(id: string) {
         onselect(id);
@@ -49,12 +48,13 @@
 
 <div class="tree-select" class:minimal class:open>
     <button
-            class="tree-trigger"
-            aria-expanded={open}
-            aria-haspopup="tree"
-            aria-label={ariaLabel}
-            onclick={() => open = !open}
-            type="button">
+        class="tree-trigger"
+        aria-expanded={open}
+        aria-haspopup="tree"
+        aria-label={ariaLabel}
+        onclick={() => (open = !open)}
+        type="button"
+    >
         {#if selected?.color}
             <span style="background: {selected.color}" class="color-tag"></span>
         {/if}
@@ -64,36 +64,40 @@
 
     {#if open}
         <div
-                class="tree-menu"
-                aria-label={ariaLabel}
-                onkeydown={handleKeydown}
-                role="tree"
-                tabindex="-1">
+            class="tree-menu"
+            aria-label={ariaLabel}
+            onkeydown={handleKeydown}
+            role="tree"
+            tabindex="-1"
+        >
             {#each visibleEntries as entry (entry.kind === 'folder' ? `folder-${entry.path}` : entry.item.id)}
                 {#if entry.kind === 'folder'}
                     <button
-                            style="--indent: {entry.depth * 18}px"
-                            class="tree-row folder-row"
-                            aria-expanded={!collapsedPaths.has(entry.path)}
-                            aria-level={entry.depth + 1}
-                            aria-selected="false"
-                            onclick={() => toggleFolder(entry.path)}
-                            role="treeitem"
-                            type="button">
-                        <i class="fa fa-chevron-{collapsedPaths.has(entry.path) ? 'right' : 'down'}"></i>
+                        style="--indent: {entry.depth * 18}px"
+                        class="tree-row folder-row"
+                        aria-expanded={!collapsedPaths.has(entry.path)}
+                        aria-level={entry.depth + 1}
+                        aria-selected="false"
+                        onclick={() => toggleFolder(entry.path)}
+                        role="treeitem"
+                        type="button"
+                    >
+                        <i class="fa fa-chevron-{collapsedPaths.has(entry.path) ? 'right' : 'down'}"
+                        ></i>
                         <i class="fa fa-folder"></i>
                         <span>{entry.label}</span>
                     </button>
                 {:else}
                     <button
-                            style="--indent: {entry.depth * 18}px"
-                            class="tree-row item-row"
-                            class:selected={entry.item.id === selected?.id}
-                            aria-level={entry.depth + 1}
-                            aria-selected={entry.item.id === selected?.id}
-                            onclick={() => choose(entry.item.id)}
-                            role="treeitem"
-                            type="button">
+                        style="--indent: {entry.depth * 18}px"
+                        class="tree-row item-row"
+                        class:selected={entry.item.id === selected?.id}
+                        aria-level={entry.depth + 1}
+                        aria-selected={entry.item.id === selected?.id}
+                        onclick={() => choose(entry.item.id)}
+                        role="treeitem"
+                        type="button"
+                    >
                         {#if entry.item.color}
                             <span style="background: {entry.item.color}" class="color-tag"></span>
                         {/if}
@@ -176,7 +180,7 @@
         background: var(--color-surface);
         border: 1px solid var(--border);
         border-radius: 5px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
     }
 
     .tree-row {

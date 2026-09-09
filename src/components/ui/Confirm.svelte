@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createEventDispatcher
-    } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
 
     import Button from './Button.svelte';
     import Dialog from './Dialog.svelte';
@@ -19,7 +17,7 @@
         title = 'Confirm',
         message = '',
         confirmLabel = 'Confirm',
-        destructive = false
+        destructive = false,
     }: Props = $props();
 
     const dispatch = createEventDispatcher<{ cancel: void; confirm: void }>();
@@ -45,7 +43,9 @@
         </div>
         <div class="actions">
             <Button variant="secondary" on:click={cancel}>Cancel</Button>
-            <Button variant={destructive ? 'danger' : 'primary'} on:click={confirm}>{confirmLabel}</Button>
+            <Button variant={destructive ? 'danger' : 'primary'} on:click={confirm}
+                >{confirmLabel}</Button
+            >
         </div>
     </div>
 </Dialog>

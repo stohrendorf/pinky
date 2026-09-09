@@ -1,40 +1,33 @@
 // Undo / redo — snapshot history around the project store.
-import type {
-    Writable
-} from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
 //
 // Every mutation in the app ends with `touch()` (i.e. `project.update(p => p)`),
 // which re-publishes the *same* object. So the history simply listens to the
 // store: same identity = an edit happened (debounced, so a whole drag becomes
 // one undo step), new identity = a new document (New/Demo/Import) → reset.
-import {
-    get, writable
-} from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
-import type {
-    Project
-} from './types';
+import type { Project } from './types';
 
-import {
-    project, selInstId, selPatId
-} from './project';
+import { project, selInstId, selPatId } from './project';
 
-const LIMIT = 60;          // snapshots kept per direction
-const DEBOUNCE = 350;      // ms of quiet before an edit is committed
+const LIMIT = 60; // snapshots kept per direction
+const DEBOUNCE = 350; // ms of quiet before an edit is committed
 
 // `selected` flags and the zoom levels are view state, not document state —
 // they neither create nor survive an undo step.
 const VIEW_KEYS = new Set(['selected', 'zoom']);
-const snap = (p: Project): string => JSON.stringify(p, (k, v) => VIEW_KEYS.has(k) ? undefined : v);
+const snap = (p: Project): string =>
+    JSON.stringify(p, (k, v) => (VIEW_KEYS.has(k) ? undefined : v));
 
 export const canUndo: Writable<boolean> = writable(false);
 export const canRedo: Writable<boolean> = writable(false);
 
 let past: string[] = [];
 let future: string[] = [];
-let base = '';                      // snapshot of the last committed state
-let known: Project | null = null;   // the document identity we are tracking
+let base = ''; // snapshot of the last committed state
+let known: Project | null = null; // the document identity we are tracking
 let timer: ReturnType<typeof setTimeout> | null = null;
 let applying = false;
 
@@ -117,7 +110,8 @@ export function initHistory(): void {
         if (!p) {
             return;
         }
-        if (p !== known) { // a whole new document (or our own undo/redo)
+        if (p !== known) {
+            // a whole new document (or our own undo/redo)
             known = p;
             if (!applying) {
                 reset(p);

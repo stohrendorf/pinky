@@ -3,40 +3,20 @@
  * the whole song into its future in chunks, and the resulting AudioBuffer is
  * encoded as 16-bit PCM. Faster than real time and independent of the audio
  * clock, so the export is always glitch-free. */
-import type {
-    Writable
-} from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
-import {
-    get, readonly, writable
-} from 'svelte/store';
+import { get, readonly, writable } from 'svelte/store';
 
-import type {
-    Project
-} from './types';
+import type { Project } from './types';
 
 import * as eng from './engine';
-import {
-    createExportEta
-} from './export-eta';
-import {
-    mixerTailSeconds, resolveMixer
-} from './mixer';
-import {
-    checkAbort, yieldExport
-} from './offline-progress';
-import {
-    playing, project
-} from './project';
-import {
-    createTimingMap
-} from './timing';
-import {
-    scheduleRangeAsync, songLengthSteps, stopTransport
-} from './transport';
-import {
-    encodeWavAsync
-} from './wav';
+import { createExportEta } from './export-eta';
+import { mixerTailSeconds, resolveMixer } from './mixer';
+import { checkAbort, yieldExport } from './offline-progress';
+import { playing, project } from './project';
+import { createTimingMap } from './timing';
+import { scheduleRangeAsync, songLengthSteps, stopTransport } from './transport';
+import { encodeWavAsync } from './wav';
 
 export const rendering: Writable<boolean> = writable(false);
 
@@ -71,7 +51,6 @@ export function dismissExportError(): void {
 const RENDER_RATE = 44100;
 const TAIL = 3; // seconds of room for release tails + reverb
 
-
 /* Renders the arrangement — or, if a loop region is marked, exactly that
  * section (same as what playback does). Returns null when there is nothing
  * to render. */
@@ -95,26 +74,45 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
     if (to <= from) {
         return null;
     }
-    const release = Math.max(0, ...p.instruments.map(inst => inst.params.rel),
-        ...(p.automation || []).filter(lane => lane.param === 'rel').flatMap(lane => lane.points.map(point => point.value)));
-    const seconds = createTimingMap(p).secondsBetween(from, to) + release * 1.5 + TAIL + mixerTailSeconds(p.mixer);
+    const release = Math.max(
+        0,
+        ...p.instruments.map(inst => inst.params.rel),
+        ...(p.automation || [])
+            .filter(lane => lane.param === 'rel')
+            .flatMap(lane => lane.points.map(point => point.value)),
+    );
+    const seconds =
+        createTimingMap(p).secondsBetween(from, to) +
+        release * 1.5 +
+        TAIL +
+        mixerTailSeconds(p.mixer);
     const controller = new AbortController();
     const signal = controller.signal;
     const eta = createExportEta();
     activeExport = controller;
     const abort = () => controller.abort();
-    options.signal?.addEventListener('abort', abort, {once: true});
-    signal.addEventListener('abort', () => {
-        progressState.update(state => state ? {...state, cancelling: true, etaSeconds: null} : state);
-    }, {once: true});
-    const report = (stage: ExportProgressState['stage'], progress: number | null, canSuspend?: boolean) => {
+    options.signal?.addEventListener('abort', abort, { once: true });
+    signal.addEventListener(
+        'abort',
+        () => {
+            progressState.update(state =>
+                state ? { ...state, cancelling: true, etaSeconds: null } : state,
+            );
+        },
+        { once: true },
+    );
+    const report = (
+        stage: ExportProgressState['stage'],
+        progress: number | null,
+        canSuspend?: boolean,
+    ) => {
         checkAbort(signal);
         const state: ExportProgressState = {
             stage,
             progress,
             canSuspend,
             cancelling: false,
-            etaSeconds: eta.update(stage, progress)
+            etaSeconds: eta.update(stage, progress),
         };
         progressState.set(state);
         options.onProgress?.(state);
@@ -128,16 +126,31 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
         if (get(playing)) {
             stopTransport();
         }
-        const buf = await eng.renderOffline(seconds, RENDER_RATE, () => scheduleRangeAsync(p, from, to, {
-            signal, onProgress: progress => report('scheduling', progress)
-        }), {
-            mixer: p.mixer, instrumentIds: p.instruments.map(inst => inst.id), master: resolveMixer(p.mixer, []).master
-        }, {
-            signal, onProgress: ({stage, progress, canSuspend}) => report(stage, progress, canSuspend)
-        });
+        const buf = await eng.renderOffline(
+            seconds,
+            RENDER_RATE,
+            () =>
+                scheduleRangeAsync(p, from, to, {
+                    signal,
+                    onProgress: progress => report('scheduling', progress),
+                }),
+            {
+                mixer: p.mixer,
+                instrumentIds: p.instruments.map(inst => inst.id),
+                master: resolveMixer(p.mixer, []).master,
+            },
+            {
+                signal,
+                onProgress: ({ stage, progress, canSuspend }) =>
+                    report(stage, progress, canSuspend),
+            },
+        );
         checkAbort(signal);
         report('encoding', 0);
-        const blob = await encodeWavAsync(buf, {signal, onProgress: progress => report('encoding', progress)});
+        const blob = await encodeWavAsync(buf, {
+            signal,
+            onProgress: progress => report('encoding', progress),
+        });
         // Include the download in the same cancellation/ownership boundary.
         checkAbort(signal);
         if (download) {
@@ -151,8 +164,10 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
             throw new DOMException('Export cancelled', 'AbortError');
         }
         progressState.set({
-            stage: 'error', progress: null, cancelling: false,
-            error: 'Render failed: ' + (error instanceof Error ? error.message : String(error))
+            stage: 'error',
+            progress: null,
+            cancelling: false,
+            error: 'Render failed: ' + (error instanceof Error ? error.message : String(error)),
         });
         throw error;
     } finally {
@@ -180,7 +195,7 @@ export async function exportWav(options: WavExportOptions = {}): Promise<string>
         const blob = await performExport(true, options);
         if (!blob) {
             const error = 'Nothing to render — the arranger is empty.';
-            progressState.set({stage: 'error', progress: null, cancelling: false, error});
+            progressState.set({ stage: 'error', progress: null, cancelling: false, error });
             return error;
         }
         return '';

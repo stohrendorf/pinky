@@ -1,58 +1,46 @@
-import type {
-    CurveShape, InstrumentParams
-} from './types';
+import type { CurveShape, InstrumentParams } from './types';
 
-import {
-    createAudioRandom
-} from './audio-random';
-import {
-    segmentProgress
-} from './automation';
+import { createAudioRandom } from './audio-random';
+import { segmentProgress } from './automation';
 import clockWorkletUrl from './clock-worklet.js?url';
-import {
-    MasterControls, type MasterValues
-} from './master-controls';
-import {
-    type MixerMaster, type MixerState, resolveMixer
-} from './mixer';
+import { MasterControls, type MasterValues } from './master-controls';
+import { type MixerMaster, type MixerState, resolveMixer } from './mixer';
 import {
     type ChannelMeter,
     limiterLatencyFrames,
     loadLimiter,
     MasterLimiter,
     type MasterMeter,
-    MixerAudio
+    MixerAudio,
 } from './mixer-audio';
-import {
-    NodePool
-} from './node-pool';
-import {
-    NoteScheduler
-} from './note-scheduler';
+import { NodePool } from './node-pool';
+import { NoteScheduler } from './note-scheduler';
 /* Audio engine — framework-free Web Audio module.
  * A voice = dry pink noise + phase-inverted EQ'd copy. Perfect cancellation
  * everywhere except the bands the peaking filters boost: those survive.
  * Percussion uses the same trick: one wide (low-Q) band = noise burst,
  * a frequency sweep on the bands = kick/tom pitch drop. */
+import { noteByName } from './notes';
 import {
-    noteByName
-} from './notes';
-import {
-    abortable, checkAbort, renderWithProgress, supportsOfflineSuspension, yieldExport
+    abortable,
+    checkAbort,
+    renderWithProgress,
+    supportsOfflineSuspension,
+    yieldExport,
 } from './offline-progress';
 import {
-    adsrLevel, type BandRecord, type BandSpec, VoiceBandRegistry, type VoiceSnapshot
+    adsrLevel,
+    type BandRecord,
+    type BandSpec,
+    VoiceBandRegistry,
+    type VoiceSnapshot,
 } from './voice-band-registry';
-import {
-    capacityForRender
-} from './voice-capacity';
-import {
-    type ManagedVoice, VoiceCollection
-} from './voice-collection';
+import { capacityForRender } from './voice-capacity';
+import { type ManagedVoice, VoiceCollection } from './voice-collection';
 
-export type {VoiceBand, VoiceSnapshot} from './voice-band-registry';
+export type { VoiceBand, VoiceSnapshot } from './voice-band-registry';
 
-export const master = {vol: 0.8, rev: 0.18, tilt: 0};
+export const master = { vol: 0.8, rev: 0.18, tilt: 0 };
 
 // The context the graph currently feeds: the live AudioContext, or — while
 // bouncing to WAV — an OfflineAudioContext (see `renderOffline`).
@@ -91,14 +79,18 @@ export const SCOPE_FFT_SIZE = 8192;
 function controlsFor(graph: EngineObjects, values: MasterValues): MasterControls {
     return new MasterControls({
         values,
-        targets: () => graph.master && graph.revSend && graph.tiltLow && graph.tiltHigh ? {
-            volume: graph.master.gain,
-            reverb: graph.revSend.gain,
-            tiltLow: graph.tiltLow.gain,
-            tiltHigh: graph.tiltHigh.gain
-        } : null,
+        targets: () =>
+            graph.master && graph.revSend && graph.tiltLow && graph.tiltHigh
+                ? {
+                      volume: graph.master.gain,
+                      reverb: graph.revSend.gain,
+                      tiltLow: graph.tiltLow.gain,
+                      tiltHigh: graph.tiltHigh.gain,
+                  }
+                : null,
         currentTime: () => graph.master?.context.currentTime ?? 0,
-        rampTo: (param, value, at, duration, from) => rampTo(param, value, at, duration, graph === liveGraph, from)
+        rampTo: (param, value, at, duration, from) =>
+            rampTo(param, value, at, duration, graph === liveGraph, from),
     });
 }
 
@@ -122,7 +114,7 @@ export interface OfflineRenderOptions {
     onProgress?: (progress: OfflineRenderProgress) => void;
 }
 
-let mixerConfig: OfflineMixerConfig = {mixer: undefined, instrumentIds: []};
+let mixerConfig: OfflineMixerConfig = { mixer: undefined, instrumentIds: [] };
 let rendering = false;
 let schedulingOffline = false;
 export const isRendering = (): boolean => rendering;
@@ -133,11 +125,16 @@ function copyMixer(mixer: MixerState | undefined, ids: string[]): MixerState | u
     }
     const resolved = resolveMixer(mixer, ids);
     const channel = <T extends MixerState['channels'][string]>(value: T): T => ({
-        ...value, compressor: {...value.compressor}, sends: value.sends.map(send => ({...send}))
+        ...value,
+        compressor: { ...value.compressor },
+        sends: value.sends.map(send => ({ ...send })),
     });
     return {
-        channels: Object.fromEntries(Object.entries(resolved.channels).map(([id, value]) => [id, channel(value)])),
-        buses: resolved.buses.map(channel), master: {...resolved.master}
+        channels: Object.fromEntries(
+            Object.entries(resolved.channels).map(([id, value]) => [id, channel(value)]),
+        ),
+        buses: resolved.buses.map(channel),
+        master: { ...resolved.master },
     };
 }
 
@@ -147,7 +144,7 @@ export function configureMixer(mixer: MixerState | undefined, instrumentIds: str
         configureGraphMixer(engine, snapshot, masterControls);
         return;
     }
-    mixerConfig = {mixer: snapshot, instrumentIds: [...instrumentIds]};
+    mixerConfig = { mixer: snapshot, instrumentIds: [...instrumentIds] };
     const values = snapshot?.master ?? resolveMixer(undefined, []).master;
     for (const id of ['vol', 'rev', 'tilt'] as const) {
         if (master[id] !== values[id]) {
@@ -161,12 +158,18 @@ export function configureMixer(mixer: MixerState | undefined, instrumentIds: str
 
 export function mixerMeters(): { master: MasterMeter; channels: Record<string, ChannelMeter> } {
     return {
-        master: liveGraph?.limiter?.meters() ?? {peak: [0, 0], rms: [0, 0], reduction: 0},
-        channels: liveGraph?.mixer?.meters() ?? {}
+        master: liveGraph?.limiter?.meters() ?? { peak: [0, 0], rms: [0, 0], reduction: 0 },
+        channels: liveGraph?.mixer?.meters() ?? {},
     };
 }
 
-export function automateMixer(id: string, param: string, value: number, at: number, ramp: number): boolean {
+export function automateMixer(
+    id: string,
+    param: string,
+    value: number,
+    at: number,
+    ramp: number,
+): boolean {
     const mixer = offline && schedulingOffline ? engine.mixer : liveGraph?.mixer;
     return !!mixer?.automate(id, param, value, at, ramp);
 }
@@ -205,14 +208,17 @@ type Voice = ManagedVoice<InstrumentParams>;
  * less shimmer, a missing partial changes the *timbre* (a drawbar organ
  * registration *is* its partial set), so that stays the last resort. */
 const BUDGET_KEY = 'pinky.nodeBudget';
-export const BUDGET_MIN = 120, BUDGET_MAX = 1200, BUDGET_DEFAULT = 480;
+export const BUDGET_MIN = 120,
+    BUDGET_MAX = 1200,
+    BUDGET_DEFAULT = 480;
 let nodeBudget = BUDGET_DEFAULT;
 try {
     const stored = Number(localStorage.getItem(BUDGET_KEY));
     if (stored >= BUDGET_MIN && stored <= BUDGET_MAX) {
         nodeBudget = stored;
     }
-} catch (e) { /* no storage — keep the default */
+} catch (e) {
+    /* no storage — keep the default */
 }
 
 export const getNodeBudget = (): number => nodeBudget;
@@ -221,14 +227,15 @@ export function setNodeBudget(n: number): void {
     nodeBudget = Math.max(BUDGET_MIN, Math.min(BUDGET_MAX, Math.round(n)));
     try {
         localStorage.setItem(BUDGET_KEY, String(nodeBudget));
-    } catch (e) { /* no storage — the setting just won't survive a reload */
+    } catch (e) {
+        /* no storage — the setting just won't survive a reload */
     }
 }
 
 const voiceCapacity = () => capacityForRender(nodeBudget, offline);
 const partialShedNodes = (): number => voiceCapacity().nodes * 0.85;
 const softLiveNodes = (): number => voiceCapacity().nodes * 0.6;
-const MIN_BAND_DB = 0.5;    // a partial boosted less than this is inaudible
+const MIN_BAND_DB = 0.5; // a partial boosted less than this is inaudible
 // Formant boost span in dB at level 1. These bands sit *after* the dry-noise
 // cancellation (see makeRank), so they shape a signal instead of creating one —
 // 22 dB on F1 is already a very pronounced vowel. Vocal formants are kept
@@ -239,11 +246,11 @@ const FORMANT_DB = 22;
 // holding the nodes for 2 x rel (as before) just kept inaudible voices — and
 // their filters — running a third longer than necessary.
 const TAIL = 1.5;
-let offline = false;        // true while bouncing into an OfflineAudioContext
+let offline = false; // true while bouncing into an OfflineAudioContext
 
 const voiceCollection = new VoiceCollection<InstrumentParams>({
     maxNodes: () => voiceCapacity().nodes,
-    maxVoices: () => voiceCapacity().voices
+    maxVoices: () => voiceCapacity().voices,
 });
 
 /* ---- batched node teardown ----
@@ -262,7 +269,7 @@ interface Teardown {
 
 const teardowns: Teardown[] = [];
 let sweeper: ReturnType<typeof setInterval> | null = null;
-const SWEEP_MS = 80;        // often, so the queue never piles up ...
+const SWEEP_MS = 80; // often, so the queue never piles up ...
 // ... and in small bites (see below). A `disconnect()` is cheap in itself; what
 // matters is not doing a whole bar of them in one quantum. Since a swept voice
 // also *returns its nodes to the pool*, a backlog now means the next notes have
@@ -341,7 +348,7 @@ function flattenLater(prm: AudioParam, v: number, at: number, forceLive = false)
     } // the offline graph is thrown away after the bounce
     const tok = ++tokSeq;
     paramTok.set(prm, tok);
-    flattens.push({prm, v, at: at + 0.03, tok});
+    flattens.push({ prm, v, at: at + 0.03, tok });
     startHousekeeping();
 }
 
@@ -359,7 +366,8 @@ function sweepFlattens(now: number): void {
         try {
             f.prm.cancelScheduledValues(0);
             f.prm.value = f.v;
-        } catch (e) { /* node already gone */
+        } catch (e) {
+            /* node already gone */
         }
     }
 }
@@ -420,7 +428,7 @@ function housekeeping(): void {
  * empty: flattened to a unity-gain, non-resonant setting, no input, its output
  * into a silent sink. Its memory then falls to zero within a millisecond or
  * two, and only then is the node as good as new. */
-const nodePool = new NodePool({reset: claimParam});
+const nodePool = new NodePool({ reset: claimParam });
 
 // Pool only for the live context — the offline render's graph is thrown away
 // together with its context, so recycling across the two would hand out nodes
@@ -429,7 +437,7 @@ function pooling(): boolean {
     if (offline || !ctx || !engine.flushBus) {
         return false;
     }
-    nodePool.attach(ctx, engine.flushBus, () => liveCtx ? liveCtx.currentTime : 0);
+    nodePool.attach(ctx, engine.flushBus, () => (liveCtx ? liveCtx.currentTime : 0));
     return true;
 }
 
@@ -440,26 +448,27 @@ function claimParam(prm: AudioParam, v: number): void {
     paramTok.set(prm, ++tokSeq);
     try {
         prm.cancelScheduledValues(0);
-    } catch (e) { /* nothing scheduled */
+    } catch (e) {
+        /* nothing scheduled */
     }
     prm.value = v;
 }
 
 function takeGain(gain: number): GainNode {
     const context = ctx as BaseAudioContext;
-    return pooling() ? nodePool.takeGain(gain, context) : new GainNode(context, {gain});
+    return pooling() ? nodePool.takeGain(gain, context) : new GainNode(context, { gain });
 }
 
 function takeBiquad(frequency: number, q: number, gain: number): BiquadFilterNode {
     const context = ctx as BaseAudioContext;
     return pooling()
         ? nodePool.takeBiquad(frequency, q, gain, context)
-        : new BiquadFilterNode(context, {type: 'peaking', frequency, Q: q, gain});
+        : new BiquadFilterNode(context, { type: 'peaking', frequency, Q: q, gain });
 }
 
 function takePanner(pan: number): StereoPannerNode {
     const context = ctx as BaseAudioContext;
-    return pooling() ? nodePool.takePanner(pan, context) : new StereoPannerNode(context, {pan});
+    return pooling() ? nodePool.takePanner(pan, context) : new StereoPannerNode(context, { pan });
 }
 
 // Hand a fully disconnected node back. Nodes from a foreign (offline) context
@@ -497,8 +506,8 @@ function vibLfo(rate: number): GainNode | null {
     const r = Math.max(0.1, Math.round((rate || 5.5) * 10) / 10);
     let out = engine.lfos.get(r);
     if (!out) {
-        const osc = new OscillatorNode(ctx, {type: 'sine', frequency: r});
-        out = new GainNode(ctx, {gain: 1});
+        const osc = new OscillatorNode(ctx, { type: 'sine', frequency: r });
+        out = new GainNode(ctx, { gain: 1 });
         osc.connect(out);
         osc.start();
         engine.lfos.set(r, out);
@@ -530,8 +539,20 @@ function disposeOfflineGraph(graph: EngineObjects): void {
     for (const node of graph.lfos?.values() ?? []) {
         cut(() => node.disconnect());
     }
-    for (const key of ['noise', 'noiseBus', 'noiseInv', 'voiceBus', 'tiltLow', 'tiltHigh', 'comp',
-        'master', 'reverb', 'revSend', 'analyser', 'flushBus'] as const) {
+    for (const key of [
+        'noise',
+        'noiseBus',
+        'noiseInv',
+        'voiceBus',
+        'tiltLow',
+        'tiltHigh',
+        'comp',
+        'master',
+        'reverb',
+        'revSend',
+        'analyser',
+        'flushBus',
+    ] as const) {
         cut(() => graph[key]?.disconnect());
     }
 }
@@ -541,7 +562,7 @@ function disposeOfflineGraph(graph: EngineObjects): void {
  * budget it is being measured against so a readout can show both. */
 export function engineLoad(): { nodes: number; voices: number; budget: number; pooled: number } {
     if (offline) {
-        return {nodes: 0, voices: 0, budget: nodeBudget, pooled: pooledNodes()};
+        return { nodes: 0, voices: 0, budget: nodeBudget, pooled: pooledNodes() };
     }
     const now = liveCtx ? liveCtx.currentTime : 0;
     voiceCollection.prune(now);
@@ -551,12 +572,13 @@ export function engineLoad(): { nodes: number; voices: number; budget: number; p
     }
     // `pooled` = nodes parked for reuse. Once it stops growing the engine has
     // stopped allocating, i.e. it can no longer leave corpses in the graph.
-    return {nodes, voices: voiceCollection.liveCount, budget: nodeBudget, pooled: pooledNodes()};
+    return { nodes, voices: voiceCollection.liveCount, budget: nodeBudget, pooled: pooledNodes() };
 }
 
-export const audioTime = (): number => (offline && !schedulingOffline ? liveCtx : ctx)?.currentTime ?? 0;
+export const audioTime = (): number =>
+    (offline && !schedulingOffline ? liveCtx : ctx)?.currentTime ?? 0;
 export const getAnalyser = (): AnalyserNode | null => liveGraph?.analyser ?? null;
-export const audioSampleRate = (): number => ctx ? ctx.sampleRate : 44100;
+export const audioSampleRate = (): number => (ctx ? ctx.sampleRate : 44100);
 
 /* What the master section is doing *right now* (automation moves the audio
  * params without touching the slider values) — the scope overlay needs it to
@@ -595,15 +617,21 @@ function pinkNoiseBuffer(seconds: number): AudioBuffer {
     const buf = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) {
         const d = buf.getChannelData(ch);
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        let b0 = 0,
+            b1 = 0,
+            b2 = 0,
+            b3 = 0,
+            b4 = 0,
+            b5 = 0,
+            b6 = 0;
         for (let i = 0; i < len; i++) {
             const w = audioRandom() * 2 - 1;
             b0 = 0.99886 * b0 + w * 0.0555179;
             b1 = 0.99332 * b1 + w * 0.0750759;
-            b2 = 0.96900 * b2 + w * 0.1538520;
-            b3 = 0.86650 * b3 + w * 0.3104856;
-            b4 = 0.55000 * b4 + w * 0.5329522;
-            b5 = -0.7616 * b5 - w * 0.0168980;
+            b2 = 0.969 * b2 + w * 0.153852;
+            b3 = 0.8665 * b3 + w * 0.3104856;
+            b4 = 0.55 * b4 + w * 0.5329522;
+            b5 = -0.7616 * b5 - w * 0.016898;
             d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
             b6 = w * 0.115926;
         }
@@ -628,14 +656,19 @@ function reverbImpulse(seconds: number, decay: number): AudioBuffer {
 
 /* The whole signal graph, built into `o` on the context `c` — shared by the
  * live context and the offline render (which needs its own copy of it). */
-async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: OfflineMixerConfig,
-    values: MasterValues, signal?: AbortSignal): Promise<void> {
+async function buildGraph(
+    c: BaseAudioContext,
+    o: EngineObjects,
+    config: OfflineMixerConfig,
+    values: MasterValues,
+    signal?: AbortSignal,
+): Promise<void> {
     await abortable(loadLimiter(c), signal);
     checkAbort(signal);
     // Endless pink noise loop feeding every voice
     o.noise = new AudioBufferSourceNode(c, {
         buffer: pinkNoiseBuffer(4),
-        loop: true
+        loop: true,
     });
     o.noiseBus = new GainNode(c);
     o.noise.connect(o.noiseBus);
@@ -649,7 +682,7 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
      * node of the graph on every render quantum, so the node count is the
      * engine's real currency. */
     o.noiseInv = new GainNode(c, {
-        gain: -1
+        gain: -1,
     });
     o.noiseBus.connect(o.noiseInv);
 
@@ -658,12 +691,12 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
     o.tiltLow = new BiquadFilterNode(c, {
         type: 'lowshelf',
         frequency: 500,
-        gain: -values.tilt
+        gain: -values.tilt,
     });
     o.tiltHigh = new BiquadFilterNode(c, {
         type: 'highshelf',
         frequency: 2000,
-        gain: values.tilt
+        gain: values.tilt,
     });
     // A safety net against the odd stacked chord, not a mix compressor: only
     // what would clip gets touched. `threshold` is dBFS and the spec caps it at
@@ -671,21 +704,21 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
     // logging a warning, so this is the same sound without the warning.
     o.comp = new DynamicsCompressorNode(c, {
         threshold: 0,
-        ratio: 4
+        ratio: 4,
     });
     o.master = new GainNode(c, {
-        gain: values.vol
+        gain: values.vol,
     });
     o.reverb = new ConvolverNode(c, {
-        buffer: reverbImpulse(2.2, 3)
+        buffer: reverbImpulse(2.2, 3),
     });
     o.revSend = new GainNode(c, {
-        gain: values.rev
+        gain: values.rev,
     });
 
     o.voiceBus.connect(o.tiltLow);
     o.tiltLow.connect(o.tiltHigh);
-    const settings = config.mixer?.master ?? {...resolveMixer(undefined, []).master, ...values};
+    const settings = config.mixer?.master ?? { ...resolveMixer(undefined, []).master, ...values };
     o.limiter = new MasterLimiter(c, settings, !offline);
     o.master.connect(o.limiter.node);
     o.limiter.node.connect(c.destination);
@@ -697,7 +730,7 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
      * path to the destination, so draining one needs somewhere to drain to;
      * at gain 0 nothing of it reaches the mix. */
     o.flushBus = new GainNode(c, {
-        gain: 0
+        gain: 0,
     });
     o.flushBus.connect(c.destination);
 
@@ -705,7 +738,12 @@ async function buildGraph(c: BaseAudioContext, o: EngineObjects, config: Offline
     o.lfoSources = [];
 }
 
-function configureGraphMixer(o: EngineObjects, mixer: MixerState | undefined, controls: MasterControls, initial = false): void {
+function configureGraphMixer(
+    o: EngineObjects,
+    mixer: MixerState | undefined,
+    controls: MasterControls,
+    initial = false,
+): void {
     if (!o.master || !o.tiltHigh || !o.comp || !o.revSend || !o.reverb || !o.voiceBus) {
         return;
     }
@@ -735,7 +773,7 @@ function configureGraphMixer(o: EngineObjects, mixer: MixerState | undefined, co
         o.legacy = legacy;
     }
     o.mixer?.configure(mixer);
-    const settings = mixer?.master ?? {...resolveMixer(undefined, []).master, ...master};
+    const settings = mixer?.master ?? { ...resolveMixer(undefined, []).master, ...master };
     o.limiter?.configure(settings);
     if (mixer && !initial) {
         for (const id of ['vol', 'rev', 'tilt'] as const) {
@@ -744,7 +782,7 @@ function configureGraphMixer(o: EngineObjects, mixer: MixerState | undefined, co
             }
         }
     }
-    o.mixerMaster = {...settings};
+    o.mixerMaster = { ...settings };
 }
 
 async function initAudio(): Promise<void> {
@@ -765,7 +803,7 @@ async function initAudio(): Promise<void> {
 
     engine.analyser = new AnalyserNode(ctx, {
         fftSize: SCOPE_FFT_SIZE,
-        smoothingTimeConstant: 0
+        smoothingTimeConstant: 0,
     });
     engine.limiter!.node.connect(engine.analyser);
 
@@ -773,7 +811,7 @@ async function initAudio(): Promise<void> {
     await ctx.audioWorklet.addModule(clockWorkletUrl);
     engine.clock = new AudioWorkletNode(ctx, 'eq-daw-clock');
     engine.clock.connect(engine.master!); // keep the node alive (it outputs silence)
-    engine.clock.port.onmessage = ({data}) => {
+    engine.clock.port.onmessage = ({ data }) => {
         if (!rendering && data.type === 'tick' && liveGraph?.onTick) {
             liveGraph.onTick(data.time);
         }
@@ -788,11 +826,11 @@ export function setTickHandler(fn: (time: number) => void): void {
 // The clock is a plain wake-up pulse now — the transport decides which steps
 // fall into its scheduling window (see lib/transport.ts).
 export function clockStart(): void {
-    liveGraph?.clock?.port.postMessage({type: 'start'});
+    liveGraph?.clock?.port.postMessage({ type: 'start' });
 }
 
 export function clockStop(): void {
-    liveGraph?.clock?.port.postMessage({type: 'stop'});
+    liveGraph?.clock?.port.postMessage({ type: 'stop' });
 }
 
 /* ---- voices ---- */
@@ -807,7 +845,14 @@ export function clockStop(): void {
  * ranks and a chord and the render thread misses its deadline: the crackle.
  * A linear ramp does the same job audibly and then drains from the event list,
  * letting the filter fall back to cheap constant coefficients. */
-function rampTo(prm: AudioParam, v: number, at: number, t: number, forceLive = false, from?: number): void {
+function rampTo(
+    prm: AudioParam,
+    v: number,
+    at: number,
+    t: number,
+    forceLive = false,
+    from?: number,
+): void {
     prm.cancelScheduledValues(at);
     prm.setValueAtTime(from ?? prm.value, at);
     prm.linearRampToValueAtTime(v, at + t);
@@ -835,8 +880,14 @@ function sweep(param: AudioParam, target: number, when: number, p: InstrumentPar
 
 /* One rank = one full serial filter chain. Unison spawns several of them,
  * detuned and spread across the stereo field (see `makeVoice`). */
-function makeRank(track: string, freq: number, when: number, p: InstrumentParams, vel: number,
-    panOffset: number): Voice {
+function makeRank(
+    track: string,
+    freq: number,
+    when: number,
+    p: InstrumentParams,
+    vel: number,
+    panOffset: number,
+): Voice {
     if (!ctx || !engine.noiseBus || !engine.noiseInv || !engine.voiceBus) {
         throw new Error('Audio not initialized');
     }
@@ -868,7 +919,10 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             return;
         }
         const value = Math.max(-1, Math.min(1, v));
-        pan = ctx === voiceContext ? takePanner(value) : new StereoPannerNode(voiceContext, {pan: value});
+        pan =
+            ctx === voiceContext
+                ? takePanner(value)
+                : new StereoPannerNode(voiceContext, { pan: value });
         env.disconnect();
         env.connect(pan);
         pan.connect(voiceOutput);
@@ -887,13 +941,14 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     // and levels — drawbars, odd-only, bell partials) or the generated series.
     const custom = p.partials && p.partials.length ? p.partials : null;
     const partials: { r: number; level: number; q: number }[] = custom
-        ? custom.filter(x => x.level > 0 && x.ratio > 0)
-            .map(x => ({r: x.ratio, level: x.level, q: p.q * Math.sqrt(x.ratio)}))
-        : Array.from({length: Math.max(0, Math.round(p.harm))}, (_, i) => ({
-            r: partialRatio(i + 1),
-            level: Math.pow(p.falloff, i),
-            q: p.q * Math.sqrt(i + 1) // keep bandwidth musical up the series
-        }));
+        ? custom
+              .filter(x => x.level > 0 && x.ratio > 0)
+              .map(x => ({ r: x.ratio, level: x.level, q: p.q * Math.sqrt(x.ratio) }))
+        : Array.from({ length: Math.max(0, Math.round(p.harm)) }, (_, i) => ({
+              r: partialRatio(i + 1),
+              level: Math.pow(p.falloff, i),
+              q: p.q * Math.sqrt(i + 1), // keep bandwidth musical up the series
+          }));
     let node: AudioNode = engine.noiseBus;
     // The first band actually fed by the noise bus (the formants are not) — that
     // edge is the one the teardown has to cut by hand, see `noiseTap`.
@@ -913,8 +968,14 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
      * being missed. The chain's magnitude response doesn't care about the
      * order of the bands, so the loudest ones can simply be kept. */
     if (voiceCollection.load > partialShedNodes() && used.length > 4) {
-        const keep = Math.max(4, Math.round(used.length * partialShedNodes() / voiceCollection.load));
-        used = used.slice().sort((a, b) => b.level - a.level).slice(0, keep);
+        const keep = Math.max(
+            4,
+            Math.round((used.length * partialShedNodes()) / voiceCollection.load),
+        );
+        used = used
+            .slice()
+            .sort((a, b) => b.level - a.level)
+            .slice(0, keep);
     }
     if (p.tone > 0) {
         for (const part of used) {
@@ -930,8 +991,13 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             }
             node = bq;
             filters.push(bq);
-            harmBands.push({bq, r: part.r, level: part.level});
-            bands.push({target: f, from: p.pitchDrop !== 0 ? f * bendRatio : f, q: bq.Q.value, gain: bq.gain.value});
+            harmBands.push({ bq, r: part.r, level: part.level });
+            bands.push({
+                target: f,
+                from: p.pitchDrop !== 0 ? f * bendRatio : f,
+                q: bq.Q.value,
+                gain: bq.gain.value,
+            });
         }
     }
     /* ---- formants: the bands that do *not* follow the note ----
@@ -958,7 +1024,11 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     if (p.formant > 0) {
         const fq = Math.max(1, p.formantQ || 3);
         // F1 carries the vowel, F2 identifies it, F3 only adds presence
-        const spec = [{hz: p.f1, w: 1}, {hz: p.f2, w: 0.75}, {hz: p.f3, w: 0.45}];
+        const spec = [
+            { hz: p.f1, w: 1 },
+            { hz: p.f2, w: 0.75 },
+            { hz: p.f3, w: 0.45 },
+        ];
         spec.forEach((f, i) => {
             const g = FORMANT_DB * p.formant * f.w;
             if (!(f.hz > 0) || f.hz > nyq * 0.9 || g < MIN_BAND_DB) {
@@ -966,9 +1036,9 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             }
             const bq = takeBiquad(f.hz, fq, g);
             filters.push(bq); // wired in after `sum`, below
-            const band: BandSpec = {target: f.hz, from: f.hz, q: fq, gain: g, post: true};
+            const band: BandSpec = { target: f.hz, from: f.hz, q: fq, gain: g, post: true };
             bands.push(band);
-            formantBands.push({bq, i, w: f.w, band});
+            formantBands.push({ bq, i, w: f.w, band });
         });
     }
     /* A formant is an emphasis, not a volume: without this, opening the vowel up
@@ -976,20 +1046,23 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
      * back out of the voice level (the bands are built strongest-first, so [0]
      * carries the largest weight that actually survived). */
     const fWeight = formantBands.length ? formantBands[0].w : 0;
-    const levelFor = (gain: number, fl: number): number => 0.9 * gain * velScale
-        * (fWeight ? Math.pow(10, -FORMANT_DB * fl * fWeight / 40) : 1);
+    const levelFor = (gain: number, fl: number): number =>
+        0.9 * gain * velScale * (fWeight ? Math.pow(10, (-FORMANT_DB * fl * fWeight) / 40) : 1);
     if (fWeight) {
         sum.gain.value = levelFor(p.gain, p.formant);
     }
     // ... plus one optional WIDE band — that's the whole percussion secret.
     // With `noiseBend` > 0 it follows the pitch bend/glides (scaled by that factor).
-    let noiseBand: { bq: BiquadFilterNode; from: number; target: number; band: BandSpec } | null = null;
+    let noiseBand: { bq: BiquadFilterNode; from: number; target: number; band: BandSpec } | null =
+        null;
     if (p.noise > 0) {
         const nb = takeBiquad(p.noiseFreq, 0.8, 40 * p.noise);
-        const nbFrom = p.pitchDrop !== 0 && p.noiseBend > 0
-            ? Math.min(nyq * 0.95, p.noiseFreq * Math.pow(2, p.pitchDrop * p.noiseBend / 12))
-            : p.noiseFreq;
-        if (nbFrom !== p.noiseFreq) { // only bent bands need a scheduled ramp (see `sweep`)
+        const nbFrom =
+            p.pitchDrop !== 0 && p.noiseBend > 0
+                ? Math.min(nyq * 0.95, p.noiseFreq * Math.pow(2, (p.pitchDrop * p.noiseBend) / 12))
+                : p.noiseFreq;
+        if (nbFrom !== p.noiseFreq) {
+            // only bent bands need a scheduled ramp (see `sweep`)
             nb.frequency.setValueAtTime(nbFrom, when);
             nb.frequency.exponentialRampToValueAtTime(p.noiseFreq, when + p.pitchTime);
             flattenLater(nb.frequency, p.noiseFreq, when + p.pitchTime);
@@ -1002,9 +1075,9 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
         }
         node = nb;
         filters.push(nb);
-        const band: BandSpec = {target: p.noiseFreq, from: nbFrom, q: 0.8, gain: 40 * p.noise};
+        const band: BandSpec = { target: p.noiseFreq, from: nbFrom, q: 0.8, gain: 40 * p.noise };
         bands.push(band);
-        noiseBand = {bq: nb, from: nbFrom, target: p.noiseFreq, band};
+        noiseBand = { bq: nb, from: nbFrom, target: p.noiseFreq, band };
     }
     // (H - 1)·noise: the shared inverted bus is the "dry" term, the chain adds
     // the boosted bands back on top. Globally flipped polarity vs. the old
@@ -1030,7 +1103,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
         vibSource = vibLfo(p.vibRate);
         if (vibSource) {
             const onset = Math.max(0, p.vibDelay || 0);
-            for (const {bq, r} of harmBands) {
+            for (const { bq, r } of harmBands) {
                 const amp = freq * r * vibRatio;
                 const g = takeGain(0);
                 g.gain.setValueAtTime(0, when);
@@ -1042,7 +1115,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                 flattenLater(g.gain, amp, when + onset);
                 vibSource.connect(g);
                 g.connect(bq.frequency);
-                vibGains.push({g, r});
+                vibGains.push({ g, r });
             }
         }
     }
@@ -1074,9 +1147,17 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     // A single scaled rank cannot reproduce the separated high-Q peaks of unison.
     const rec: BandRecord = {
         inst: track.startsWith('live-') ? track.slice(5) : track,
-        bands, level: sum.gain.value,
-        start: when, end: Infinity, release: Infinity, bendStart: when,
-        pitchTime: p.pitchTime, att: p.att, dec: p.dec, sus: p.sus, rel: p.rel
+        bands,
+        level: sum.gain.value,
+        start: when,
+        end: Infinity,
+        release: Infinity,
+        bendStart: when,
+        pitchTime: p.pitchTime,
+        att: p.att,
+        dec: p.dec,
+        sus: p.sus,
+        rel: p.rel,
     };
     bandRegistry.add(rec, when);
 
@@ -1096,13 +1177,20 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
     };
 
     let cleanupGen = 0; // a glide revives the voice — invalidate pending teardowns
-    let curP = p;       // params currently applied (automation lanes move them)
+    let curP = p; // params currently applied (automation lanes move them)
     // The subset of params that can move on a *sounding* voice, as last applied
     // to the audio graph — automation is compared against this, not against the
     // previous lane value, so a slow sweep accumulates instead of being dropped.
     const app = {
-        gain: p.gain, pan: p.pan, tone: p.tone, q: p.q, noise: p.noise, noiseFreq: p.noiseFreq,
-        formant: p.formant, f: [p.f1, p.f2, p.f3], vib: p.vib
+        gain: p.gain,
+        pan: p.pan,
+        tone: p.tone,
+        q: p.q,
+        noise: p.noise,
+        noiseFreq: p.noiseFreq,
+        formant: p.formant,
+        f: [p.f1, p.f2, p.f3],
+        vib: p.vib,
     };
     const voice: Voice = {
         stopAt: Infinity,
@@ -1124,8 +1212,9 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             }
             let env = adsrLevel(rec, at - rec.start);
             if (at > rec.release) {
-                env = adsrLevel(rec, rec.release - rec.start)
-                    * Math.exp(-(at - rec.release) / Math.max(0.01, rec.rel / 3));
+                env =
+                    adsrLevel(rec, rec.release - rec.start) *
+                    Math.exp(-(at - rec.release) / Math.max(0.01, rec.rel / 3));
             }
             return rec.level * env;
         },
@@ -1146,7 +1235,8 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             // queued at note start) — by then the tail is ~40 dB down
             flattenLater(env.gain, 0, at + tail);
             const gen = ++cleanupGen;
-            scheduleTeardown({ // node cleanup only — batched, not timing-critical
+            scheduleTeardown({
+                // node cleanup only — batched, not timing-critical
                 due: at + tail + 0.05,
                 gen,
                 size: filters.length + 3,
@@ -1161,7 +1251,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                     if (pan) {
                         cut(() => pan!.disconnect());
                     }
-                    for (const {g} of vibGains) {
+                    for (const { g } of vibGains) {
                         // both edges: the gain's own output *and* the shared
                         // LFO's edge into it (disconnect() only drops outputs)
                         cut(() => g.disconnect());
@@ -1177,7 +1267,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                     // graph (which the browser only reclaims on a GC pass).
                     giveNode(sum);
                     giveNode(env);
-                    for (const {g} of vibGains) {
+                    for (const { g } of vibGains) {
                         giveNode(g);
                     }
                     if (pan) {
@@ -1186,7 +1276,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                     for (const n of filters) {
                         giveNode(n);
                     }
-                }
+                },
             });
         },
         /* Automation of a *sounding* note: the values that can move without
@@ -1231,7 +1321,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             const dTone = differs(np.tone, app.tone, 0.004);
             const dQ = differs(np.q, app.q, Math.max(0.4, app.q * 0.02));
             if (dTone || dQ) {
-                harmBands.forEach(({bq, r, level}, i) => {
+                harmBands.forEach(({ bq, r, level }, i) => {
                     if (dTone) {
                         const g = 40 * np.tone * level;
                         rampTo(bq.gain, g, at, t);
@@ -1283,7 +1373,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             // Vibrato depth: the LFO stays, only how far it reaches moves
             if (vibGains.length && differs(np.vib, app.vib, 0.5)) {
                 const ratio = Math.pow(2, Math.max(0, np.vib) / 1200) - 1;
-                for (const {g, r} of vibGains) {
+                for (const { g, r } of vibGains) {
                     rampTo(g.gain, bendTarget * r * ratio, at, t);
                 }
                 app.vib = np.vib;
@@ -1296,8 +1386,10 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                     app.noise = np.noise;
                 }
                 // only steer the wide band when it isn't riding a bend/glide
-                if (differs(np.noiseFreq, app.noiseFreq, Math.max(5, app.noiseFreq * 0.02))
-                    && noiseBand.from === noiseBand.target) {
+                if (
+                    differs(np.noiseFreq, app.noiseFreq, Math.max(5, app.noiseFreq * 0.02)) &&
+                    noiseBand.from === noiseBand.target
+                ) {
                     rampTo(noiseBand.bq.frequency, np.noiseFreq, at, t);
                     noiseBand.from = noiseBand.target = np.noiseFreq;
                     noiseBand.band.from = noiseBand.band.target = np.noiseFreq;
@@ -1318,15 +1410,18 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
                 if (curve === 'linear') {
                     param.exponentialRampToValueAtTime(to, at + time);
                 } else {
-                    const values = Array.from({length: 17}, (_, index) =>
-                        from * Math.pow(to / from, segmentProgress(curve, index / 16)));
+                    const values = Array.from(
+                        { length: 17 },
+                        (_, index) =>
+                            from * Math.pow(to / from, segmentProgress(curve, index / 16)),
+                    );
                     param.setValueCurveAtTime(values, at, time);
                 }
                 flattenLater(param, to, at + time);
             };
             // progress of the segment being interrupted (shared by all swept bands)
             const k = bendTime > 0 ? Math.min(1, Math.max(0, (at - bendStart) / bendTime)) : 1;
-            harmBands.forEach(({bq, r}, i) => {
+            harmBands.forEach(({ bq, r }, i) => {
                 scheduleGlide(bq.frequency, cur * r, newFreq * r);
                 bands[i].from = cur * r;
                 bands[i].target = newFreq * r;
@@ -1335,14 +1430,16 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             // new pitch has to re-scale it or the vibrato would widen/narrow
             if (vibGains.length) {
                 const ratio = Math.pow(2, Math.max(0, app.vib) / 1200) - 1;
-                for (const {g, r} of vibGains) {
+                for (const { g, r } of vibGains) {
                     rampTo(g.gain, newFreq * r * ratio, at, Math.max(0.01, time));
                 }
             }
             if (noiseBand && p.noiseBend > 0) {
                 const nbCur = noiseBand.from * Math.pow(noiseBand.target / noiseBand.from, k);
-                const nbNew = Math.min(ctx.sampleRate * 0.475,
-                    nbCur * Math.pow(newFreq / cur, p.noiseBend));
+                const nbNew = Math.min(
+                    ctx.sampleRate * 0.475,
+                    nbCur * Math.pow(newFreq / cur, p.noiseBend),
+                );
                 scheduleGlide(noiseBand.bq.frequency, nbCur, nbNew);
                 noiseBand.from = nbCur;
                 noiseBand.target = nbNew;
@@ -1368,7 +1465,7 @@ function makeRank(track: string, freq: number, when: number, p: InstrumentParams
             rec.end = Infinity;
             rec.bendStart = at;
             rec.pitchTime = time;
-        }
+        },
     };
     return voice;
 }
@@ -1384,17 +1481,17 @@ function makeVoice(track: string, freq: number, when: number, p: InstrumentParam
      * partials of every note. Held chords keep what they were born with; only
      * new voices are thinned. */
     if (n > 2 && voiceCollection.load > softLiveNodes()) {
-        n = Math.max(2, Math.round(n * softLiveNodes() / voiceCollection.load));
+        n = Math.max(2, Math.round((n * softLiveNodes()) / voiceCollection.load));
     }
     if (n === 1 || p.detune <= 0) {
         return makeRank(track, freq, when, p, vel, 0);
     }
-    const g = 1 / Math.sqrt(n);       // keep the perceived level constant
+    const g = 1 / Math.sqrt(n); // keep the perceived level constant
     const ratios: number[] = [];
     const ranks: Voice[] = [];
     for (let i = 0; i < n; i++) {
         const x = (2 * i) / (n - 1) - 1; // -1 .. +1 across the ranks
-        const ratio = Math.pow(2, (x * p.detune / 2) / 1200);
+        const ratio = Math.pow(2, (x * p.detune) / 2 / 1200);
         ratios.push(ratio);
         ranks.push(makeRank(track, freq * ratio, when, p, vel * g, x * 0.18));
     }
@@ -1418,17 +1515,17 @@ function makeVoice(track: string, freq: number, when: number, p: InstrumentParam
         },
         setParams(np: InstrumentParams, at: number, ramp: number) {
             ranks.forEach(r => r.setParams(np, at, ramp));
-        }
+        },
     };
     return voice;
 }
 
 const noteScheduler = new NoteScheduler<InstrumentParams>({
     findNote: name => noteByName[name],
-    currentTime: () => ctx ? ctx.currentTime : null,
+    currentTime: () => (ctx ? ctx.currentTime : null),
     voices: voiceCollection,
     createVoice: makeVoice,
-    releaseTail: TAIL
+    releaseTail: TAIL,
 });
 
 function whileScheduling<T extends unknown[]>(fn: (...args: T) => void): (...args: T) => void {
@@ -1440,7 +1537,9 @@ function whileScheduling<T extends unknown[]>(fn: (...args: T) => void): (...arg
 }
 
 export const noteOnAt = whileScheduling(noteScheduler.noteOnAt.bind(noteScheduler));
-export const automateInstrument = whileScheduling(noteScheduler.automateInstrument.bind(noteScheduler));
+export const automateInstrument = whileScheduling(
+    noteScheduler.automateInstrument.bind(noteScheduler),
+);
 export const noteOn = whileScheduling(noteScheduler.noteOn.bind(noteScheduler));
 export const noteOffAt = whileScheduling(noteScheduler.noteOffAt.bind(noteScheduler));
 export const glideAt = (...args: Parameters<typeof noteScheduler.glideAt>): boolean =>
@@ -1449,8 +1548,10 @@ export const noteOff = whileScheduling(noteScheduler.noteOff.bind(noteScheduler)
 export const allNotesOff = whileScheduling(noteScheduler.allNotesOff.bind(noteScheduler));
 
 /* ---- master FX ---- */
-const selectedMasterControls = (): MasterControls => offline && schedulingOffline ? masterControls : liveMasterControls;
-export const applyMaster = (id: string, value: number): void => selectedMasterControls().apply(id, value);
+const selectedMasterControls = (): MasterControls =>
+    offline && schedulingOffline ? masterControls : liveMasterControls;
+export const applyMaster = (id: string, value: number): void =>
+    selectedMasterControls().apply(id, value);
 export const automateMaster = (id: string, value: number, at: number, ramp: number): void =>
     selectedMasterControls().automate(id, value, at, ramp);
 export const resetMaster = (): void => selectedMasterControls().reset();
@@ -1459,23 +1560,34 @@ export const resetMaster = (): void => selectedMasterControls().reset();
  * The whole engine talks to the module-level `ctx`/`engine`, so a render just
  * swaps both for an OfflineAudioContext + a fresh graph, lets the caller
  * schedule the song into the future, renders, and puts the live graph back. */
-export async function renderOffline(seconds: number, sampleRate: number, schedule: () => void | number | Promise<void | number>,
-    config: OfflineMixerConfig = mixerConfig, options: OfflineRenderOptions = {}): Promise<AudioBuffer> {
+export async function renderOffline(
+    seconds: number,
+    sampleRate: number,
+    schedule: () => void | number | Promise<void | number>,
+    config: OfflineMixerConfig = mixerConfig,
+    options: OfflineRenderOptions = {},
+): Promise<AudioBuffer> {
     if (rendering) {
         throw new Error('An offline render is already in progress');
     }
-    if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(sampleRate) || sampleRate < 8000 || sampleRate > 96000) {
+    if (
+        !Number.isFinite(seconds) ||
+        seconds <= 0 ||
+        !Number.isFinite(sampleRate) ||
+        sampleRate < 8000 ||
+        sampleRate > 96000
+    ) {
         throw new Error('Invalid offline render duration or sample rate');
     }
     rendering = true;
     try {
         checkAbort(options.signal);
-        options.onProgress?.({stage: 'preparing', progress: null});
+        options.onProgress?.({ stage: 'preparing', progress: null });
         const snapshot = {
             mixer: copyMixer(config.mixer, config.instrumentIds),
-            instrumentIds: [...config.instrumentIds]
+            instrumentIds: [...config.instrumentIds],
         };
-        const values = {...master, ...config.master, ...snapshot.mixer?.master};
+        const values = { ...master, ...config.master, ...snapshot.mixer?.master };
         if (initPromise) {
             await abortable(initPromise, options.signal);
         }
@@ -1499,7 +1611,7 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             voiceCollection.reset();
             await buildGraph(oc, engine, snapshot, values, options.signal);
             checkAbort(options.signal);
-            options.onProgress?.({stage: 'scheduling', progress: 0});
+            options.onProgress?.({ stage: 'scheduling', progress: 0 });
             schedulingOffline = true;
             try {
                 await schedule();
@@ -1509,24 +1621,30 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             checkAbort(options.signal);
             const canSuspend = supportsOfflineSuspension(oc);
             const limiter = engine.limiter;
-            options.onProgress?.({stage: 'rendering', progress: 0, canSuspend});
+            options.onProgress?.({ stage: 'rendering', progress: 0, canSuspend });
             const rendered = await renderWithProgress(oc, {
                 signal: options.signal,
-                subscribeFrames: limiter ? listener => limiter.trackProgress(oc.length, listener) : undefined,
-                onAbandon: canSuspend ? undefined : completion => {
-                    abandoned = true;
-                    void completion.then(() => {
-                        if (offlineEngine) {
-                            disposeOfflineGraph(offlineEngine);
-                        }
-                    });
-                },
-                onProgress: options.onProgress ? progress => {
-                    if (limiter?.error) {
-                        throw limiter.error;
-                    }
-                    options.onProgress?.({stage: 'rendering', progress, canSuspend});
-                } : undefined
+                subscribeFrames: limiter
+                    ? listener => limiter.trackProgress(oc.length, listener)
+                    : undefined,
+                onAbandon: canSuspend
+                    ? undefined
+                    : completion => {
+                          abandoned = true;
+                          void completion.then(() => {
+                              if (offlineEngine) {
+                                  disposeOfflineGraph(offlineEngine);
+                              }
+                          });
+                      },
+                onProgress: options.onProgress
+                    ? progress => {
+                          if (limiter?.error) {
+                              throw limiter.error;
+                          }
+                          options.onProgress?.({ stage: 'rendering', progress, canSuspend });
+                      }
+                    : undefined,
             });
             checkAbort(options.signal);
             if (engine.limiter?.error) {
@@ -1535,8 +1653,16 @@ export async function renderOffline(seconds: number, sampleRate: number, schedul
             const trimmed = oc.createBuffer(2, frames, sampleRate);
             for (let channel = 0; channel < 2; channel++) {
                 for (let offset = 0; offset < frames; offset += 262144) {
-                    trimmed.copyToChannel(rendered.getChannelData(channel).subarray(latency + offset,
-                        latency + Math.min(frames, offset + 262144)), channel, offset);
+                    trimmed.copyToChannel(
+                        rendered
+                            .getChannelData(channel)
+                            .subarray(
+                                latency + offset,
+                                latency + Math.min(frames, offset + 262144),
+                            ),
+                        channel,
+                        offset,
+                    );
                     if (options.signal || options.onProgress) {
                         await yieldExport(options.signal);
                     }
@@ -1565,7 +1691,9 @@ let initPromise: Promise<void> | null = null;
 export function ensureAudio(): Promise<void> {
     if (!initPromise) {
         if (rendering) {
-            return Promise.reject(new Error('Wait for the offline render before initializing live audio'));
+            return Promise.reject(
+                new Error('Wait for the offline render before initializing live audio'),
+            );
         }
         initPromise = initAudio().catch(error => {
             cut(() => liveGraph?.mixer?.dispose());
@@ -1573,7 +1701,7 @@ export function ensureAudio(): Promise<void> {
             if (liveCtx) {
                 void liveCtx.close();
             }
-            engine = {onTick: liveGraph?.onTick};
+            engine = { onTick: liveGraph?.onTick };
             liveGraph = null;
             liveCtx = null;
             ctx = null;

@@ -2,8 +2,8 @@
 // maximum includes both the delayed output sample and its entire lookahead.
 export const LIMITER_LOOKAHEAD = 0.005;
 
-const bounded = (value, min, max, fallback) => Number.isFinite(value)
-    ? Math.max(min, Math.min(max, value)) : fallback;
+const bounded = (value, min, max, fallback) =>
+    Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
 
 export class LimiterDSP {
     constructor(sampleRate) {
@@ -29,7 +29,7 @@ export class LimiterDSP {
         this.configure({});
     }
 
-    configure({enabled = true, driveDb = 0, ceilingDb = -1, release = 0.1} = {}) {
+    configure({ enabled = true, driveDb = 0, ceilingDb = -1, release = 0.1 } = {}) {
         this.enabled = !!enabled;
         this.drive = Math.pow(10, bounded(driveDb, 0, 18, 0) / 20);
         // Leave one float32 rounding margin, so writing output cannot exceed
@@ -94,7 +94,7 @@ export class LimiterDSP {
         const result = {
             peak: [...this.meterPeak],
             rms: this.meterSquares.map(sum => Math.sqrt(sum / frames)),
-            reduction: this.meterReduction
+            reduction: this.meterReduction,
         };
         this.meterPeak.fill(0);
         this.meterSquares.fill(0);

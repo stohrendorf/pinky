@@ -1,12 +1,6 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    describe, expect, it
-} from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const scope = readFileSync(fileURLToPath(new URL('./Scope.svelte', import.meta.url)), 'utf8');
 const engine = readFileSync(fileURLToPath(new URL('../lib/engine.ts', import.meta.url)), 'utf8');
@@ -30,9 +24,15 @@ describe('Scope frequency sampling', () => {
 
     it('adds each stereo-spread rank as power and reuses that calculation for the dots', () => {
         expect(scope).toContain('let power = 0;');
-        expect(scope).toContain('power += level * level * (response[0] * response[0] + response[1] * response[1]);');
-        expect(scope).toContain('const spectrumPower = (cw: number, sw: number, c2w: number, s2w: number): number =>');
-        expect(scope).toContain('const pow = spectrumPower(cw, sw, c2w, s2w) * pinkNoisePower(f, fs) * gMaster');
+        expect(scope).toMatch(
+            /power\s*\+=\s*level\s*\*\s*level\s*\*\s*\(response\[0]\s*\*\s*response\[0]\s*\+\s*response\[1]\s*\*\s*response\[1]\);/,
+        );
+        expect(scope).toMatch(
+            /const spectrumPower\s*=\s*\(\s*cw:\s*number,\s*sw:\s*number,\s*c2w:\s*number,\s*s2w:\s*number,?\s*\)\s*:\s*number\s*=>/,
+        );
+        expect(scope).toMatch(
+            /const pow\s*=\s*spectrumPower\(cw, sw, c2w, s2w\)\s*\*\s*pinkNoisePower\(f, fs\)\s*\*\s*gMaster/,
+        );
     });
 
     it('evaluates each filter before chaining it so very low notes cannot underflow', () => {

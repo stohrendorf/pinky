@@ -1,29 +1,32 @@
 <script lang="ts">
-    import {
-        tick
-    } from 'svelte';
+    import { tick } from 'svelte';
 
-    import {
-        formatStageEta
-    } from '../lib/export-eta';
-    import {
-        cancelExport, dismissExportError, exportProgress, exportWav
-    } from '../lib/render';
+    import { formatStageEta } from '../lib/export-eta';
+    import { cancelExport, dismissExportError, exportProgress, exportWav } from '../lib/render';
 
     let dialog = $state<HTMLDialogElement>();
     let confirmCancel = $state(false);
     const visible = $derived($exportProgress !== null);
     const failed = $derived($exportProgress?.stage === 'error');
     const stages = [
-        {id: 'preparing', label: 'Preparing audio'},
-        {id: 'scheduling', label: 'Scheduling notes'},
-        {id: 'rendering', label: 'Rendering audio'},
-        {id: 'encoding', label: 'Encoding WAV'}
+        { id: 'preparing', label: 'Preparing audio' },
+        { id: 'scheduling', label: 'Scheduling notes' },
+        { id: 'rendering', label: 'Rendering audio' },
+        { id: 'encoding', label: 'Encoding WAV' },
     ];
-    const label = $derived(stages.find(stage => stage.id === $exportProgress?.stage)?.label ?? 'Export failed');
-    const percent = $derived(typeof $exportProgress?.progress === 'number' ? Math.floor($exportProgress.progress * 100) : null);
-    const eta = $derived(!$exportProgress?.cancelling && percent !== null && percent < 100
-        ? formatStageEta($exportProgress?.etaSeconds) : null);
+    const label = $derived(
+        stages.find(stage => stage.id === $exportProgress?.stage)?.label ?? 'Export failed',
+    );
+    const percent = $derived(
+        typeof $exportProgress?.progress === 'number'
+            ? Math.floor($exportProgress.progress * 100)
+            : null,
+    );
+    const eta = $derived(
+        !$exportProgress?.cancelling && percent !== null && percent < 100
+            ? formatStageEta($exportProgress?.etaSeconds)
+            : null,
+    );
 
     function cancel() {
         if (failed) {
@@ -63,7 +66,8 @@
             return;
         }
         const element = dialog;
-        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const opener =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
         element.showModal();
         element.querySelector('button')?.focus();
         window.addEventListener('keydown', handleKey, true);
@@ -91,12 +95,18 @@
 </script>
 
 <dialog
-        bind:this={dialog}
-        aria-describedby="export-description"
-        aria-labelledby="export-title"
-        aria-modal="true"
-        oncancel={event => {event.preventDefault(); cancel();}}>
-    <h2 id="export-title">{failed ? 'WAV export failed' : confirmCancel ? 'Cancel export?' : 'Export WAV'}</h2>
+    bind:this={dialog}
+    aria-describedby="export-description"
+    aria-labelledby="export-title"
+    aria-modal="true"
+    oncancel={event => {
+        event.preventDefault();
+        cancel();
+    }}
+>
+    <h2 id="export-title">
+        {failed ? 'WAV export failed' : confirmCancel ? 'Cancel export?' : 'Export WAV'}
+    </h2>
     {#if $exportProgress}
         {#if failed}
             <p id="export-description" role="alert">{$exportProgress.error}</p>
@@ -105,19 +115,28 @@
                 <button onclick={() => void exportWav()} type="button">Retry export</button>
             </div>
         {:else}
-            <p id="export-description">Exporting a snapshot of your song. Editing and playback resume when this dialog
-                closes.</p>
+            <p id="export-description">
+                Exporting a snapshot of your song. Editing and playback resume when this dialog
+                closes.
+            </p>
             {#if confirmCancel}
                 <p class="status" aria-live="polite" role="status">Cancel export?</p>
                 <p class="detail">The current render will be discarded and must start over.</p>
                 <div class="actions">
-                    <button onclick={() => {confirmCancel = false;}} type="button">Keep rendering</button>
+                    <button
+                        onclick={() => {
+                            confirmCancel = false;
+                        }}
+                        type="button">Keep rendering</button
+                    >
                     <button onclick={confirmCancellation} type="button">Abort export</button>
                 </div>
             {:else}
                 <ol aria-label="Export stages">
                     {#each stages as stage (stage.id)}
-                        <li aria-current={$exportProgress.stage === stage.id ? 'step' : undefined}>{stage.label}</li>
+                        <li aria-current={$exportProgress.stage === stage.id ? 'step' : undefined}>
+                            {stage.label}
+                        </li>
                     {/each}
                 </ol>
                 <p class="status" aria-live="polite" role="status">
@@ -128,14 +147,20 @@
                 {:else}
                     <progress aria-label={label} max="100" value={percent}></progress>
                 {/if}
-                <p class="detail">{percent === null
-                    ? ($exportProgress.stage === 'rendering'
-                        ? 'Waiting for audio progress…'
-                        : 'Initializing the audio graph…')
-                    : `${percent}% of this stage`}</p>
+                <p class="detail">
+                    {percent === null
+                        ? $exportProgress.stage === 'rendering'
+                            ? 'Waiting for audio progress…'
+                            : 'Initializing the audio graph…'
+                        : `${percent}% of this stage`}
+                </p>
                 {#if eta}<p class="detail">{eta}</p>{/if}
                 <div class="actions">
-                    <button aria-disabled={$exportProgress.cancelling} onclick={cancel} type="button">
+                    <button
+                        aria-disabled={$exportProgress.cancelling}
+                        onclick={cancel}
+                        type="button"
+                    >
                         {$exportProgress.cancelling ? 'Cancelling…' : 'Cancel export'}
                     </button>
                 </div>
@@ -156,7 +181,9 @@
         border-radius: 4px;
         background: var(--color-surface);
         color: var(--primary-text);
-        box-shadow: 0 24px 56px rgba(0, 0, 0, .7), inset 0 2px var(--accent);
+        box-shadow:
+            0 24px 56px rgba(0, 0, 0, 0.7),
+            inset 0 2px var(--accent);
     }
 
     dialog::backdrop {
@@ -230,8 +257,7 @@
     }
 
     button[aria-disabled='true'] {
-        opacity: .65;
+        opacity: 0.65;
         cursor: wait;
     }
-
 </style>

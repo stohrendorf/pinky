@@ -1,45 +1,93 @@
 import type {
-    AutomationLane, CurveShape, Instrument, InstrumentParams, Note, Pattern, Project, Track
+    AutomationLane,
+    CurveShape,
+    Instrument,
+    InstrumentParams,
+    Note,
+    Pattern,
+    Project,
+    Track,
 } from './types';
 
-import {
-    mixDemo
-} from './demo-mixer';
-import {
-    DEFAULT_PARAMS, ensurePartials
-} from './instruments';
-import {
-    createId, PROJECT_FORMAT_VERSION
-} from './types';
+import { mixDemo } from './demo-mixer';
+import { DEFAULT_PARAMS, ensurePartials } from './instruments';
+import { createId, PROJECT_FORMAT_VERSION } from './types';
 
 type NoteSpec = [pitch: string, start: number, len?: number, vel?: number];
 type TrackNotes = Record<string, NoteSpec[]>;
 
-const COLORS = ['#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#a29bfe', '#f9ca24', '#ff6b6b', '#48dbfb', '#e056fd'];
+const COLORS = [
+    '#53d8fb',
+    '#ff9f43',
+    '#ee5253',
+    '#10ac84',
+    '#a29bfe',
+    '#f9ca24',
+    '#ff6b6b',
+    '#48dbfb',
+    '#e056fd',
+];
 
-const note = ([pitch, start, len = 1, vel = 0.8]: NoteSpec): Note => ({pitch, start, len, vel});
+const note = ([pitch, start, len = 1, vel = 0.8]: NoteSpec): Note => ({ pitch, start, len, vel });
 const notes = (...items: NoteSpec[]): Note[] => items.map(note);
-const pattern = (id: string, name: string, steps: number, color: string, tracks: TrackNotes): Pattern => ({
+const pattern = (
+    id: string,
+    name: string,
+    steps: number,
+    color: string,
+    tracks: TrackNotes,
+): Pattern => ({
     id,
     name,
     steps,
     color,
-    tracks: Object.fromEntries(Object.entries(tracks).map(([instrument, part]) => [instrument, notes(...part)]))
+    tracks: Object.fromEntries(
+        Object.entries(tracks).map(([instrument, part]) => [instrument, notes(...part)]),
+    ),
 });
-const instrument = (id: string, name: string, color: string, params: Partial<InstrumentParams>): Instrument => ({
+const instrument = (
+    id: string,
+    name: string,
+    color: string,
+    params: Partial<InstrumentParams>,
+): Instrument => ({
     id,
     name,
     color,
-    params: ensurePartials({...DEFAULT_PARAMS, ...params})
+    params: ensurePartials({ ...DEFAULT_PARAMS, ...params }),
 });
-const tracks = (names: string[]): Track[] => names.map((name, index) => ({name, color: COLORS[index % COLORS.length]}));
-const clip = (id: string, patternId: string, track: number, start: number, len: number, transpose?: number) =>
-    ({id, patternId, track, start, len, ...(transpose ? {transpose} : {})});
+const tracks = (names: string[]): Track[] =>
+    names.map((name, index) => ({ name, color: COLORS[index % COLORS.length] }));
+const clip = (
+    id: string,
+    patternId: string,
+    track: number,
+    start: number,
+    len: number,
+    transpose?: number,
+) => ({ id, patternId, track, start, len, ...(transpose ? { transpose } : {}) });
 type ArrangementSection = readonly (readonly [patternId: string, track: number])[];
-const arrangeSong = (prefix: string, sections: ArrangementSection[]): Project['arrangement'] => sections.flatMap((section, sectionIndex) =>
-    section.map(([patternId, track], layerIndex) => clip(`${prefix}${sectionIndex + 1}-${layerIndex + 1}`, patternId, track, sectionIndex * 32, 32))
-);
-const project = (instruments: Instrument[], patterns: Pattern[], arrangement: Project['arrangement'], laneNames: string[], bpm: number, automation: AutomationLane[], swing = 0): Project => {
+const arrangeSong = (prefix: string, sections: ArrangementSection[]): Project['arrangement'] =>
+    sections.flatMap((section, sectionIndex) =>
+        section.map(([patternId, track], layerIndex) =>
+            clip(
+                `${prefix}${sectionIndex + 1}-${layerIndex + 1}`,
+                patternId,
+                track,
+                sectionIndex * 32,
+                32,
+            ),
+        ),
+    );
+const project = (
+    instruments: Instrument[],
+    patterns: Pattern[],
+    arrangement: Project['arrangement'],
+    laneNames: string[],
+    bpm: number,
+    automation: AutomationLane[],
+    swing = 0,
+): Project => {
     const instrumentIds = new Map(instruments.map(instrument => [instrument.id, createId()]));
     const patternIds = new Map(patterns.map(pattern => [pattern.id, createId()]));
     const automationIds = new Map(automation.map(lane => [lane.id, createId()]));
@@ -48,34 +96,50 @@ const project = (instruments: Instrument[], patterns: Pattern[], arrangement: Pr
 
     return {
         formatVersion: PROJECT_FORMAT_VERSION,
-        instruments: instruments.map(instrument => ({...instrument, id: remapInstrumentId(instrument.id)})),
+        instruments: instruments.map(instrument => ({
+            ...instrument,
+            id: remapInstrumentId(instrument.id),
+        })),
         patterns: patterns.map(pattern => ({
             ...pattern,
             id: remapPatternId(pattern.id),
-            tracks: Object.fromEntries(Object.entries(pattern.tracks).map(([id, notes]) => [remapInstrumentId(id), notes]))
+            tracks: Object.fromEntries(
+                Object.entries(pattern.tracks).map(([id, notes]) => [remapInstrumentId(id), notes]),
+            ),
         })),
-        arrangement: arrangement.map(clip => ({...clip, id: createId(), patternId: remapPatternId(clip.patternId)})),
+        arrangement: arrangement.map(clip => ({
+            ...clip,
+            id: createId(),
+            patternId: remapPatternId(clip.patternId),
+        })),
         tracks: tracks(laneNames),
         bpm,
         swing,
         automation: automation.map(lane => ({
             ...lane,
             id: automationIds.get(lane.id)!,
-            target: lane.target === 'master' ? lane.target : remapInstrumentId(lane.target)
+            target: lane.target === 'master' ? lane.target : remapInstrumentId(lane.target),
         })),
         automationOrder: automation.map(lane => automationIds.get(lane.id)!),
         automationPositions: {},
-        zoom: {seq: {width: 24, height: 14}, arr: {width: 24, height: 32}}
+        zoom: { seq: { width: 24, height: 14 }, arr: { width: 24, height: 32 } },
     };
 };
-const connect = (patterns: Pattern[], patternId: string, instrumentId: string, from: number, to: number, curve: CurveShape) => {
+const connect = (
+    patterns: Pattern[],
+    patternId: string,
+    instrumentId: string,
+    from: number,
+    to: number,
+    curve: CurveShape,
+) => {
     const part = patterns.find(value => value.id === patternId)?.tracks[instrumentId];
     const source = part?.find(value => value.start === from);
     const target = part?.find(value => value.start === to);
     if (!source || !target || target.start < source.start + source.len) {
         throw new Error(`Invalid legato link in ${patternId}/${instrumentId}: ${from} -> ${to}`);
     }
-    source.legatoTo = {pitch: target.pitch, start: target.start, curve};
+    source.legatoTo = { pitch: target.pitch, start: target.start, curve };
 };
 
 /* These are original compositions. They borrow only broad production traits from
@@ -101,7 +165,7 @@ export function buildPocketTheory(): Project {
             dec: 0.16,
             sus: 0,
             rel: 0.1,
-            gain: 0.8
+            gain: 0.8,
         }),
         instrument('p2', 'Drums/Pocket Snare', COLORS[1], {
             tone: 0.4,
@@ -114,7 +178,7 @@ export function buildPocketTheory(): Project {
             dec: 0.14,
             sus: 0,
             rel: 0.14,
-            gain: 0.6
+            gain: 0.6,
         }),
         instrument('p3', 'Drums/Sixteenth Hat', COLORS[3], {
             tone: 0,
@@ -126,7 +190,7 @@ export function buildPocketTheory(): Project {
             sus: 0,
             rel: 0.035,
             gain: 0.3,
-            pan: 0.24
+            pan: 0.24,
         }),
         // Low resonance on purpose: at 50..90 Hz the residual behind a 40 dB
         // band rings up in q·10/(π·f) seconds, so q 9 (≈ 0.4 s) is what still
@@ -137,17 +201,23 @@ export function buildPocketTheory(): Project {
             harmShape: 'Saw / Reed',
             harm: 5,
             falloff: 0.7,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.75}, {ratio: 3, level: 0.5}, {
-                ratio: 4,
-                level: 0.3
-            }, {ratio: 5, level: 0.15}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.75 },
+                { ratio: 3, level: 0.5 },
+                {
+                    ratio: 4,
+                    level: 0.3,
+                },
+                { ratio: 5, level: 0.15 },
+            ],
             pitchDrop: 3,
             pitchTime: 0.03,
             att: 0.003,
             dec: 0.2,
             sus: 0.5,
             rel: 0.12,
-            gain: 0.85
+            gain: 0.85,
         }),
         instrument('p5', 'Keys/Glass Circuit', COLORS[5], {
             tone: 1,
@@ -158,16 +228,22 @@ export function buildPocketTheory(): Project {
             stretch: 0.01,
             pitchDrop: 3,
             pitchTime: 0.015,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.62}, {ratio: 3.01, level: 0.4}, {
-                ratio: 4.02,
-                level: 0.22
-            }, {ratio: 5.1, level: 0.1}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.62 },
+                { ratio: 3.01, level: 0.4 },
+                {
+                    ratio: 4.02,
+                    level: 0.22,
+                },
+                { ratio: 5.1, level: 0.1 },
+            ],
             att: 0.002,
             dec: 0.2,
             sus: 0.05,
             rel: 0.22,
             gain: 0.5,
-            pan: -0.24
+            pan: -0.24,
         }),
         instrument('p6', 'Pads/Choir Voltage', COLORS[6], {
             tone: 1,
@@ -175,10 +251,16 @@ export function buildPocketTheory(): Project {
             harmShape: 'Organ drawbars',
             harm: 6,
             falloff: 0.82,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.7}, {ratio: 3, level: 0.46}, {
-                ratio: 4,
-                level: 0.32
-            }, {ratio: 6, level: 0.2}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.7 },
+                { ratio: 3, level: 0.46 },
+                {
+                    ratio: 4,
+                    level: 0.32,
+                },
+                { ratio: 6, level: 0.2 },
+            ],
             formant: 0.66,
             f1: 360,
             f2: 1380,
@@ -191,7 +273,7 @@ export function buildPocketTheory(): Project {
             sus: 0.7,
             rel: 0.72,
             gain: 0.34,
-            pan: 0.18
+            pan: 0.18,
         }),
         instrument('p7', 'Synth/Radio Animal', COLORS[7], {
             tone: 1,
@@ -199,10 +281,15 @@ export function buildPocketTheory(): Project {
             harmShape: 'Odd (hollow)',
             harm: 6,
             falloff: 0.78,
-            partials: [{ratio: 1, level: 1}, {ratio: 3, level: 0.72}, {ratio: 5, level: 0.42}, {
-                ratio: 7,
-                level: 0.2
-            }],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 3, level: 0.72 },
+                { ratio: 5, level: 0.42 },
+                {
+                    ratio: 7,
+                    level: 0.2,
+                },
+            ],
             formant: 0.82,
             f1: 520,
             f2: 1740,
@@ -218,7 +305,7 @@ export function buildPocketTheory(): Project {
             sus: 0.48,
             rel: 0.24,
             gain: 0.4,
-            legatoCurve: 'ease-in'
+            legatoCurve: 'ease-in',
         }),
         instrument('p8', 'Drums/Hand Clap', COLORS[8], {
             tone: 0.1,
@@ -230,7 +317,7 @@ export function buildPocketTheory(): Project {
             sus: 0,
             rel: 0.1,
             gain: 0.3,
-            pan: 0.12
+            pan: 0.12,
         }),
         instrument('p9', 'Synth/Neon Chordbite', '#7ed6df', {
             tone: 1,
@@ -238,7 +325,12 @@ export function buildPocketTheory(): Project {
             harmShape: 'Saw / Reed',
             harm: 4,
             falloff: 0.6,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.6}, {ratio: 3, level: 0.36}, {ratio: 4, level: 0.18}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.6 },
+                { ratio: 3, level: 0.36 },
+                { ratio: 4, level: 0.18 },
+            ],
             pitchDrop: -2,
             pitchTime: 0.03,
             att: 0.01,
@@ -246,7 +338,7 @@ export function buildPocketTheory(): Project {
             sus: 0.15,
             rel: 0.16,
             gain: 0.38,
-            pan: 0.25
+            pan: 0.25,
         }),
         instrument('p10', 'Percussion/Shard Guitar', '#f6d365', {
             tone: 1,
@@ -255,10 +347,16 @@ export function buildPocketTheory(): Project {
             harm: 5,
             falloff: 0.55,
             stretch: 0.01,
-            partials: [{ratio: 1, level: 1}, {ratio: 2.01, level: 0.5}, {ratio: 3.02, level: 0.3}, {
-                ratio: 4.1,
-                level: 0.16
-            }, {ratio: 5.2, level: 0.08}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2.01, level: 0.5 },
+                { ratio: 3.02, level: 0.3 },
+                {
+                    ratio: 4.1,
+                    level: 0.16,
+                },
+                { ratio: 5.2, level: 0.08 },
+            ],
             noise: 0.02,
             noiseFreq: 5200,
             pitchDrop: 2,
@@ -268,139 +366,669 @@ export function buildPocketTheory(): Project {
             sus: 0.08,
             rel: 0.24,
             gain: 0.4,
-            pan: 0.34
-        })
+            pan: 0.34,
+        }),
     ];
     const patterns = [
         pattern('pp1', '01 Intro/Pocket grid', 16, '#995b65', {
-            p1: [['D3', 0, 1, 0.94], ['D3', 6, 1, 0.58], ['D3', 8, 1, 0.82], ['D3', 11, 1, 0.5], ['D3', 14, 1, 0.64]],
-            p2: [['D4', 4, 1, 0.74], ['D4', 12, 1, 0.82]],
-            p3: [['D4', 1, 1, 0.23], ['D4', 3, 1, 0.31], ['D4', 5, 1, 0.26], ['D4', 7, 1, 0.36], ['D4', 9, 1, 0.25], ['D4', 11, 1, 0.34], ['D4', 13, 1, 0.26], ['D4', 15, 1, 0.38]],
-            p8: [['D3', 4, 1, 0.34], ['D3', 12, 1, 0.38]]
+            p1: [
+                ['D3', 0, 1, 0.94],
+                ['D3', 6, 1, 0.58],
+                ['D3', 8, 1, 0.82],
+                ['D3', 11, 1, 0.5],
+                ['D3', 14, 1, 0.64],
+            ],
+            p2: [
+                ['D4', 4, 1, 0.74],
+                ['D4', 12, 1, 0.82],
+            ],
+            p3: [
+                ['D4', 1, 1, 0.23],
+                ['D4', 3, 1, 0.31],
+                ['D4', 5, 1, 0.26],
+                ['D4', 7, 1, 0.36],
+                ['D4', 9, 1, 0.25],
+                ['D4', 11, 1, 0.34],
+                ['D4', 13, 1, 0.26],
+                ['D4', 15, 1, 0.38],
+            ],
+            p8: [
+                ['D3', 4, 1, 0.34],
+                ['D3', 12, 1, 0.38],
+            ],
         }),
         pattern('pp2', '02 Main/Bass conversation', 16, '#b36b75', {
-            p4: [['D3', 0, 2, 0.82], ['A2', 3, 1, 0.56], ['C3', 5, 2, 0.68], ['D3', 8, 1, 0.76], ['F3', 10, 2, 0.7], ['E3', 13, 1, 0.58], ['C3', 15, 1, 0.52]]
+            p4: [
+                ['D3', 0, 2, 0.82],
+                ['A2', 3, 1, 0.56],
+                ['C3', 5, 2, 0.68],
+                ['D3', 8, 1, 0.76],
+                ['F3', 10, 2, 0.7],
+                ['E3', 13, 1, 0.58],
+                ['C3', 15, 1, 0.52],
+            ],
         }),
         pattern('pp3', '02 Main/Chord stabs', 16, '#d3827d', {
-            p5: [['D5', 2, 1, 0.55], ['F5', 2, 1, 0.46], ['A5', 2, 1, 0.42], ['C6', 2, 1, 0.38], ['G4', 6, 1, 0.5], ['B4', 6, 1, 0.43], ['D5', 6, 1, 0.38], ['F5', 6, 1, 0.34], ['A4', 10, 1, 0.52], ['C5', 10, 1, 0.44], ['E5', 10, 1, 0.4], ['G5', 10, 1, 0.35], ['D5', 14, 1, 0.58], ['F5', 14, 1, 0.48], ['A5', 14, 1, 0.42], ['C6', 14, 1, 0.37]],
-            p6: [['D4', 0, 3, 0.32], ['F4', 0, 3, 0.28], ['A4', 0, 3, 0.26], ['C5', 0, 3, 0.22], ['G3', 8, 3, 0.3], ['B3', 8, 3, 0.27], ['D4', 8, 3, 0.24], ['F4', 8, 3, 0.2]]
+            p5: [
+                ['D5', 2, 1, 0.55],
+                ['F5', 2, 1, 0.46],
+                ['A5', 2, 1, 0.42],
+                ['C6', 2, 1, 0.38],
+                ['G4', 6, 1, 0.5],
+                ['B4', 6, 1, 0.43],
+                ['D5', 6, 1, 0.38],
+                ['F5', 6, 1, 0.34],
+                ['A4', 10, 1, 0.52],
+                ['C5', 10, 1, 0.44],
+                ['E5', 10, 1, 0.4],
+                ['G5', 10, 1, 0.35],
+                ['D5', 14, 1, 0.58],
+                ['F5', 14, 1, 0.48],
+                ['A5', 14, 1, 0.42],
+                ['C6', 14, 1, 0.37],
+            ],
+            p6: [
+                ['D4', 0, 3, 0.32],
+                ['F4', 0, 3, 0.28],
+                ['A4', 0, 3, 0.26],
+                ['C5', 0, 3, 0.22],
+                ['G3', 8, 3, 0.3],
+                ['B3', 8, 3, 0.27],
+                ['D4', 8, 3, 0.24],
+                ['F4', 8, 3, 0.2],
+            ],
         }),
         pattern('pp4', '02 Chorus/Hook question', 32, '#ef9f82', {
-            p7: [['A5', 0, 2, 0.58], ['C6', 3, 2, 0.68], ['D6', 6, 2, 0.56], ['F6', 9, 3, 0.72], ['E6', 14, 2, 0.54], ['D6', 18, 2, 0.62], ['A5', 21, 2, 0.5], ['C6', 24, 2, 0.58], ['E6', 27, 2, 0.66], ['D6', 30, 2, 0.64]],
-            p9: [['D5', 12, 3, 0.34], ['G5', 28, 3, 0.32]]
+            p7: [
+                ['A5', 0, 2, 0.58],
+                ['C6', 3, 2, 0.68],
+                ['D6', 6, 2, 0.56],
+                ['F6', 9, 3, 0.72],
+                ['E6', 14, 2, 0.54],
+                ['D6', 18, 2, 0.62],
+                ['A5', 21, 2, 0.5],
+                ['C6', 24, 2, 0.58],
+                ['E6', 27, 2, 0.66],
+                ['D6', 30, 2, 0.64],
+            ],
+            p9: [
+                ['D5', 12, 3, 0.34],
+                ['G5', 28, 3, 0.32],
+            ],
         }),
         pattern('pp5', '03 Development/Breakdown answer', 32, '#c86d74', {
-            p4: [['D3', 0, 3, 0.64], ['C3', 6, 2, 0.5], ['A2', 10, 3, 0.58], ['G2', 16, 3, 0.55], ['A2', 22, 2, 0.48], ['C3', 26, 2, 0.52]],
-            p5: [['D5', 4, 1, 0.36], ['A5', 7, 1, 0.32], ['C6', 12, 1, 0.38], ['F5', 20, 1, 0.34], ['E5', 28, 1, 0.36]],
-            p7: [['A5', 2, 3, 0.48], ['C6', 10, 2, 0.55], ['D6', 18, 3, 0.6], ['F6', 26, 3, 0.62]]
+            p4: [
+                ['D3', 0, 3, 0.64],
+                ['C3', 6, 2, 0.5],
+                ['A2', 10, 3, 0.58],
+                ['G2', 16, 3, 0.55],
+                ['A2', 22, 2, 0.48],
+                ['C3', 26, 2, 0.52],
+            ],
+            p5: [
+                ['D5', 4, 1, 0.36],
+                ['A5', 7, 1, 0.32],
+                ['C6', 12, 1, 0.38],
+                ['F5', 20, 1, 0.34],
+                ['E5', 28, 1, 0.36],
+            ],
+            p7: [
+                ['A5', 2, 3, 0.48],
+                ['C6', 10, 2, 0.55],
+                ['D6', 18, 3, 0.6],
+                ['F6', 26, 3, 0.62],
+            ],
         }),
         pattern('pp6', '04 Climax/Pocket finale', 32, '#f6b38d', {
-            p1: [['D3', 0, 1, 0.94], ['D3', 6, 1, 0.58], ['D3', 8, 1, 0.84], ['D3', 11, 1, 0.5], ['D3', 14, 1, 0.65], ['D3', 16, 1, 0.9], ['D3', 22, 1, 0.62], ['D3', 24, 1, 0.84], ['D3', 27, 1, 0.54], ['D3', 30, 1, 0.7]],
-            p2: [['D4', 4, 1, 0.76], ['D4', 12, 1, 0.82], ['D4', 20, 1, 0.78], ['D4', 28, 1, 0.84]],
-            p3: [['D4', 1, 1, 0.24], ['D4', 3, 1, 0.32], ['D4', 5, 1, 0.27], ['D4', 7, 1, 0.36], ['D4', 9, 1, 0.26], ['D4', 11, 1, 0.35], ['D4', 13, 1, 0.27], ['D4', 15, 1, 0.39], ['D4', 17, 1, 0.26], ['D4', 19, 1, 0.34], ['D4', 21, 1, 0.28], ['D4', 23, 1, 0.37], ['D4', 25, 1, 0.28], ['D4', 27, 1, 0.36], ['D4', 29, 1, 0.3], ['D4', 31, 1, 0.4]],
-            p4: [['D3', 0, 2, 0.82], ['A2', 3, 1, 0.56], ['C3', 5, 2, 0.68], ['D3', 8, 1, 0.76], ['F3', 10, 2, 0.7], ['E3', 13, 1, 0.58], ['C3', 15, 1, 0.52], ['D3', 16, 2, 0.82], ['A2', 19, 1, 0.58], ['C3', 21, 2, 0.7], ['D3', 24, 1, 0.78], ['F3', 26, 2, 0.72], ['E3', 29, 1, 0.6], ['C3', 31, 1, 0.55]],
-            p5: [['D5', 2, 1, 0.55], ['F5', 2, 1, 0.46], ['A5', 2, 1, 0.42], ['C6', 2, 1, 0.38], ['G4', 6, 1, 0.5], ['B4', 6, 1, 0.43], ['D5', 6, 1, 0.38], ['F5', 6, 1, 0.34], ['A4', 10, 1, 0.52], ['C5', 10, 1, 0.44], ['E5', 10, 1, 0.4], ['G5', 10, 1, 0.35], ['D5', 14, 1, 0.58], ['F5', 14, 1, 0.48], ['A5', 14, 1, 0.42], ['C6', 14, 1, 0.37], ['D5', 18, 1, 0.58], ['F5', 18, 1, 0.48], ['A5', 18, 1, 0.42], ['C6', 18, 1, 0.37], ['G4', 22, 1, 0.5], ['B4', 22, 1, 0.43], ['D5', 22, 1, 0.38], ['F5', 22, 1, 0.34], ['A4', 26, 1, 0.52], ['C5', 26, 1, 0.44], ['E5', 26, 1, 0.4], ['G5', 26, 1, 0.35], ['D5', 30, 1, 0.6], ['F5', 30, 1, 0.5], ['A5', 30, 1, 0.44], ['C6', 30, 1, 0.38]],
-            p7: [['A5', 0, 2, 0.58], ['C6', 3, 2, 0.68], ['D6', 6, 2, 0.56], ['F6', 9, 3, 0.72], ['E6', 14, 2, 0.54], ['D6', 18, 2, 0.62], ['A5', 21, 2, 0.5], ['C6', 24, 2, 0.58], ['E6', 27, 2, 0.66], ['D6', 30, 2, 0.64]]
+            p1: [
+                ['D3', 0, 1, 0.94],
+                ['D3', 6, 1, 0.58],
+                ['D3', 8, 1, 0.84],
+                ['D3', 11, 1, 0.5],
+                ['D3', 14, 1, 0.65],
+                ['D3', 16, 1, 0.9],
+                ['D3', 22, 1, 0.62],
+                ['D3', 24, 1, 0.84],
+                ['D3', 27, 1, 0.54],
+                ['D3', 30, 1, 0.7],
+            ],
+            p2: [
+                ['D4', 4, 1, 0.76],
+                ['D4', 12, 1, 0.82],
+                ['D4', 20, 1, 0.78],
+                ['D4', 28, 1, 0.84],
+            ],
+            p3: [
+                ['D4', 1, 1, 0.24],
+                ['D4', 3, 1, 0.32],
+                ['D4', 5, 1, 0.27],
+                ['D4', 7, 1, 0.36],
+                ['D4', 9, 1, 0.26],
+                ['D4', 11, 1, 0.35],
+                ['D4', 13, 1, 0.27],
+                ['D4', 15, 1, 0.39],
+                ['D4', 17, 1, 0.26],
+                ['D4', 19, 1, 0.34],
+                ['D4', 21, 1, 0.28],
+                ['D4', 23, 1, 0.37],
+                ['D4', 25, 1, 0.28],
+                ['D4', 27, 1, 0.36],
+                ['D4', 29, 1, 0.3],
+                ['D4', 31, 1, 0.4],
+            ],
+            p4: [
+                ['D3', 0, 2, 0.82],
+                ['A2', 3, 1, 0.56],
+                ['C3', 5, 2, 0.68],
+                ['D3', 8, 1, 0.76],
+                ['F3', 10, 2, 0.7],
+                ['E3', 13, 1, 0.58],
+                ['C3', 15, 1, 0.52],
+                ['D3', 16, 2, 0.82],
+                ['A2', 19, 1, 0.58],
+                ['C3', 21, 2, 0.7],
+                ['D3', 24, 1, 0.78],
+                ['F3', 26, 2, 0.72],
+                ['E3', 29, 1, 0.6],
+                ['C3', 31, 1, 0.55],
+            ],
+            p5: [
+                ['D5', 2, 1, 0.55],
+                ['F5', 2, 1, 0.46],
+                ['A5', 2, 1, 0.42],
+                ['C6', 2, 1, 0.38],
+                ['G4', 6, 1, 0.5],
+                ['B4', 6, 1, 0.43],
+                ['D5', 6, 1, 0.38],
+                ['F5', 6, 1, 0.34],
+                ['A4', 10, 1, 0.52],
+                ['C5', 10, 1, 0.44],
+                ['E5', 10, 1, 0.4],
+                ['G5', 10, 1, 0.35],
+                ['D5', 14, 1, 0.58],
+                ['F5', 14, 1, 0.48],
+                ['A5', 14, 1, 0.42],
+                ['C6', 14, 1, 0.37],
+                ['D5', 18, 1, 0.58],
+                ['F5', 18, 1, 0.48],
+                ['A5', 18, 1, 0.42],
+                ['C6', 18, 1, 0.37],
+                ['G4', 22, 1, 0.5],
+                ['B4', 22, 1, 0.43],
+                ['D5', 22, 1, 0.38],
+                ['F5', 22, 1, 0.34],
+                ['A4', 26, 1, 0.52],
+                ['C5', 26, 1, 0.44],
+                ['E5', 26, 1, 0.4],
+                ['G5', 26, 1, 0.35],
+                ['D5', 30, 1, 0.6],
+                ['F5', 30, 1, 0.5],
+                ['A5', 30, 1, 0.44],
+                ['C6', 30, 1, 0.38],
+            ],
+            p7: [
+                ['A5', 0, 2, 0.58],
+                ['C6', 3, 2, 0.68],
+                ['D6', 6, 2, 0.56],
+                ['F6', 9, 3, 0.72],
+                ['E6', 14, 2, 0.54],
+                ['D6', 18, 2, 0.62],
+                ['A5', 21, 2, 0.5],
+                ['C6', 24, 2, 0.58],
+                ['E6', 27, 2, 0.66],
+                ['D6', 30, 2, 0.64],
+            ],
         }),
         pattern('pp7', '02 Main/Ghost pocket', 32, '#b35d69', {
-            p1: [['D3', 0, 1, 0.88], ['D3', 5, 1, 0.38], ['D3', 8, 1, 0.74], ['D3', 11, 1, 0.42], ['D3', 14, 1, 0.58], ['D3', 16, 1, 0.86], ['D3', 21, 1, 0.4], ['D3', 24, 1, 0.76], ['D3', 27, 1, 0.44], ['D3', 30, 1, 0.62]],
-            p2: [['D4', 4, 1, 0.68], ['D4', 7, 1, 0.22], ['D4', 12, 1, 0.78], ['D4', 20, 1, 0.7], ['D4', 23, 1, 0.24], ['D4', 28, 1, 0.8]],
-            p3: [['D4', 1, 1, 0.2], ['D4', 3, 1, 0.28], ['D4', 5, 1, 0.22], ['D4', 7, 1, 0.34], ['D4', 9, 1, 0.24], ['D4', 11, 1, 0.32], ['D4', 13, 1, 0.26], ['D4', 15, 1, 0.36], ['D4', 17, 1, 0.23], ['D4', 19, 1, 0.31], ['D4', 21, 1, 0.25], ['D4', 23, 1, 0.35], ['D4', 25, 1, 0.27], ['D4', 27, 1, 0.34], ['D4', 29, 1, 0.29], ['D4', 31, 1, 0.38]],
-            p8: [['D3', 4, 1, 0.3], ['D3', 12, 1, 0.34], ['D3', 20, 1, 0.32], ['D3', 28, 1, 0.38]]
+            p1: [
+                ['D3', 0, 1, 0.88],
+                ['D3', 5, 1, 0.38],
+                ['D3', 8, 1, 0.74],
+                ['D3', 11, 1, 0.42],
+                ['D3', 14, 1, 0.58],
+                ['D3', 16, 1, 0.86],
+                ['D3', 21, 1, 0.4],
+                ['D3', 24, 1, 0.76],
+                ['D3', 27, 1, 0.44],
+                ['D3', 30, 1, 0.62],
+            ],
+            p2: [
+                ['D4', 4, 1, 0.68],
+                ['D4', 7, 1, 0.22],
+                ['D4', 12, 1, 0.78],
+                ['D4', 20, 1, 0.7],
+                ['D4', 23, 1, 0.24],
+                ['D4', 28, 1, 0.8],
+            ],
+            p3: [
+                ['D4', 1, 1, 0.2],
+                ['D4', 3, 1, 0.28],
+                ['D4', 5, 1, 0.22],
+                ['D4', 7, 1, 0.34],
+                ['D4', 9, 1, 0.24],
+                ['D4', 11, 1, 0.32],
+                ['D4', 13, 1, 0.26],
+                ['D4', 15, 1, 0.36],
+                ['D4', 17, 1, 0.23],
+                ['D4', 19, 1, 0.31],
+                ['D4', 21, 1, 0.25],
+                ['D4', 23, 1, 0.35],
+                ['D4', 25, 1, 0.27],
+                ['D4', 27, 1, 0.34],
+                ['D4', 29, 1, 0.29],
+                ['D4', 31, 1, 0.38],
+            ],
+            p8: [
+                ['D3', 4, 1, 0.3],
+                ['D3', 12, 1, 0.34],
+                ['D3', 20, 1, 0.32],
+                ['D3', 28, 1, 0.38],
+            ],
         }),
         pattern('pp8', '02 Main/Bass answer', 32, '#cf7780', {
-            p4: [['D3', 0, 2, 0.8], ['A2', 3, 1, 0.48], ['C3', 6, 1, 0.58], ['D3', 8, 2, 0.74], ['F3', 11, 1, 0.54], ['E3', 14, 1, 0.46], ['C3', 15, 1, 0.5], ['D3', 16, 2, 0.82], ['A2', 19, 1, 0.5], ['C3', 22, 1, 0.6], ['F3', 24, 2, 0.76], ['E3', 27, 1, 0.52], ['D3', 30, 2, 0.7]]
+            p4: [
+                ['D3', 0, 2, 0.8],
+                ['A2', 3, 1, 0.48],
+                ['C3', 6, 1, 0.58],
+                ['D3', 8, 2, 0.74],
+                ['F3', 11, 1, 0.54],
+                ['E3', 14, 1, 0.46],
+                ['C3', 15, 1, 0.5],
+                ['D3', 16, 2, 0.82],
+                ['A2', 19, 1, 0.5],
+                ['C3', 22, 1, 0.6],
+                ['F3', 24, 2, 0.76],
+                ['E3', 27, 1, 0.52],
+                ['D3', 30, 2, 0.7],
+            ],
         }),
         pattern('pp9', '02 Main/Clav reply', 32, '#e19285', {
-            p5: [['D5', 2, 1, 0.54], ['F5', 2, 1, 0.44], ['A5', 2, 1, 0.4], ['C6', 2, 1, 0.34], ['G4', 7, 1, 0.46], ['B4', 7, 1, 0.4], ['D5', 7, 1, 0.34], ['F5', 7, 1, 0.3], ['A4', 13, 1, 0.5], ['C5', 13, 1, 0.42], ['E5', 13, 1, 0.36], ['G5', 13, 1, 0.32], ['D5', 18, 1, 0.56], ['F5', 18, 1, 0.46], ['A5', 18, 1, 0.4], ['C6', 18, 1, 0.34], ['G4', 23, 1, 0.48], ['B4', 23, 1, 0.42], ['D5', 23, 1, 0.36], ['F5', 23, 1, 0.32], ['A4', 29, 1, 0.52], ['C5', 29, 1, 0.44], ['E5', 29, 1, 0.38], ['G5', 29, 1, 0.34]],
-            p6: [['D4', 0, 3, 0.28], ['F4', 0, 3, 0.24], ['A4', 0, 3, 0.22], ['C5', 0, 3, 0.18], ['G3', 16, 3, 0.28], ['B3', 16, 3, 0.24], ['D4', 16, 3, 0.22], ['F4', 16, 3, 0.18]],
-            p10: [['D5', 4, 1, 0.42], ['F5', 4, 1, 0.34], ['A5', 4, 1, 0.28], ['C5', 10, 1, 0.4], ['E5', 10, 1, 0.32], ['G5', 10, 1, 0.27], ['D5', 20, 1, 0.44], ['F5', 20, 1, 0.35], ['A5', 20, 1, 0.29], ['G4', 26, 1, 0.42], ['B4', 26, 1, 0.34], ['D5', 26, 1, 0.28]]
+            p5: [
+                ['D5', 2, 1, 0.54],
+                ['F5', 2, 1, 0.44],
+                ['A5', 2, 1, 0.4],
+                ['C6', 2, 1, 0.34],
+                ['G4', 7, 1, 0.46],
+                ['B4', 7, 1, 0.4],
+                ['D5', 7, 1, 0.34],
+                ['F5', 7, 1, 0.3],
+                ['A4', 13, 1, 0.5],
+                ['C5', 13, 1, 0.42],
+                ['E5', 13, 1, 0.36],
+                ['G5', 13, 1, 0.32],
+                ['D5', 18, 1, 0.56],
+                ['F5', 18, 1, 0.46],
+                ['A5', 18, 1, 0.4],
+                ['C6', 18, 1, 0.34],
+                ['G4', 23, 1, 0.48],
+                ['B4', 23, 1, 0.42],
+                ['D5', 23, 1, 0.36],
+                ['F5', 23, 1, 0.32],
+                ['A4', 29, 1, 0.52],
+                ['C5', 29, 1, 0.44],
+                ['E5', 29, 1, 0.38],
+                ['G5', 29, 1, 0.34],
+            ],
+            p6: [
+                ['D4', 0, 3, 0.28],
+                ['F4', 0, 3, 0.24],
+                ['A4', 0, 3, 0.22],
+                ['C5', 0, 3, 0.18],
+                ['G3', 16, 3, 0.28],
+                ['B3', 16, 3, 0.24],
+                ['D4', 16, 3, 0.22],
+                ['F4', 16, 3, 0.18],
+            ],
+            p10: [
+                ['D5', 4, 1, 0.42],
+                ['F5', 4, 1, 0.34],
+                ['A5', 4, 1, 0.28],
+                ['C5', 10, 1, 0.4],
+                ['E5', 10, 1, 0.32],
+                ['G5', 10, 1, 0.27],
+                ['D5', 20, 1, 0.44],
+                ['F5', 20, 1, 0.35],
+                ['A5', 20, 1, 0.29],
+                ['G4', 26, 1, 0.42],
+                ['B4', 26, 1, 0.34],
+                ['D5', 26, 1, 0.28],
+            ],
         }),
         pattern('pp10', '02 Main/Horn answer', 32, '#edaa88', {
-            p7: [['A5', 1, 2, 0.48], ['C6', 5, 2, 0.58], ['D6', 9, 2, 0.52], ['F6', 13, 3, 0.64], ['E6', 20, 2, 0.5], ['D6', 24, 2, 0.58], ['A5', 28, 2, 0.46]],
-            p9: [['D5', 3, 2, 0.3], ['F5', 3, 2, 0.24], ['A5', 3, 2, 0.2], ['G5', 15, 2, 0.32], ['B5', 15, 2, 0.26], ['D6', 15, 2, 0.22], ['A5', 27, 2, 0.34], ['C6', 27, 2, 0.28], ['E6', 27, 2, 0.24]]
+            p7: [
+                ['A5', 1, 2, 0.48],
+                ['C6', 5, 2, 0.58],
+                ['D6', 9, 2, 0.52],
+                ['F6', 13, 3, 0.64],
+                ['E6', 20, 2, 0.5],
+                ['D6', 24, 2, 0.58],
+                ['A5', 28, 2, 0.46],
+            ],
+            p9: [
+                ['D5', 3, 2, 0.3],
+                ['F5', 3, 2, 0.24],
+                ['A5', 3, 2, 0.2],
+                ['G5', 15, 2, 0.32],
+                ['B5', 15, 2, 0.26],
+                ['D6', 15, 2, 0.22],
+                ['A5', 27, 2, 0.34],
+                ['C6', 27, 2, 0.28],
+                ['E6', 27, 2, 0.24],
+            ],
         }),
         pattern('pp11', '05 Outro/Turnaround push', 32, '#c76c76', {
-            p4: [['D3', 0, 2, 0.74], ['C3', 4, 1, 0.48], ['A2', 7, 2, 0.54], ['G2', 11, 1, 0.46], ['A2', 16, 2, 0.7], ['C3', 20, 1, 0.5], ['D3', 23, 2, 0.76], ['F3', 28, 2, 0.62]],
-            p5: [['D5', 3, 1, 0.42], ['A5', 8, 1, 0.38], ['C6', 13, 1, 0.44], ['F5', 19, 1, 0.4], ['E5', 24, 1, 0.42], ['A5', 30, 1, 0.46]],
-            p8: [['D3', 4, 1, 0.3], ['D3', 12, 1, 0.34], ['D3', 20, 1, 0.32], ['D3', 28, 1, 0.38]]
+            p4: [
+                ['D3', 0, 2, 0.74],
+                ['C3', 4, 1, 0.48],
+                ['A2', 7, 2, 0.54],
+                ['G2', 11, 1, 0.46],
+                ['A2', 16, 2, 0.7],
+                ['C3', 20, 1, 0.5],
+                ['D3', 23, 2, 0.76],
+                ['F3', 28, 2, 0.62],
+            ],
+            p5: [
+                ['D5', 3, 1, 0.42],
+                ['A5', 8, 1, 0.38],
+                ['C6', 13, 1, 0.44],
+                ['F5', 19, 1, 0.4],
+                ['E5', 24, 1, 0.42],
+                ['A5', 30, 1, 0.46],
+            ],
+            p8: [
+                ['D3', 4, 1, 0.3],
+                ['D3', 12, 1, 0.34],
+                ['D3', 20, 1, 0.32],
+                ['D3', 28, 1, 0.38],
+            ],
         }),
         pattern('pp12', '05 Outro/Bright turnaround', 32, '#f5bf96', {
-            p6: [['D4', 0, 4, 0.26], ['F4', 0, 4, 0.22], ['A4', 0, 4, 0.2], ['C5', 0, 4, 0.16], ['G3', 16, 4, 0.26], ['B3', 16, 4, 0.22], ['D4', 16, 4, 0.2], ['F4', 16, 4, 0.16]],
-            p8: [['D3', 4, 1, 0.28], ['D3', 12, 1, 0.32], ['D3', 20, 1, 0.3], ['D3', 28, 1, 0.36]],
-            p9: [['D5', 6, 2, 0.28], ['F5', 6, 2, 0.22], ['A5', 6, 2, 0.18], ['G5', 22, 2, 0.3], ['B5', 22, 2, 0.24], ['D6', 22, 2, 0.2]]
-        })
+            p6: [
+                ['D4', 0, 4, 0.26],
+                ['F4', 0, 4, 0.22],
+                ['A4', 0, 4, 0.2],
+                ['C5', 0, 4, 0.16],
+                ['G3', 16, 4, 0.26],
+                ['B3', 16, 4, 0.22],
+                ['D4', 16, 4, 0.2],
+                ['F4', 16, 4, 0.16],
+            ],
+            p8: [
+                ['D3', 4, 1, 0.28],
+                ['D3', 12, 1, 0.32],
+                ['D3', 20, 1, 0.3],
+                ['D3', 28, 1, 0.36],
+            ],
+            p9: [
+                ['D5', 6, 2, 0.28],
+                ['F5', 6, 2, 0.22],
+                ['A5', 6, 2, 0.18],
+                ['G5', 22, 2, 0.3],
+                ['B5', 22, 2, 0.24],
+                ['D6', 22, 2, 0.2],
+            ],
+        }),
     ];
     connect(patterns, 'pp4', 'p7', 0, 3, 'ease-in');
     connect(patterns, 'pp4', 'p7', 6, 9, 'smooth');
     connect(patterns, 'pp4', 'p7', 18, 21, 'ease-out');
     connect(patterns, 'pp4', 'p7', 24, 27, 'smooth');
-    return mixDemo(project(instruments, patterns, arrangeSong('pc', [
-        [['pp1', 0], ['pp2', 1]], [['pp1', 0], ['pp2', 1]], [['pp7', 0], ['pp8', 1]], [['pp1', 0], ['pp9', 2]],
-        [['pp3', 2], ['pp4', 4]], [['pp7', 0], ['pp9', 2]], [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp10', 4]],
-        [['pp11', 1], ['pp10', 4]], [['pp1', 0], ['pp9', 2]], [['pp3', 2], ['pp4', 4]], [['pp7', 0], ['pp8', 1]],
-        [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp10', 4]], [['pp5', 1], ['pp12', 3]], [['pp5', 1], ['pp12', 3]],
-        [['pp7', 0], ['pp9', 2]], [['pp11', 1], ['pp10', 4]], [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp4', 4]],
-        [['pp7', 0], ['pp8', 1]], [['pp3', 2], ['pp10', 4]], [['pp5', 1], ['pp12', 3]], [['pp5', 1], ['pp12', 3]],
-        [['pp1', 0], ['pp9', 2]], [['pp7', 0], ['pp8', 1]], [['pp3', 2], ['pp4', 4]], [['pp11', 1], ['pp10', 4]],
-        [['pp6', 0], ['pp12', 3]], [['pp6', 0], ['pp12', 3]], [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp10', 4]],
-        [['pp6', 0], ['pp12', 3]], [['pp11', 1], ['pp10', 4]], [['pp6', 0], ['pp12', 3]], [['pp6', 0], ['pp12', 3]],
-        [['pp1', 0], ['pp9', 2]], [['pp7', 0], ['pp8', 1]], [['pp1', 0], ['pp2', 1]], [['pp3', 2], ['pp10', 4]]
-    ]), ['Kick', 'Bass', 'Clav', 'Keys', 'Lead'], 108, [
-        {
-            id: 'pa1',
-            target: 'master',
-            param: 'rev',
-            points: [{step: 0, value: 0.18, curve: 'ease-out'}, {step: 128, value: 0.14, curve: 'smooth'}, {
-                step: 384,
-                value: 0.22,
-                curve: 'ease-in'
-            }, {step: 576, value: 0.3, curve: 'ease-out'}, {step: 768, value: 0.18, curve: 'smooth'}, {
-                step: 960,
-                value: 0.24,
-                curve: 'ease-in'
-            }, {step: 1280, value: 0.14}]
-        },
-        {
-            id: 'pa2',
-            target: 'p7',
-            param: 'gain',
-            points: [{step: 0, value: 0.34, curve: 'hold'}, {step: 128, value: 0.4, curve: 'ease-in'}, {
-                step: 384,
-                value: 0.5,
-                curve: 'smooth'
-            }, {step: 640, value: 0.38, curve: 'ease-out'}, {step: 960, value: 0.52, curve: 'smooth'}, {
-                step: 1280,
-                value: 0.36
-            }]
-        },
-        {
-            id: 'pa3',
-            target: 'master',
-            param: 'vol',
-            points: [{step: 0, value: 0.58, curve: 'ease-out'}, {step: 128, value: 0.76, curve: 'smooth'}, {
-                step: 384,
-                value: 0.84,
-                curve: 'ease-in'
-            }, {step: 640, value: 0.68, curve: 'smooth'}, {step: 960, value: 0.9, curve: 'ease-out'}, {
-                step: 1280,
-                value: 0.62
-            }]
-        },
-        {
-            id: 'pa4',
-            target: 'p6',
-            param: 'gain',
-            points: [{step: 0, value: 0.3, curve: 'hold'}, {step: 128, value: 0.38, curve: 'ease-in'}, {
-                step: 384,
-                value: 0.44,
-                curve: 'smooth'
-            }, {step: 640, value: 0.32, curve: 'ease-out'}, {step: 960, value: 0.46, curve: 'smooth'}, {
-                step: 1280,
-                value: 0.3
-            }]
-        }
-    ], 0.16), 'pocket');
+    return mixDemo(
+        project(
+            instruments,
+            patterns,
+            arrangeSong('pc', [
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp8', 1],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp4', 4],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp11', 1],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp4', 4],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp8', 1],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp5', 1],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp5', 1],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp11', 1],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp4', 4],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp8', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp5', 1],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp5', 1],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp8', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp4', 4],
+                ],
+                [
+                    ['pp11', 1],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp6', 0],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp6', 0],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp6', 0],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp11', 1],
+                    ['pp10', 4],
+                ],
+                [
+                    ['pp6', 0],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp6', 0],
+                    ['pp12', 3],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp9', 2],
+                ],
+                [
+                    ['pp7', 0],
+                    ['pp8', 1],
+                ],
+                [
+                    ['pp1', 0],
+                    ['pp2', 1],
+                ],
+                [
+                    ['pp3', 2],
+                    ['pp10', 4],
+                ],
+            ]),
+            ['Kick', 'Bass', 'Clav', 'Keys', 'Lead'],
+            108,
+            [
+                {
+                    id: 'pa1',
+                    target: 'master',
+                    param: 'rev',
+                    points: [
+                        { step: 0, value: 0.18, curve: 'ease-out' },
+                        { step: 128, value: 0.14, curve: 'smooth' },
+                        {
+                            step: 384,
+                            value: 0.22,
+                            curve: 'ease-in',
+                        },
+                        { step: 576, value: 0.3, curve: 'ease-out' },
+                        { step: 768, value: 0.18, curve: 'smooth' },
+                        {
+                            step: 960,
+                            value: 0.24,
+                            curve: 'ease-in',
+                        },
+                        { step: 1280, value: 0.14 },
+                    ],
+                },
+                {
+                    id: 'pa2',
+                    target: 'p7',
+                    param: 'gain',
+                    points: [
+                        { step: 0, value: 0.34, curve: 'hold' },
+                        { step: 128, value: 0.4, curve: 'ease-in' },
+                        {
+                            step: 384,
+                            value: 0.5,
+                            curve: 'smooth',
+                        },
+                        { step: 640, value: 0.38, curve: 'ease-out' },
+                        { step: 960, value: 0.52, curve: 'smooth' },
+                        {
+                            step: 1280,
+                            value: 0.36,
+                        },
+                    ],
+                },
+                {
+                    id: 'pa3',
+                    target: 'master',
+                    param: 'vol',
+                    points: [
+                        { step: 0, value: 0.58, curve: 'ease-out' },
+                        { step: 128, value: 0.76, curve: 'smooth' },
+                        {
+                            step: 384,
+                            value: 0.84,
+                            curve: 'ease-in',
+                        },
+                        { step: 640, value: 0.68, curve: 'smooth' },
+                        { step: 960, value: 0.9, curve: 'ease-out' },
+                        {
+                            step: 1280,
+                            value: 0.62,
+                        },
+                    ],
+                },
+                {
+                    id: 'pa4',
+                    target: 'p6',
+                    param: 'gain',
+                    points: [
+                        { step: 0, value: 0.3, curve: 'hold' },
+                        { step: 128, value: 0.38, curve: 'ease-in' },
+                        {
+                            step: 384,
+                            value: 0.44,
+                            curve: 'smooth',
+                        },
+                        { step: 640, value: 0.32, curve: 'ease-out' },
+                        { step: 960, value: 0.46, curve: 'smooth' },
+                        {
+                            step: 1280,
+                            value: 0.3,
+                        },
+                    ],
+                },
+            ],
+            0.16,
+        ),
+        'pocket',
+    );
 }
 
 export function buildBitHorizon(): Project {
@@ -420,7 +1048,7 @@ export function buildBitHorizon(): Project {
             dec: 0.1,
             sus: 0,
             rel: 0.07,
-            gain: 0.76
+            gain: 0.76,
         }),
         instrument('c2', 'Drums/Bit Snare', COLORS[1], {
             tone: 0.2,
@@ -437,7 +1065,7 @@ export function buildBitHorizon(): Project {
             dec: 0.07,
             sus: 0,
             rel: 0.08,
-            gain: 0.42
+            gain: 0.42,
         }),
         instrument('c3', 'Drums/Bit Hat', COLORS[3], {
             tone: 0,
@@ -454,7 +1082,7 @@ export function buildBitHorizon(): Project {
             sus: 0,
             rel: 0.035,
             gain: 0.22,
-            pan: 0.2
+            pan: 0.2,
         }),
         // Square-wave bass an octave up from where it was written and with a
         // low q: a 40 dB band at 40 Hz and q 42 needs ~4 s to ring up, so the
@@ -465,12 +1093,17 @@ export function buildBitHorizon(): Project {
             harmShape: 'Odd (hollow)',
             harm: 4,
             falloff: 0.88,
-            partials: [{ratio: 1, level: 1}, {ratio: 3, level: 0.5}, {ratio: 5, level: 0.22}, {ratio: 7, level: 0.1}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 3, level: 0.5 },
+                { ratio: 5, level: 0.22 },
+                { ratio: 7, level: 0.1 },
+            ],
             att: 0.002,
             dec: 0.12,
             sus: 0.65,
             rel: 0.08,
-            gain: 0.7
+            gain: 0.7,
         }),
         instrument('c5', 'Keys/Power Chord', COLORS[5], {
             tone: 1,
@@ -478,16 +1111,21 @@ export function buildBitHorizon(): Project {
             harmShape: 'Fifths (quint)',
             harm: 5,
             falloff: 0.82,
-            partials: [{ratio: 1, level: 1}, {ratio: 1.5, level: 0.5}, {ratio: 2, level: 0.68}, {
-                ratio: 3,
-                level: 0.32
-            }],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 1.5, level: 0.5 },
+                { ratio: 2, level: 0.68 },
+                {
+                    ratio: 3,
+                    level: 0.32,
+                },
+            ],
             att: 0.002,
             dec: 0.12,
             sus: 0.18,
             rel: 0.1,
             gain: 0.42,
-            pan: -0.18
+            pan: -0.18,
         }),
         instrument('c6', 'Lead/Star Runner', COLORS[6], {
             tone: 1,
@@ -495,7 +1133,12 @@ export function buildBitHorizon(): Project {
             harmShape: 'Saw / Reed',
             harm: 5,
             falloff: 0.72,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.44}, {ratio: 3, level: 0.24}, {ratio: 4, level: 0.12}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.44 },
+                { ratio: 3, level: 0.24 },
+                { ratio: 4, level: 0.12 },
+            ],
             vib: 4,
             vibRate: 6,
             vibDelay: 0.35,
@@ -505,7 +1148,7 @@ export function buildBitHorizon(): Project {
             rel: 0.09,
             gain: 0.38,
             pan: 0.12,
-            legatoCurve: 'ease-out'
+            legatoCurve: 'ease-out',
         }),
         instrument('c7', 'Arp/Crystal Ladder', COLORS[7], {
             tone: 1,
@@ -513,13 +1156,17 @@ export function buildBitHorizon(): Project {
             harmShape: 'Odd (hollow)',
             harm: 4,
             falloff: 0.78,
-            partials: [{ratio: 1, level: 1}, {ratio: 3, level: 0.34}, {ratio: 5, level: 0.13}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 3, level: 0.34 },
+                { ratio: 5, level: 0.13 },
+            ],
             att: 0.002,
             dec: 0.08,
             sus: 0.02,
             rel: 0.07,
             gain: 0.4,
-            pan: -0.32
+            pan: -0.32,
         }),
         instrument('c8', 'FX/Level Warp', COLORS[8], {
             tone: 0.3,
@@ -537,7 +1184,7 @@ export function buildBitHorizon(): Project {
             sus: 0.42,
             rel: 0.48,
             gain: 0.1,
-            pan: 0.25
+            pan: 0.25,
         }),
         instrument('c9', 'Pad/Console Memory', '#85a7bb', {
             tone: 0.9,
@@ -545,7 +1192,11 @@ export function buildBitHorizon(): Project {
             harmShape: 'Flute (pure)',
             harm: 3,
             falloff: 0.76,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.18}, {ratio: 3, level: 0.06}],
+            partials: [
+                { ratio: 1, level: 1 },
+                { ratio: 2, level: 0.18 },
+                { ratio: 3, level: 0.06 },
+            ],
             vib: 3,
             vibRate: 4.2,
             vibDelay: 0.5,
@@ -554,7 +1205,7 @@ export function buildBitHorizon(): Project {
             sus: 0.55,
             rel: 0.38,
             gain: 0.2,
-            pan: 0.28
+            pan: 0.28,
         }),
         instrument('c10', 'FX/Save Point', '#d6c27a', {
             tone: 1,
@@ -562,69 +1213,329 @@ export function buildBitHorizon(): Project {
             harmShape: 'Bell partials',
             harm: 5,
             falloff: 0.75,
-            partials: [{ratio: 0.5, level: 0.45}, {ratio: 1, level: 1}, {ratio: 1.5, level: 0.35}, {
-                ratio: 2,
-                level: 0.52
-            }, {ratio: 3.36, level: 0.16}],
+            partials: [
+                { ratio: 0.5, level: 0.45 },
+                { ratio: 1, level: 1 },
+                { ratio: 1.5, level: 0.35 },
+                {
+                    ratio: 2,
+                    level: 0.52,
+                },
+                { ratio: 3.36, level: 0.16 },
+            ],
             att: 0.002,
             dec: 0.28,
             sus: 0.05,
             rel: 0.45,
             gain: 0.26,
-            pan: 0.36
-        })
+            pan: 0.36,
+        }),
     ];
     const patterns = [
-        pattern('cp1', '01 Boot/Signal awake', 32, '#3d5b78', {c7: [['E5', 0, 1, 0.28], ['B5', 4, 1, 0.3], ['G5', 8, 1, 0.32], ['B5', 12, 1, 0.28], ['D6', 16, 1, 0.34], ['B5', 20, 1, 0.3], ['G5', 24, 1, 0.28], ['B5', 28, 1, 0.32]]}),
-        pattern('cp2', '02 Run/Bit rhythm', 32, '#4c7186', {
-            c1: [['E3', 0, 1, 0.9], ['E3', 8, 1, 0.72], ['E3', 16, 1, 0.86], ['E3', 24, 1, 0.76]],
-            c2: [['E4', 8, 1, 0.68], ['E4', 24, 1, 0.74]],
-            c3: [['E4', 2, 1, 0.24], ['E4', 6, 1, 0.2], ['E4', 10, 1, 0.28], ['E4', 14, 1, 0.22], ['E4', 18, 1, 0.26], ['E4', 22, 1, 0.22], ['E4', 26, 1, 0.3], ['E4', 30, 1, 0.24]]
+        pattern('cp1', '01 Boot/Signal awake', 32, '#3d5b78', {
+            c7: [
+                ['E5', 0, 1, 0.28],
+                ['B5', 4, 1, 0.3],
+                ['G5', 8, 1, 0.32],
+                ['B5', 12, 1, 0.28],
+                ['D6', 16, 1, 0.34],
+                ['B5', 20, 1, 0.3],
+                ['G5', 24, 1, 0.28],
+                ['B5', 28, 1, 0.32],
+            ],
         }),
-        pattern('cp3', '02 Run/Pixel bass', 32, '#5e5085', {c4: [['E3', 0, 3, 0.82], ['B2', 4, 2, 0.58], ['D3', 8, 3, 0.74], ['A2', 12, 2, 0.56], ['C3', 16, 3, 0.8], ['G2', 20, 2, 0.58], ['D3', 24, 3, 0.76], ['B2', 28, 3, 0.62]]}),
-        pattern('cp4', '02 Run/Power grid', 32, '#765683', {c5: [['E4', 0, 3, 0.4], ['B4', 0, 3, 0.3], ['D4', 8, 3, 0.38], ['A4', 8, 3, 0.28], ['C4', 16, 3, 0.42], ['G4', 16, 3, 0.31], ['D4', 24, 3, 0.4], ['A4', 24, 3, 0.3]]}),
-        pattern('cp5', '03 Flight/Star runner', 32, '#a85d78', {c6: [['E5', 0, 3, 0.58], ['G5', 4, 3, 0.66], ['B5', 8, 3, 0.72], ['D6', 12, 4, 0.78], ['B5', 16, 3, 0.64], ['A5', 20, 3, 0.68], ['G5', 24, 3, 0.62], ['E6', 28, 4, 0.8]]}),
-        pattern('cp6', '03 Flight/Crystal ladder', 32, '#c76c6d', {c7: [['E5', 0, 1, 0.28], ['G5', 2, 1, 0.31], ['B5', 4, 1, 0.35], ['E6', 6, 1, 0.38], ['D5', 8, 1, 0.27], ['F#5', 10, 1, 0.3], ['A5', 12, 1, 0.34], ['D6', 14, 1, 0.37], ['C5', 16, 1, 0.28], ['E5', 18, 1, 0.31], ['G5', 20, 1, 0.35], ['C6', 22, 1, 0.38], ['D5', 24, 1, 0.3], ['F#5', 26, 1, 0.33], ['A5', 28, 1, 0.37], ['D6', 30, 1, 0.4]]}),
+        pattern('cp2', '02 Run/Bit rhythm', 32, '#4c7186', {
+            c1: [
+                ['E3', 0, 1, 0.9],
+                ['E3', 8, 1, 0.72],
+                ['E3', 16, 1, 0.86],
+                ['E3', 24, 1, 0.76],
+            ],
+            c2: [
+                ['E4', 8, 1, 0.68],
+                ['E4', 24, 1, 0.74],
+            ],
+            c3: [
+                ['E4', 2, 1, 0.24],
+                ['E4', 6, 1, 0.2],
+                ['E4', 10, 1, 0.28],
+                ['E4', 14, 1, 0.22],
+                ['E4', 18, 1, 0.26],
+                ['E4', 22, 1, 0.22],
+                ['E4', 26, 1, 0.3],
+                ['E4', 30, 1, 0.24],
+            ],
+        }),
+        pattern('cp3', '02 Run/Pixel bass', 32, '#5e5085', {
+            c4: [
+                ['E3', 0, 3, 0.82],
+                ['B2', 4, 2, 0.58],
+                ['D3', 8, 3, 0.74],
+                ['A2', 12, 2, 0.56],
+                ['C3', 16, 3, 0.8],
+                ['G2', 20, 2, 0.58],
+                ['D3', 24, 3, 0.76],
+                ['B2', 28, 3, 0.62],
+            ],
+        }),
+        pattern('cp4', '02 Run/Power grid', 32, '#765683', {
+            c5: [
+                ['E4', 0, 3, 0.4],
+                ['B4', 0, 3, 0.3],
+                ['D4', 8, 3, 0.38],
+                ['A4', 8, 3, 0.28],
+                ['C4', 16, 3, 0.42],
+                ['G4', 16, 3, 0.31],
+                ['D4', 24, 3, 0.4],
+                ['A4', 24, 3, 0.3],
+            ],
+        }),
+        pattern('cp5', '03 Flight/Star runner', 32, '#a85d78', {
+            c6: [
+                ['E5', 0, 3, 0.58],
+                ['G5', 4, 3, 0.66],
+                ['B5', 8, 3, 0.72],
+                ['D6', 12, 4, 0.78],
+                ['B5', 16, 3, 0.64],
+                ['A5', 20, 3, 0.68],
+                ['G5', 24, 3, 0.62],
+                ['E6', 28, 4, 0.8],
+            ],
+        }),
+        pattern('cp6', '03 Flight/Crystal ladder', 32, '#c76c6d', {
+            c7: [
+                ['E5', 0, 1, 0.28],
+                ['G5', 2, 1, 0.31],
+                ['B5', 4, 1, 0.35],
+                ['E6', 6, 1, 0.38],
+                ['D5', 8, 1, 0.27],
+                ['F#5', 10, 1, 0.3],
+                ['A5', 12, 1, 0.34],
+                ['D6', 14, 1, 0.37],
+                ['C5', 16, 1, 0.28],
+                ['E5', 18, 1, 0.31],
+                ['G5', 20, 1, 0.35],
+                ['C6', 22, 1, 0.38],
+                ['D5', 24, 1, 0.3],
+                ['F#5', 26, 1, 0.33],
+                ['A5', 28, 1, 0.37],
+                ['D6', 30, 1, 0.4],
+            ],
+        }),
         pattern('cp7', '04 Cave/Low battery', 32, '#616687', {
-            c1: [['E3', 0, 1, 0.72], ['E3', 16, 1, 0.68]],
-            c2: [['E4', 8, 1, 0.58], ['E4', 24, 1, 0.62]],
-            c4: [['C3', 0, 7, 0.62], ['G2', 8, 7, 0.56], ['D3', 16, 7, 0.64], ['A2', 24, 7, 0.58]],
-            c5: [['C4', 2, 5, 0.3], ['G4', 10, 5, 0.28], ['D4', 18, 5, 0.31], ['A3', 26, 5, 0.27]]
+            c1: [
+                ['E3', 0, 1, 0.72],
+                ['E3', 16, 1, 0.68],
+            ],
+            c2: [
+                ['E4', 8, 1, 0.58],
+                ['E4', 24, 1, 0.62],
+            ],
+            c4: [
+                ['C3', 0, 7, 0.62],
+                ['G2', 8, 7, 0.56],
+                ['D3', 16, 7, 0.64],
+                ['A2', 24, 7, 0.58],
+            ],
+            c5: [
+                ['C4', 2, 5, 0.3],
+                ['G4', 10, 5, 0.28],
+                ['D4', 18, 5, 0.31],
+                ['A3', 26, 5, 0.27],
+            ],
         }),
         pattern('cp8', '05 Boss/Red alert', 32, '#9b555f', {
-            c1: [['E3', 0, 1, 0.94], ['E3', 6, 1, 0.64], ['E3', 8, 1, 0.82], ['E3', 14, 1, 0.66], ['E3', 16, 1, 0.9], ['E3', 22, 1, 0.68], ['E3', 24, 1, 0.86], ['E3', 30, 1, 0.7]],
-            c2: [['E4', 4, 1, 0.78], ['E4', 12, 1, 0.84], ['E4', 20, 1, 0.8], ['E4', 28, 1, 0.88]],
-            c3: [['E4', 1, 1, 0.25], ['E4', 3, 1, 0.28], ['E4', 5, 1, 0.26], ['E4', 7, 1, 0.32], ['E4', 9, 1, 0.28], ['E4', 11, 1, 0.34], ['E4', 13, 1, 0.3], ['E4', 15, 1, 0.36], ['E4', 17, 1, 0.28], ['E4', 19, 1, 0.34], ['E4', 21, 1, 0.3], ['E4', 23, 1, 0.36], ['E4', 25, 1, 0.32], ['E4', 27, 1, 0.38], ['E4', 29, 1, 0.34], ['E4', 31, 1, 0.4]]
+            c1: [
+                ['E3', 0, 1, 0.94],
+                ['E3', 6, 1, 0.64],
+                ['E3', 8, 1, 0.82],
+                ['E3', 14, 1, 0.66],
+                ['E3', 16, 1, 0.9],
+                ['E3', 22, 1, 0.68],
+                ['E3', 24, 1, 0.86],
+                ['E3', 30, 1, 0.7],
+            ],
+            c2: [
+                ['E4', 4, 1, 0.78],
+                ['E4', 12, 1, 0.84],
+                ['E4', 20, 1, 0.8],
+                ['E4', 28, 1, 0.88],
+            ],
+            c3: [
+                ['E4', 1, 1, 0.25],
+                ['E4', 3, 1, 0.28],
+                ['E4', 5, 1, 0.26],
+                ['E4', 7, 1, 0.32],
+                ['E4', 9, 1, 0.28],
+                ['E4', 11, 1, 0.34],
+                ['E4', 13, 1, 0.3],
+                ['E4', 15, 1, 0.36],
+                ['E4', 17, 1, 0.28],
+                ['E4', 19, 1, 0.34],
+                ['E4', 21, 1, 0.3],
+                ['E4', 23, 1, 0.36],
+                ['E4', 25, 1, 0.32],
+                ['E4', 27, 1, 0.38],
+                ['E4', 29, 1, 0.34],
+                ['E4', 31, 1, 0.4],
+            ],
         }),
         pattern('cp9', '05 Boss/Level warp', 32, '#c4655f', {
             c8: [['E3', 0, 16, 0.22]],
-            c6: [['B5', 0, 3, 0.72], ['D6', 4, 3, 0.78], ['E6', 8, 4, 0.84], ['G6', 12, 4, 0.8], ['E6', 16, 3, 0.76], ['D6', 20, 3, 0.72], ['B5', 24, 3, 0.7], ['E6', 28, 4, 0.86]]
+            c6: [
+                ['B5', 0, 3, 0.72],
+                ['D6', 4, 3, 0.78],
+                ['E6', 8, 4, 0.84],
+                ['G6', 12, 4, 0.8],
+                ['E6', 16, 3, 0.76],
+                ['D6', 20, 3, 0.72],
+                ['B5', 24, 3, 0.7],
+                ['E6', 28, 4, 0.86],
+            ],
         }),
         pattern('cp10', '06 Clear/High score', 32, '#d2a665', {
-            c5: [['E4', 0, 4, 0.32], ['B4', 0, 4, 0.25], ['C4', 8, 4, 0.3], ['G4', 8, 4, 0.22], ['D4', 16, 4, 0.34], ['A4', 16, 4, 0.26], ['E4', 24, 8, 0.36], ['B4', 24, 8, 0.28]],
-            c6: [['E6', 0, 4, 0.64], ['G6', 5, 3, 0.68], ['B6', 9, 4, 0.74], ['D7', 14, 4, 0.78], ['B6', 19, 3, 0.66], ['G6', 23, 3, 0.62], ['E6', 27, 5, 0.72]]
+            c5: [
+                ['E4', 0, 4, 0.32],
+                ['B4', 0, 4, 0.25],
+                ['C4', 8, 4, 0.3],
+                ['G4', 8, 4, 0.22],
+                ['D4', 16, 4, 0.34],
+                ['A4', 16, 4, 0.26],
+                ['E4', 24, 8, 0.36],
+                ['B4', 24, 8, 0.28],
+            ],
+            c6: [
+                ['E6', 0, 4, 0.64],
+                ['G6', 5, 3, 0.68],
+                ['B6', 9, 4, 0.74],
+                ['D7', 14, 4, 0.78],
+                ['B6', 19, 3, 0.66],
+                ['G6', 23, 3, 0.62],
+                ['E6', 27, 5, 0.72],
+            ],
         }),
-        pattern('cp11', '04 Horizon/Second signal', 32, '#7981b2', {c6: [['B4', 0, 3, 0.54], ['D5', 4, 3, 0.62], ['F#5', 8, 4, 0.68], ['A5', 13, 3, 0.72], ['G5', 17, 3, 0.62], ['F#5', 21, 3, 0.58], ['D5', 25, 3, 0.54], ['B4', 29, 3, 0.6]]}),
-        pattern('cp12', '04 Horizon/Answer bass', 32, '#66709f', {c4: [['B2', 0, 3, 0.7], ['F#3', 4, 2, 0.48], ['A2', 8, 3, 0.66], ['E3', 12, 2, 0.46], ['G2', 16, 3, 0.68], ['D3', 20, 2, 0.48], ['F#2', 24, 3, 0.7], ['C#3', 28, 3, 0.5]]}),
+        pattern('cp11', '04 Horizon/Second signal', 32, '#7981b2', {
+            c6: [
+                ['B4', 0, 3, 0.54],
+                ['D5', 4, 3, 0.62],
+                ['F#5', 8, 4, 0.68],
+                ['A5', 13, 3, 0.72],
+                ['G5', 17, 3, 0.62],
+                ['F#5', 21, 3, 0.58],
+                ['D5', 25, 3, 0.54],
+                ['B4', 29, 3, 0.6],
+            ],
+        }),
+        pattern('cp12', '04 Horizon/Answer bass', 32, '#66709f', {
+            c4: [
+                ['B2', 0, 3, 0.7],
+                ['F#3', 4, 2, 0.48],
+                ['A2', 8, 3, 0.66],
+                ['E3', 12, 2, 0.46],
+                ['G2', 16, 3, 0.68],
+                ['D3', 20, 2, 0.48],
+                ['F#2', 24, 3, 0.7],
+                ['C#3', 28, 3, 0.5],
+            ],
+        }),
         pattern('cp13', '04 Horizon/Off-grid rhythm', 32, '#55768e', {
-            c1: [['E3', 0, 1, 0.82], ['E3', 7, 1, 0.5], ['E3', 12, 1, 0.7], ['E3', 16, 1, 0.84], ['E3', 23, 1, 0.54], ['E3', 28, 1, 0.76]],
-            c2: [['E4', 4, 1, 0.62], ['E4', 14, 1, 0.54], ['E4', 20, 1, 0.66], ['E4', 30, 1, 0.58]],
-            c3: [['E4', 3, 1, 0.18], ['E4', 9, 1, 0.22], ['E4', 13, 1, 0.2], ['E4', 19, 1, 0.24], ['E4', 25, 1, 0.22], ['E4', 29, 1, 0.26]]
+            c1: [
+                ['E3', 0, 1, 0.82],
+                ['E3', 7, 1, 0.5],
+                ['E3', 12, 1, 0.7],
+                ['E3', 16, 1, 0.84],
+                ['E3', 23, 1, 0.54],
+                ['E3', 28, 1, 0.76],
+            ],
+            c2: [
+                ['E4', 4, 1, 0.62],
+                ['E4', 14, 1, 0.54],
+                ['E4', 20, 1, 0.66],
+                ['E4', 30, 1, 0.58],
+            ],
+            c3: [
+                ['E4', 3, 1, 0.18],
+                ['E4', 9, 1, 0.22],
+                ['E4', 13, 1, 0.2],
+                ['E4', 19, 1, 0.24],
+                ['E4', 25, 1, 0.22],
+                ['E4', 29, 1, 0.26],
+            ],
         }),
         pattern('cp14', '05 Drift/Console memory', 32, '#60748d', {
-            c4: [['C3', 0, 7, 0.5], ['G2', 8, 7, 0.44], ['A2', 16, 7, 0.48], ['E2', 24, 7, 0.42]],
-            c9: [['C4', 0, 8, 0.2], ['E4', 0, 8, 0.15], ['G4', 0, 8, 0.12], ['A3', 16, 8, 0.21], ['C4', 16, 8, 0.16], ['E4', 16, 8, 0.13]],
-            c10: [['E6', 7, 2, 0.28], ['D6', 15, 2, 0.25], ['C6', 23, 2, 0.26], ['B5', 30, 2, 0.3]]
+            c4: [
+                ['C3', 0, 7, 0.5],
+                ['G2', 8, 7, 0.44],
+                ['A2', 16, 7, 0.48],
+                ['E2', 24, 7, 0.42],
+            ],
+            c9: [
+                ['C4', 0, 8, 0.2],
+                ['E4', 0, 8, 0.15],
+                ['G4', 0, 8, 0.12],
+                ['A3', 16, 8, 0.21],
+                ['C4', 16, 8, 0.16],
+                ['E4', 16, 8, 0.13],
+            ],
+            c10: [
+                ['E6', 7, 2, 0.28],
+                ['D6', 15, 2, 0.25],
+                ['C6', 23, 2, 0.26],
+                ['B5', 30, 2, 0.3],
+            ],
         }),
-        pattern('cp15', '06 Return/Counter spark', 32, '#bd7a72', {c7: [['B5', 0, 1, 0.24], ['D6', 2, 1, 0.28], ['F#6', 4, 1, 0.32], ['B6', 6, 1, 0.34], ['A5', 8, 1, 0.24], ['C6', 10, 1, 0.28], ['E6', 12, 1, 0.32], ['A6', 14, 1, 0.34], ['G5', 16, 1, 0.25], ['B5', 18, 1, 0.28], ['D6', 20, 1, 0.32], ['G6', 22, 1, 0.35], ['F#5', 24, 1, 0.26], ['A5', 26, 1, 0.3], ['C#6', 28, 1, 0.34], ['F#6', 30, 1, 0.36]]}),
+        pattern('cp15', '06 Return/Counter spark', 32, '#bd7a72', {
+            c7: [
+                ['B5', 0, 1, 0.24],
+                ['D6', 2, 1, 0.28],
+                ['F#6', 4, 1, 0.32],
+                ['B6', 6, 1, 0.34],
+                ['A5', 8, 1, 0.24],
+                ['C6', 10, 1, 0.28],
+                ['E6', 12, 1, 0.32],
+                ['A6', 14, 1, 0.34],
+                ['G5', 16, 1, 0.25],
+                ['B5', 18, 1, 0.28],
+                ['D6', 20, 1, 0.32],
+                ['G6', 22, 1, 0.35],
+                ['F#5', 24, 1, 0.26],
+                ['A5', 26, 1, 0.3],
+                ['C#6', 28, 1, 0.34],
+                ['F#6', 30, 1, 0.36],
+            ],
+        }),
         pattern('cp16', '07 Exit/Final transmission', 32, '#d8b06a', {
-            c1: [['E3', 0, 1, 0.86], ['E3', 8, 1, 0.72], ['E3', 16, 1, 0.82]],
-            c2: [['E4', 8, 1, 0.7], ['E4', 24, 1, 0.56]],
-            c4: [['E3', 0, 4, 0.7], ['B2', 8, 4, 0.56], ['C3', 16, 4, 0.62], ['E3', 24, 8, 0.74]],
-            c5: [['E4', 0, 6, 0.28], ['B4', 0, 6, 0.22], ['C4', 16, 6, 0.26], ['G4', 16, 6, 0.2]],
-            c6: [['E6', 0, 4, 0.64], ['B5', 6, 3, 0.56], ['G5', 11, 3, 0.52], ['E6', 16, 4, 0.68], ['D6', 22, 3, 0.58], ['E6', 27, 5, 0.7]],
-            c10: [['E7', 28, 4, 0.34]]
-        })
+            c1: [
+                ['E3', 0, 1, 0.86],
+                ['E3', 8, 1, 0.72],
+                ['E3', 16, 1, 0.82],
+            ],
+            c2: [
+                ['E4', 8, 1, 0.7],
+                ['E4', 24, 1, 0.56],
+            ],
+            c4: [
+                ['E3', 0, 4, 0.7],
+                ['B2', 8, 4, 0.56],
+                ['C3', 16, 4, 0.62],
+                ['E3', 24, 8, 0.74],
+            ],
+            c5: [
+                ['E4', 0, 6, 0.28],
+                ['B4', 0, 6, 0.22],
+                ['C4', 16, 6, 0.26],
+                ['G4', 16, 6, 0.2],
+            ],
+            c6: [
+                ['E6', 0, 4, 0.64],
+                ['B5', 6, 3, 0.56],
+                ['G5', 11, 3, 0.52],
+                ['E6', 16, 4, 0.68],
+                ['D6', 22, 3, 0.58],
+                ['E6', 27, 5, 0.7],
+            ],
+            c10: [['E7', 28, 4, 0.34]],
+        }),
     ];
     connect(patterns, 'cp5', 'c6', 0, 4, 'ease-out');
     connect(patterns, 'cp5', 'c6', 8, 12, 'smooth');
@@ -632,90 +1543,368 @@ export function buildBitHorizon(): Project {
     connect(patterns, 'cp11', 'c6', 4, 8, 'smooth');
     connect(patterns, 'cp11', 'c6', 17, 21, 'ease-out');
     const sections: ArrangementSection[] = [
-        [['cp1', 3]], [['cp1', 3], ['cp14', 2]], [['cp1', 3], ['cp14', 2]], [['cp1', 3], ['cp10', 3]],
-        [['cp2', 0], ['cp3', 1]], [['cp2', 0], ['cp3', 1], ['cp4', 2]], [['cp13', 0], ['cp3', 1], ['cp4', 2]], [['cp2', 0], ['cp3', 1], ['cp6', 3]],
-        [['cp2', 0], ['cp3', 1], ['cp5', 4]], [['cp13', 0], ['cp3', 1], ['cp4', 2], ['cp5', 4]], [['cp2', 0], ['cp3', 1], ['cp6', 3]], [['cp13', 0], ['cp3', 1], ['cp5', 4], ['cp6', 3]],
-        [['cp13', 0], ['cp12', 1]], [['cp13', 0], ['cp12', 1], ['cp11', 4]], [['cp13', 0], ['cp12', 1], ['cp15', 3]], [['cp13', 0], ['cp12', 1], ['cp11', 4], ['cp15', 3]],
-        [['cp7', 1], ['cp14', 2]], [['cp14', 2]], [['cp14', 2], ['cp1', 3]], [['cp7', 1], ['cp10', 3]],
-        [['cp2', 0], ['cp3', 1], ['cp5', 4]], [['cp13', 0], ['cp12', 1], ['cp11', 4]], [['cp2', 0], ['cp3', 1], ['cp4', 2], ['cp6', 3]], [['cp13', 0], ['cp12', 1], ['cp15', 3]],
-        [['cp8', 0], ['cp3', 1], ['cp9', 4]], [['cp8', 0], ['cp3', 1], ['cp4', 2], ['cp9', 4]], [['cp8', 0], ['cp12', 1], ['cp11', 4]], [['cp8', 0], ['cp12', 1], ['cp9', 4], ['cp15', 3]],
-        [['cp8', 0], ['cp3', 1], ['cp4', 2], ['cp9', 4]], [['cp8', 0], ['cp12', 1], ['cp11', 4], ['cp15', 3]], [['cp8', 0], ['cp3', 1], ['cp9', 4], ['cp6', 3]], [['cp8', 0], ['cp12', 1], ['cp4', 2], ['cp11', 4]],
-        [['cp7', 1], ['cp14', 2]], [['cp14', 2], ['cp10', 3]], [['cp7', 1], ['cp1', 3]], [['cp14', 2]],
-        [['cp13', 0], ['cp3', 1], ['cp5', 4], ['cp15', 3]], [['cp2', 0], ['cp12', 1], ['cp11', 4]], [['cp13', 0], ['cp3', 1], ['cp4', 2], ['cp5', 4]], [['cp2', 0], ['cp12', 1], ['cp11', 4], ['cp15', 3]],
-        [['cp8', 0], ['cp3', 1], ['cp9', 4], ['cp15', 3]], [['cp8', 0], ['cp12', 1], ['cp4', 2], ['cp11', 4]], [['cp8', 0], ['cp3', 1], ['cp4', 2], ['cp9', 4], ['cp15', 3]], [['cp8', 0], ['cp12', 1], ['cp11', 4], ['cp9', 4]],
-        [['cp16', 0], ['cp15', 3]], [['cp16', 0], ['cp6', 3]], [['cp16', 0], ['cp11', 4]], [['cp16', 0], ['cp15', 3]],
-        [['cp10', 2], ['cp14', 1]], [['cp16', 0], ['cp10', 2]], [['cp14', 2], ['cp1', 3]], [['cp16', 0]],
-        [['cp10', 2]], [['cp14', 2]], [['cp16', 0]], [['cp10', 2]]
+        [['cp1', 3]],
+        [
+            ['cp1', 3],
+            ['cp14', 2],
+        ],
+        [
+            ['cp1', 3],
+            ['cp14', 2],
+        ],
+        [
+            ['cp1', 3],
+            ['cp10', 3],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+        ],
+        [
+            ['cp13', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp6', 3],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp5', 4],
+        ],
+        [
+            ['cp13', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp5', 4],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp6', 3],
+        ],
+        [
+            ['cp13', 0],
+            ['cp3', 1],
+            ['cp5', 4],
+            ['cp6', 3],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+            ['cp15', 3],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp7', 1],
+            ['cp14', 2],
+        ],
+        [['cp14', 2]],
+        [
+            ['cp14', 2],
+            ['cp1', 3],
+        ],
+        [
+            ['cp7', 1],
+            ['cp10', 3],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp5', 4],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+        ],
+        [
+            ['cp2', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp6', 3],
+        ],
+        [
+            ['cp13', 0],
+            ['cp12', 1],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp9', 4],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp9', 4],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp9', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp9', 4],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp9', 4],
+            ['cp6', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp4', 2],
+            ['cp11', 4],
+        ],
+        [
+            ['cp7', 1],
+            ['cp14', 2],
+        ],
+        [
+            ['cp14', 2],
+            ['cp10', 3],
+        ],
+        [
+            ['cp7', 1],
+            ['cp1', 3],
+        ],
+        [['cp14', 2]],
+        [
+            ['cp13', 0],
+            ['cp3', 1],
+            ['cp5', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp2', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+        ],
+        [
+            ['cp13', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp5', 4],
+        ],
+        [
+            ['cp2', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp9', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp4', 2],
+            ['cp11', 4],
+        ],
+        [
+            ['cp8', 0],
+            ['cp3', 1],
+            ['cp4', 2],
+            ['cp9', 4],
+            ['cp15', 3],
+        ],
+        [
+            ['cp8', 0],
+            ['cp12', 1],
+            ['cp11', 4],
+            ['cp9', 4],
+        ],
+        [
+            ['cp16', 0],
+            ['cp15', 3],
+        ],
+        [
+            ['cp16', 0],
+            ['cp6', 3],
+        ],
+        [
+            ['cp16', 0],
+            ['cp11', 4],
+        ],
+        [
+            ['cp16', 0],
+            ['cp15', 3],
+        ],
+        [
+            ['cp10', 2],
+            ['cp14', 1],
+        ],
+        [
+            ['cp16', 0],
+            ['cp10', 2],
+        ],
+        [
+            ['cp14', 2],
+            ['cp1', 3],
+        ],
+        [['cp16', 0]],
+        [['cp10', 2]],
+        [['cp14', 2]],
+        [['cp16', 0]],
+        [['cp10', 2]],
     ];
-    return project(instruments, patterns, arrangeSong('bc', sections), ['Rhythm', 'Bass', 'Harmony', 'Arpeggio', 'Lead'], 150, [
-        {
-            id: 'ca1',
-            target: 'master',
-            param: 'vol',
-            points: [{step: 0, value: 0.38, curve: 'ease-out'}, {step: 256, value: 0.68, curve: 'linear'}, {
-                step: 640,
-                value: 0.76,
-                curve: 'ease-in'
-            }, {step: 1024, value: 0.86, curve: 'smooth'}, {step: 1408, value: 0.78, curve: 'hold'}, {
-                step: 1728,
-                value: 0.3,
-                curve: 'ease-out'
-            }]
-        },
-        {
-            id: 'ca2',
-            target: 'master',
-            param: 'rev',
-            points: [{step: 0, value: 0.28, curve: 'hold'}, {step: 384, value: 0.18, curve: 'linear'}, {
-                step: 576,
-                value: 0.38,
-                curve: 'ease-out'
-            }, {step: 1024, value: 0.24, curve: 'smooth'}, {step: 1536, value: 0.42, curve: 'ease-in'}, {
-                step: 1728,
-                value: 0.56,
-                curve: 'linear'
-            }]
-        },
-        {
-            id: 'ca3',
-            target: 'c7',
-            param: 'tone',
-            // kept at/above 0.6 — see the Relay Dawn pad lane for why
-            points: [{step: 0, value: 0.62, curve: 'hold'}, {step: 320, value: 0.86, curve: 'ease-in'}, {
-                step: 640,
-                value: 0.7,
-                curve: 'smooth'
-            }, {step: 1024, value: 1, curve: 'ease-out'}, {step: 1440, value: 0.6, curve: 'linear'}]
-        },
-        {
-            id: 'ca4',
-            target: 'c8',
-            param: 'gain',
-            points: [{step: 0, value: 0, curve: 'hold'}, {step: 768, value: 0.1, curve: 'ease-in'}, {
-                step: 1024,
-                value: 0,
-                curve: 'ease-out'
-            }, {step: 1280, value: 0.08, curve: 'smooth'}, {step: 1472, value: 0, curve: 'linear'}]
-        },
-        {
-            id: 'ca5',
-            target: 'c9',
-            param: 'gain',
-            points: [{step: 0, value: 0.14, curve: 'hold'}, {step: 512, value: 0.22, curve: 'ease-in'}, {
-                step: 768,
-                value: 0.1,
-                curve: 'ease-out'
-            }, {step: 1536, value: 0.2, curve: 'smooth'}]
-        },
-        {
-            id: 'ca6',
-            target: 'c6',
-            param: 'tone',
-            points: [{step: 0, value: 0.72, curve: 'hold'}, {step: 512, value: 0.9, curve: 'ease-in'}, {
-                step: 960,
-                value: 0.8,
-                curve: 'smooth'
-            }, {step: 1280, value: 1, curve: 'ease-out'}, {step: 1600, value: 0.65, curve: 'linear'}]
-        }
-    ]);
+    return project(
+        instruments,
+        patterns,
+        arrangeSong('bc', sections),
+        ['Rhythm', 'Bass', 'Harmony', 'Arpeggio', 'Lead'],
+        150,
+        [
+            {
+                id: 'ca1',
+                target: 'master',
+                param: 'vol',
+                points: [
+                    { step: 0, value: 0.38, curve: 'ease-out' },
+                    { step: 256, value: 0.68, curve: 'linear' },
+                    {
+                        step: 640,
+                        value: 0.76,
+                        curve: 'ease-in',
+                    },
+                    { step: 1024, value: 0.86, curve: 'smooth' },
+                    { step: 1408, value: 0.78, curve: 'hold' },
+                    {
+                        step: 1728,
+                        value: 0.3,
+                        curve: 'ease-out',
+                    },
+                ],
+            },
+            {
+                id: 'ca2',
+                target: 'master',
+                param: 'rev',
+                points: [
+                    { step: 0, value: 0.28, curve: 'hold' },
+                    { step: 384, value: 0.18, curve: 'linear' },
+                    {
+                        step: 576,
+                        value: 0.38,
+                        curve: 'ease-out',
+                    },
+                    { step: 1024, value: 0.24, curve: 'smooth' },
+                    { step: 1536, value: 0.42, curve: 'ease-in' },
+                    {
+                        step: 1728,
+                        value: 0.56,
+                        curve: 'linear',
+                    },
+                ],
+            },
+            {
+                id: 'ca3',
+                target: 'c7',
+                param: 'tone',
+                // kept at/above 0.6 — see the Relay Dawn pad lane for why
+                points: [
+                    { step: 0, value: 0.62, curve: 'hold' },
+                    { step: 320, value: 0.86, curve: 'ease-in' },
+                    {
+                        step: 640,
+                        value: 0.7,
+                        curve: 'smooth',
+                    },
+                    { step: 1024, value: 1, curve: 'ease-out' },
+                    { step: 1440, value: 0.6, curve: 'linear' },
+                ],
+            },
+            {
+                id: 'ca4',
+                target: 'c8',
+                param: 'gain',
+                points: [
+                    { step: 0, value: 0, curve: 'hold' },
+                    { step: 768, value: 0.1, curve: 'ease-in' },
+                    {
+                        step: 1024,
+                        value: 0,
+                        curve: 'ease-out',
+                    },
+                    { step: 1280, value: 0.08, curve: 'smooth' },
+                    { step: 1472, value: 0, curve: 'linear' },
+                ],
+            },
+            {
+                id: 'ca5',
+                target: 'c9',
+                param: 'gain',
+                points: [
+                    { step: 0, value: 0.14, curve: 'hold' },
+                    { step: 512, value: 0.22, curve: 'ease-in' },
+                    {
+                        step: 768,
+                        value: 0.1,
+                        curve: 'ease-out',
+                    },
+                    { step: 1536, value: 0.2, curve: 'smooth' },
+                ],
+            },
+            {
+                id: 'ca6',
+                target: 'c6',
+                param: 'tone',
+                points: [
+                    { step: 0, value: 0.72, curve: 'hold' },
+                    { step: 512, value: 0.9, curve: 'ease-in' },
+                    {
+                        step: 960,
+                        value: 0.8,
+                        curve: 'smooth',
+                    },
+                    { step: 1280, value: 1, curve: 'ease-out' },
+                    { step: 1600, value: 0.65, curve: 'linear' },
+                ],
+            },
+        ],
+    );
 }

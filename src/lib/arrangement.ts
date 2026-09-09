@@ -1,17 +1,22 @@
-import type {
-    ArrangementClip, Note, Pattern, Track
-} from './types';
+import type { ArrangementClip, Note, Pattern, Track } from './types';
 
-import {
-    rowOfNote
-} from './notes';
+import { rowOfNote } from './notes';
 
-const TRACK_COLORS = ['#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#a29bfe', '#f9ca24', '#ff6b6b', '#48dbfb'];
+const TRACK_COLORS = [
+    '#53d8fb',
+    '#ff9f43',
+    '#ee5253',
+    '#10ac84',
+    '#a29bfe',
+    '#f9ca24',
+    '#ff6b6b',
+    '#48dbfb',
+];
 
 function newArrangementTrack(index: number): Track {
     return {
         name: `Track ${index + 1}`,
-        color: TRACK_COLORS[index % TRACK_COLORS.length]
+        color: TRACK_COLORS[index % TRACK_COLORS.length],
     };
 }
 
@@ -31,23 +36,45 @@ export function addArrangementTrack(tracks: Track[]): Track[] {
     return [...tracks, newArrangementTrack(tracks.length)];
 }
 
-export function insertArrangementTrack(tracks: Track[], arrangement: ArrangementClip[], index: number): {
+export function insertArrangementTrack(
+    tracks: Track[],
+    arrangement: ArrangementClip[],
+    index: number,
+): {
     tracks: Track[];
     arrangement: ArrangementClip[];
 } {
     const insertionIndex = Math.max(0, Math.min(index, tracks.length));
     return {
-        tracks: [...tracks.slice(0, insertionIndex), newArrangementTrack(insertionIndex), ...tracks.slice(insertionIndex)],
-        arrangement: arrangement.map(clip => clip.track >= insertionIndex ? {...clip, track: clip.track + 1} : clip)
+        tracks: [
+            ...tracks.slice(0, insertionIndex),
+            newArrangementTrack(insertionIndex),
+            ...tracks.slice(insertionIndex),
+        ],
+        arrangement: arrangement.map(clip =>
+            clip.track >= insertionIndex ? { ...clip, track: clip.track + 1 } : clip,
+        ),
     };
 }
 
-export function moveArrangementTrack(tracks: Track[], arrangement: ArrangementClip[], from: number, to: number): {
+export function moveArrangementTrack(
+    tracks: Track[],
+    arrangement: ArrangementClip[],
+    from: number,
+    to: number,
+): {
     tracks: Track[];
     arrangement: ArrangementClip[];
 } {
-    if (from < 0 || from >= tracks.length || to < 0 || to > tracks.length || to === from || to === from + 1) {
-        return {tracks, arrangement};
+    if (
+        from < 0 ||
+        from >= tracks.length ||
+        to < 0 ||
+        to > tracks.length ||
+        to === from ||
+        to === from + 1
+    ) {
+        return { tracks, arrangement };
     }
 
     const destination = to > from ? to - 1 : to;
@@ -59,38 +86,42 @@ export function moveArrangementTrack(tracks: Track[], arrangement: ArrangementCl
         tracks: reorderedTracks,
         arrangement: arrangement.map(clip => {
             if (clip.track === from) {
-                return {...clip, track: destination};
+                return { ...clip, track: destination };
             }
             if (from < destination && clip.track > from && clip.track <= destination) {
                 return {
                     ...clip,
-                    track: clip.track - 1
+                    track: clip.track - 1,
                 };
             }
             if (destination < from && clip.track >= destination && clip.track < from) {
                 return {
                     ...clip,
-                    track: clip.track + 1
+                    track: clip.track + 1,
                 };
             }
             return clip;
-        })
+        }),
     };
 }
 
-export function removeArrangementTrack(tracks: Track[], arrangement: ArrangementClip[], index: number): {
+export function removeArrangementTrack(
+    tracks: Track[],
+    arrangement: ArrangementClip[],
+    index: number,
+): {
     tracks: Track[];
     arrangement: ArrangementClip[];
 } {
     if (tracks.length <= 1 || index < 0 || index >= tracks.length) {
-        return {tracks, arrangement};
+        return { tracks, arrangement };
     }
 
     return {
         tracks: tracks.filter((_, trackIndex) => trackIndex !== index),
         arrangement: arrangement
             .filter(clip => clip.track !== index)
-            .map(clip => clip.track > index ? {...clip, track: clip.track - 1} : clip)
+            .map(clip => (clip.track > index ? { ...clip, track: clip.track - 1 } : clip)),
     };
 }
 
@@ -125,7 +156,7 @@ export function getPatternPreview(pattern: Pattern | undefined, clipLen: number)
                     ...note,
                     start,
                     len: Math.min(note.len, clipLen - start),
-                    y: (rowOfNote[note.pitch] - minPitch) / range
+                    y: (rowOfNote[note.pitch] - minPitch) / range,
                 });
             }
         });

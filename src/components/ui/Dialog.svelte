@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createEventDispatcher, type Snippet, tick
-    } from 'svelte';
+    import { createEventDispatcher, type Snippet, tick } from 'svelte';
 
     interface Props {
         bodyClass?: string;
@@ -20,7 +18,7 @@
         height = '',
         show = $bindable(false),
         title = '',
-        width = '300px'
+        width = '300px',
     }: Props = $props();
 
     const dispatch = createEventDispatcher<{ close: void }>();
@@ -50,16 +48,18 @@
 
 {#if show}
     <div class="modal-overlay">
-        <button class="modal-backdrop" aria-label="Close dialog" onclick={close} type="button"></button>
+        <button class="modal-backdrop" aria-label="Close dialog" onclick={close} type="button"
+        ></button>
         <div
-                bind:this={dialogEl}
-                style="width: {width}; height: {height}"
-                class="modal-content"
-                aria-label={title}
-                aria-modal="true"
-                onkeydown={handleKey}
-                role="dialog"
-                tabindex="-1">
+            bind:this={dialogEl}
+            style="width: {width}; height: {height}"
+            class="modal-content"
+            aria-label={title}
+            aria-modal="true"
+            onkeydown={handleKey}
+            role="dialog"
+            tabindex="-1"
+        >
             <div class="modal-header">
                 <h3>{title}</h3>
                 {#if headerActions}
@@ -105,7 +105,9 @@
         background: var(--color-surface);
         border: 1px solid var(--border);
         border-radius: 2px;
-        box-shadow: 0 24px 56px rgba(0, 0, 0, .7), inset 0 2px var(--accent);
+        box-shadow:
+            0 24px 56px rgba(0, 0, 0, 0.7),
+            inset 0 2px var(--accent);
         display: flex;
         flex-direction: column;
         max-width: calc(100vw - 32px);
@@ -125,7 +127,7 @@
         flex: 0 0 auto;
         font-size: 12px;
         color: var(--accent2);
-        letter-spacing: .12em;
+        letter-spacing: 0.12em;
     }
 
     .modal-header-actions {

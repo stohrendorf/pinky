@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createEventDispatcher
-    } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher<{ click: MouseEvent }>();
 
@@ -20,16 +18,16 @@
         disabled = false,
         title = '',
         ariaLabel = '',
-        className = ''
+        className = '',
     }: Props = $props();
 </script>
 
 <button
-        class="icon-btn {variant} {className}"
-        aria-label={ariaLabel || title}
-        {disabled}
-        onclick={event => dispatch('click', event)}
-        {title}
+    class="icon-btn {variant} {className}"
+    aria-label={ariaLabel || title}
+    {disabled}
+    onclick={event => dispatch('click', event)}
+    {title}
 >
     <i class="fa {icon}"></i>
 </button>
@@ -42,7 +40,10 @@
         height: 32px;
         border-radius: 5px;
         cursor: pointer;
-        transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+        transition:
+            background-color 0.12s ease,
+            border-color 0.12s ease,
+            color 0.12s ease;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -74,7 +75,7 @@
     }
 
     .icon-btn:disabled {
-        opacity: .3;
+        opacity: 0.3;
         cursor: not-allowed;
     }
 </style>

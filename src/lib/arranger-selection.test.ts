@@ -1,10 +1,6 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-    shouldPlacePattern
-} from './arrangement';
+import { shouldPlacePattern } from './arrangement';
 
 describe('shouldPlacePattern', () => {
     it('uses the first plain click to clear an existing arranger selection', () => {

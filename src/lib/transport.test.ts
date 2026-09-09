@@ -1,30 +1,22 @@
-import {
-    beforeEach, describe, expect, it, vi
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-    Instrument, Pattern
-} from './types';
+import type { Instrument, Pattern } from './types';
 
 import * as engine from './engine';
-import {
-    DEFAULT_PARAMS
-} from './instruments';
-import {
-    schedulePatternNotes
-} from './transport';
+import { DEFAULT_PARAMS } from './instruments';
+import { schedulePatternNotes } from './transport';
 
 vi.mock('./engine', () => ({
     glideAt: vi.fn(),
     noteOffAt: vi.fn(),
-    noteOnAt: vi.fn()
+    noteOnAt: vi.fn(),
 }));
 
 const lead: Instrument = {
     id: 'lead',
     name: 'Lead',
     color: '#fff',
-    params: {...DEFAULT_PARAMS}
+    params: { ...DEFAULT_PARAMS },
 };
 
 const chainedPattern: Pattern = {
@@ -34,11 +26,11 @@ const chainedPattern: Pattern = {
     color: '#fff',
     tracks: {
         lead: [
-            {pitch: 'C4', start: 0, len: 4, legatoTo: {pitch: 'D4', start: 8}},
-            {pitch: 'D4', start: 8, len: 4, legatoTo: {pitch: 'E4', start: 16}},
-            {pitch: 'E4', start: 16, len: 4}
-        ]
-    }
+            { pitch: 'C4', start: 0, len: 4, legatoTo: { pitch: 'D4', start: 8 } },
+            { pitch: 'D4', start: 8, len: 4, legatoTo: { pitch: 'E4', start: 16 } },
+            { pitch: 'E4', start: 16, len: 4 },
+        ],
+    },
 };
 
 describe('pattern note scheduling', () => {

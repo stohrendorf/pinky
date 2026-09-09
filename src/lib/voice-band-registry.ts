@@ -39,8 +39,7 @@ export interface VoiceSnapshot {
 export class VoiceBandRegistry {
     private readonly records: BandRecord[] = [];
 
-    constructor(private readonly capacity = 384) {
-    }
+    constructor(private readonly capacity = 384) {}
 
     add(record: BandRecord, now: number): void {
         this.records.push(record);
@@ -61,15 +60,17 @@ export class VoiceBandRegistry {
             const elapsed = now - record.start;
             let env = adsrLevel(record, elapsed);
             if (now > record.release) {
-                env = adsrLevel(record, record.release - record.start)
-                    * Math.exp(-(now - record.release) / Math.max(0.01, record.rel / 3));
+                env =
+                    adsrLevel(record, record.release - record.start) *
+                    Math.exp(-(now - record.release) / Math.max(0.01, record.rel / 3));
             }
             if (env < 0.004) {
                 continue;
             }
-            const bend = record.pitchTime > 0
-                ? Math.min(1, Math.max(0, (now - record.bendStart) / record.pitchTime))
-                : 1;
+            const bend =
+                record.pitchTime > 0
+                    ? Math.min(1, Math.max(0, (now - record.bendStart) / record.pitchTime))
+                    : 1;
             out.push({
                 inst: record.inst,
                 env,
@@ -78,10 +79,11 @@ export class VoiceBandRegistry {
                     q: band.q,
                     gain: band.gain,
                     post: band.post,
-                    freq: band.from === band.target
-                        ? band.target
-                        : band.from * Math.pow(band.target / band.from, bend)
-                }))
+                    freq:
+                        band.from === band.target
+                            ? band.target
+                            : band.from * Math.pow(band.target / band.from, bend),
+                })),
             });
         }
         return out;
@@ -122,7 +124,8 @@ export function adsrLevel(record: BandRecord, elapsed: number): number {
     if (elapsed < record.att) {
         return record.att > 0 ? elapsed / record.att : 1;
     }
-    return record.sus + (1 - record.sus) * Math.exp(
-        -(elapsed - record.att) / Math.max(0.01, record.dec / 3)
+    return (
+        record.sus +
+        (1 - record.sus) * Math.exp(-(elapsed - record.att) / Math.max(0.01, record.dec / 3))
     );
 }

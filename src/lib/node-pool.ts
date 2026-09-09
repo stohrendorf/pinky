@@ -54,10 +54,15 @@ export class NodePool {
             this.reset(node.gain, gain);
             return node;
         }
-        return new GainNode(context, {gain});
+        return new GainNode(context, { gain });
     }
 
-    takeBiquad(frequency: number, q: number, gain: number, context: BaseAudioContext): BiquadFilterNode {
+    takeBiquad(
+        frequency: number,
+        q: number,
+        gain: number,
+        context: BaseAudioContext,
+    ): BiquadFilterNode {
         const node = this.enabled && context === this.context ? this.biquads.pop() : undefined;
         if (node) {
             node.type = 'peaking';
@@ -67,7 +72,7 @@ export class NodePool {
             this.reset(node.detune, 0);
             return node;
         }
-        return new BiquadFilterNode(context, {type: 'peaking', frequency, Q: q, gain});
+        return new BiquadFilterNode(context, { type: 'peaking', frequency, Q: q, gain });
     }
 
     takePanner(pan: number, context: BaseAudioContext): StereoPannerNode {
@@ -76,7 +81,7 @@ export class NodePool {
             this.reset(node.pan, pan);
             return node;
         }
-        return new StereoPannerNode(context, {pan});
+        return new StereoPannerNode(context, { pan });
     }
 
     /** Return a disconnected node to this pool when it belongs to this graph. */
@@ -130,7 +135,7 @@ export class NodePool {
         this.reset(node.detune, 0);
         const sink = this.flushBus;
         safe(() => node.connect(sink));
-        this.cooling.push({node, at: this.now() + this.coolTime, sink});
+        this.cooling.push({ node, at: this.now() + this.coolTime, sink });
     }
 }
 

@@ -10,12 +10,8 @@
     import Shortcuts from './components/Shortcuts.svelte';
     import TopBar from './components/TopBar.svelte';
     import Dialog from './components/ui/Dialog.svelte';
-    import {
-        initHistory
-    } from './lib/history';
-    import {
-        initProject, project
-    } from './lib/project';
+    import { initHistory } from './lib/history';
+    import { initProject, project } from './lib/project';
 
     initProject();
     initHistory();
@@ -70,7 +66,10 @@
 
     function stopDividerDrag(event?: PointerEvent) {
         dividerDragging = false;
-        if (event?.currentTarget instanceof HTMLElement && event.currentTarget.hasPointerCapture(event.pointerId)) {
+        if (
+            event?.currentTarget instanceof HTMLElement &&
+            event.currentTarget.hasPointerCapture(event.pointerId)
+        ) {
             event.currentTarget.releasePointerCapture(event.pointerId);
         }
     }
@@ -95,67 +94,80 @@
 
 {#if $project}
     <div class="workspace">
-        <Shortcuts/>
-        <TopBar/>
+        <Shortcuts />
+        <TopBar />
         <main
-                bind:this={workspaceMain}
-                style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"
-                class="workspace-main"
-                class:divider-dragging={dividerDragging}
-                onpointercancel={stopDividerDrag}
-                onpointermove={handleDividerPointerMove}
-                onpointerup={stopDividerDrag}>
+            bind:this={workspaceMain}
+            style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"
+            class="workspace-main"
+            class:divider-dragging={dividerDragging}
+            onpointercancel={stopDividerDrag}
+            onpointermove={handleDividerPointerMove}
+            onpointerup={stopDividerDrag}
+        >
             <section class="arranger-panel" aria-label="Song arranger">
                 <div class="editor-with-tree">
-                    <PatternBar/>
-                    <Playlist bind:contextualEditor/>
+                    <PatternBar />
+                    <Playlist bind:contextualEditor />
                 </div>
             </section>
             <div
-                    class="split-divider"
-                    aria-label="Resize arranger and pattern editor"
-                    aria-orientation="horizontal"
-                    aria-valuemax="100"
-                    aria-valuemin="0"
-                    aria-valuenow={Math.round(splitRatio * 100)}
-                    onkeydown={handleDividerKeydown}
-                    onpointercancel={stopDividerDrag}
-                    onpointerdown={startDividerDrag}
-                    onpointermove={handleDividerPointerMove}
-                    onpointerup={stopDividerDrag}
-                    role="separator"
-                    tabindex="0"
-                    title="Click or drag to resize editors"></div>
+                class="split-divider"
+                aria-label="Resize arranger and pattern editor"
+                aria-orientation="horizontal"
+                aria-valuemax="100"
+                aria-valuemin="0"
+                aria-valuenow={Math.round(splitRatio * 100)}
+                onkeydown={handleDividerKeydown}
+                onpointercancel={stopDividerDrag}
+                onpointerdown={startDividerDrag}
+                onpointermove={handleDividerPointerMove}
+                onpointerup={stopDividerDrag}
+                role="separator"
+                tabindex="0"
+                title="Click or drag to resize editors"
+            ></div>
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
-                    <InstrumentTree onEdit={() => showInstrumentEditor = true}/>
-                    <Sequencer onEditInstrument={() => showInstrumentEditor = true} bind:contextualEditor/>
+                    <InstrumentTree onEdit={() => (showInstrumentEditor = true)} />
+                    <Sequencer
+                        onEditInstrument={() => (showInstrumentEditor = true)}
+                        bind:contextualEditor
+                    />
                 </div>
             </section>
         </main>
         <section class="scope-tray" class:collapsed={!scopeExpanded}>
-            <button class="scope-toggle" aria-expanded={scopeExpanded} onclick={() => scopeExpanded = !scopeExpanded}>
+            <button
+                class="scope-toggle"
+                aria-expanded={scopeExpanded}
+                onclick={() => (scopeExpanded = !scopeExpanded)}
+            >
                 <span><i class="fa fa-chart-simple"></i> Scope</span>
-                <span>{scopeExpanded ? 'Collapse' : 'Expand'} <i class="fa fa-chevron-{scopeExpanded ? 'down' : 'up'}"></i></span>
+                <span
+                    >{scopeExpanded ? 'Collapse' : 'Expand'}
+                    <i class="fa fa-chevron-{scopeExpanded ? 'down' : 'up'}"></i></span
+                >
             </button>
             {#if scopeExpanded}
-                <Scope/>
+                <Scope />
             {/if}
         </section>
     </div>
 
     <Dialog
-            bodyClass="instrument-editor-body"
-            height="min(720px, calc(100dvh - 32px))"
-            title="Instrument editor"
-            width="min(1040px, calc(100vw - 32px))"
-            bind:show={showInstrumentEditor}>
+        bodyClass="instrument-editor-body"
+        height="min(720px, calc(100dvh - 32px))"
+        title="Instrument editor"
+        width="min(1040px, calc(100vw - 32px))"
+        bind:show={showInstrumentEditor}
+    >
         {#snippet headerActions()}
-            <InstrumentPresetBar/>
+            <InstrumentPresetBar />
         {/snippet}
         <div class="instrument-editor-layout">
-            <InstrumentPanel/>
-            <Keyboard/>
+            <InstrumentPanel />
+            <Keyboard />
         </div>
     </Dialog>
 {/if}
@@ -285,7 +297,7 @@
         color: var(--accent2);
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
     }
 
     .scope-tray :global(.scope-wrap) {
@@ -295,5 +307,4 @@
     .scope-tray.collapsed {
         border-bottom: 0;
     }
-
 </style>

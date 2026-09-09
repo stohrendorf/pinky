@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createEventDispatcher
-    } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
 
     import Button from './Button.svelte';
     import Dialog from './Dialog.svelte';
@@ -12,7 +10,16 @@
         value?: string;
         label?: string;
         inputType?: string;
-        inputMode?: 'search' | 'text' | 'none' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | undefined;
+        inputMode?:
+            | 'search'
+            | 'text'
+            | 'none'
+            | 'tel'
+            | 'url'
+            | 'email'
+            | 'numeric'
+            | 'decimal'
+            | undefined;
     }
 
     let {
@@ -21,7 +28,7 @@
         value = $bindable(''),
         label = '',
         inputType = 'text',
-        inputMode = undefined
+        inputMode = undefined,
     }: Props = $props();
 
     const dispatch = createEventDispatcher<{ cancel: void; submit: string }>();
@@ -48,13 +55,14 @@
     <div class="prompt-body">
         {#if label}<label for="prompt-input">{label}</label>{/if}
         <input
-                id="prompt-input"
-                aria-label={label || title}
-                inputmode={inputMode}
-                onkeydown={(e) => e.key === 'Enter' && submit()}
-                type={inputType}
-                bind:value
-                use:selectOnMount/>
+            id="prompt-input"
+            aria-label={label || title}
+            inputmode={inputMode}
+            onkeydown={e => e.key === 'Enter' && submit()}
+            type={inputType}
+            bind:value
+            use:selectOnMount
+        />
         <div class="actions">
             <Button variant="secondary" on:click={cancel}>Cancel</Button>
             <Button on:click={submit}>OK</Button>

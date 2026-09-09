@@ -1,15 +1,9 @@
 // Global keyboard shortcuts (see Shortcuts.svelte for the cheat sheet dialog)
-import type {
-    Writable
-} from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
-import {
-    get, writable
-} from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
-import {
-    redo, undo
-} from './history';
+import { redo, undo } from './history';
 import {
     clearNoteSelection,
     copySelectedNotes,
@@ -20,17 +14,11 @@ import {
     pasteNotes,
     selectAllNotes,
     transposeSelectedNotes,
-    velocitySelectedNotes
+    velocitySelectedNotes,
 } from './noteops';
-import {
-    playing, saveProject
-} from './project';
-import {
-    exportWav
-} from './render';
-import {
-    playPattern, playSong, seekSong, stopTransport
-} from './transport';
+import { playing, saveProject } from './project';
+import { exportWav } from './render';
+import { playPattern, playSong, seekSong, stopTransport } from './transport';
 
 export const showShortcuts: Writable<boolean> = writable(false);
 
@@ -41,8 +29,8 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
             ['Space', 'Play / stop the song'],
             ['Shift + Space', 'Play / stop the selected pattern'],
             ['Home', 'Playback cursor back to the start'],
-            ['Media buttons', 'Play song, play pattern, reset cursor, or stop']
-        ]
+            ['Media buttons', 'Play song, play pattern, reset cursor, or stop'],
+        ],
     },
     {
         title: 'Project',
@@ -51,8 +39,8 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
             ['Ctrl + Shift + Z', 'Redo (also Ctrl + Y)'],
             ['Ctrl + S', 'Save to the browser'],
             ['Ctrl + E', 'Render the song to a WAV file'],
-            ['?', 'This cheat sheet']
-        ]
+            ['?', 'This cheat sheet'],
+        ],
     },
     {
         title: 'Piano roll',
@@ -65,8 +53,8 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
             ['← / →', 'Nudge by a step (Shift = a beat)'],
             ['Alt + ↑ / ↓', 'Louder / quieter (velocity)'],
             ['Alt + drag', 'Set velocity'],
-            ['Esc', 'Clear the note selection']
-        ]
+            ['Esc', 'Clear the note selection'],
+        ],
     },
     {
         title: 'Automation',
@@ -75,15 +63,15 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
             ['Click the curve', 'Add a point (and drag it)'],
             ['Drag a point', 'Move it in time / value'],
             ['Right-click a point', 'Remove it'],
-            ['× on the lane', 'Remove the whole lane']
-        ]
+            ['× on the lane', 'Remove the whole lane'],
+        ],
     },
     {
         title: 'Mixing',
         items: [
             ['M / S on an instrument', 'Mute / solo that instrument'],
-            ['M / S on a lane', 'Mute / solo that arranger lane']
-        ]
+            ['M / S on a lane', 'Mute / solo that arranger lane'],
+        ],
     },
     {
         title: 'Mouse',
@@ -93,9 +81,9 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
             ['Alt + wheel (arranger)', 'Transpose the selected clips (Shift = an octave)'],
             ['Timeline click / drag', 'Place the playback cursor / mark a loop'],
             ['Timeline right-click', 'Clear the loop region'],
-            ['Z .. M, Q .. U', 'Play the selected instrument live']
-        ]
-    }
+            ['Z .. M, Q .. U', 'Play the selected instrument live'],
+        ],
+    },
 ];
 
 function togglePlay(pattern: boolean): void {

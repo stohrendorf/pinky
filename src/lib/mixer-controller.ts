@@ -1,9 +1,5 @@
-import type {
-    MixerState
-} from './mixer';
-import type {
-    Project
-} from './types';
+import type { MixerState } from './mixer';
+import type { Project } from './types';
 
 /** Document changes (including undo/import) update the graph, but not playhead
  * changes. Never touch the temporarily swapped graph during an offline bounce. */
@@ -36,6 +32,6 @@ export function mixerController(configure: (mixer: MixerState | undefined, ids: 
             if (!active) {
                 sync();
             }
-        }
+        },
     };
 }

@@ -11,7 +11,7 @@ class ClockProcessor extends AudioWorkletProcessor {
         this.running = false;
         this.pulseFrames = Math.max(128, Math.round(sampleRate * 0.02)); // ~20 ms
         this.nextFrame = 0;
-        this.port.onmessage = ({data}) => {
+        this.port.onmessage = ({ data }) => {
             if (data.type === 'start') {
                 this.running = true;
                 this.nextFrame = currentFrame;
@@ -24,7 +24,7 @@ class ClockProcessor extends AudioWorkletProcessor {
     process() {
         if (this.running && currentFrame + 128 >= this.nextFrame) {
             this.nextFrame = currentFrame + this.pulseFrames;
-            this.port.postMessage({type: 'tick', time: currentTime});
+            this.port.postMessage({ type: 'tick', time: currentTime });
         }
         return true;
     }

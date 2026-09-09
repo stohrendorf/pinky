@@ -1,13 +1,7 @@
 <script lang="ts">
-    import {
-        onDestroy, onMount
-    } from 'svelte';
-    import {
-        SvelteMap
-    } from 'svelte/reactivity';
-    import {
-        get
-    } from 'svelte/store';
+    import { onDestroy, onMount } from 'svelte';
+    import { SvelteMap } from 'svelte/reactivity';
+    import { get } from 'svelte/store';
 
     import {
         bindingForCode,
@@ -17,17 +11,11 @@
         learnKeyboardLabel,
         loadKeyboardLayout,
         MAX_PREVIEW_OCTAVE,
-        MIN_PREVIEW_OCTAVE
+        MIN_PREVIEW_OCTAVE,
     } from '../lib/computer-keyboard';
-    import {
-        ensureAudio, noteOff, noteOn
-    } from '../lib/engine';
-    import {
-        NOTES
-    } from '../lib/notes';
-    import {
-        lastPlayedPitch, selectedInstrument
-    } from '../lib/project';
+    import { ensureAudio, noteOff, noteOn } from '../lib/engine';
+    import { NOTES } from '../lib/notes';
+    import { lastPlayedPitch, selectedInstrument } from '../lib/project';
 
     const POINTER_SOURCE = 'pointer';
     const SPACE_SOURCE = 'space';
@@ -46,14 +34,20 @@
         const blackWidth = whiteWidth * 0.6;
         let whiteIndex = 0;
         return visible.map(note => {
-            const key = {...note, left: note.black ? whiteIndex * whiteWidth - blackWidth / 2 : 0, blackWidth};
+            const key = {
+                ...note,
+                left: note.black ? whiteIndex * whiteWidth - blackWidth / 2 : 0,
+                blackWidth,
+            };
             if (!note.black) {
                 whiteIndex++;
             }
             return key;
         });
     });
-    const computerLabels = new SvelteMap(COMPUTER_KEY_BINDINGS.map(binding => [binding.code, binding.character]));
+    const computerLabels = new SvelteMap(
+        COMPUTER_KEY_BINDINGS.map(binding => [binding.code, binding.character]),
+    );
     const labelsByNote = $derived.by(() => {
         const labels: Record<string, string> = {};
         for (const binding of COMPUTER_KEY_BINDINGS) {
@@ -86,7 +80,7 @@
         }
         pendingSources.delete(source);
         const inst = selectedInstrument();
-        if (heldNotes.hold(source, {instrumentId: inst.id, note: name})) {
+        if (heldNotes.hold(source, { instrumentId: inst.id, note: name })) {
             noteOn('live-' + inst.id, name, inst.params);
         }
         syncActive();
@@ -123,10 +117,12 @@
 
     function isTextEntry(e: KeyboardEvent) {
         const target = e.target as HTMLElement;
-        return (target instanceof HTMLInputElement && target.type !== 'range')
-            || target instanceof HTMLSelectElement
-            || target instanceof HTMLTextAreaElement
-            || target.isContentEditable;
+        return (
+            (target instanceof HTMLInputElement && target.type !== 'range') ||
+            target instanceof HTMLSelectElement ||
+            target instanceof HTMLTextAreaElement ||
+            target.isContentEditable
+        );
     }
 
     async function replayLastNote() {
@@ -199,28 +195,31 @@
 </script>
 
 <svelte:window
-        onblur={releaseAll}
-        onkeydowncapture={onKeydown}
-        onkeyup={onKeyup}
-        onmousedown={() => mouseDown = true}
-        onmouseup={onMouseUp}/>
+    onblur={releaseAll}
+    onkeydowncapture={onKeydown}
+    onkeyup={onKeyup}
+    onmousedown={() => (mouseDown = true)}
+    onmouseup={onMouseUp}
+/>
 
 <div class="keyboard-header">
     <div class="octave-controls" aria-label="Preview octave range">
         <button
-                aria-label="Octave down"
-                disabled={octave === MIN_PREVIEW_OCTAVE}
-                onclick={() => changeOctave(-1)}
-                title="Shift preview down one octave"
-                type="button">−
+            aria-label="Octave down"
+            disabled={octave === MIN_PREVIEW_OCTAVE}
+            onclick={() => changeOctave(-1)}
+            title="Shift preview down one octave"
+            type="button"
+            >−
         </button>
         <strong>Range C{octave - 1}–B{octave + 1}</strong>
         <button
-                aria-label="Octave up"
-                disabled={octave === MAX_PREVIEW_OCTAVE}
-                onclick={() => changeOctave(1)}
-                title="Shift preview up one octave"
-                type="button">+
+            aria-label="Octave up"
+            disabled={octave === MAX_PREVIEW_OCTAVE}
+            onclick={() => changeOctave(1)}
+            title="Shift preview up one octave"
+            type="button"
+            >+
         </button>
     </div>
     <span>Space replays the last note</span>
@@ -229,17 +228,18 @@
 <div class="keyboard">
     {#each keys as k (k.name)}
         <div
-                style={k.black ? `left:${k.left}%; width:${k.blackWidth}%` : ''}
-                class="key {k.black ? 'black' : 'white'}"
-                class:active={active[k.name]}
-                aria-label="Play {k.name}"
-                aria-pressed={active[k.name] ?? false}
-                onmousedown={e => onPointerDown(e, k.name)}
-                onmouseenter={() => mouseDown && press(POINTER_SOURCE, k.name)}
-                onmouseleave={() => mouseDown && releaseSource(POINTER_SOURCE)}
-                onmouseup={() => releaseSource(POINTER_SOURCE)}
-                role="button"
-                tabindex="-1">
+            style={k.black ? `left:${k.left}%; width:${k.blackWidth}%` : ''}
+            class="key {k.black ? 'black' : 'white'}"
+            class:active={active[k.name]}
+            aria-label="Play {k.name}"
+            aria-pressed={active[k.name] ?? false}
+            onmousedown={e => onPointerDown(e, k.name)}
+            onmouseenter={() => mouseDown && press(POINTER_SOURCE, k.name)}
+            onmouseleave={() => mouseDown && releaseSource(POINTER_SOURCE)}
+            onmouseup={() => releaseSource(POINTER_SOURCE)}
+            role="button"
+            tabindex="-1"
+        >
             {#if labelsByNote[k.name]}<kbd class="computer-key">{labelsByNote[k.name]}</kbd>{/if}
             <span class="note-name">{k.name}</span>
         </div>
@@ -277,7 +277,7 @@
 
     .octave-controls button:disabled {
         cursor: default;
-        opacity: .4;
+        opacity: 0.4;
     }
 
     .keyboard {

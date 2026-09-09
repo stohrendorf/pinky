@@ -1,15 +1,11 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-    type BandRecord, VoiceBandRegistry
-} from './voice-band-registry';
+import { type BandRecord, VoiceBandRegistry } from './voice-band-registry';
 
 function record(end: number, start = 0): BandRecord {
     return {
         inst: 'lead',
-        bands: [{from: 200, target: 800, q: 2, gain: 10}],
+        bands: [{ from: 200, target: 800, q: 2, gain: 10 }],
         level: 0.8,
         start,
         end,
@@ -19,7 +15,7 @@ function record(end: number, start = 0): BandRecord {
         att: 1,
         dec: 1,
         sus: 0.5,
-        rel: 1
+        rel: 1,
     };
 }
 

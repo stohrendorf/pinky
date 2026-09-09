@@ -2,7 +2,7 @@
 
 A ~50 second trailer for pinky, rendered entirely from code:
 
-- **Soundtrack** — the DAW's own *Pinky Promo* demo song
+- **Soundtrack** — the DAW's own _Pinky Promo_ demo song
   (`src/lib/promo-demo.ts`), bounced through the real audio engine.
   `promo/bounce.mjs` starts Vite, opens the DAW in a headless Chromium-based
   browser and renders the project into an `OfflineAudioContext` exactly like

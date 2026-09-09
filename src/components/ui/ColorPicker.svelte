@@ -1,19 +1,31 @@
 <script lang="ts">
-    import {
-        createEventDispatcher
-    } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
 
     interface Props {
         value?: string;
     }
 
-    let {value = $bindable('#53d8fb')}: Props = $props();
+    let { value = $bindable('#53d8fb') }: Props = $props();
     const dispatch = createEventDispatcher<{ change: string }>();
     const uid = $props.id();
 
     const presets = [
-        '#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#5f27cd', '#0abde3', '#ff6b6b', '#48dbfb',
-        '#f368e0', '#feca57', '#1dd1a1', '#ff9ff3', '#00d2d3', '#54a0ff', '#341f97', '#222f3e'
+        '#53d8fb',
+        '#ff9f43',
+        '#ee5253',
+        '#10ac84',
+        '#5f27cd',
+        '#0abde3',
+        '#ff6b6b',
+        '#48dbfb',
+        '#f368e0',
+        '#feca57',
+        '#1dd1a1',
+        '#ff9ff3',
+        '#00d2d3',
+        '#54a0ff',
+        '#341f97',
+        '#222f3e',
     ];
 
     function select(c: string) {
@@ -27,15 +39,16 @@
     <div class="grid">
         {#each presets as c (c)}
             <button
-                    style="background: {c}"
-                    class="swatch"
-                    class:active={value === c}
-                    onclick={() => select(c)}></button>
+                style="background: {c}"
+                class="swatch"
+                class:active={value === c}
+                onclick={() => select(c)}
+            ></button>
         {/each}
     </div>
     <div class="hex-input">
-        <label for="{uid}">Hex:</label>
-        <input id="{uid}" oninput={() => dispatch('change', value)} type="text" bind:value/>
+        <label for={uid}>Hex:</label>
+        <input id={uid} oninput={() => dispatch('change', value)} type="text" bind:value />
     </div>
 </div>
 
@@ -75,7 +88,7 @@
 
     .swatch.active {
         border-color: var(--color-playhead);
-        box-shadow: 0 0 8px rgba(255, 255, 255, .3);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
     }
 
     .hex-input {

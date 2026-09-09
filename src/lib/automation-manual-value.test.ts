@@ -1,20 +1,17 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type {
-    AutomationLane
-} from './types';
+import type { AutomationLane } from './types';
 
-import {
-    setAutomationPointValue
-} from './automation';
+import { setAutomationPointValue } from './automation';
 
 const lane = (): AutomationLane => ({
     id: 'tone',
     target: 'instrument',
     param: 'tone',
-    points: [{step: 8, value: 0.25}, {step: 0, value: 0.5}]
+    points: [
+        { step: 8, value: 0.25 },
+        { step: 0, value: 0.5 },
+    ],
 });
 
 describe('setAutomationPointValue', () => {
@@ -24,7 +21,7 @@ describe('setAutomationPointValue', () => {
 
         expect(setAutomationPointValue(next, point, '0.537')).toBe(true);
         expect(point.value).toBe(0.54);
-        expect(next.points.map(({step}) => step)).toEqual([0, 8]);
+        expect(next.points.map(({ step }) => step)).toEqual([0, 8]);
     });
 
     it('clamps a typed automation value to its control range', () => {
@@ -34,7 +31,7 @@ describe('setAutomationPointValue', () => {
         setAutomationPointValue(next, point, '4');
 
         expect(point.value).toBe(1);
-        expect(next.points.map(({step}) => step)).toEqual([0, 8]);
+        expect(next.points.map(({ step }) => step)).toEqual([0, 8]);
     });
 
     it('leaves the point unchanged for an invalid typed value', () => {

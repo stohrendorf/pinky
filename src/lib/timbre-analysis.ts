@@ -1,10 +1,6 @@
-import type {
-    InstrumentParams
-} from './types';
+import type { InstrumentParams } from './types';
 
-import {
-    noteByName
-} from './notes';
+import { noteByName } from './notes';
 
 /* ---- offline timbre analysis ----
  * A pure-JS model of one engine voice (see engine.ts `makeRank`): pink noise
@@ -39,7 +35,7 @@ const COEFF_BLOCK = 32;
 function mulberry32(seed: number): () => number {
     let a = seed >>> 0;
     return () => {
-        a = (a + 0x6D2B79F5) >>> 0;
+        a = (a + 0x6d2b79f5) >>> 0;
         let t = a;
         t = Math.imul(t ^ (t >>> 15), t | 1);
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -51,15 +47,21 @@ function mulberry32(seed: number): () => number {
 function pinkNoise(length: number, seed: number): Float32Array {
     const random = mulberry32(seed);
     const out = new Float32Array(length);
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    let b0 = 0,
+        b1 = 0,
+        b2 = 0,
+        b3 = 0,
+        b4 = 0,
+        b5 = 0,
+        b6 = 0;
     for (let i = 0; i < length; i++) {
         const w = random() * 2 - 1;
         b0 = 0.99886 * b0 + w * 0.0555179;
         b1 = 0.99332 * b1 + w * 0.0750759;
-        b2 = 0.96900 * b2 + w * 0.1538520;
-        b3 = 0.86650 * b3 + w * 0.3104856;
-        b4 = 0.55000 * b4 + w * 0.5329522;
-        b5 = -0.7616 * b5 - w * 0.0168980;
+        b2 = 0.969 * b2 + w * 0.153852;
+        b3 = 0.8665 * b3 + w * 0.3104856;
+        b4 = 0.55 * b4 + w * 0.5329522;
+        b5 = -0.7616 * b5 - w * 0.016898;
         out[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
         b6 = w * 0.115926;
     }
@@ -76,12 +78,17 @@ class Peaking {
     private z1 = 0;
     private z2 = 0;
 
-    constructor(private readonly sampleRate: number, frequency: number, private readonly q: number, private readonly gainDb: number) {
+    constructor(
+        private readonly sampleRate: number,
+        frequency: number,
+        private readonly q: number,
+        private readonly gainDb: number,
+    ) {
         this.tune(frequency);
     }
 
     tune(frequency: number): void {
-        const w0 = 2 * Math.PI * Math.min(frequency, this.sampleRate * 0.49) / this.sampleRate;
+        const w0 = (2 * Math.PI * Math.min(frequency, this.sampleRate * 0.49)) / this.sampleRate;
         const amplitude = Math.pow(10, this.gainDb / 40);
         const alpha = Math.sin(w0) / (2 * Math.max(0.1, this.q));
         const cosine = -2 * Math.cos(w0);
@@ -103,7 +110,7 @@ class Peaking {
 
 interface SweptBand {
     filter: Peaking;
-    from: number;   // where the band starts (Hz)
+    from: number; // where the band starts (Hz)
     target: number; // where it lands after `pitchTime`
     vibrato: boolean;
 }
@@ -118,13 +125,14 @@ export interface UsedPartial {
 export function usedPartials(params: InstrumentParams): UsedPartial[] {
     const custom = params.partials && params.partials.length ? params.partials : null;
     const all: UsedPartial[] = custom
-        ? custom.filter(x => x.level > 0 && x.ratio > 0)
-            .map(x => ({ratio: x.ratio, level: x.level, q: params.q * Math.sqrt(x.ratio)}))
-        : Array.from({length: Math.max(0, Math.round(params.harm))}, (_, i) => ({
-            ratio: Math.pow(i + 1, 1 + params.stretch),
-            level: Math.pow(params.falloff, i),
-            q: params.q * Math.sqrt(i + 1)
-        }));
+        ? custom
+              .filter(x => x.level > 0 && x.ratio > 0)
+              .map(x => ({ ratio: x.ratio, level: x.level, q: params.q * Math.sqrt(x.ratio) }))
+        : Array.from({ length: Math.max(0, Math.round(params.harm)) }, (_, i) => ({
+              ratio: Math.pow(i + 1, 1 + params.stretch),
+              level: Math.pow(params.falloff, i),
+              q: params.q * Math.sqrt(i + 1),
+          }));
     const used = all.filter(x => 40 * params.tone * x.level >= MIN_BAND_DB);
     return used.length || !all.length ? used : [all[0]];
 }
@@ -135,15 +143,15 @@ export function unisonRatios(params: InstrumentParams): number[] {
     if (n === 1 || params.detune <= 0) {
         return [1];
     }
-    return Array.from({length: n}, (_, i) => {
+    return Array.from({ length: n }, (_, i) => {
         const x = (2 * i) / (n - 1) - 1;
-        return Math.pow(2, (x * params.detune / 2) / 1200);
+        return Math.pow(2, (x * params.detune) / 2 / 1200);
     });
 }
 
 /** Ring-up time constant (s) of the residual resonator behind one band. */
 export function ringTime(frequency: number, q: number, gainDb: number): number {
-    return q * Math.pow(10, gainDb / 40) / (Math.PI * frequency);
+    return (q * Math.pow(10, gainDb / 40)) / (Math.PI * frequency);
 }
 
 export interface RenderedNote {
@@ -162,8 +170,13 @@ export interface RenderedNote {
  * seconds of key-down, then the release tail. Velocity is left at 1 — it only
  * scales the level, which the clarity measure is independent of.
  */
-export function renderNote(params: InstrumentParams, frequency: number, hold: number,
-    sampleRate = ANALYSIS_SAMPLE_RATE, seed = 1): RenderedNote {
+export function renderNote(
+    params: InstrumentParams,
+    frequency: number,
+    hold: number,
+    sampleRate = ANALYSIS_SAMPLE_RATE,
+    seed = 1,
+): RenderedNote {
     const nyquist = sampleRate / 2;
     const release = Math.max(0.02, params.rel);
     const total = Math.ceil((hold + release * TAIL) * sampleRate);
@@ -181,15 +194,27 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
 
     // Formant trim: an emphasis, not a volume (see `levelFor` in engine.ts)
     let formantWeight = 0;
-    const formantSpecs = params.formant > 0
-        ? [{hz: params.f1, w: 1}, {hz: params.f2, w: 0.75}, {hz: params.f3, w: 0.45}]
-            .filter(f => f.hz > 0 && f.hz <= nyquist * 0.9 && FORMANT_DB * params.formant * f.w >= MIN_BAND_DB)
-        : [];
+    const formantSpecs =
+        params.formant > 0
+            ? [
+                  { hz: params.f1, w: 1 },
+                  { hz: params.f2, w: 0.75 },
+                  { hz: params.f3, w: 0.45 },
+              ].filter(
+                  f =>
+                      f.hz > 0 &&
+                      f.hz <= nyquist * 0.9 &&
+                      FORMANT_DB * params.formant * f.w >= MIN_BAND_DB,
+              )
+            : [];
     if (formantSpecs.length) {
         formantWeight = formantSpecs[0].w;
     }
-    const level = 0.9 * params.gain * rankLevel
-        * (formantWeight ? Math.pow(10, -FORMANT_DB * params.formant * formantWeight / 40) : 1);
+    const level =
+        0.9 *
+        params.gain *
+        rankLevel *
+        (formantWeight ? Math.pow(10, (-FORMANT_DB * params.formant * formantWeight) / 40) : 1);
 
     for (const rankRatio of ratios) {
         const base = frequency * rankRatio;
@@ -203,21 +228,38 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
                 const from = params.pitchDrop !== 0 ? f * bendRatio : f;
                 bands.push({
                     filter: new Peaking(sampleRate, from, part.q, 40 * params.tone * part.level),
-                    from, target: f, vibrato: vibRatio > 0
+                    from,
+                    target: f,
+                    vibrato: vibRatio > 0,
                 });
                 partialFrequencies.push(f);
             }
         }
         if (params.noise > 0 && params.noiseFreq <= nyquist * 0.9) {
-            const from = params.pitchDrop !== 0 && params.noiseBend > 0
-                ? Math.min(nyquist * 0.95, params.noiseFreq * Math.pow(2, params.pitchDrop * params.noiseBend / 12))
-                : params.noiseFreq;
+            const from =
+                params.pitchDrop !== 0 && params.noiseBend > 0
+                    ? Math.min(
+                          nyquist * 0.95,
+                          params.noiseFreq *
+                              Math.pow(2, (params.pitchDrop * params.noiseBend) / 12),
+                      )
+                    : params.noiseFreq;
             bands.push({
                 filter: new Peaking(sampleRate, from, 0.8, 40 * params.noise),
-                from, target: params.noiseFreq, vibrato: false
+                from,
+                target: params.noiseFreq,
+                vibrato: false,
             });
         }
-        const formants = formantSpecs.map(f => new Peaking(sampleRate, f.hz, Math.max(1, params.formantQ || 3), FORMANT_DB * params.formant * f.w));
+        const formants = formantSpecs.map(
+            f =>
+                new Peaking(
+                    sampleRate,
+                    f.hz,
+                    Math.max(1, params.formantQ || 3),
+                    FORMANT_DB * params.formant * f.w,
+                ),
+        );
         const moving = bands.some(b => b.from !== b.target || b.vibrato);
 
         // Amp ADSR exactly as scheduled by the engine: linear attack, then
@@ -234,11 +276,18 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
             if (moving && i % COEFF_BLOCK === 0) {
                 const t = i / sampleRate;
                 const sweep = params.pitchTime > 0 ? Math.min(1, t / params.pitchTime) : 1;
-                const wobble = vibRatio > 0
-                    ? 1 + vibRatio * Math.sin(2 * Math.PI * vibRate * t) * (vibOnset > 0.005 ? Math.min(1, t / vibOnset) : 1)
-                    : 1;
+                const wobble =
+                    vibRatio > 0
+                        ? 1 +
+                          vibRatio *
+                              Math.sin(2 * Math.PI * vibRate * t) *
+                              (vibOnset > 0.005 ? Math.min(1, t / vibOnset) : 1)
+                        : 1;
                 for (const band of bands) {
-                    let f = band.from === band.target ? band.target : band.from * Math.pow(band.target / band.from, sweep);
+                    let f =
+                        band.from === band.target
+                            ? band.target
+                            : band.from * Math.pow(band.target / band.from, sweep);
                     if (band.vibrato) {
                         f *= wobble;
                     }
@@ -255,7 +304,7 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
                 y = formant.process(y);
             }
             if (i < attackSamples) {
-                env = peak * (i + 1) / attackSamples;
+                env = (peak * (i + 1)) / attackSamples;
             } else if (i < holdSamples) {
                 env += (params.sus * peak - env) * decayCoefficient;
             } else {
@@ -268,8 +317,11 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
         }
     }
     return {
-        samples: out, sampleRate, partialFrequencies, vibratoSpread: 1 + vibRatio,
-        effectiveDuration: loudSamples / sampleRate
+        samples: out,
+        sampleRate,
+        partialFrequencies,
+        vibratoSpread: 1 + vibRatio,
+        effectiveDuration: loudSamples / sampleRate,
     };
 }
 
@@ -288,12 +340,15 @@ function fft(re: Float64Array, im: Float64Array): void {
         }
     }
     for (let len = 2; len <= n; len <<= 1) {
-        const angle = -2 * Math.PI / len;
-        const wr = Math.cos(angle), wi = Math.sin(angle);
+        const angle = (-2 * Math.PI) / len;
+        const wr = Math.cos(angle),
+            wi = Math.sin(angle);
         for (let i = 0; i < n; i += len) {
-            let cr = 1, ci = 0;
+            let cr = 1,
+                ci = 0;
             for (let j = 0; j < len / 2; j++) {
-                const ur = re[i + j], ui = im[i + j];
+                const ur = re[i + j],
+                    ui = im[i + j];
                 const vr = re[i + j + len / 2] * cr - im[i + j + len / 2] * ci;
                 const vi = re[i + j + len / 2] * ci + im[i + j + len / 2] * cr;
                 re[i + j] = ur + vr;
@@ -334,20 +389,21 @@ export function analyzeNote(note: RenderedNote): NoteAnalysis {
     return summarize(splitEnergy(note));
 }
 
-const summarize = ({harmonic, total, peak}: EnergySplit): NoteAnalysis => ({
+const summarize = ({ harmonic, total, peak }: EnergySplit): NoteAnalysis => ({
     clarity: total > 0 ? harmonic / total : 0,
-    peakDb: peak > 0 ? 10 * Math.log10(peak) : -Infinity
+    peakDb: peak > 0 ? 10 * Math.log10(peak) : -Infinity,
 });
 
 function splitEnergy(note: RenderedNote): EnergySplit {
-    const {samples, sampleRate, partialFrequencies} = note;
+    const { samples, sampleRate, partialFrequencies } = note;
     let size = 1 << 15;
     while (size < samples.length) {
         size <<= 1;
     }
     // resolution matters at the bottom: ±25 cents of 40 Hz is ±0.6 Hz
     size = Math.max(size, 1 << 17);
-    const re = new Float64Array(size), im = new Float64Array(size);
+    const re = new Float64Array(size),
+        im = new Float64Array(size);
     let peak = 0;
     const window = Math.round(sampleRate * 0.05);
     let acc = 0;
@@ -363,7 +419,8 @@ function splitEnergy(note: RenderedNote): EnergySplit {
     }
     fft(re, im);
     const binHz = sampleRate / size;
-    const low = Math.ceil(AUDIBLE_LOW_HZ / binHz), high = Math.min(size / 2, Math.floor(AUDIBLE_HIGH_HZ / binHz));
+    const low = Math.ceil(AUDIBLE_LOW_HZ / binHz),
+        high = Math.min(size / 2, Math.floor(AUDIBLE_HIGH_HZ / binHz));
     const spread = Math.pow(2, PITCH_WINDOW_CENTS / 1200) * note.vibratoSpread;
     const uncertainty = 1 / Math.max(0.02, note.effectiveDuration);
     const onPitch = new Uint8Array(size / 2);
@@ -375,7 +432,8 @@ function splitEnergy(note: RenderedNote): EnergySplit {
             onPitch[k] = 1;
         }
     }
-    let total = 0, harmonic = 0;
+    let total = 0,
+        harmonic = 0;
     for (let k = low; k <= high; k++) {
         const power = re[k] * re[k] + im[k] * im[k];
         total += power;
@@ -383,7 +441,7 @@ function splitEnergy(note: RenderedNote): EnergySplit {
             harmonic += power;
         }
     }
-    return {harmonic, total, peak};
+    return { harmonic, total, peak };
 }
 
 export interface InstrumentClarity extends NoteAnalysis {
@@ -398,22 +456,27 @@ export interface InstrumentClarity extends NoteAnalysis {
 const MEASURE_SEEDS = 3;
 
 /** Render + analyze one note by name, `steps` sixteenths long at `bpm`. */
-export function measureNote(params: InstrumentParams, pitch: string, steps: number, bpm: number): InstrumentClarity {
+export function measureNote(
+    params: InstrumentParams,
+    pitch: string,
+    steps: number,
+    bpm: number,
+): InstrumentClarity {
     const frequency = noteByName[pitch]?.freq;
     if (!frequency) {
         throw new Error(`Unknown pitch ${pitch}`);
     }
     // long pads are measured on their first two seconds — that is what decides
     // whether they read as a chord or as a wash
-    const hold = Math.min(2, Math.max(0.05, steps * 60 / bpm / 4));
-    const pooled: EnergySplit = {harmonic: 0, total: 0, peak: 0};
+    const hold = Math.min(2, Math.max(0.05, (steps * 60) / bpm / 4));
+    const pooled: EnergySplit = { harmonic: 0, total: 0, peak: 0 };
     for (let seed = 1; seed <= MEASURE_SEEDS; seed++) {
         const split = splitEnergy(renderNote(params, frequency, hold, ANALYSIS_SAMPLE_RATE, seed));
         pooled.harmonic += split.harmonic;
         pooled.total += split.total;
         pooled.peak = Math.max(pooled.peak, split.peak);
     }
-    return {pitch, frequency, hold, ...summarize(pooled)};
+    return { pitch, frequency, hold, ...summarize(pooled) };
 }
 
 /**

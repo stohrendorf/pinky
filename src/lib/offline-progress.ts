@@ -32,11 +32,10 @@ export async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Prom
     if (!signal) {
         return work;
     }
-    let cancel = () => {
-    };
+    let cancel = () => {};
     const aborted = new Promise<never>((_resolve, reject) => {
         cancel = () => reject(new DOMException('Export cancelled', 'AbortError'));
-        signal.addEventListener('abort', cancel, {once: true});
+        signal.addEventListener('abort', cancel, { once: true });
         if (signal.aborted) {
             cancel();
         }
@@ -52,8 +51,11 @@ export async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Prom
  * quantum and abandon the suspended context; never resume it after an abort.
  * Without suspend/resume support, the caller may abandon its graph and clean it
  * up when native rendering finishes. */
-export async function renderWithProgress(context: OfflineAudioContext, options: OfflineProgressOptions): Promise<AudioBuffer> {
-    const {signal, onProgress} = options;
+export async function renderWithProgress(
+    context: OfflineAudioContext,
+    options: OfflineProgressOptions,
+): Promise<AudioBuffer> {
+    const { signal, onProgress } = options;
     checkAbort(signal);
     // Legacy callers need neither checkpoints nor event-loop yields.
     if (!signal && !onProgress) {
@@ -71,43 +73,60 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
             onProgress?.(null);
         }
         checkAbort(signal);
-        let active = true, last = 0, observerFailed = false;
+        let active = true,
+            last = 0,
+            observerFailed = false;
         let observerError: unknown;
-        const unsubscribe = onProgress ? options.subscribeFrames?.(frames => {
-            if (!active || signal?.aborted || observerFailed || !Number.isFinite(frames) || frames <= last) {
-                return;
-            }
-            // The final quantum can extend beyond length. Only native
-            // completion, not a queued port message, is allowed to report 100%.
-            const completed = Math.min(context.length - 1, frames);
-            if (completed <= last) {
-                return;
-            }
-            last = completed;
-            try {
-                onProgress(last / context.length);
-            } catch (error) {
-                observerFailed = true;
-                observerError = error;
-            }
-        }) : undefined;
+        const unsubscribe = onProgress
+            ? options.subscribeFrames?.(frames => {
+                  if (
+                      !active ||
+                      signal?.aborted ||
+                      observerFailed ||
+                      !Number.isFinite(frames) ||
+                      frames <= last
+                  ) {
+                      return;
+                  }
+                  // The final quantum can extend beyond length. Only native
+                  // completion, not a queued port message, is allowed to report 100%.
+                  const completed = Math.min(context.length - 1, frames);
+                  if (completed <= last) {
+                      return;
+                  }
+                  last = completed;
+                  try {
+                      onProgress(last / context.length);
+                  } catch (error) {
+                      observerFailed = true;
+                      observerError = error;
+                  }
+              })
+            : undefined;
         try {
             const native = context.startRendering();
-            let abort = () => {
-            };
-            const aborted = options.onAbandon && signal ? new Promise<never>((_resolve, reject) => {
-                abort = () => {
-                    try {
-                        options.onAbandon?.(native.then(() => undefined, () => undefined));
-                    } finally {
-                        reject(new DOMException('Export cancelled', 'AbortError'));
-                    }
-                };
-                signal.addEventListener('abort', abort, {once: true});
-                if (signal.aborted) {
-                    abort();
-                }
-            }) : undefined;
+            let abort = () => {};
+            const aborted =
+                options.onAbandon && signal
+                    ? new Promise<never>((_resolve, reject) => {
+                          abort = () => {
+                              try {
+                                  options.onAbandon?.(
+                                      native.then(
+                                          () => undefined,
+                                          () => undefined,
+                                      ),
+                                  );
+                              } finally {
+                                  reject(new DOMException('Export cancelled', 'AbortError'));
+                              }
+                          };
+                          signal.addEventListener('abort', abort, { once: true });
+                          if (signal.aborted) {
+                              abort();
+                          }
+                      })
+                    : undefined;
             let buffer: AudioBuffer;
             try {
                 buffer = await (aborted ? Promise.race([native, aborted]) : native);
@@ -126,14 +145,14 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
             unsubscribe?.();
         }
     }
-    const interval = Math.ceil(context.sampleRate * 0.25 / 128) * 128;
+    const interval = Math.ceil((context.sampleRate * 0.25) / 128) * 128;
     let frame = 0;
-    let checkpoint = context.suspend(0).then(() => ({kind: 'paused' as const}));
+    let checkpoint = context.suspend(0).then(() => ({ kind: 'paused' as const }));
     // Always consume the native promise, including a late rejection after we
     // abandon a suspension. A pending native promise is NOT a cancellation.
     const completed = context.startRendering().then(
-        buffer => ({kind: 'done' as const, buffer}),
-        error => ({kind: 'failed' as const, error: error as unknown})
+        buffer => ({ kind: 'done' as const, buffer }),
+        error => ({ kind: 'failed' as const, error: error as unknown }),
     );
     try {
         while (true) {
@@ -147,14 +166,15 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
                 checkAbort(signal);
                 return result.buffer;
             }
-            onProgress?.(Math.min(1, context.currentTime * context.sampleRate / context.length));
+            onProgress?.(Math.min(1, (context.currentTime * context.sampleRate) / context.length));
             await yieldExport(signal);
             frame += interval;
             if (frame < context.length) {
-                checkpoint = context.suspend(frame / context.sampleRate).then(() => ({kind: 'paused' as const}));
+                checkpoint = context
+                    .suspend(frame / context.sampleRate)
+                    .then(() => ({ kind: 'paused' as const }));
             } else {
-                checkpoint = new Promise<never>(() => {
-                });
+                checkpoint = new Promise<never>(() => {});
             }
             await context.resume();
         }

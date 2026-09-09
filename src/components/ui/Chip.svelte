@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createBubbler
-    } from 'svelte/legacy';
+    import { createBubbler } from 'svelte/legacy';
 
     const bubble = createBubbler();
 
@@ -11,13 +9,10 @@
         children?: import('svelte').Snippet;
     }
 
-    const {selected = false, className = '', children}: Props = $props();
+    const { selected = false, className = '', children }: Props = $props();
 </script>
 
-<button
-        class="chip {selected ? 'sel' : ''} {className}"
-        onclick={bubble('click')}
->
+<button class="chip {selected ? 'sel' : ''} {className}" onclick={bubble('click')}>
     {@render children?.()}
 </button>
 

@@ -1,15 +1,12 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    describe, expect, it
-} from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const palette = readFileSync(fileURLToPath(new URL('./app.css', import.meta.url)), 'utf8');
-const sequencer = readFileSync(fileURLToPath(new URL('./components/Sequencer.svelte', import.meta.url)), 'utf8');
+const sequencer = readFileSync(
+    fileURLToPath(new URL('./components/Sequencer.svelte', import.meta.url)),
+    'utf8',
+);
 
 describe('shared UI palette', () => {
     it('defines semantic tokens for editor-specific visual states', () => {

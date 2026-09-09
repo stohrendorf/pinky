@@ -1,14 +1,8 @@
 <script lang="ts">
-    import {
-        untrack
-    } from 'svelte';
+    import { untrack } from 'svelte';
 
-    import type {
-        NamedTreeItem
-    } from '../lib/name-tree';
-    import type {
-        Project
-    } from '../lib/types';
+    import type { NamedTreeItem } from '../lib/name-tree';
+    import type { Project } from '../lib/types';
 
     import {
         type AutoParamGroup,
@@ -16,7 +10,7 @@
         INSTRUMENT_AUTO_GROUPS,
         MASTER_TARGET,
         mixerTarget,
-        parseMixerTarget
+        parseMixerTarget,
     } from '../lib/automation';
     import TreeView from './ui/TreeView.svelte';
 
@@ -25,22 +19,25 @@
         onadd?: (target: string, param: string) => void;
     }
 
-    const {
-        project, onadd = () => {
-        }
-    }: Props = $props();
+    const { project, onadd = () => {} }: Props = $props();
     const initialTarget = untrack(() => project.instruments[0]?.id || MASTER_TARGET);
     let tab: 'instrument' | 'mixer' | 'global' = $state('instrument');
     let target = $state(initialTarget);
     let param = $state(autoParams(initialTarget)[0]?.param || '');
 
     const mixerItems = $derived([
-        ...project.instruments.filter(instrument => !!project.mixer?.channels[instrument.id]).map(instrument => ({
-            id: mixerTarget('channel', instrument.id), name: `${instrument.name} channel`, color: instrument.color
-        })),
+        ...project.instruments
+            .filter(instrument => !!project.mixer?.channels[instrument.id])
+            .map(instrument => ({
+                id: mixerTarget('channel', instrument.id),
+                name: `${instrument.name} channel`,
+                color: instrument.color,
+            })),
         ...(project.mixer?.buses.map(bus => ({
-            id: mixerTarget('bus', bus.id), name: `Buses/${bus.name}`, color: '#a29bfe'
-        })) || [])
+            id: mixerTarget('bus', bus.id),
+            name: `Buses/${bus.name}`,
+            color: '#a29bfe',
+        })) || []),
     ] satisfies NamedTreeItem[]);
     const parameterGroups = $derived.by((): AutoParamGroup[] => {
         if (tab === 'instrument') {
@@ -48,16 +45,24 @@
         }
         let params = autoParams(target);
         const parsed = parseMixerTarget(target);
-        if (parsed?.kind === 'bus' && project.mixer?.buses.find(bus => bus.id === parsed.id)?.effect !== 'delay') {
+        if (
+            parsed?.kind === 'bus' &&
+            project.mixer?.buses.find(bus => bus.id === parsed.id)?.effect !== 'delay'
+        ) {
             params = params.filter(def => def.param !== 'delayTime' && def.param !== 'feedback');
         }
-        return [{title: tab === 'global' ? 'Master' : 'Channel strip', params}];
+        return [{ title: tab === 'global' ? 'Master' : 'Channel strip', params }];
     });
-    const duplicate = $derived(project.automation?.find(lane => lane.target === target && lane.param === param));
+    const duplicate = $derived(
+        project.automation?.find(lane => lane.target === target && lane.param === param),
+    );
 
     function choose(nextTarget: string) {
         target = nextTarget;
-        param = parameterGroups.flatMap(group => group.params)[0]?.param || autoParams(target)[0]?.param || '';
+        param =
+            parameterGroups.flatMap(group => group.params)[0]?.param ||
+            autoParams(target)[0]?.param ||
+            '';
     }
 
     function chooseTab(next: typeof tab) {
@@ -81,41 +86,54 @@
 <div class="automation-picker">
     <div class="target-tabs" aria-label="Automation target type" role="tablist">
         <button
-                class:active={tab === 'instrument'}
-                aria-selected={tab === 'instrument'}
-                onclick={() => chooseTab('instrument')}
-                role="tab"
-                type="button">Instruments
+            class:active={tab === 'instrument'}
+            aria-selected={tab === 'instrument'}
+            onclick={() => chooseTab('instrument')}
+            role="tab"
+            type="button"
+            >Instruments
         </button>
         <button
-                class:active={tab === 'mixer'}
-                aria-selected={tab === 'mixer'}
-                onclick={() => chooseTab('mixer')}
-                role="tab"
-                type="button">Mixer
+            class:active={tab === 'mixer'}
+            aria-selected={tab === 'mixer'}
+            onclick={() => chooseTab('mixer')}
+            role="tab"
+            type="button"
+            >Mixer
         </button>
         <button
-                class:active={tab === 'global'}
-                aria-selected={tab === 'global'}
-                onclick={() => chooseTab('global')}
-                role="tab"
-                type="button">Global FX
+            class:active={tab === 'global'}
+            aria-selected={tab === 'global'}
+            onclick={() => chooseTab('global')}
+            role="tab"
+            type="button"
+            >Global FX
         </button>
     </div>
 
     <div class="picker-grid">
         <div class="targets" role="tabpanel">
             {#if tab === 'instrument'}
-                <TreeView items={project.instruments} onselect={choose} selectedId={target} title="Instruments"/>
+                <TreeView
+                    items={project.instruments}
+                    onselect={choose}
+                    selectedId={target}
+                    title="Instruments"
+                />
             {:else if tab === 'mixer'}
                 <TreeView
-                        emptyLabel="No mixer channels"
-                        items={mixerItems}
-                        onselect={choose}
-                        selectedId={target}
-                        title="Channels and buses"/>
+                    emptyLabel="No mixer channels"
+                    items={mixerItems}
+                    onselect={choose}
+                    selectedId={target}
+                    title="Channels and buses"
+                />
             {:else}
-                <button class="global-target selected" onclick={() => choose(MASTER_TARGET)} type="button">
+                <button
+                    class="global-target selected"
+                    onclick={() => choose(MASTER_TARGET)}
+                    type="button"
+                >
                     <i class="fa fa-sliders" aria-hidden="true"></i> Master FX
                 </button>
             {/if}
@@ -129,10 +147,11 @@
                         <div class="parameter-list">
                             {#each group.params as def (def.param)}
                                 <button
-                                        class:selected={param === def.param}
-                                        aria-pressed={param === def.param}
-                                        onclick={() => param = def.param}
-                                        type="button">
+                                    class:selected={param === def.param}
+                                    aria-pressed={param === def.param}
+                                    onclick={() => (param = def.param)}
+                                    type="button"
+                                >
                                     <span>{def.label}</span>
                                     {#if def.unit}<small>{def.unit}</small>{/if}
                                 </button>
@@ -148,8 +167,14 @@
     </div>
 
     <div class="picker-footer">
-        <span>{duplicate ? 'This lane already exists.' : 'Starts at the control’s current value.'}</span>
-        <button class="add-lane" disabled={!param || !!duplicate} onclick={add} type="button">Add lane</button>
+        <span
+            >{duplicate
+                ? 'This lane already exists.'
+                : 'Starts at the control’s current value.'}</span
+        >
+        <button class="add-lane" disabled={!param || !!duplicate} onclick={add} type="button"
+            >Add lane</button
+        >
     </div>
 </div>
 
@@ -183,7 +208,7 @@
 
     .picker-grid {
         display: grid;
-        grid-template-columns: minmax(190px, .8fr) minmax(280px, 1.2fr);
+        grid-template-columns: minmax(190px, 0.8fr) minmax(280px, 1.2fr);
         gap: 12px;
         flex: 1;
         min-height: 0;
@@ -193,7 +218,8 @@
         height: 330px;
     }
 
-    .targets, .parameters {
+    .targets,
+    .parameters {
         min-height: 0;
     }
 
@@ -213,7 +239,7 @@
         color: var(--color-text-muted);
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
@@ -223,7 +249,8 @@
         gap: 4px;
     }
 
-    .parameter-list button, .global-target {
+    .parameter-list button,
+    .global-target {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -237,7 +264,8 @@
         cursor: pointer;
     }
 
-    .parameter-list button.selected, .global-target.selected {
+    .parameter-list button.selected,
+    .global-target.selected {
         border-color: var(--accent);
         background: var(--color-accent-soft);
     }
@@ -251,7 +279,8 @@
         justify-content: flex-start;
     }
 
-    .empty, .picker-footer {
+    .empty,
+    .picker-footer {
         color: var(--secondary-text);
         font-size: 11px;
     }
@@ -273,5 +302,4 @@
         outline: 2px solid var(--accent);
         outline-offset: 2px;
     }
-
 </style>

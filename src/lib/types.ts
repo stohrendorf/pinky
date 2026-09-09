@@ -1,9 +1,5 @@
-import type {
-    MixerState
-} from './mixer';
-import type {
-    ConductorData
-} from './timing';
+import type { MixerState } from './mixer';
+import type { ConductorData } from './timing';
 
 export interface NoteInfo {
     name: string;
@@ -17,8 +13,8 @@ export const PROJECT_FORMAT_VERSION = 1;
 export const createId = (): string => crypto.randomUUID();
 
 export const isProjectId = (value: unknown): value is string =>
-    typeof value === 'string'
-    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export interface Note {
     pitch: string;
@@ -67,7 +63,7 @@ export interface ArrangementClip {
  * instrument ids and the `master` target remain valid; mixer channel and bus
  * targets use the collision-safe encoding from automation.ts. */
 export interface AutomationPoint {
-    step: number;  // position on the arranger timeline (steps)
+    step: number; // position on the arranger timeline (steps)
     value: number; // parameter value in its own unit
     curve?: CurveShape; // interpolation to the following point (undefined = linear)
 }
@@ -75,7 +71,7 @@ export interface AutomationPoint {
 export interface AutomationLane {
     id: string;
     target: string; // instrument id, 'master', or encoded mixer channel/bus target
-    param: string;  // numeric parameter valid for that target
+    param: string; // numeric parameter valid for that target
     points: AutomationPoint[];
 }
 
@@ -102,15 +98,15 @@ export interface InstrumentParams {
      * signature of a pipe, not of a throat. A vocal tract has fixed
      * resonances instead: F1/F2 stay put and the harmonics move *through*
      * them. `formant` 0 = off (every instrument written before this existed). */
-    formant: number;    // level of the fixed bands (0 = no formants at all)
-    f1: number;         // Hz — first formant (jaw / vowel openness)
-    f2: number;         // Hz — second formant (tongue: ah/eh/ee)
-    f3: number;         // Hz — third formant (the "singer's" brightness)
-    formantQ: number;   // width of the three bands (low = broad vowel, high = nasal)
+    formant: number; // level of the fixed bands (0 = no formants at all)
+    f1: number; // Hz — first formant (jaw / vowel openness)
+    f2: number; // Hz — second formant (tongue: ah/eh/ee)
+    f3: number; // Hz — third formant (the "singer's" brightness)
+    formantQ: number; // width of the three bands (low = broad vowel, high = nasal)
     // Vibrato: one shared LFO detunes the whole chain (cents), after a delay
-    vib: number;        // depth in cents (0 = off)
-    vibRate: number;    // Hz
-    vibDelay: number;   // s until the vibrato has faded in
+    vib: number; // depth in cents (0 = off)
+    vibRate: number; // Hz
+    vibDelay: number; // s until the vibrato has faded in
     pitchDrop: number;
     pitchTime: number;
     noiseBend: number;

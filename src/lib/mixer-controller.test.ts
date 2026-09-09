@@ -1,17 +1,12 @@
-import {
-    describe, expect, it, vi
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-    mixerController
-} from './mixer-controller';
-import {
-    newEmptyProject
-} from './project';
+import { mixerController } from './mixer-controller';
+import { newEmptyProject } from './project';
 
 describe('mixer document synchronization', () => {
     it('updates edits and restored documents, not unrelated view changes', () => {
-        const configure = vi.fn(), controller = mixerController(configure);
+        const configure = vi.fn(),
+            controller = mixerController(configure);
         const p = newEmptyProject();
         controller.project(p);
         expect(configure).toHaveBeenCalledExactlyOnceWith(p.mixer, [p.instruments[0].id]);
@@ -26,7 +21,8 @@ describe('mixer document synchronization', () => {
     });
 
     it('defers edits while bouncing and applies the final document when finished', () => {
-        const configure = vi.fn(), controller = mixerController(configure);
+        const configure = vi.fn(),
+            controller = mixerController(configure);
         const p = newEmptyProject();
         controller.project(p);
         controller.rendering(true);

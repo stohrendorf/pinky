@@ -1,14 +1,8 @@
-import type {
-    MixerBus, MixerChannel, MixerMaster, MixerState
-} from './mixer';
+import type { MixerBus, MixerChannel, MixerMaster, MixerState } from './mixer';
 
-import {
-    LIMITER_LOOKAHEAD
-} from './limiter-dsp.js';
+import { LIMITER_LOOKAHEAD } from './limiter-dsp.js';
 import limiterWorkletUrl from './limiter-worklet.js?worker&url';
-import {
-    audibleMixerIds
-} from './mixer';
+import { audibleMixerIds } from './mixer';
 
 export interface MasterMeter {
     peak: number[];
@@ -39,7 +33,7 @@ export const limiterLatencyFrames = (rate: number): number => Math.ceil(rate * L
 export class MasterLimiter {
     readonly node: AudioWorkletNode;
     error: Error | null = null;
-    private latest: MasterMeter = {peak: [0, 0], rms: [0, 0], reduction: 0};
+    private latest: MasterMeter = { peak: [0, 0], rms: [0, 0], reduction: 0 };
     private signature: string;
     private onFrames: ((frames: number) => void) | null = null;
 
@@ -47,14 +41,19 @@ export class MasterLimiter {
         const values = this.settings(settings);
         this.signature = JSON.stringify(values);
         this.node = new AudioWorkletNode(context, 'pinky-mixer-limiter', {
-            numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2],
-            channelCount: 2, channelCountMode: 'explicit',
-            processorOptions: {settings: values, metering}
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            outputChannelCount: [2],
+            channelCount: 2,
+            channelCountMode: 'explicit',
+            processorOptions: { settings: values, metering },
         });
         this.node.onprocessorerror = () => {
             this.error = new Error('Master limiter processor failed');
         };
-        this.node.port.onmessage = ({data}: MessageEvent<MasterMeter | { type: 'progress'; frames: number }>) => {
+        this.node.port.onmessage = ({
+            data,
+        }: MessageEvent<MasterMeter | { type: 'progress'; frames: number }>) => {
             if ('type' in data && data.type === 'progress') {
                 this.onFrames?.(data.frames);
             } else if (metering && 'peak' in data) {
@@ -66,11 +65,12 @@ export class MasterLimiter {
     trackProgress(totalFrames: number, listener: (frames: number) => void): () => void {
         this.onFrames = listener;
         // At most ~200 updates per bounce, and no more than four per audio second.
-        const intervalFrames = Math.ceil(Math.max(this.node.context.sampleRate / 4, totalFrames / 200) / 128) * 128;
-        this.node.port.postMessage({type: 'progress', intervalFrames});
+        const intervalFrames =
+            Math.ceil(Math.max(this.node.context.sampleRate / 4, totalFrames / 200) / 128) * 128;
+        this.node.port.postMessage({ type: 'progress', intervalFrames });
         return () => {
             this.onFrames = null;
-            this.node.port.postMessage({type: 'progress', intervalFrames: 0});
+            this.node.port.postMessage({ type: 'progress', intervalFrames: 0 });
         };
     }
 
@@ -81,11 +81,15 @@ export class MasterLimiter {
             return;
         }
         this.signature = signature;
-        this.node.port.postMessage({type: 'configure', settings: values});
+        this.node.port.postMessage({ type: 'configure', settings: values });
     }
 
     meters(): MasterMeter {
-        return {peak: [...this.latest.peak], rms: [...this.latest.rms], reduction: this.latest.reduction};
+        return {
+            peak: [...this.latest.peak],
+            rms: [...this.latest.rms],
+            reduction: this.latest.reduction,
+        };
     }
 
     dispose(): void {
@@ -96,7 +100,12 @@ export class MasterLimiter {
     }
 
     private settings(master: MixerMaster) {
-        return {enabled: master.limiter, driveDb: master.driveDb, ceilingDb: master.ceilingDb, release: master.release};
+        return {
+            enabled: master.limiter,
+            driveDb: master.driveDb,
+            ceilingDb: master.ceilingDb,
+            release: master.release,
+        };
     }
 }
 
@@ -123,7 +132,8 @@ interface Strip {
     samples: Float32Array<ArrayBuffer>;
 }
 
-const bounded = (v: number, min: number, max: number): number => Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : min;
+const bounded = (v: number, min: number, max: number): number =>
+    Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : min;
 
 /** Persistent native strips. Only structural edits change edges; fader/EQ edits
  * touch parameters. Reverb is one shared return, never fed from the master sum. */
@@ -135,9 +145,12 @@ export class MixerAudio {
     private readonly voiceTargets = new Map<string, AudioNode>();
     private mixed = false;
 
-    constructor(private readonly context: BaseAudioContext, private readonly master: AudioNode,
-                private readonly reverb: AudioNode, private readonly metering: boolean) {
-    }
+    constructor(
+        private readonly context: BaseAudioContext,
+        private readonly master: AudioNode,
+        private readonly reverb: AudioNode,
+        private readonly metering: boolean,
+    ) {}
 
     input(id: string): AudioNode | undefined {
         return this.strips.get(id)?.input;
@@ -158,7 +171,11 @@ export class MixerAudio {
     configure(mixer: MixerState | undefined): void {
         this.mixed = !!mixer;
         const entries: [string, MixerChannel | MixerBus][] = mixer
-            ? [...Object.entries(mixer.channels), ...mixer.buses.map(bus => [bus.id, bus] as [string, MixerBus])] : [];
+            ? [
+                  ...Object.entries(mixer.channels),
+                  ...mixer.buses.map(bus => [bus.id, bus] as [string, MixerBus]),
+              ]
+            : [];
         const ids = new Set(entries.map(([id]) => id));
         for (const [id, strip] of this.strips) {
             if (!ids.has(id)) {
@@ -177,14 +194,18 @@ export class MixerAudio {
             const strip = this.strips.get(id)!;
             this.update(strip, settings, audible.has(id));
             const routes = new Map<string, { target: AudioNode; level: number }>();
-            const target = busIds.has(settings.output) ? this.strips.get(settings.output)?.input : this.master;
+            const target = busIds.has(settings.output)
+                ? this.strips.get(settings.output)?.input
+                : this.master;
             if (target) {
-                routes.set('output', {target, level: 1});
+                routes.set('output', { target, level: 1 });
             }
             for (const send of settings.sends) {
-                const target = busIds.has(send.busId) ? this.strips.get(send.busId)?.input : undefined;
+                const target = busIds.has(send.busId)
+                    ? this.strips.get(send.busId)?.input
+                    : undefined;
                 if (target) {
-                    routes.set(`send:${send.busId}`, {target, level: bounded(send.level, 0, 1)});
+                    routes.set(`send:${send.busId}`, { target, level: bounded(send.level, 0, 1) });
                 }
             }
             for (const [key, route] of strip.routes) {
@@ -198,10 +219,10 @@ export class MixerAudio {
             for (const [key, route] of routes) {
                 let edge = strip.routes.get(key);
                 if (!edge) {
-                    const gain = new GainNode(this.context, {gain: route.level});
+                    const gain = new GainNode(this.context, { gain: route.level });
                     strip.gate.connect(gain);
                     gain.connect(route.target);
-                    edge = {gain, target: route.target};
+                    edge = { gain, target: route.target };
                     strip.routes.set(key, edge);
                 }
                 this.set(edge.gain.gain, route.level);
@@ -215,7 +236,8 @@ export class MixerAudio {
     reset(mixer: MixerState): void {
         const audible = audibleMixerIds(mixer);
         const entries: [string, MixerChannel | MixerBus][] = [
-            ...Object.entries(mixer.channels), ...mixer.buses.map(bus => [bus.id, bus] as [string, MixerBus])
+            ...Object.entries(mixer.channels),
+            ...mixer.buses.map(bus => [bus.id, bus] as [string, MixerBus]),
         ];
         for (const [id, settings] of entries) {
             const strip = this.strips.get(id);
@@ -228,7 +250,8 @@ export class MixerAudio {
     meters(): Record<string, ChannelMeter> {
         const result: Record<string, ChannelMeter> = {};
         for (const [id, strip] of this.strips) {
-            let peak = 0, squares = 0;
+            let peak = 0,
+                squares = 0;
             for (const analyser of strip.analysers) {
                 analyser.getFloatTimeDomainData(strip.samples);
                 for (const v of strip.samples) {
@@ -239,7 +262,12 @@ export class MixerAudio {
                     squares += v * v;
                 }
             }
-            result[id] = {peak, rms: Math.sqrt(squares / Math.max(1, strip.samples.length * strip.analysers.length))};
+            result[id] = {
+                peak,
+                rms: Math.sqrt(
+                    squares / Math.max(1, strip.samples.length * strip.analysers.length),
+                ),
+            };
         }
         return result;
     }
@@ -260,7 +288,7 @@ export class MixerAudio {
             audioParam.cancelScheduledValues(at);
             audioParam.setValueAtTime(from, at);
             audioParam.linearRampToValueAtTime(next, at + Math.max(0, ramp));
-            this.scheduled.set(audioParam, {at: at + Math.max(0, ramp), value: next});
+            this.scheduled.set(audioParam, { at: at + Math.max(0, ramp), value: next });
             this.values.set(audioParam, next);
             return true;
         };
@@ -319,15 +347,22 @@ export class MixerAudio {
         const c = this.context;
         const strip: Strip = {
             input: new GainNode(c),
-            highpass: new BiquadFilterNode(c, {type: 'highpass', frequency: 20, Q: Math.SQRT1_2}),
-            low: new BiquadFilterNode(c, {type: 'lowshelf', frequency: 500}),
-            high: new BiquadFilterNode(c, {type: 'highshelf', frequency: 2000}),
+            highpass: new BiquadFilterNode(c, { type: 'highpass', frequency: 20, Q: Math.SQRT1_2 }),
+            low: new BiquadFilterNode(c, { type: 'lowshelf', frequency: 500 }),
+            high: new BiquadFilterNode(c, { type: 'highshelf', frequency: 2000 }),
             compressor: null,
-            volume: new GainNode(c), pan: new StereoPannerNode(c), gate: new GainNode(c),
-            reverb: new GainNode(c, {gain: 0}), delay: null, feedback: null, routes: new Map(),
-            splitter: this.metering ? new ChannelSplitterNode(c, {numberOfOutputs: 2}) : null,
-            analysers: this.metering ? [new AnalyserNode(c, {fftSize: 1024}), new AnalyserNode(c, {fftSize: 1024})] : [],
-            samples: new Float32Array(this.metering ? 1024 : 0)
+            volume: new GainNode(c),
+            pan: new StereoPannerNode(c),
+            gate: new GainNode(c),
+            reverb: new GainNode(c, { gain: 0 }),
+            delay: null,
+            feedback: null,
+            routes: new Map(),
+            splitter: this.metering ? new ChannelSplitterNode(c, { numberOfOutputs: 2 }) : null,
+            analysers: this.metering
+                ? [new AnalyserNode(c, { fftSize: 1024 }), new AnalyserNode(c, { fftSize: 1024 })]
+                : [],
+            samples: new Float32Array(this.metering ? 1024 : 0),
         };
         strip.input.connect(strip.highpass);
         strip.highpass.connect(strip.low);
@@ -344,7 +379,12 @@ export class MixerAudio {
         return strip;
     }
 
-    private update(strip: Strip, settings: MixerChannel | MixerBus, audible: boolean, force = false): void {
+    private update(
+        strip: Strip,
+        settings: MixerChannel | MixerBus,
+        audible: boolean,
+        force = false,
+    ): void {
         const delay = 'effect' in settings && settings.effect === 'delay';
         if (delay !== !!strip.delay) {
             strip.input.disconnect();
@@ -352,8 +392,12 @@ export class MixerAudio {
                 strip.delay.disconnect();
                 strip.feedback!.disconnect();
             }
-            strip.delay = delay ? new DelayNode(this.context, {maxDelayTime: 2, delayTime: settings.delayTime}) : null;
-            strip.feedback = delay ? new GainNode(this.context, {gain: bounded(settings.feedback, 0, 0.8)}) : null;
+            strip.delay = delay
+                ? new DelayNode(this.context, { maxDelayTime: 2, delayTime: settings.delayTime })
+                : null;
+            strip.feedback = delay
+                ? new GainNode(this.context, { gain: bounded(settings.feedback, 0, 0.8) })
+                : null;
             if (strip.delay && strip.feedback) {
                 strip.input.connect(strip.delay);
                 strip.delay.connect(strip.feedback);
@@ -370,10 +414,12 @@ export class MixerAudio {
         if (settings.compressor.enabled !== !!strip.compressor) {
             strip.high.disconnect();
             strip.compressor?.disconnect();
-            strip.compressor = settings.compressor.enabled ? new DynamicsCompressorNode(this.context, {
-                threshold: bounded(settings.compressor.threshold, -60, 0),
-                ratio: bounded(settings.compressor.ratio, 1, 20)
-            }) : null;
+            strip.compressor = settings.compressor.enabled
+                ? new DynamicsCompressorNode(this.context, {
+                      threshold: bounded(settings.compressor.threshold, -60, 0),
+                      ratio: bounded(settings.compressor.ratio, 1, 20),
+                  })
+                : null;
             if (strip.compressor) {
                 strip.high.connect(strip.compressor);
                 strip.compressor.connect(strip.volume);
@@ -382,7 +428,11 @@ export class MixerAudio {
             }
         }
         if (strip.compressor) {
-            this.set(strip.compressor.threshold, bounded(settings.compressor.threshold, -60, 0), force);
+            this.set(
+                strip.compressor.threshold,
+                bounded(settings.compressor.threshold, -60, 0),
+                force,
+            );
             this.set(strip.compressor.ratio, bounded(settings.compressor.ratio, 1, 20), force);
         }
         this.set(strip.highpass.frequency, bounded(settings.highpass, 20, 1000), force);
@@ -412,8 +462,21 @@ export class MixerAudio {
         for (const route of strip.routes.values()) {
             route.gain.disconnect();
         }
-        for (const node of [strip.input, strip.highpass, strip.low, strip.high, strip.compressor,
-            strip.volume, strip.pan, strip.gate, strip.reverb, strip.delay, strip.feedback, strip.splitter, ...strip.analysers]) {
+        for (const node of [
+            strip.input,
+            strip.highpass,
+            strip.low,
+            strip.high,
+            strip.compressor,
+            strip.volume,
+            strip.pan,
+            strip.gate,
+            strip.reverb,
+            strip.delay,
+            strip.feedback,
+            strip.splitter,
+            ...strip.analysers,
+        ]) {
             node?.disconnect();
         }
     }

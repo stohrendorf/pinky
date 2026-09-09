@@ -1,47 +1,50 @@
 <script lang="ts">
-    import {
-        onMount, tick
-    } from 'svelte';
+    import { onMount, tick } from 'svelte';
 
-    import type {
-        MixerBus, MixerChannel, MixerMaster, MixerState
-    } from '../lib/mixer';
+    import type { MixerBus, MixerChannel, MixerMaster, MixerState } from '../lib/mixer';
 
+    import { mixerMeters } from '../lib/engine';
     import {
-        mixerMeters
-    } from '../lib/engine';
-    import {
-        addMixerBus, canRoute, ensureMixer, MAX_MIXER_BUSES, removeMixerBus, resolveMixer
+        addMixerBus,
+        canRoute,
+        ensureMixer,
+        MAX_MIXER_BUSES,
+        removeMixerBus,
+        resolveMixer,
     } from '../lib/mixer';
-    import {
-        project, touch
-    } from '../lib/project';
-    import {
-        rendering
-    } from '../lib/render';
+    import { project, touch } from '../lib/project';
+    import { rendering } from '../lib/render';
     import MixerFader from './MixerFader.svelte';
     import MixerStrip from './MixerStrip.svelte';
 
     // touch() publishes in-place edits; fresh values also invalidate strip props.
-    const mixer = $derived(structuredClone(resolveMixer($project?.mixer, $project?.instruments.map(inst => inst.id) ?? [])));
+    const mixer = $derived(
+        structuredClone(
+            resolveMixer($project?.mixer, $project?.instruments.map(inst => inst.id) ?? []),
+        ),
+    );
     const strips = $derived([
         ...($project?.instruments ?? []).map(inst => ({
-            id: inst.id, name: inst.name, color: inst.color, kind: 'Instrument', channel: mixer.channels[inst.id]
+            id: inst.id,
+            name: inst.name,
+            color: inst.color,
+            kind: 'Instrument',
+            channel: mixer.channels[inst.id],
         })),
         ...mixer.buses.map(bus => ({
             id: bus.id,
             name: bus.name,
             color: 'var(--accent2)',
             kind: bus.effect === 'delay' ? 'Delay return' : 'Group bus',
-            channel: bus
-        }))
+            channel: bus,
+        })),
     ]);
     let selectedId = $state('');
     const selected = $derived(strips.find(strip => strip.id === selectedId));
     const selectedBus = $derived(mixer.buses.find(bus => bus.id === selected?.id));
     let root: HTMLDivElement;
     let details = $state<HTMLElement>();
-    const silence = {master: {peak: [0, 0], rms: [0, 0], reduction: 0}, channels: {}};
+    const silence = { master: { peak: [0, 0], rms: [0, 0], reduction: 0 }, channels: {} };
     let meters = $state<ReturnType<typeof mixerMeters>>(silence);
 
     onMount(() => {
@@ -53,11 +56,17 @@
             if (event.key !== 'Tab' || !dialog) {
                 return;
             }
-            const controls = [...dialog.querySelectorAll<HTMLElement>('button, input, select, summary, [tabindex="0"]')]
-                .filter(el => !el.matches(':disabled') && el.checkVisibility());
+            const controls = [
+                ...dialog.querySelectorAll<HTMLElement>(
+                    'button, input, select, summary, [tabindex="0"]',
+                ),
+            ].filter(el => !el.matches(':disabled') && el.checkVisibility());
             const first = controls[0];
             const last = controls.at(-1);
-            if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+            if (
+                event.shiftKey &&
+                (document.activeElement === first || document.activeElement === dialog)
+            ) {
                 event.preventDefault();
                 last?.focus();
             } else if (!event.shiftKey && document.activeElement === last) {
@@ -89,7 +98,12 @@
         });
     }
 
-    function numeric(input: HTMLInputElement, min: number, max: number, change: (value: number) => void) {
+    function numeric(
+        input: HTMLInputElement,
+        min: number,
+        max: number,
+        change: (value: number) => void,
+    ) {
         const value = input.valueAsNumber;
         if (Number.isFinite(value)) {
             change(Math.max(min, Math.min(max, value)));
@@ -97,14 +111,14 @@
     }
 
     function masterNumber(key: Exclude<keyof MixerMaster, 'limiter'>, value: number) {
-        edit(state => state.master[key] = value);
+        edit(state => (state.master[key] = value));
     }
 
     function route(id: string, target: string) {
         if (!canRoute(mixer, id, target)) {
             return;
         }
-        editChannel(id, channel => channel.output = target);
+        editChannel(id, channel => (channel.output = target));
     }
 
     function addSend(id: string, target: string) {
@@ -113,7 +127,7 @@
         }
         editChannel(id, channel => {
             if (!channel.sends.some(send => send.busId === target)) {
-                channel.sends.push({busId: target, level: 0.25});
+                channel.sends.push({ busId: target, level: 0.25 });
             }
         });
     }
@@ -124,8 +138,9 @@
     }
 
     function closeDetails() {
-        const heading = [...root.querySelectorAll<HTMLButtonElement>('[data-strip]')]
-            .find(button => button.dataset.strip === selectedId);
+        const heading = [...root.querySelectorAll<HTMLButtonElement>('[data-strip]')].find(
+            button => button.dataset.strip === selectedId,
+        );
         selectedId = '';
         heading?.focus();
     }
@@ -171,25 +186,38 @@
     }
 </script>
 
-{#snippet numberControl(label: string, value: number, min: number, max: number, step: number, change: (value: number) => void, unit = '')}
+{#snippet numberControl(
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    change: (value: number) => void,
+    unit = '',
+)}
     <label class="number-control">
-        <span>{label}
-            <output>{Number(value.toFixed(2))}{unit ? ` ${unit}` : ''}</output></span>
+        <span
+            >{label}
+            <output>{Number(value.toFixed(2))}{unit ? ` ${unit}` : ''}</output></span
+        >
         <input
-                aria-label={label}
-                aria-valuetext={`${value} ${unit}`}
-                {max}
-                {min}
-                oninput={e => numeric(e.currentTarget, min, max, change)}
-                {step}
-                type="range"
-                {value}>
+            aria-label={label}
+            aria-valuetext={`${value} ${unit}`}
+            {max}
+            {min}
+            oninput={e => numeric(e.currentTarget, min, max, change)}
+            {step}
+            type="range"
+            {value}
+        />
     </label>
 {/snippet}
 
 <div bind:this={root} class="mixer">
     {#if $rendering}
-        <p class="render-notice" role="status">Rendering WAV — mixer editing and live meters are paused.</p>
+        <p class="render-notice" role="status">
+            Rendering WAV — mixer editing and live meters are paused.
+        </p>
     {/if}
     <fieldset class="mixer-editing" disabled={$rendering || !$project}>
         <legend class="sr-only">Mixer controls</legend>
@@ -200,18 +228,18 @@
             </div>
             <div class="bus-actions">
                 <button
-disabled={mixer.buses.length >= MAX_MIXER_BUSES}
-onclick={() => addBus('none')}
-                        title="Add a routing bus"
-type="button">+
-                    Group bus
+                    disabled={mixer.buses.length >= MAX_MIXER_BUSES}
+                    onclick={() => addBus('none')}
+                    title="Add a routing bus"
+                    type="button"
+                    >+ Group bus
                 </button>
                 <button
-disabled={mixer.buses.length >= MAX_MIXER_BUSES}
-onclick={() => addBus('delay')}
-                        title="Add a wet-only delay return"
-type="button">+
-                    Delay return
+                    disabled={mixer.buses.length >= MAX_MIXER_BUSES}
+                    onclick={() => addBus('delay')}
+                    title="Add a wet-only delay return"
+                    type="button"
+                    >+ Delay return
                 </button>
             </div>
         </div>
@@ -222,6 +250,27 @@ type="button">+
                     <div class="strip-row">
                         {#each strips.filter(strip => strip.kind === 'Instrument') as strip (strip.id)}
                             <MixerStrip
+                                id={strip.id}
+                                name={strip.name}
+                                channel={strip.channel}
+                                color={strip.color}
+                                kind={strip.kind}
+                                onedit={change => editChannel(strip.id, change)}
+                                onselect={() => toggleStrip(strip.id)}
+                                outputs={mixer.buses}
+                                peak={meters.channels[strip.id]?.peak ?? 0}
+                                rms={meters.channels[strip.id]?.rms ?? 0}
+                                selected={selected?.id === strip.id}
+                            />
+                        {/each}
+                    </div>
+                </section>
+                <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
+                    <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
+                    {#if mixer.buses.length}
+                        <div class="strip-row">
+                            {#each strips.filter(strip => strip.kind !== 'Instrument') as strip (strip.id)}
+                                <MixerStrip
                                     id={strip.id}
                                     name={strip.name}
                                     channel={strip.channel}
@@ -232,27 +281,8 @@ type="button">+
                                     outputs={mixer.buses}
                                     peak={meters.channels[strip.id]?.peak ?? 0}
                                     rms={meters.channels[strip.id]?.rms ?? 0}
-                                    selected={selected?.id === strip.id}/>
-                        {/each}
-                    </div>
-                </section>
-                <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
-                    <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
-                    {#if mixer.buses.length}
-                        <div class="strip-row">
-                            {#each strips.filter(strip => strip.kind !== 'Instrument') as strip (strip.id)}
-                                <MixerStrip
-                                        id={strip.id}
-                                        name={strip.name}
-                                        channel={strip.channel}
-                                        color={strip.color}
-                                        kind={strip.kind}
-                                        onedit={change => editChannel(strip.id, change)}
-                                        onselect={() => toggleStrip(strip.id)}
-                                        outputs={mixer.buses}
-                                        peak={meters.channels[strip.id]?.peak ?? 0}
-                                        rms={meters.channels[strip.id]?.rms ?? 0}
-                                        selected={selected?.id === strip.id}/>
+                                    selected={selected?.id === strip.id}
+                                />
                             {/each}
                         </div>
                     {:else}
@@ -260,100 +290,155 @@ type="button">+
                     {/if}
                 </section>
             </div>
-            <section class="master-strip" class:selected={selectedId === 'master'} aria-label="Master strip">
+            <section
+                class="master-strip"
+                class:selected={selectedId === 'master'}
+                aria-label="Master strip"
+            >
                 <button
-                        class="master-heading"
-                        aria-controls="mixer-details"
-                        aria-expanded={selectedId === 'master'}
-                        aria-label="Master settings"
-                        data-strip="master"
-                        onclick={() => toggleStrip('master')}
-                        type="button">
-                    <span class="master-kind">Final output</span><strong>Master</strong><span aria-hidden="true">···</span>
+                    class="master-heading"
+                    aria-controls="mixer-details"
+                    aria-expanded={selectedId === 'master'}
+                    aria-label="Master settings"
+                    data-strip="master"
+                    onclick={() => toggleStrip('master')}
+                    type="button"
+                >
+                    <span class="master-kind">Final output</span><strong>Master</strong><span
+                        aria-hidden="true">···</span
+                    >
                 </button>
                 <button
-                        class="limiter-toggle"
-                        aria-pressed={mixer.master.limiter}
-                        onclick={() => edit(state => state.master.limiter = !state.master.limiter)}
-                        title="Sample-peak limiter · 5ms lookahead"
-                        type="button">
+                    class="limiter-toggle"
+                    aria-pressed={mixer.master.limiter}
+                    onclick={() => edit(state => (state.master.limiter = !state.master.limiter))}
+                    title="Sample-peak limiter · 5ms lookahead"
+                    type="button"
+                >
                     Limiter
                 </button>
                 <div class="reduction" title="Limiter gain reduction">
                     {Math.max(0, meters.master.reduction).toFixed(1)} dB GR
                 </div>
                 <MixerFader
-                        name="Master"
-                        max={1}
-                        onchange={value => masterNumber('vol', value)}
-                        peaks={meters.master.peak}
-                        value={mixer.master.vol}/>
+                    name="Master"
+                    max={1}
+                    onchange={value => masterNumber('vol', value)}
+                    peaks={meters.master.peak}
+                    value={mixer.master.vol}
+                />
                 <span class="output-label">→ Stereo out</span>
             </section>
         </div>
         {#if selected || selectedId === 'master'}
             <section
-                    bind:this={details}
-                    id="mixer-details"
-                    class="details"
-                    aria-label={selected ? `${selected.name} settings` : 'Master settings'}
-                    tabindex="-1">
+                bind:this={details}
+                id="mixer-details"
+                class="details"
+                aria-label={selected ? `${selected.name} settings` : 'Master settings'}
+                tabindex="-1"
+            >
                 <div class="details-heading">
                     <div class="inspector-title">
                         <span>Channel inspector</span>
                         {#if selectedBus}
-                            <label class="bus-identity"><span class="sr-only">Bus name</span>
+                            <label class="bus-identity"
+                                ><span class="sr-only">Bus name</span>
                                 <input
-                                        maxlength="80"
-                                        onchange={e => renameBus(selectedBus.id, e.currentTarget)}
-                                        type="text"
-                                        value={selectedBus.name}>
+                                    maxlength="80"
+                                    onchange={e => renameBus(selectedBus.id, e.currentTarget)}
+                                    type="text"
+                                    value={selectedBus.name}
+                                />
                             </label>
                         {:else}
                             <h4>{selected?.name ?? 'Master'}</h4>
                         {/if}
                     </div>
-                    <button aria-label="Close channel settings" onclick={closeDetails} type="button">×</button>
+                    <button aria-label="Close channel settings" onclick={closeDetails} type="button"
+                        >×</button
+                    >
                 </div>
                 {#key selectedId}
                     {#if selected}
-                        {@const
-                            availableSends = mixer.buses.filter(bus => canRoute(mixer, selected.id, bus.id) && !selected.channel.sends.some(send => send.busId === bus.id))}
+                        {@const availableSends = mixer.buses.filter(
+                            bus =>
+                                canRoute(mixer, selected.id, bus.id) &&
+                                !selected.channel.sends.some(send => send.busId === bus.id),
+                        )}
                         <div class="channel-controls">
-                            <label class="output-control">Output
+                            <label class="output-control"
+                                >Output
                                 <select
-                                        aria-label={`${selected.name} output`}
-                                        onchange={e => route(selected.id, e.currentTarget.value)}
-                                        value={selected.channel.output}>
+                                    aria-label={`${selected.name} output`}
+                                    onchange={e => route(selected.id, e.currentTarget.value)}
+                                    value={selected.channel.output}
+                                >
                                     <option value="master">Master</option>
-                                    {#each mixer.buses.filter(bus => canRoute(mixer, selected.id, bus.id)) as bus (bus.id)}
-                                        <option value={bus.id}>{bus.name}{bus.effect === 'delay' ? ' (wet delay)' : ''}</option>
+                                    {#each mixer.buses.filter( bus => canRoute(mixer, selected.id, bus.id) ) as bus (bus.id)}
+                                        <option value={bus.id}
+                                            >{bus.name}{bus.effect === 'delay'
+                                                ? ' (wet delay)'
+                                                : ''}</option
+                                        >
                                     {/each}
                                 </select>
                             </label>
-                            {@render numberControl('Reverb send', selected.channel.reverb * 100, 0, 100, 1, value => editChannel(selected.id, c => c.reverb = value / 100), '%')}
+                            {@render numberControl(
+                                'Reverb send',
+                                selected.channel.reverb * 100,
+                                0,
+                                100,
+                                1,
+                                value => editChannel(selected.id, c => (c.reverb = value / 100)),
+                                '%',
+                            )}
                             {#each selected.channel.sends as send (send.busId)}
                                 <div class="send">
-                                    {@render numberControl(`Send to ${mixer.buses.find(bus => bus.id === send.busId)?.name}`, send.level * 100, 0, 100, 1, value => editChannel(selected.id, c => {
-                                        const target = c.sends.find(s => s.busId === send.busId);
-                                        if (target) {
-                                            target.level = value / 100;
-                                        }
-                                    }), '%')}
+                                    {@render numberControl(
+                                        `Send to ${mixer.buses.find(bus => bus.id === send.busId)?.name}`,
+                                        send.level * 100,
+                                        0,
+                                        100,
+                                        1,
+                                        value =>
+                                            editChannel(selected.id, c => {
+                                                const target = c.sends.find(
+                                                    s => s.busId === send.busId,
+                                                );
+                                                if (target) {
+                                                    target.level = value / 100;
+                                                }
+                                            }),
+                                        '%',
+                                    )}
                                     <button
-                                            aria-label={`Remove send to ${mixer.buses.find(bus => bus.id === send.busId)?.name}`}
-                                            onclick={() => editChannel(selected.id, c => c.sends = c.sends.filter(s => s.busId !== send.busId))}
-                                            type="button">×
+                                        aria-label={`Remove send to ${mixer.buses.find(bus => bus.id === send.busId)?.name}`}
+                                        onclick={() =>
+                                            editChannel(
+                                                selected.id,
+                                                c =>
+                                                    (c.sends = c.sends.filter(
+                                                        s => s.busId !== send.busId,
+                                                    )),
+                                            )}
+                                        type="button"
+                                        >×
                                     </button>
                                 </div>
                             {/each}
                             {#if availableSends.length}
-                                <label class="output-control">Send a copy
+                                <label class="output-control"
+                                    >Send a copy
                                     <select
-                                            aria-label="Add send"
-                                            onchange={e => { addSend(selected.id, e.currentTarget.value); e.currentTarget.value = ''; }}
-                                            title="Post-fader only"
-                                            value="">
+                                        aria-label="Add send"
+                                        onchange={e => {
+                                            addSend(selected.id, e.currentTarget.value);
+                                            e.currentTarget.value = '';
+                                        }}
+                                        title="Post-fader only"
+                                        value=""
+                                    >
                                         <option value="">+ Send…</option>
                                         {#each availableSends as bus (bus.id)}
                                             <option value={bus.id}>{bus.name}</option>
@@ -362,69 +447,193 @@ type="button">+
                                 </label>
                             {/if}
                             {#if selectedBus?.effect === 'delay'}
-                                {@render numberControl('Delay time', selectedBus.delayTime, 0.02, 2, 0.01, value => edit(state => {
-                                    const bus = state.buses.find(b => b.id === selectedBus?.id);
-                                    if (bus) {
-                                        bus.delayTime = value;
-                                    }
-                                }), 's')}
-                                {@render numberControl('Feedback', selectedBus.feedback * 100, 0, 80, 1, value => edit(state => {
-                                    const bus = state.buses.find(b => b.id === selectedBus?.id);
-                                    if (bus) {
-                                        bus.feedback = value / 100;
-                                    }
-                                }), '%')}
+                                {@render numberControl(
+                                    'Delay time',
+                                    selectedBus.delayTime,
+                                    0.02,
+                                    2,
+                                    0.01,
+                                    value =>
+                                        edit(state => {
+                                            const bus = state.buses.find(
+                                                b => b.id === selectedBus?.id,
+                                            );
+                                            if (bus) {
+                                                bus.delayTime = value;
+                                            }
+                                        }),
+                                    's',
+                                )}
+                                {@render numberControl(
+                                    'Feedback',
+                                    selectedBus.feedback * 100,
+                                    0,
+                                    80,
+                                    1,
+                                    value =>
+                                        edit(state => {
+                                            const bus = state.buses.find(
+                                                b => b.id === selectedBus?.id,
+                                            );
+                                            if (bus) {
+                                                bus.feedback = value / 100;
+                                            }
+                                        }),
+                                    '%',
+                                )}
                             {/if}
                         </div>
                         {#if selectedBus?.effect === 'delay'}
-                            <p class="mixer-note">Wet-only delay return — send a copy here to add echoes.</p>
+                            <p class="mixer-note">
+                                Wet-only delay return — send a copy here to add echoes.
+                            </p>
                         {/if}
                         <details class="processing">
-                            <summary>Tone &amp; dynamics
-                                <span>{selected.channel.highpass > 20 || selected.channel.tilt !== 0 ? 'EQ' : ''}{selected.channel.compressor.enabled ? ' · Compressor' : ''}</span>
+                            <summary
+                                >Tone &amp; dynamics
+                                <span
+                                    >{selected.channel.highpass > 20 || selected.channel.tilt !== 0
+                                        ? 'EQ'
+                                        : ''}{selected.channel.compressor.enabled
+                                        ? ' · Compressor'
+                                        : ''}</span
+                                >
                             </summary>
                             <div class="channel-controls">
-                                {@render numberControl('High-pass', selected.channel.highpass, 20, 1000, 1, value => editChannel(selected.id, c => c.highpass = value), 'Hz')}
-                                {@render numberControl('Tilt', selected.channel.tilt, -12, 12, 0.1, value => editChannel(selected.id, c => c.tilt = value), 'dB')}
+                                {@render numberControl(
+                                    'High-pass',
+                                    selected.channel.highpass,
+                                    20,
+                                    1000,
+                                    1,
+                                    value => editChannel(selected.id, c => (c.highpass = value)),
+                                    'Hz',
+                                )}
+                                {@render numberControl(
+                                    'Tilt',
+                                    selected.channel.tilt,
+                                    -12,
+                                    12,
+                                    0.1,
+                                    value => editChannel(selected.id, c => (c.tilt = value)),
+                                    'dB',
+                                )}
                                 <label class="toggle">
                                     <input
-                                            checked={selected.channel.compressor.enabled}
-                                            onchange={e => { const checked = e.currentTarget.checked; editChannel(selected.id, c => c.compressor.enabled = checked); }}
-                                            type="checkbox">
+                                        checked={selected.channel.compressor.enabled}
+                                        onchange={e => {
+                                            const checked = e.currentTarget.checked;
+                                            editChannel(
+                                                selected.id,
+                                                c => (c.compressor.enabled = checked),
+                                            );
+                                        }}
+                                        type="checkbox"
+                                    />
                                     Compressor
                                 </label>
                                 {#if selected.channel.compressor.enabled}
-                                    {@render numberControl('Threshold', selected.channel.compressor.threshold, -60, 0, 1, value => editChannel(selected.id, c => c.compressor.threshold = value), 'dB')}
-                                    {@render numberControl('Ratio', selected.channel.compressor.ratio, 1, 20, 0.1, value => editChannel(selected.id, c => c.compressor.ratio = value), ':1')}
+                                    {@render numberControl(
+                                        'Threshold',
+                                        selected.channel.compressor.threshold,
+                                        -60,
+                                        0,
+                                        1,
+                                        value =>
+                                            editChannel(
+                                                selected.id,
+                                                c => (c.compressor.threshold = value),
+                                            ),
+                                        'dB',
+                                    )}
+                                    {@render numberControl(
+                                        'Ratio',
+                                        selected.channel.compressor.ratio,
+                                        1,
+                                        20,
+                                        0.1,
+                                        value =>
+                                            editChannel(
+                                                selected.id,
+                                                c => (c.compressor.ratio = value),
+                                            ),
+                                        ':1',
+                                    )}
                                 {/if}
                             </div>
                         </details>
                         {#if selectedBus}
                             <button
-                                    class="delete-bus"
-                                    onclick={() => deleteBus(selectedBus.id)}
-                                    title="Dependents route to Master; sends to this bus are removed"
-                                    type="button">
+                                class="delete-bus"
+                                onclick={() => deleteBus(selectedBus.id)}
+                                title="Dependents route to Master; sends to this bus are removed"
+                                type="button"
+                            >
                                 Delete bus
                             </button>
                         {/if}
                     {:else}
                         <div class="channel-controls">
-                            {@render numberControl('Reverb return', mixer.master.rev * 100, 0, 100, 1, value => masterNumber('rev', value / 100), '%')}
-                            {@render numberControl('Master tilt', mixer.master.tilt, -12, 12, 0.1, value => masterNumber('tilt', value), 'dB')}
+                            {@render numberControl(
+                                'Reverb return',
+                                mixer.master.rev * 100,
+                                0,
+                                100,
+                                1,
+                                value => masterNumber('rev', value / 100),
+                                '%',
+                            )}
+                            {@render numberControl(
+                                'Master tilt',
+                                mixer.master.tilt,
+                                -12,
+                                12,
+                                0.1,
+                                value => masterNumber('tilt', value),
+                                'dB',
+                            )}
                             <div class="meter-readings">
                                 {#each ['L', 'R'] as side, i (side)}
-                                    <span>{side} · Peak {db(meters.master.peak[i] ?? 0)}
-                                        · RMS {db(meters.master.rms[i] ?? 0)} dBFS</span>
+                                    <span
+                                        >{side} · Peak {db(meters.master.peak[i] ?? 0)}
+                                        · RMS {db(meters.master.rms[i] ?? 0)} dBFS</span
+                                    >
                                 {/each}
                             </div>
                         </div>
                         <details class="processing">
-                            <summary>Limiter settings <span>{mixer.master.limiter ? 'On' : 'Off'}</span></summary>
+                            <summary
+                                >Limiter settings <span>{mixer.master.limiter ? 'On' : 'Off'}</span
+                                ></summary
+                            >
                             <div class="channel-controls">
-                                {@render numberControl('Drive', mixer.master.driveDb, 0, 18, 0.1, value => masterNumber('driveDb', value), 'dB')}
-                                {@render numberControl('Ceiling', mixer.master.ceilingDb, -12, 0, 0.1, value => masterNumber('ceilingDb', value), 'dBFS')}
-                                {@render numberControl('Release', mixer.master.release, 0.02, 1, 0.01, value => masterNumber('release', value), 's')}
+                                {@render numberControl(
+                                    'Drive',
+                                    mixer.master.driveDb,
+                                    0,
+                                    18,
+                                    0.1,
+                                    value => masterNumber('driveDb', value),
+                                    'dB',
+                                )}
+                                {@render numberControl(
+                                    'Ceiling',
+                                    mixer.master.ceilingDb,
+                                    -12,
+                                    0,
+                                    0.1,
+                                    value => masterNumber('ceilingDb', value),
+                                    'dBFS',
+                                )}
+                                {@render numberControl(
+                                    'Release',
+                                    mixer.master.release,
+                                    0.02,
+                                    1,
+                                    0.01,
+                                    value => masterNumber('release', value),
+                                    's',
+                                )}
                             </div>
                             <p class="mixer-note">Sample-peak protection · 5ms lookahead.</p>
                         </details>
@@ -465,16 +674,19 @@ type="button">+
     }
 
     .mixer-editing:disabled {
-        opacity: .6;
+        opacity: 0.6;
     }
 
-    .mixer-actions, .bus-actions, .details-heading {
+    .mixer-actions,
+    .bus-actions,
+    .details-heading {
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    .mixer-actions, .details-heading {
+    .mixer-actions,
+    .details-heading {
         justify-content: space-between;
         margin-bottom: 12px;
     }
@@ -536,7 +748,7 @@ type="button">+
         color: var(--color-text-muted);
         font-size: 9px;
         font-weight: 700;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
@@ -607,11 +819,11 @@ type="button">+
         border-radius: 50%;
     }
 
-    .limiter-toggle[aria-pressed=true]::before {
+    .limiter-toggle[aria-pressed='true']::before {
         background: currentColor;
     }
 
-    .limiter-toggle[aria-pressed=true] {
+    .limiter-toggle[aria-pressed='true'] {
         color: var(--accent2);
         border-color: var(--accent2);
     }
@@ -650,7 +862,7 @@ type="button">+
     .inspector-empty > strong {
         color: var(--accent);
         font-size: 9px;
-        letter-spacing: .08em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
@@ -690,7 +902,8 @@ type="button">+
         margin: 12px 0;
     }
 
-    .number-control, .output-control {
+    .number-control,
+    .output-control {
         display: flex;
         flex-direction: column;
         gap: 7px;
@@ -710,13 +923,14 @@ type="button">+
         white-space: nowrap;
     }
 
-    input[type=text], select {
+    input[type='text'],
+    select {
         padding: 6px;
         min-width: 0;
         max-width: 100%;
     }
 
-    input[type=range] {
+    input[type='range'] {
         margin: 0;
     }
 
@@ -775,7 +989,12 @@ type="button">+
         font-variant-numeric: tabular-nums;
     }
 
-    .details:focus-visible, .strips:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+    .details:focus-visible,
+    .strips:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
     }
@@ -789,5 +1008,4 @@ type="button">+
         clip-path: inset(50%);
         white-space: nowrap;
     }
-
 </style>

@@ -1,7 +1,5 @@
 <script lang="ts">
-    import {
-        createEventDispatcher
-    } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher<{ click: MouseEvent }>();
 
@@ -28,19 +26,19 @@
         expanded = undefined,
         ariaControls = undefined,
         compact = false,
-        children
+        children,
     }: Props = $props();
 </script>
 
 <button
-        class="btn {variant} {compact ? 'compact' : ''} {className}"
-        aria-controls={ariaControls}
-        aria-expanded={expanded}
-        aria-pressed={pressed}
-        {disabled}
-        onclick={event => dispatch('click', event)}
-        {title}
-        {type}
+    class="btn {variant} {compact ? 'compact' : ''} {className}"
+    aria-controls={ariaControls}
+    aria-expanded={expanded}
+    aria-pressed={pressed}
+    {disabled}
+    onclick={event => dispatch('click', event)}
+    {title}
+    {type}
 >
     {@render children?.()}
 </button>
@@ -53,9 +51,12 @@
         font-size: 11px;
         font-weight: 600;
         border-radius: 2px;
-        letter-spacing: .055em;
+        letter-spacing: 0.055em;
         cursor: pointer;
-        transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+        transition:
+            background-color 0.12s ease,
+            border-color 0.12s ease,
+            color 0.12s ease;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -108,7 +109,7 @@
     }
 
     .btn:disabled {
-        opacity: .3;
+        opacity: 0.3;
         cursor: not-allowed;
     }
 </style>

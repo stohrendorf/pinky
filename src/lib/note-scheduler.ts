@@ -1,9 +1,5 @@
-import type {
-    CurveShape
-} from './types';
-import type {
-    ManagedVoice
-} from './voice-collection';
+import type { CurveShape } from './types';
+import type { ManagedVoice } from './voice-collection';
 
 export interface NoteSchedulingParams {
     rel: number;
@@ -12,13 +8,27 @@ export interface NoteSchedulingParams {
 export interface NoteSchedulingCollection<Params> {
     load: number;
 
-    glide(track: string, fromKey: string, toKey: string, at: number, frequency: number, time: number, curve?: CurveShape): boolean;
+    glide(
+        track: string,
+        fromKey: string,
+        toKey: string,
+        at: number,
+        frequency: number,
+        time: number,
+        curve?: CurveShape,
+    ): boolean;
 
     replaceActive(key: string, at: number): void;
 
     prepare(at: number): number;
 
-    register(track: string, key: string, at: number, voice: ManagedVoice<Params>, tail: number): void;
+    register(
+        track: string,
+        key: string,
+        at: number,
+        voice: ManagedVoice<Params>,
+        tail: number,
+    ): void;
 
     noteOff(key: string, at: number): void;
 
@@ -31,7 +41,13 @@ export interface NoteSchedulerOptions<Params extends NoteSchedulingParams> {
     findNote: (name: string) => { freq: number } | undefined;
     currentTime: () => number | null;
     voices: NoteSchedulingCollection<Params>;
-    createVoice: (track: string, frequency: number, at: number, params: Params, velocity: number) => ManagedVoice<Params>;
+    createVoice: (
+        track: string,
+        frequency: number,
+        at: number,
+        params: Params,
+        velocity: number,
+    ) => ManagedVoice<Params>;
     releaseTail: number;
 }
 
@@ -85,14 +101,29 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
         this.noteOffAt(track, name, (this.currentTime() ?? 0) + when);
     }
 
-    glideAt(track: string, from: string, to: string, atTime: number, time: number, curve: CurveShape = 'linear'): boolean {
+    glideAt(
+        track: string,
+        from: string,
+        to: string,
+        atTime: number,
+        time: number,
+        curve: CurveShape = 'linear',
+    ): boolean {
         const note = this.findNote(to);
         const now = this.currentTime();
         if (!note || now === null) {
             return false;
         }
         const at = Math.max(atTime, now);
-        return this.voices.glide(track, track + ':' + from, track + ':' + to, at, note.freq, time, curve);
+        return this.voices.glide(
+            track,
+            track + ':' + from,
+            track + ':' + to,
+            at,
+            note.freq,
+            time,
+            curve,
+        );
     }
 
     allNotesOff(): void {

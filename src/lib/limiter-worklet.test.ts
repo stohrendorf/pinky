@@ -1,6 +1,4 @@
-import {
-    afterEach, describe, expect, it, vi
-} from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface Processor {
     port: { postMessage: ReturnType<typeof vi.fn>; onmessage: (event: { data: unknown }) => void };
@@ -12,15 +10,20 @@ async function processor(metering: boolean) {
     vi.resetModules();
     let Constructor!: new (options: unknown) => Processor;
     vi.stubGlobal('sampleRate', 48000);
-    vi.stubGlobal('AudioWorkletProcessor', class {
-        port = {postMessage: vi.fn(), onmessage: null};
-    });
+    vi.stubGlobal(
+        'AudioWorkletProcessor',
+        class {
+            port = { postMessage: vi.fn(), onmessage: null };
+        },
+    );
     vi.stubGlobal('registerProcessor', (name: string, constructor: typeof Constructor) => {
         expect(name).toBe('pinky-mixer-limiter');
         Constructor = constructor;
     });
     await import('./limiter-worklet.js');
-    return new Constructor({processorOptions: {metering, settings: {enabled: true, ceilingDb: -6, driveDb: 18}}});
+    return new Constructor({
+        processorOptions: { metering, settings: { enabled: true, ceilingDb: -6, driveDb: 18 } },
+    });
 }
 
 afterEach(() => {
@@ -30,24 +33,28 @@ afterEach(() => {
 describe('limiter worklet actual DSP wiring', () => {
     it('reports frames through silence and bypass at bounded intervals without needing audio-thread replies', async () => {
         const node = await processor(false);
-        node.port.onmessage({data: {type: 'configure', settings: {enabled: false}}});
-        node.port.onmessage({data: {type: 'progress', intervalFrames: 12032}});
+        node.port.onmessage({ data: { type: 'configure', settings: { enabled: false } } });
+        node.port.onmessage({ data: { type: 'progress', intervalFrames: 12032 } });
         const output = [new Float32Array(128), new Float32Array(128)];
         for (let block = 0; block < 375; block++) {
             vi.stubGlobal('currentFrame', block * 128);
             node.process([[]], [output]);
         }
-        expect(node.port.postMessage.mock.calls).toEqual([128, 12160, 24192, 36224].map(frames => [{
-            type: 'progress',
-            frames
-        }]));
+        expect(node.port.postMessage.mock.calls).toEqual(
+            [128, 12160, 24192, 36224].map(frames => [
+                {
+                    type: 'progress',
+                    frames,
+                },
+            ]),
+        );
         vi.stubGlobal('currentFrame', 48000);
         node.process([[]], [output]);
         expect(node.port.postMessage).toHaveBeenCalledTimes(4);
         vi.stubGlobal('currentFrame', 48128);
         node.process([[]], [output]);
-        expect(node.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', frames: 48256});
-        node.port.onmessage({data: {type: 'progress', intervalFrames: 0}});
+        expect(node.port.postMessage).toHaveBeenLastCalledWith({ type: 'progress', frames: 48256 });
+        node.port.onmessage({ data: { type: 'progress', intervalFrames: 0 } });
         vi.stubGlobal('currentFrame', 96000);
         node.process([[]], [output]);
         expect(node.port.postMessage).toHaveBeenCalledTimes(5);
@@ -55,10 +62,12 @@ describe('limiter worklet actual DSP wiring', () => {
     });
 
     it('leaves every audio sample unchanged when telemetry is enabled', async () => {
-        const plain = await processor(false), tracked = await processor(false);
-        tracked.port.onmessage({data: {type: 'progress', intervalFrames: 12032}});
+        const plain = await processor(false),
+            tracked = await processor(false);
+        tracked.port.onmessage({ data: { type: 'progress', intervalFrames: 12032 } });
         const input = [new Float32Array(128), new Float32Array(128)];
-        const a = [new Float32Array(128), new Float32Array(128)], b = [new Float32Array(128), new Float32Array(128)];
+        const a = [new Float32Array(128), new Float32Array(128)],
+            b = [new Float32Array(128), new Float32Array(128)];
         for (let block = 0; block < 200; block++) {
             vi.stubGlobal('currentFrame', block * 128);
             for (let i = 0; i < 128; i++) {
@@ -83,7 +92,11 @@ describe('limiter worklet actual DSP wiring', () => {
         }
         expect(node.port.postMessage.mock.calls.length).toBeLessThanOrEqual(20);
         expect(node.port.postMessage.mock.calls.length).toBeGreaterThanOrEqual(19);
-        const meter = node.port.postMessage.mock.lastCall?.[0] as { peak: number[]; rms: number[]; reduction: number };
+        const meter = node.port.postMessage.mock.lastCall?.[0] as {
+            peak: number[];
+            rms: number[];
+            reduction: number;
+        };
         expect(meter.reduction).toBeGreaterThan(40);
         expect(meter.peak[1] / meter.peak[0]).toBeCloseTo(0.25);
         expect(meter.rms[0]).toBeCloseTo(meter.peak[0]);
@@ -103,7 +116,9 @@ describe('limiter worklet actual DSP wiring', () => {
 
     it('applies bypass configuration without removing the delay buffer', async () => {
         const node = await processor(false);
-        node.port.onmessage({data: {type: 'configure', settings: {enabled: false, driveDb: 18}}});
+        node.port.onmessage({
+            data: { type: 'configure', settings: { enabled: false, driveDb: 18 } },
+        });
         const input = [new Float32Array(128).fill(2), new Float32Array(128).fill(-1)];
         const output = [new Float32Array(128), new Float32Array(128)];
         node.process([input], [output]);

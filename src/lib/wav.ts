@@ -1,8 +1,6 @@
 /* Minimal WAV writer: 16-bit PCM, interleaved, one `data` chunk, no metadata —
  * everything a rendered AudioBuffer needs to leave the app as a file. */
-import {
-    checkAbort, type WorkProgressOptions, yieldExport
-} from './offline-progress';
+import { checkAbort, type WorkProgressOptions, yieldExport } from './offline-progress';
 
 // Accepts anything AudioBuffer-shaped (that's all the encoder reads)
 export interface PcmSource {
@@ -63,7 +61,7 @@ function wavWriter(buf: PcmSource) {
                 }
             }
         },
-        finish: () => new Blob([out.buffer], {type: 'audio/wav'})
+        finish: () => new Blob([out.buffer], { type: 'audio/wav' }),
     };
 }
 
@@ -73,7 +71,10 @@ export function encodeWav(buf: PcmSource): Blob {
     return writer.finish();
 }
 
-export async function encodeWavAsync(buf: PcmSource, options: WorkProgressOptions = {}): Promise<Blob> {
+export async function encodeWavAsync(
+    buf: PcmSource,
+    options: WorkProgressOptions = {},
+): Promise<Blob> {
     checkAbort(options.signal);
     options.onProgress?.(0);
     await yieldExport(options.signal);

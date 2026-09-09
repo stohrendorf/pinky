@@ -8,7 +8,7 @@
     }
 
     // eslint-disable-next-line prefer-const
-    let {name, value, max = 2, peaks, onchange}: Props = $props();
+    let { name, value, max = 2, peaks, onchange }: Props = $props();
 
     function level(value: number): string {
         return value > 0 ? (20 * Math.log10(value)).toFixed(1) : '−∞';
@@ -24,29 +24,35 @@
 <div class="fader">
     <div class="travel">
         <input
-                aria-label={`${name} fader`}
-                aria-orientation="vertical"
-                aria-valuetext={`${level(value)} dB`}
-                {max}
-                min="0"
-                oninput={e => change(e.currentTarget)}
-                step="0.01"
-                type="range"
-                {value}>
+            aria-label={`${name} fader`}
+            aria-orientation="vertical"
+            aria-valuetext={`${level(value)} dB`}
+            {max}
+            min="0"
+            oninput={e => change(e.currentTarget)}
+            step="0.01"
+            type="range"
+            {value}
+        />
         <div class="meters">
             {#each peaks as peak, i (i)}
                 {@const decibels = peak > 0 ? 20 * Math.log10(peak) : -60}
                 <div
-                        class="meter"
-                        class:overload={peak > 1}
-                        aria-label={peaks.length === 2 ? `${name} ${i === 0 ? 'L' : 'R'} peak` : `${name} peak`}
-                        aria-valuemax="6"
-                        aria-valuemin="-60"
-                        aria-valuenow={Math.max(-60, Math.min(6, decibels))}
-                        aria-valuetext={`${level(peak)} dBFS`}
-                        role="meter"
-                        title={`${level(peak)} dBFS`}>
-                    <span style:height={`${Math.max(0, Math.min(100, (decibels + 60) / 66 * 100))}%`}></span>
+                    class="meter"
+                    class:overload={peak > 1}
+                    aria-label={peaks.length === 2
+                        ? `${name} ${i === 0 ? 'L' : 'R'} peak`
+                        : `${name} peak`}
+                    aria-valuemax="6"
+                    aria-valuemin="-60"
+                    aria-valuenow={Math.max(-60, Math.min(6, decibels))}
+                    aria-valuetext={`${level(peak)} dBFS`}
+                    role="meter"
+                    title={`${level(peak)} dBFS`}
+                >
+                    <span
+                        style:height={`${Math.max(0, Math.min(100, ((decibels + 60) / 66) * 100))}%`}
+                    ></span>
                 </div>
             {/each}
         </div>
@@ -69,7 +75,7 @@
         height: 132px;
     }
 
-    input[type=range] {
+    input[type='range'] {
         writing-mode: vertical-lr;
         direction: rtl;
         width: 28px;

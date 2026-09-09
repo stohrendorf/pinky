@@ -1,74 +1,84 @@
-import {
-    get
-} from 'svelte/store';
-import {
-    afterEach, beforeEach, describe, expect, it, vi
-} from 'vitest';
+import { get } from 'svelte/store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-    Project
-} from './types';
+import type { Project } from './types';
 
-import {
-    mixerTarget
-} from './automation';
+import { mixerTarget } from './automation';
 import * as engine from './engine';
+import { createMixer } from './mixer';
+import { newEmptyProject, playing, project, selPatId, songCursor } from './project';
+import { createTimingMap, ensureConductor } from './timing';
 import {
-    createMixer
-} from './mixer';
-import {
-    newEmptyProject, playing, project, selPatId, songCursor
-} from './project';
-import {
-    createTimingMap, ensureConductor
-} from './timing';
-import {
-    playPattern, playSong, scheduleRange, scheduleRangeAsync, seekSong, stopTransport
+    playPattern,
+    playSong,
+    scheduleRange,
+    scheduleRangeAsync,
+    seekSong,
+    stopTransport,
 } from './transport';
-import {
-    createId
-} from './types';
+import { createId } from './types';
 
-const clock = vi.hoisted(() => ({now: 0, tick: null as null | ((time: number) => void)}));
+const clock = vi.hoisted(() => ({ now: 0, tick: null as null | ((time: number) => void) }));
 vi.mock('./engine', () => ({
-    configureMixer: vi.fn(), noteOnAt: vi.fn(), noteOffAt: vi.fn(), glideAt: vi.fn(),
-    automateMaster: vi.fn(), automateInstrument: vi.fn(), automateMixer: vi.fn(), allNotesOff: vi.fn(),
-    resetMaster: vi.fn(), resetMixer: vi.fn(),
-    isRendering: () => false, ensureAudio: vi.fn(async () => {
-    }), outputLatency: () => 0.005,
-    audioTime: () => clock.now, clockStart: vi.fn(), clockStop: vi.fn(),
+    configureMixer: vi.fn(),
+    noteOnAt: vi.fn(),
+    noteOffAt: vi.fn(),
+    glideAt: vi.fn(),
+    automateMaster: vi.fn(),
+    automateInstrument: vi.fn(),
+    automateMixer: vi.fn(),
+    allNotesOff: vi.fn(),
+    resetMaster: vi.fn(),
+    resetMixer: vi.fn(),
+    isRendering: () => false,
+    ensureAudio: vi.fn(async () => {}),
+    outputLatency: () => 0.005,
+    audioTime: () => clock.now,
+    clockStart: vi.fn(),
+    clockStop: vi.fn(),
     setTickHandler: (callback: (time: number) => void) => {
         clock.tick = callback;
-    }
+    },
 }));
 
 function score(): Project {
-    const p = newEmptyProject(), id = p.instruments[0].id;
+    const p = newEmptyProject(),
+        id = p.instruments[0].id;
     p.bpm = 120;
     p.patterns[0].steps = 32;
     p.arrangement[0].len = 32;
     p.patterns[0].tracks[id] = [
-        {pitch: 'C5', start: 0, len: 12},
-        {pitch: 'D5', start: 8, len: 4},
-        {pitch: 'E5', start: 16, len: 2},
-        {pitch: 'F5', start: 24, len: 4}
+        { pitch: 'C5', start: 0, len: 12 },
+        { pitch: 'D5', start: 8, len: 4 },
+        { pitch: 'E5', start: 16, len: 2 },
+        { pitch: 'F5', start: 24, len: 4 },
     ];
     const conductor = ensureConductor(p);
     conductor.tempos = [
-        {id: createId(), step: 0, bpm: 120, curve: 'hold'},
-        {id: createId(), step: 8, bpm: 60, curve: 'linear'},
-        {id: createId(), step: 24, bpm: 120, curve: 'hold'}
+        { id: createId(), step: 0, bpm: 120, curve: 'hold' },
+        { id: createId(), step: 8, bpm: 60, curve: 'linear' },
+        { id: createId(), step: 24, bpm: 120, curve: 'hold' },
     ];
-    p.automation = [{
-        id: createId(),
-        target: 'master',
-        param: 'vol',
-        points: [{step: 0, value: 0.5}, {step: 32, value: 0.8}]
-    }];
+    p.automation = [
+        {
+            id: createId(),
+            target: 'master',
+            param: 'vol',
+            points: [
+                { step: 0, value: 0.5 },
+                { step: 32, value: 0.8 },
+            ],
+        },
+    ];
     p.mixer = createMixer([id]);
     p.automation.push({
-        id: createId(), target: mixerTarget('channel', id), param: 'pan',
-        points: [{step: 0, value: -0.5}, {step: 32, value: 0.5}]
+        id: createId(),
+        target: mixerTarget('channel', id),
+        param: 'pan',
+        points: [
+            { step: 0, value: -0.5 },
+            { step: 32, value: 0.5 },
+        ],
     });
     return p;
 }
@@ -88,7 +98,9 @@ afterEach(() => {
 
 describe('conductor-aware scheduling', () => {
     it('maps note starts, releases across markers and automation through the same ramp integral', () => {
-        const p = score(), timing = createTimingMap(p), id = p.instruments[0].id;
+        const p = score(),
+            timing = createTimingMap(p),
+            id = p.instruments[0].id;
         expect(scheduleRange(p, 0, 32)).toBeCloseTo(timing.secondsAt(32), 10);
         const on = vi.mocked(engine.noteOnAt).mock.calls;
         expect(on.map(call => call[1])).toEqual(['C5', 'D5', 'E5', 'F5']);
@@ -103,10 +115,17 @@ describe('conductor-aware scheduling', () => {
     });
 
     it('maps both ends of slides, including a terminal linked note after a tempo change', () => {
-        const p = score(), id = p.instruments[0].id, timing = createTimingMap(p);
+        const p = score(),
+            id = p.instruments[0].id,
+            timing = createTimingMap(p);
         p.patterns[0].tracks[id] = [
-            {pitch: 'C5', start: 4, len: 2, legatoTo: {pitch: 'D5', start: 12, curve: 'smooth'}},
-            {pitch: 'D5', start: 12, len: 8}
+            {
+                pitch: 'C5',
+                start: 4,
+                len: 2,
+                legatoTo: { pitch: 'D5', start: 12, curve: 'smooth' },
+            },
+            { pitch: 'D5', start: 12, len: 8 },
         ];
         scheduleRange(p, 0, 32);
         expect(engine.noteOnAt).toHaveBeenCalledOnce();
@@ -119,19 +138,30 @@ describe('conductor-aware scheduling', () => {
     });
 
     it('uses absolute musical positions for a selected export and fractional swing within ramps', () => {
-        const p = score(), id = p.instruments[0].id, timing = createTimingMap(p);
+        const p = score(),
+            id = p.instruments[0].id,
+            timing = createTimingMap(p);
         p.swing = 0.6;
-        p.patterns[0].tracks[id] = [{pitch: 'D5', start: 9, len: 4}];
+        p.patterns[0].tracks[id] = [{ pitch: 'D5', start: 9, len: 4 }];
         const seconds = scheduleRange(p, 8, 16);
         expect(seconds).toBeCloseTo(timing.secondsBetween(8, 16), 10);
-        expect(vi.mocked(engine.noteOnAt).mock.calls[0][2]).toBeCloseTo(timing.secondsBetween(8, 9.2), 10);
-        expect(vi.mocked(engine.noteOffAt).mock.calls[0][2]).toBeCloseTo(timing.secondsBetween(8, 12.8), 10);
+        expect(vi.mocked(engine.noteOnAt).mock.calls[0][2]).toBeCloseTo(
+            timing.secondsBetween(8, 9.2),
+            10,
+        );
+        expect(vi.mocked(engine.noteOffAt).mock.calls[0][2]).toBeCloseTo(
+            timing.secondsBetween(8, 12.8),
+            10,
+        );
     });
 
     it('plays the same timestamps live and offline, and seeks into the current ramp', async () => {
-        const p = score(), timing = createTimingMap(p);
+        const p = score(),
+            timing = createTimingMap(p);
         scheduleRange(p, 0, 32);
-        const offline = vi.mocked(engine.noteOnAt).mock.calls.map(call => [call[1], call[2]] as const);
+        const offline = vi
+            .mocked(engine.noteOnAt)
+            .mock.calls.map(call => [call[1], call[2]] as const);
         vi.clearAllMocks();
         project.set(p);
         await playSong();
@@ -154,8 +184,9 @@ describe('conductor-aware scheduling', () => {
     });
 
     it('loops with the integrated duration and leaves pattern preview on the base tempo', async () => {
-        const p = score(), timing = createTimingMap(p);
-        p.loop = {start: 8, end: 16};
+        const p = score(),
+            timing = createTimingMap(p);
+        p.loop = { start: 8, end: 16 };
         project.set(p);
         await playSong();
         const loopSeconds = timing.secondsBetween(8, 16);
@@ -188,21 +219,26 @@ describe('conductor-aware scheduling', () => {
         const expected = vi.mocked(engine.noteOnAt).mock.calls.map(call => [...call]);
         vi.clearAllMocks();
         const updates: number[] = [];
-        await scheduleRangeAsync(p, 0, 96, {onProgress: value => updates.push(value)});
+        await scheduleRangeAsync(p, 0, 96, { onProgress: value => updates.push(value) });
         expect(vi.mocked(engine.noteOnAt).mock.calls).toEqual(expected);
         expect(updates).toEqual([0, 1 / 3, 2 / 3, 1]);
         vi.clearAllMocks();
         const controller = new AbortController();
-        await expect(scheduleRangeAsync(p, 0, 96, {
-            signal: controller.signal, onProgress: value => {
-                if (value >= 1 / 3) {
-                    controller.abort();
-                }
-            }
-        })).rejects.toMatchObject({name: 'AbortError'});
+        await expect(
+            scheduleRangeAsync(p, 0, 96, {
+                signal: controller.signal,
+                onProgress: value => {
+                    if (value >= 1 / 3) {
+                        controller.abort();
+                    }
+                },
+            }),
+        ).rejects.toMatchObject({ name: 'AbortError' });
         expect(engine.noteOnAt).toHaveBeenCalledTimes(4);
         vi.clearAllMocks();
-        await expect(scheduleRangeAsync(p, 0, 96, {signal: controller.signal})).rejects.toMatchObject({name: 'AbortError'});
+        await expect(
+            scheduleRangeAsync(p, 0, 96, { signal: controller.signal }),
+        ).rejects.toMatchObject({ name: 'AbortError' });
         expect(engine.configureMixer).not.toHaveBeenCalled();
     });
 });

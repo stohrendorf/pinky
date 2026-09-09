@@ -1,7 +1,5 @@
 /* global AudioWorkletProcessor, registerProcessor, sampleRate, currentFrame */
-import {
-    LimiterDSP
-} from './limiter-dsp.js';
+import { LimiterDSP } from './limiter-dsp.js';
 
 class MixerLimiterProcessor extends AudioWorkletProcessor {
     constructor(options) {
@@ -12,12 +10,14 @@ class MixerLimiterProcessor extends AudioWorkletProcessor {
         this.interval = Math.ceil(sampleRate / 20);
         this.progressInterval = 0;
         this.nextProgressFrame = 0;
-        this.port.onmessage = ({data}) => {
+        this.port.onmessage = ({ data }) => {
             if (data.type === 'configure') {
                 this.dsp.configure(data.settings);
             }
             if (data.type === 'progress') {
-                this.progressInterval = Number.isFinite(data.intervalFrames) ? Math.max(0, data.intervalFrames) : 0;
+                this.progressInterval = Number.isFinite(data.intervalFrames)
+                    ? Math.max(0, data.intervalFrames)
+                    : 0;
                 this.nextProgressFrame = 0;
             }
         };
@@ -37,7 +37,7 @@ class MixerLimiterProcessor extends AudioWorkletProcessor {
         if (this.progressInterval) {
             const frames = currentFrame + output[0].length;
             if (frames >= this.nextProgressFrame) {
-                this.port.postMessage({type: 'progress', frames});
+                this.port.postMessage({ type: 'progress', frames });
                 this.nextProgressFrame = frames + this.progressInterval;
             }
         }

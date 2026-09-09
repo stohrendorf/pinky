@@ -1,28 +1,15 @@
 // Note editing operations of the piano roll — shared by the mouse handlers and
-import type {
-    Writable
-} from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
 // the keyboard shortcuts (tracker workflow: copy/paste, duplicate, transpose,
 // nudge, velocity).
-import {
-    get, writable
-} from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
-import type {
-    Note, Pattern
-} from './types';
+import type { Note, Pattern } from './types';
 
-import {
-    isLegatoTarget
-} from './legato';
-import {
-    idxOfNote, NOTES
-} from './notes';
-import {
-    project, selInstId, selPatId, touch, trackNotes
-} from './project';
-
+import { isLegatoTarget } from './legato';
+import { idxOfNote, NOTES } from './notes';
+import { project, selInstId, selPatId, touch, trackNotes } from './project';
 
 // Where the next paste lands (in steps) — set by clicking in the piano roll.
 export const editStep: Writable<number> = writable(0);
@@ -58,7 +45,9 @@ export function removeInvalidLegatoLinks(notes: Note[]): void {
         if (!source.legatoTo) {
             return;
         }
-        const target = notes.find(note => note.start === source.legatoTo?.start && note.pitch === source.legatoTo.pitch);
+        const target = notes.find(
+            note => note.start === source.legatoTo?.start && note.pitch === source.legatoTo.pitch,
+        );
         if (!target || !isLegatoTarget(source, target.start)) {
             delete source.legatoTo;
         }
@@ -68,7 +57,10 @@ export function removeInvalidLegatoLinks(notes: Note[]): void {
 export function updateLegatoTargets(
     notes: Note[],
     originalPositions: Map<Note, Pick<Note, 'pitch' | 'start'>>,
-    originalLegatoTargets: ReadonlyMap<Note, Pick<NonNullable<Note['legatoTo']>, 'pitch' | 'start'>>
+    originalLegatoTargets: ReadonlyMap<
+        Note,
+        Pick<NonNullable<Note['legatoTo']>, 'pitch' | 'start'>
+    >,
 ): void {
     const movedTargets = new Map<string, Note>();
     originalPositions.forEach((position, note) => {
@@ -95,11 +87,13 @@ export function createLegatoBetweenSelected(): boolean {
     if (!notes) {
         return false;
     }
-    const selected = selectedOf(notes).sort((a, b) => a.start - b.start || idxOfNote[a.pitch] - idxOfNote[b.pitch]);
+    const selected = selectedOf(notes).sort(
+        (a, b) => a.start - b.start || idxOfNote[a.pitch] - idxOfNote[b.pitch],
+    );
     if (selected.length !== 2 || !isLegatoTarget(selected[0], selected[1].start)) {
         return false;
     }
-    selected[0].legatoTo = {pitch: selected[1].pitch, start: selected[1].start};
+    selected[0].legatoTo = { pitch: selected[1].pitch, start: selected[1].start };
     touch();
     return true;
 }
@@ -109,7 +103,7 @@ export function selectAllNotes(): void {
     if (!notes) {
         return;
     }
-    notes.forEach(n => n.selected = true);
+    notes.forEach(n => (n.selected = true));
     touch();
 }
 
@@ -118,7 +112,7 @@ export function clearNoteSelection(): void {
     if (!notes) {
         return;
     }
-    notes.forEach(n => n.selected = false);
+    notes.forEach(n => (n.selected = false));
     touch();
 }
 
@@ -145,7 +139,7 @@ export function copySelectedNotes(): number {
         return 0;
     }
     const base = Math.min(...sel.map(n => n.start));
-    clipboard = sel.map(n => ({pitch: n.pitch, start: n.start - base, len: n.len, vel: n.vel}));
+    clipboard = sel.map(n => ({ pitch: n.pitch, start: n.start - base, len: n.len, vel: n.vel }));
     hasClipboard.set(true);
     return clipboard.length;
 }
@@ -163,8 +157,8 @@ export function pasteNotes(): void {
         return;
     }
     const at = Math.max(0, get(editStep));
-    notes.forEach(n => n.selected = false);
-    clipboard.forEach(c => notes.push({...c, start: at + c.start, selected: true}));
+    notes.forEach(n => (n.selected = false));
+    clipboard.forEach(c => notes.push({ ...c, start: at + c.start, selected: true }));
     touch();
 }
 
@@ -181,8 +175,14 @@ export function duplicateSelectedNotes(): void {
     const from = Math.min(...sel.map(n => n.start));
     const to = Math.max(...sel.map(n => n.start + n.len));
     const shift = Math.max(1, to - from);
-    const copies = sel.map(n => ({pitch: n.pitch, start: n.start + shift, len: n.len, vel: n.vel, selected: true}));
-    sel.forEach(n => n.selected = false);
+    const copies = sel.map(n => ({
+        pitch: n.pitch,
+        start: n.start + shift,
+        len: n.len,
+        vel: n.vel,
+        selected: true,
+    }));
+    sel.forEach(n => (n.selected = false));
     copies.forEach(c => notes.push(c));
     touch();
 }
@@ -201,7 +201,7 @@ export function transposeSelectedNotes(semis: number): void {
     if (Math.min(...rows) + semis < 0 || Math.max(...rows) + semis > NOTES.length - 1) {
         return;
     }
-    sel.forEach(n => n.pitch = NOTES[(idxOfNote[n.pitch] ?? 0) + semis].name);
+    sel.forEach(n => (n.pitch = NOTES[(idxOfNote[n.pitch] ?? 0) + semis].name));
     touch();
 }
 
@@ -217,7 +217,7 @@ export function nudgeSelectedNotes(steps: number): void {
     if (Math.min(...sel.map(n => n.start)) + steps < 0) {
         return;
     }
-    sel.forEach(n => n.start += steps);
+    sel.forEach(n => (n.start += steps));
     touch();
 }
 
@@ -230,6 +230,6 @@ export function velocitySelectedNotes(delta: number): void {
     if (!sel.length) {
         return;
     }
-    sel.forEach(n => n.vel = clampVel((n.vel ?? 1) + delta));
+    sel.forEach(n => (n.vel = clampVel((n.vel ?? 1) + delta)));
     touch();
 }

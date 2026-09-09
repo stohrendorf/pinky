@@ -1,42 +1,41 @@
-import type {
-    Instrument, InstrumentParams, PartialSpec
-} from './types';
+import type { Instrument, InstrumentParams, PartialSpec } from './types';
 
-import {
-    createId
-} from './types';
+import { createId } from './types';
 
 // Instrument model — every instrument is still "just EQ on pink noise".
 // Percussion works with the same trick: wide (low-Q) EQ boosts = noise bursts,
 // a pitch-drop envelope on the bands = kick/tom thump.
 
 export const DEFAULT_PARAMS: InstrumentParams = {
-    tone: 1,        // level of the harmonic (narrow-band) EQ chain
-    q: 40,          // resonance of the harmonic bands
+    tone: 1, // level of the harmonic (narrow-band) EQ chain
+    q: 40, // resonance of the harmonic bands
     // harm/falloff/stretch are the remembered inputs of the harmonics generator
-    harm: 4,        // number of partials to generate
-    falloff: 0.6,   // level falloff per partial
-    stretch: 0,     // inharmonicity: partial ratio r becomes r^(1+stretch) — >0 = bell/metal
-    noise: 0,       // level of one extra WIDE EQ band (the "percussion/air" band)
-    noiseFreq: 6000,// center of that wide band
+    harm: 4, // number of partials to generate
+    falloff: 0.6, // level falloff per partial
+    stretch: 0, // inharmonicity: partial ratio r becomes r^(1+stretch) — >0 = bell/metal
+    noise: 0, // level of one extra WIDE EQ band (the "percussion/air" band)
+    noiseFreq: 6000, // center of that wide band
     // Formants: three bands at *fixed* frequencies (see types.ts) — off by default
-    formant: 0,     // level of the formant bands
-    f1: 700,        // "ah": F1 700 / F2 1150 / F3 2800
+    formant: 0, // level of the formant bands
+    f1: 700, // "ah": F1 700 / F2 1150 / F3 2800
     f2: 1150,
     f3: 2800,
-    formantQ: 6,    // width of the formant bands
-    vib: 0,         // vibrato depth (cents) — 0 = off
-    vibRate: 5.5,   // vibrato speed (Hz)
+    formantQ: 6, // width of the formant bands
+    vib: 0, // vibrato depth (cents) — 0 = off
+    vibRate: 5.5, // vibrato speed (Hz)
     vibDelay: 0.35, // how long until the vibrato has faded in (s)
-    pitchDrop: 0,   // semitones the bands start away from the note (bipolar: +down / -up sweep)
-    pitchTime: 0.08,// sweep time to the note
-    noiseBend: 0,   // how much the wide noise band follows pitch bends/glides (0 = fixed, 1 = full)
-    voices: 1,      // unison: how many detuned copies of the chain sound per note
-    detune: 12,     // spread between the outermost ranks (cents) — only heard with voices > 1
-    att: 0.01, dec: 0.25, sus: 0.5, rel: 0.35,
+    pitchDrop: 0, // semitones the bands start away from the note (bipolar: +down / -up sweep)
+    pitchTime: 0.08, // sweep time to the note
+    noiseBend: 0, // how much the wide noise band follows pitch bends/glides (0 = fixed, 1 = full)
+    voices: 1, // unison: how many detuned copies of the chain sound per note
+    detune: 12, // spread between the outermost ranks (cents) — only heard with voices > 1
+    att: 0.01,
+    dec: 0.25,
+    sus: 0.5,
+    rel: 0.35,
     gain: 0.8,
-    pan: 0,         // stereo placement (-1 left .. +1 right)
-    legatoCurve: 'linear'
+    pan: 0, // stereo placement (-1 left .. +1 right)
+    legatoCurve: 'linear',
     // `partials` (the actual harmonic profile) is generated/edited — see below
 };
 
@@ -57,27 +56,53 @@ export const clampPartialLevel = (level: number): number => l2(level);
 
 export interface PartialShape {
     name: string;
-    max: number;                            // how many partials this shape can produce
-    partial: (h: number) => PartialSpec;    // h = 1-based partial index
+    max: number; // how many partials this shape can produce
+    partial: (h: number) => PartialSpec; // h = 1-based partial index
 }
 
-const fn = (name: string, max: number, ratio: (h: number) => number, weight: (h: number) => number): PartialShape =>
-    ({name, max, partial: h => ({ratio: r3(ratio(h)), level: l2(weight(h))})});
-const tbl = (name: string, ratios: number[], weights: number[]): PartialShape =>
-    ({name, max: ratios.length, partial: h => ({ratio: r3(ratios[h - 1]), level: l2(weights[h - 1])})});
+const fn = (
+    name: string,
+    max: number,
+    ratio: (h: number) => number,
+    weight: (h: number) => number,
+): PartialShape => ({ name, max, partial: h => ({ ratio: r3(ratio(h)), level: l2(weight(h)) }) });
+const tbl = (name: string, ratios: number[], weights: number[]): PartialShape => ({
+    name,
+    max: ratios.length,
+    partial: h => ({ ratio: r3(ratios[h - 1]), level: l2(weights[h - 1]) }),
+});
 
 // Timbre families used as generator starting points
 export const PARTIAL_SHAPES: PartialShape[] = [
-    fn('Harmonic', MAX_PARTIALS, h => h, () => 1),
-    fn('Saw / Reed', MAX_PARTIALS, h => h, h => 1 / h),
-    fn('Odd (hollow)', MAX_PARTIALS, h => 2 * h - 1, h => 1 / (2 * h - 1)),
+    fn(
+        'Harmonic',
+        MAX_PARTIALS,
+        h => h,
+        () => 1,
+    ),
+    fn(
+        'Saw / Reed',
+        MAX_PARTIALS,
+        h => h,
+        h => 1 / h,
+    ),
+    fn(
+        'Odd (hollow)',
+        MAX_PARTIALS,
+        h => 2 * h - 1,
+        h => 1 / (2 * h - 1),
+    ),
     // 16' 8' 5⅓' 4' 2⅔' 2' 1⅗' 1' — the organ registration (no 5th/7th partial)
     tbl('Organ drawbars', [1, 2, 3, 4, 6, 8, 10, 16], [1, 1, 0.75, 0.9, 0.6, 0.5, 0.35, 0.3]),
     tbl('Fifths (quint)', [1, 1.5, 2, 3, 4, 6], [1, 0.7, 0.9, 0.5, 0.6, 0.35]),
     // hum, prime, tierce, quint, nominal ... — a real bell's inharmonic partials
-    tbl('Bell partials', [0.5, 1, 1.19, 1.5, 2, 2.5, 3.36, 4.13], [0.7, 1, 0.8, 0.6, 0.9, 0.5, 0.4, 0.3]),
+    tbl(
+        'Bell partials',
+        [0.5, 1, 1.19, 1.5, 2, 2.5, 3.36, 4.13],
+        [0.7, 1, 0.8, 0.6, 0.9, 0.5, 0.4, 0.3],
+    ),
     tbl('Metal / clang', [1, 1.41, 2.24, 2.83, 3.61, 4.47], [1, 0.8, 0.7, 0.6, 0.5, 0.4]),
-    tbl('Flute (pure)', [1, 2, 3], [1, 0.25, 0.08])
+    tbl('Flute (pure)', [1, 2, 3], [1, 0.25, 0.08]),
 ];
 
 export const DEFAULT_SHAPE = PARTIAL_SHAPES[0].name;
@@ -90,8 +115,8 @@ export function findShape(name: string | undefined): PartialShape {
 export interface HarmonicsGen {
     shape: string;
     count: number;
-    falloff: number;    // extra tilt on top of the shape's own weights (1 = none)
-    stretch: number;    // inharmonicity: ratio → ratio^(1+stretch)
+    falloff: number; // extra tilt on top of the shape's own weights (1 = none)
+    stretch: number; // inharmonicity: ratio → ratio^(1+stretch)
 }
 
 export function genSettings(p: InstrumentParams): HarmonicsGen {
@@ -99,7 +124,7 @@ export function genSettings(p: InstrumentParams): HarmonicsGen {
         shape: p.harmShape || DEFAULT_SHAPE,
         count: Math.round(p.harm),
         falloff: p.falloff,
-        stretch: p.stretch
+        stretch: p.stretch,
     };
 }
 
@@ -107,11 +132,11 @@ export function genSettings(p: InstrumentParams): HarmonicsGen {
 export function genPartials(g: HarmonicsGen): PartialSpec[] {
     const shape = findShape(g.shape);
     const n = Math.max(1, Math.min(shape.max, MAX_PARTIALS, Math.round(g.count)));
-    return Array.from({length: n}, (_, i) => {
+    return Array.from({ length: n }, (_, i) => {
         const base = shape.partial(i + 1);
         return {
             ratio: r3(Math.pow(base.ratio, 1 + g.stretch)),
-            level: l2(base.level * Math.pow(g.falloff, i))
+            level: l2(base.level * Math.pow(g.falloff, i)),
         };
     });
 }
@@ -126,7 +151,10 @@ export function ensurePartials(p: InstrumentParams): InstrumentParams {
 }
 
 // every numeric parameter except the partial list and categorical shapes is a slider
-export type NumericParam = Exclude<keyof InstrumentParams, 'partials' | 'harmShape' | 'legatoCurve'>;
+export type NumericParam = Exclude<
+    keyof InstrumentParams,
+    'partials' | 'harmShape' | 'legatoCurve'
+>;
 
 export interface SliderDef {
     id: NumericParam;
@@ -146,77 +174,94 @@ export const INSTRUMENT_PANELS: PanelDef[] = [
     {
         title: 'EQ Voice',
         sliders: [
-            {id: 'tone', label: 'Tone Level', min: 0, max: 1, step: 0.01},
-            {id: 'q', label: 'Resonance (Q)', min: 5, max: 120, step: 1}
+            { id: 'tone', label: 'Tone Level', min: 0, max: 1, step: 0.01 },
+            { id: 'q', label: 'Resonance (Q)', min: 5, max: 120, step: 1 },
             // the harmonic structure itself lives in the Harmonics editor below
-        ]
+        ],
     },
     {
         title: 'Percussion',
         sliders: [
-            {id: 'noise', label: 'Noise Band Level', min: 0, max: 1, step: 0.01},
-            {id: 'noiseFreq', label: 'Noise Band Freq', min: 200, max: 12000, step: 50, unit: 'Hz'},
-            {id: 'pitchDrop', label: 'Pitch Bend', min: -48, max: 48, step: 1, unit: 'st'},
-            {id: 'pitchTime', label: 'Bend Time', min: 0.01, max: 8, step: 0.01, unit: 's'},
-            {id: 'noiseBend', label: 'Noise Follows Bend', min: 0, max: 1, step: 0.01}
-        ]
+            { id: 'noise', label: 'Noise Band Level', min: 0, max: 1, step: 0.01 },
+            {
+                id: 'noiseFreq',
+                label: 'Noise Band Freq',
+                min: 200,
+                max: 12000,
+                step: 50,
+                unit: 'Hz',
+            },
+            { id: 'pitchDrop', label: 'Pitch Bend', min: -48, max: 48, step: 1, unit: 'st' },
+            { id: 'pitchTime', label: 'Bend Time', min: 0.01, max: 8, step: 0.01, unit: 's' },
+            { id: 'noiseBend', label: 'Noise Follows Bend', min: 0, max: 1, step: 0.01 },
+        ],
     },
     {
         // Fixed-frequency resonances: the harmonics slide through them instead of
         // dragging them along — a throat rather than a pipe. See makeRank().
         title: 'Formants (vowel)',
         sliders: [
-            {id: 'formant', label: 'Formant Level', min: 0, max: 1, step: 0.01},
-            {id: 'f1', label: 'F1 (openness)', min: 200, max: 1400, step: 10, unit: 'Hz'},
-            {id: 'f2', label: 'F2 (vowel)', min: 500, max: 3500, step: 10, unit: 'Hz'},
-            {id: 'f3', label: 'F3 (brightness)', min: 1200, max: 5000, step: 10, unit: 'Hz'},
-            {id: 'formantQ', label: 'Formant Width', min: 1, max: 16, step: 0.5}
-        ]
+            { id: 'formant', label: 'Formant Level', min: 0, max: 1, step: 0.01 },
+            { id: 'f1', label: 'F1 (openness)', min: 200, max: 1400, step: 10, unit: 'Hz' },
+            { id: 'f2', label: 'F2 (vowel)', min: 500, max: 3500, step: 10, unit: 'Hz' },
+            { id: 'f3', label: 'F3 (brightness)', min: 1200, max: 5000, step: 10, unit: 'Hz' },
+            { id: 'formantQ', label: 'Formant Width', min: 1, max: 16, step: 0.5 },
+        ],
     },
     {
         title: 'Vibrato',
         sliders: [
-            {id: 'vib', label: 'Vibrato Depth', min: 0, max: 100, step: 1, unit: 'ct'},
-            {id: 'vibRate', label: 'Vibrato Rate', min: 0.5, max: 9, step: 0.1, unit: 'Hz'},
-            {id: 'vibDelay', label: 'Vibrato Onset', min: 0, max: 2, step: 0.01, unit: 's'}
-        ]
+            { id: 'vib', label: 'Vibrato Depth', min: 0, max: 100, step: 1, unit: 'ct' },
+            { id: 'vibRate', label: 'Vibrato Rate', min: 0.5, max: 9, step: 0.1, unit: 'Hz' },
+            { id: 'vibDelay', label: 'Vibrato Onset', min: 0, max: 2, step: 0.01, unit: 's' },
+        ],
     },
     {
         title: 'Unison',
         sliders: [
-            {id: 'voices', label: 'Unison Voices', min: 1, max: 8, step: 1},
-            {id: 'detune', label: 'Unison Detune', min: 0, max: 60, step: 1, unit: 'ct'}
-        ]
+            { id: 'voices', label: 'Unison Voices', min: 1, max: 8, step: 1 },
+            { id: 'detune', label: 'Unison Detune', min: 0, max: 60, step: 1, unit: 'ct' },
+        ],
     },
     {
         title: 'Envelope',
         sliders: [
-            {id: 'att', label: 'Attack', min: 0.002, max: 1, step: 0.002, unit: 's'},
-            {id: 'dec', label: 'Decay', min: 0.02, max: 2, step: 0.01, unit: 's'},
-            {id: 'sus', label: 'Sustain', min: 0, max: 1, step: 0.01},
-            {id: 'rel', label: 'Release', min: 0.02, max: 3, step: 0.01, unit: 's'}
-        ]
+            { id: 'att', label: 'Attack', min: 0.002, max: 1, step: 0.002, unit: 's' },
+            { id: 'dec', label: 'Decay', min: 0.02, max: 2, step: 0.01, unit: 's' },
+            { id: 'sus', label: 'Sustain', min: 0, max: 1, step: 0.01 },
+            { id: 'rel', label: 'Release', min: 0.02, max: 3, step: 0.01, unit: 's' },
+        ],
     },
     {
         title: 'Mix',
         sliders: [
-            {id: 'gain', label: 'Level', min: 0, max: 1, step: 0.01},
-            {id: 'pan', label: 'Pan (L↔R)', min: -1, max: 1, step: 0.05}
-        ]
-    }
+            { id: 'gain', label: 'Level', min: 0, max: 1, step: 0.01 },
+            { id: 'pan', label: 'Pan (L↔R)', min: -1, max: 1, step: 0.05 },
+        ],
+    },
 ];
 
 export const MASTER_SLIDERS = [
-    {id: 'vol', label: 'Volume', min: 0, max: 1, step: 0.01},
-    {id: 'rev', label: 'Reverb', min: 0, max: 1, step: 0.01},
-    {id: 'tilt', label: 'Noise Tilt', min: -12, max: 12, step: 1, unit: 'dB'}
+    { id: 'vol', label: 'Volume', min: 0, max: 1, step: 0.01 },
+    { id: 'rev', label: 'Reverb', min: 0, max: 1, step: 0.01 },
+    { id: 'tilt', label: 'Noise Tilt', min: -12, max: 12, step: 1, unit: 'dB' },
 ];
 
 export const PRESETS: Record<string, Partial<InstrumentParams>> = {
-    'Pluck': {q: 45, harm: 4, falloff: 0.6, att: 0.01, dec: 0.3, sus: 0.4, rel: 0.4},
-    'Glass Bell': {q: 95, harm: 2, falloff: 0.5, att: 0.01, dec: 0.6, sus: 0.3, rel: 1.6},
-    'Church Bell': {q: 90, harm: 6, falloff: 0.7, stretch: 0.42, att: 0.002, dec: 1.6, sus: 0, rel: 2.2, gain: 0.6},
-    'Pad': {q: 30, harm: 5, falloff: 0.7, att: 0.3, dec: 1, sus: 0.7, rel: 1.5, gain: 0.5},
+    Pluck: { q: 45, harm: 4, falloff: 0.6, att: 0.01, dec: 0.3, sus: 0.4, rel: 0.4 },
+    'Glass Bell': { q: 95, harm: 2, falloff: 0.5, att: 0.01, dec: 0.6, sus: 0.3, rel: 1.6 },
+    'Church Bell': {
+        q: 90,
+        harm: 6,
+        falloff: 0.7,
+        stretch: 0.42,
+        att: 0.002,
+        dec: 1.6,
+        sus: 0,
+        rel: 2.2,
+        gain: 0.6,
+    },
+    Pad: { q: 30, harm: 5, falloff: 0.7, att: 0.3, dec: 1, sus: 0.7, rel: 1.5, gain: 0.5 },
     // Unison ranks beating against each other = the lush/shimmering sound
     'Super Strings': {
         q: 35,
@@ -228,11 +273,11 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
         dec: 0.8,
         sus: 0.9,
         rel: 1.2,
-        gain: 0.45
+        gain: 0.45,
     },
-    'Whistle': {q: 120, harm: 1, att: 0.05, dec: 0.8, sus: 0.6, rel: 2},
-    'Bass': {q: 25, harm: 3, falloff: 0.5, att: 0.005, dec: 0.25, sus: 0.6, rel: 0.15, gain: 0.9},
-    'Kick': {
+    Whistle: { q: 120, harm: 1, att: 0.05, dec: 0.8, sus: 0.6, rel: 2 },
+    Bass: { q: 25, harm: 3, falloff: 0.5, att: 0.005, dec: 0.25, sus: 0.6, rel: 0.15, gain: 0.9 },
+    Kick: {
         tone: 1,
         q: 8,
         harm: 1,
@@ -244,9 +289,9 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
         dec: 0.16,
         sus: 0,
         rel: 0.12,
-        gain: 1
+        gain: 1,
     },
-    'Snare': {
+    Snare: {
         tone: 0.5,
         q: 6,
         harm: 2,
@@ -259,11 +304,29 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
         dec: 0.16,
         sus: 0,
         rel: 0.14,
-        gain: 0.9
+        gain: 0.9,
     },
-    'Hi-Hat': {tone: 0, noise: 1, noiseFreq: 9500, att: 0.002, dec: 0.05, sus: 0, rel: 0.05, gain: 0.6},
-    'Open Hat': {tone: 0, noise: 1, noiseFreq: 8500, att: 0.002, dec: 0.3, sus: 0, rel: 0.3, gain: 0.55},
-    'Clap': {
+    'Hi-Hat': {
+        tone: 0,
+        noise: 1,
+        noiseFreq: 9500,
+        att: 0.002,
+        dec: 0.05,
+        sus: 0,
+        rel: 0.05,
+        gain: 0.6,
+    },
+    'Open Hat': {
+        tone: 0,
+        noise: 1,
+        noiseFreq: 8500,
+        att: 0.002,
+        dec: 0.3,
+        sus: 0,
+        rel: 0.3,
+        gain: 0.55,
+    },
+    Clap: {
         tone: 0.15,
         q: 5,
         harm: 1,
@@ -273,9 +336,9 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
         dec: 0.12,
         sus: 0,
         rel: 0.15,
-        gain: 0.85
+        gain: 0.85,
     },
-    'Riser': {
+    Riser: {
         tone: 1,
         q: 30,
         harm: 1,
@@ -288,15 +351,27 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
         dec: 0.3,
         sus: 1,
         rel: 0.5,
-        gain: 0.5
+        gain: 0.5,
     },
     // Registration instead of a falling series + flat, gated envelope = pipe organ
     'Organ (Drawbars)': {
-        tone: 1, q: 45, noise: 0.05, noiseFreq: 2500, att: 0.015, dec: 0.05, sus: 1, rel: 0.15, gain: 0.5,
+        tone: 1,
+        q: 45,
+        noise: 0.05,
+        noiseFreq: 2500,
+        att: 0.015,
+        dec: 0.05,
+        sus: 1,
+        rel: 0.15,
+        gain: 0.5,
         partials: [
-            {ratio: 1, level: 1}, {ratio: 2, level: 1}, {ratio: 3, level: 0.75},
-            {ratio: 4, level: 0.9}, {ratio: 6, level: 0.6}, {ratio: 8, level: 0.5}
-        ]
+            { ratio: 1, level: 1 },
+            { ratio: 2, level: 1 },
+            { ratio: 3, level: 0.75 },
+            { ratio: 4, level: 0.9 },
+            { ratio: 6, level: 0.6 },
+            { ratio: 8, level: 0.5 },
+        ],
     },
     /* The vowel presets are the formant bands doing the work: the partial set is
      * only the "glottal source", the fixed F1/F2/F3 shape it into a vowel, and
@@ -304,35 +379,96 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
      * resonance is high on purpose for the glottal source; the fixed formants
      * below are broader, so they colour neighbouring harmonics like a tract. */
     'Voice - Soprano (ah)': {
-        tone: 0.95, q: 42, formant: 0.9, f1: 800, f2: 1150, f3: 2900, formantQ: 3.2,
-        vib: 34, vibRate: 5.6, vibDelay: 0.4, noise: 0.03, noiseFreq: 3800,
-        voices: 2, detune: 9, att: 0.09, dec: 0.3, sus: 0.85, rel: 0.35, gain: 0.5,
+        tone: 0.95,
+        q: 42,
+        formant: 0.9,
+        f1: 800,
+        f2: 1150,
+        f3: 2900,
+        formantQ: 3.2,
+        vib: 34,
+        vibRate: 5.6,
+        vibDelay: 0.4,
+        noise: 0.03,
+        noiseFreq: 3800,
+        voices: 2,
+        detune: 9,
+        att: 0.09,
+        dec: 0.3,
+        sus: 0.85,
+        rel: 0.35,
+        gain: 0.5,
         partials: [
-            {ratio: 1, level: 1}, {ratio: 2, level: 0.6}, {ratio: 3, level: 0.42},
-            {ratio: 4, level: 0.3}, {ratio: 5, level: 0.22}, {ratio: 6, level: 0.16},
-            {ratio: 7, level: 0.12}, {ratio: 8, level: 0.09}
-        ]
+            { ratio: 1, level: 1 },
+            { ratio: 2, level: 0.6 },
+            { ratio: 3, level: 0.42 },
+            { ratio: 4, level: 0.3 },
+            { ratio: 5, level: 0.22 },
+            { ratio: 6, level: 0.16 },
+            { ratio: 7, level: 0.12 },
+            { ratio: 8, level: 0.09 },
+        ],
     },
     'Voice - Choir (oo)': {
-        tone: 0.82, q: 36, formant: 0.85, f1: 350, f2: 800, f3: 2600, formantQ: 2.8,
-        vib: 12, vibRate: 4.6, vibDelay: 0.6, voices: 4, detune: 18,
-        att: 0.45, dec: 0.6, sus: 0.9, rel: 1.1, gain: 0.45,
+        tone: 0.82,
+        q: 36,
+        formant: 0.85,
+        f1: 350,
+        f2: 800,
+        f3: 2600,
+        formantQ: 2.8,
+        vib: 12,
+        vibRate: 4.6,
+        vibDelay: 0.6,
+        voices: 4,
+        detune: 18,
+        att: 0.45,
+        dec: 0.6,
+        sus: 0.9,
+        rel: 1.1,
+        gain: 0.45,
         partials: [
-            {ratio: 1, level: 1}, {ratio: 2, level: 0.5}, {ratio: 3, level: 0.33},
-            {ratio: 4, level: 0.24}, {ratio: 5, level: 0.18}, {ratio: 6, level: 0.13}
-        ]
+            { ratio: 1, level: 1 },
+            { ratio: 2, level: 0.5 },
+            { ratio: 3, level: 0.33 },
+            { ratio: 4, level: 0.24 },
+            { ratio: 5, level: 0.18 },
+            { ratio: 6, level: 0.13 },
+        ],
     },
     'Clarinet (odd)': {
-        tone: 1, q: 55, att: 0.03, dec: 0.1, sus: 0.95, rel: 0.2, gain: 0.55,
+        tone: 1,
+        q: 55,
+        att: 0.03,
+        dec: 0.1,
+        sus: 0.95,
+        rel: 0.2,
+        gain: 0.55,
         partials: [
-            {ratio: 1, level: 1}, {ratio: 3, level: 0.6}, {ratio: 5, level: 0.35},
-            {ratio: 7, level: 0.2}, {ratio: 9, level: 0.12}
-        ]
-    }
+            { ratio: 1, level: 1 },
+            { ratio: 3, level: 0.6 },
+            { ratio: 5, level: 0.35 },
+            { ratio: 7, level: 0.2 },
+            { ratio: 9, level: 0.12 },
+        ],
+    },
 };
 
 // Palette used to tell instruments apart (scope dots, instrument chips)
-export const INSTRUMENT_COLORS = ['#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#a29bfe', '#0abde3', '#ff6b6b', '#f9ca24', '#badc58', '#e056fd', '#48dbfb', '#7ed6df'];
+export const INSTRUMENT_COLORS = [
+    '#53d8fb',
+    '#ff9f43',
+    '#ee5253',
+    '#10ac84',
+    '#a29bfe',
+    '#0abde3',
+    '#ff6b6b',
+    '#f9ca24',
+    '#badc58',
+    '#e056fd',
+    '#48dbfb',
+    '#7ed6df',
+];
 
 /* ---- user presets (saved in the browser) ----
  * The built-in PRESETS are the factory bank; anything the user dials in can be
@@ -346,7 +482,7 @@ export function loadUserPresets(): PresetBank {
         const raw = localStorage.getItem(USER_PRESET_KEY);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const b = raw ? JSON.parse(raw) : null;
-        return b && typeof b === 'object' ? b as PresetBank : {};
+        return b && typeof b === 'object' ? (b as PresetBank) : {};
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
         return {};
@@ -381,5 +517,10 @@ let nextColorIndex = 0;
 
 export function createInstrument(name: string, preset: Partial<InstrumentParams> = {}): Instrument {
     const color = INSTRUMENT_COLORS[nextColorIndex++ % INSTRUMENT_COLORS.length];
-    return {id: createId(), name, color, params: ensurePartials({...DEFAULT_PARAMS, ...preset})};
+    return {
+        id: createId(),
+        name,
+        color,
+        params: ensurePartials({ ...DEFAULT_PARAMS, ...preset }),
+    };
 }

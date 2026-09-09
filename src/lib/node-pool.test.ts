@@ -1,10 +1,6 @@
-import {
-    afterEach, describe, expect, it, vi
-} from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-    NodePool
-} from './node-pool';
+import { NodePool } from './node-pool';
 
 class FakeParam {
     value: number;
@@ -18,8 +14,7 @@ class FakeParam {
 class FakeNode {
     readonly connections: unknown[] = [];
 
-    constructor(readonly context: BaseAudioContext) {
-    }
+    constructor(readonly context: BaseAudioContext) {}
 
     connect(destination: unknown): this {
         this.connections.push(destination);
@@ -51,7 +46,10 @@ class FakeBiquadFilterNode extends FakeNode {
     readonly gain = new FakeParam();
     readonly detune = new FakeParam();
 
-    constructor(context: BaseAudioContext, options: { frequency?: number; Q?: number; gain?: number } = {}) {
+    constructor(
+        context: BaseAudioContext,
+        options: { frequency?: number; Q?: number; gain?: number } = {},
+    ) {
         super(context);
         this.frequency.value = options.frequency ?? 0;
         this.Q.value = options.Q ?? 0;
@@ -74,7 +72,7 @@ describe('NodePool', () => {
     it('reuses gains and resets their scheduled value', () => {
         vi.stubGlobal('GainNode', FakeGainNode);
         const context = {} as BaseAudioContext;
-        const pool = new NodePool({capacity: 2});
+        const pool = new NodePool({ capacity: 2 });
         pool.attach(context, new FakeGainNode(context) as unknown as GainNode, () => 0);
 
         const first = pool.takeGain(0.2, context);
@@ -89,7 +87,7 @@ describe('NodePool', () => {
     it('keeps the configured number of reusable nodes', () => {
         vi.stubGlobal('GainNode', FakeGainNode);
         const context = {} as BaseAudioContext;
-        const pool = new NodePool({capacity: 1});
+        const pool = new NodePool({ capacity: 1 });
         pool.attach(context, new FakeGainNode(context) as unknown as GainNode, () => 0);
 
         pool.give(pool.takeGain(0.2, context));
@@ -104,7 +102,7 @@ describe('NodePool', () => {
         vi.stubGlobal('StereoPannerNode', FakePannerNode);
         const context = {} as BaseAudioContext;
         let now = 0;
-        const pool = new NodePool({capacity: 2, coolTime: 0.2});
+        const pool = new NodePool({ capacity: 2, coolTime: 0.2 });
         pool.attach(context, new FakeGainNode(context) as unknown as GainNode, () => now);
 
         const first = pool.takeBiquad(440, 3, 12, context);

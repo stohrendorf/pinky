@@ -1,23 +1,11 @@
-import type {
-    Project
-} from './types';
+import type { Project } from './types';
 
 import * as eng from './engine';
-import {
-    resolveMixer
-} from './mixer';
-import {
-    buildPromoDemo, PROMO_ID, type PromoPart
-} from './promo-demo';
-import {
-    promoScore, type PromoScore
-} from './promo-score';
-import {
-    scheduleRange, songLengthSteps
-} from './transport';
-import {
-    encodeWav
-} from './wav';
+import { resolveMixer } from './mixer';
+import { buildPromoDemo, PROMO_ID, type PromoPart } from './promo-demo';
+import { promoScore, type PromoScore } from './promo-score';
+import { scheduleRange, songLengthSteps } from './transport';
+import { encodeWav } from './wav';
 
 /* The promo soundtrack, bounced through the real engine.
  * `promo/bounce.mjs` opens the DAW in a headless browser and calls
@@ -49,13 +37,16 @@ async function render(p: Project, seconds: number, sampleRate: number): Promise<
     // first value so the bounce does not depend on where the UI sliders sit
     const master = resolveMixer(p.mixer, []).master;
     for (const param of ['vol', 'rev', 'tilt'] as const) {
-        const first = p.automation?.find(lane => lane.target === 'master' && lane.param === param)?.points[0];
+        const first = p.automation?.find(lane => lane.target === 'master' && lane.param === param)
+            ?.points[0];
         if (first) {
             master[param] = first.value;
         }
     }
     return eng.renderOffline(seconds, sampleRate, () => scheduleRange(p, 0, songLengthSteps(p)), {
-        mixer: p.mixer, instrumentIds: p.instruments.map(inst => inst.id), master
+        mixer: p.mixer,
+        instrumentIds: p.instruments.map(inst => inst.id),
+        master,
     });
 }
 
@@ -64,7 +55,7 @@ export async function bouncePromo(sampleRate = 48000): Promise<PromoBounce> {
     const score = promoScore(p);
     // exactly the length of the video: the last two bars are the ring-out
     const buf = await render(p, score.length, sampleRate);
-    const bar = Math.round(16 * 60 / p.bpm / 4 * sampleRate);
+    const bar = Math.round(((16 * 60) / p.bpm / 4) * sampleRate);
     const barPeaks = new Array<number>(Math.ceil(buf.length / bar)).fill(0);
     for (let ch = 0; ch < buf.numberOfChannels; ch++) {
         const data = buf.getChannelData(ch);
@@ -75,7 +66,12 @@ export async function bouncePromo(sampleRate = 48000): Promise<PromoBounce> {
     }
     const db = (v: number): number => 20 * Math.log10(Math.max(v, 1e-9));
     const bytes = new Uint8Array(await encodeWav(buf).arrayBuffer());
-    return {wav: base64(bytes), score, peakDb: db(Math.max(...barPeaks)), barPeaksDb: barPeaks.map(db)};
+    return {
+        wav: base64(bytes),
+        score,
+        peakDb: db(Math.max(...barPeaks)),
+        barPeaksDb: barPeaks.map(db),
+    };
 }
 
 /* ---- fader calibration ----
@@ -101,10 +97,18 @@ export async function measurePromoParts(sampleRate = 48000): Promise<SoloLevel[]
             inst.mute = inst.id !== PROMO_ID[part];
         }
         const steps = songLengthSteps(p);
-        const buf = await eng.renderOffline(steps * 60 / p.bpm / 4 + 3, sampleRate, () => scheduleRange(p, 0, steps), {
-            mixer: undefined, instrumentIds: p.instruments.map(inst => inst.id), master: {vol: 1, rev: 0, tilt: 0}
-        });
-        const l = buf.getChannelData(0), r = buf.getChannelData(1);
+        const buf = await eng.renderOffline(
+            (steps * 60) / p.bpm / 4 + 3,
+            sampleRate,
+            () => scheduleRange(p, 0, steps),
+            {
+                mixer: undefined,
+                instrumentIds: p.instruments.map(inst => inst.id),
+                master: { vol: 1, rev: 0, tilt: 0 },
+            },
+        );
+        const l = buf.getChannelData(0),
+            r = buf.getChannelData(1);
         const win = Math.round(0.05 * sampleRate);
         const rms: number[] = [];
         let peak = 0;
@@ -121,9 +125,16 @@ export async function measurePromoParts(sampleRate = 48000): Promise<SoloLevel[]
             }
         }
         rms.sort((a, b) => a - b);
-        const ref = rms.length ? rms[Math.min(rms.length - 1, Math.floor(0.99 * rms.length))] : 1e-9;
+        const ref = rms.length
+            ? rms[Math.min(rms.length - 1, Math.floor(0.99 * rms.length))]
+            : 1e-9;
         const gain = p.instruments.find(i => i.id === PROMO_ID[part])!.params.gain;
-        out.push({part, gain, refDb: 20 * Math.log10(ref), peakDb: 20 * Math.log10(Math.max(peak, 1e-9))});
+        out.push({
+            part,
+            gain,
+            refDb: 20 * Math.log10(ref),
+            peakDb: 20 * Math.log10(Math.max(peak, 1e-9)),
+        });
     }
     return out;
 }

@@ -1,10 +1,6 @@
-import {
-    describe, expect, it, vi
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-    type ManagedVoice, VoiceCollection
-} from './voice-collection';
+import { type ManagedVoice, VoiceCollection } from './voice-collection';
 
 function voice(cost: number, level: number): ManagedVoice {
     const result: ManagedVoice = {
@@ -16,13 +12,13 @@ function voice(cost: number, level: number): ManagedVoice {
             result.stopAt = Math.min(result.stopAt, at);
         }),
         glide: vi.fn(),
-        setParams: vi.fn()
+        setParams: vi.fn(),
     };
     return result;
 }
 
 function collection(maxNodes = 100, maxVoices = 96): VoiceCollection {
-    return new VoiceCollection({maxNodes: () => maxNodes, maxVoices: () => maxVoices});
+    return new VoiceCollection({ maxNodes: () => maxNodes, maxVoices: () => maxVoices });
 }
 
 describe('VoiceCollection', () => {
@@ -52,7 +48,6 @@ describe('VoiceCollection', () => {
         expect(second.stop).not.toHaveBeenCalled();
         expect(third.stop).toHaveBeenCalledWith(1);
     });
-
 
     it('keeps active and live state isolated between collection instances', () => {
         const first = collection();

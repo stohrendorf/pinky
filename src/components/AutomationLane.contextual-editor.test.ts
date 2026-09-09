@@ -1,18 +1,13 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    describe, expect, it
-} from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import {
-    functionHasAssignment
-} from '../test/svelte-semantics';
+import { functionHasAssignment } from '../test/svelte-semantics';
 
-const lane = readFileSync(fileURLToPath(new URL('./AutomationLane.svelte', import.meta.url)), 'utf8');
+const lane = readFileSync(
+    fileURLToPath(new URL('./AutomationLane.svelte', import.meta.url)),
+    'utf8',
+);
 
 describe('AutomationLane contextual node editing', () => {
     it('keeps node controls in the lane instead of opening a modal', () => {
@@ -25,9 +20,13 @@ describe('AutomationLane contextual node editing', () => {
     it('makes selected node values direct editable inputs', () => {
         expect(lane).toContain('class="point-readout"');
         expect(lane).toContain('aria-live="polite"');
-        expect(lane).toMatch(/<input\b(?=[^>]*\bmax=\{def\.max\})(?=[^>]*\bmin=\{def\.min\})(?=[^>]*\bstep=\{def\.step\})(?=[^>]*\btype="number")[^>]*>/);
+        expect(lane).toMatch(
+            /<input\b(?=[^>]*\bmax=\{def\.max\})(?=[^>]*\bmin=\{def\.min\})(?=[^>]*\bstep=\{def\.step\})(?=[^>]*\btype="number")[^>]*>/,
+        );
         expect(lane).toContain('aria-label={`Set ${def.label} value`}');
-        expect(lane).toContain('oninput={(event) => updatePointValue(selectedPoint, event.currentTarget.value)}');
+        expect(lane).toMatch(
+            /oninput=\{\(?event\)?\s*=>\s*updatePointValue\(selectedPoint, event\.currentTarget\.value\)}/,
+        );
         expect(lane).toContain("onkeydown={stopPropagation(bubble('keydown'))}");
         expect(lane).not.toContain('ondblclick={stopPropagation(() => openPointEditor(p))}');
         expect(lane).toContain('onkeydown={e => onPointKeydown(e, p)}');
@@ -78,11 +77,15 @@ describe('AutomationLane contextual node editing', () => {
         expect(lane).toContain('selectedPoint && !editingPoint');
         expect(lane).toMatch(/\.auto-lane-wrap\s*\{[^}]*position:\s*relative;/s);
         expect(lane).not.toMatch(/\.auto-lane-wrap\s*\{[^}]*padding-top:/s);
-        expect(lane).toMatch(/\.point-readout,[\s\S]*?\.point-editor\s*\{[^}]*bottom:\s*calc\(100% \+ 4px\);/s);
+        expect(lane).toMatch(
+            /\.point-readout,[\s\S]*?\.point-editor\s*\{[^}]*bottom:\s*calc\(100% \+ 4px\);/s,
+        );
     });
 
     it('keeps clipboard shortcuts inside the value editor', () => {
-        expect(lane).toMatch(/function onPointEditorKeydown\(e: KeyboardEvent\) \{\s*e\.stopPropagation\(\);/);
+        expect(lane).toMatch(
+            /function onPointEditorKeydown\(e: KeyboardEvent\) \{\s*e\.stopPropagation\(\);/,
+        );
         expect(lane).toMatch(/e\.key === 'Escape'\) \{\s*e\.preventDefault\(\);/);
     });
 });

@@ -1,25 +1,33 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type {
-    AutomationLane
-} from './types';
+import type { AutomationLane } from './types';
 
-import {
-    laneValueAt, segmentProgress
-} from './automation';
+import { laneValueAt, segmentProgress } from './automation';
 
 const lane = (curve: NonNullable<AutomationLane['points'][number]['curve']>): AutomationLane => ({
     id: 'tone',
     target: 'instrument',
     param: 'tone',
-    points: [{step: 0, value: 0, curve}, {step: 8, value: 1}]
+    points: [
+        { step: 0, value: 0, curve },
+        { step: 8, value: 1 },
+    ],
 });
 
 describe('automation curve presets', () => {
     it('keeps unconfigured segments linear by default', () => {
-        expect(laneValueAt({...lane('linear'), points: [{step: 0, value: 0}, {step: 8, value: 1}]}, 2)).toBe(0.25);
+        expect(
+            laneValueAt(
+                {
+                    ...lane('linear'),
+                    points: [
+                        { step: 0, value: 0 },
+                        { step: 8, value: 1 },
+                    ],
+                },
+                2,
+            ),
+        ).toBe(0.25);
     });
 
     it('evaluates hold and easing curves from the outgoing point', () => {

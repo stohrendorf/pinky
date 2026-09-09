@@ -1,11 +1,7 @@
 <script lang="ts">
-    import {
-        createBubbler, preventDefault, run, stopPropagation
-    } from 'svelte/legacy';
+    import { createBubbler, preventDefault, run, stopPropagation } from 'svelte/legacy';
 
-    import type {
-        ArrangementClip, AutomationLane as Lane, AutomationPoint
-    } from '../lib/types';
+    import type { ArrangementClip, AutomationLane as Lane, AutomationPoint } from '../lib/types';
 
     import {
         addArrangementTrack,
@@ -15,7 +11,7 @@
         type PreviewNote,
         removeArrangementTrack,
         shouldEditAutomation,
-        shouldPlacePattern
+        shouldPlacePattern,
     } from '../lib/arrangement';
     import {
         automationCurrentValue,
@@ -25,29 +21,27 @@
         laneTargetTitle,
         laneTitle,
         laneValueAt,
-        newLane
+        newLane,
     } from '../lib/automation';
+    import { master } from '../lib/engine';
     import {
-        master
-    } from '../lib/engine';
-    import {
-        curStep, playing, playMode, project, selPatId, songCursor, touch
+        curStep,
+        playing,
+        playMode,
+        project,
+        selPatId,
+        songCursor,
+        touch,
     } from '../lib/project';
-    import {
-        rendering
-    } from '../lib/render';
-    import {
-        barAt, barsInRange, snapToBeat
-    } from '../lib/timing';
-    import {
-        seekSong
-    } from '../lib/transport';
+    import { rendering } from '../lib/render';
+    import { barAt, barsInRange, snapToBeat } from '../lib/timing';
+    import { seekSong } from '../lib/transport';
     import {
         createViewportState,
         handleViewportMouseDown,
         handleViewportMouseMove,
         handleViewportMouseUp,
-        handleViewportWheel
+        handleViewportWheel,
     } from '../lib/viewport';
     import AutomationLane from './AutomationLane.svelte';
     import AutomationPicker from './AutomationPicker.svelte';
@@ -64,7 +58,7 @@
         contextualEditor?: string | null;
     }
 
-    let {contextualEditor = $bindable(null)}: Props = $props();
+    let { contextualEditor = $bindable(null) }: Props = $props();
 
     interface ExtendedClip extends ArrangementClip {
         _initStart?: number;
@@ -74,14 +68,13 @@
 
     let dragClip: ExtendedClip | null = $state(null);
     let dragStartRawS = 0;
-    let dragStartPos = {s: 0, t: 0};
-    let dragOffset = {s: 0, t: 0};
+    let dragStartPos = { s: 0, t: 0 };
+    let dragOffset = { s: 0, t: 0 };
     let resizeMode = $state(false);
     let playlistEl: HTMLElement | undefined = $state();
     let scrollLeft = $state(0);
     let scrollTop = $state(0);
     let viewportWidth = $state(0);
-
 
     function setZoom(w: number, h: number) {
         if (!$project) {
@@ -100,7 +93,11 @@
         scrollTop = playlistEl.scrollTop;
     }
 
-    function scrollPlayheadIntoView(container: HTMLElement | undefined, step: number, width: number) {
+    function scrollPlayheadIntoView(
+        container: HTMLElement | undefined,
+        step: number,
+        width: number,
+    ) {
         if (!container) {
             return;
         }
@@ -110,30 +107,30 @@
             return;
         }
         const nextLeft = step * width - container.clientWidth * 0.35;
-        container.scrollLeft = Math.max(0, Math.min(nextLeft, container.scrollWidth - container.clientWidth));
+        container.scrollLeft = Math.max(
+            0,
+            Math.min(nextLeft, container.scrollWidth - container.clientWidth),
+        );
     }
-
 
     const viewport = createViewportState();
 
     let isSelecting = $state(false);
     let isRightDragging = false;
-    let selectionStart = $state({s: 0, t: 0});
-    let selectionEnd = $state({s: 0, t: 0});
+    let selectionStart = $state({ s: 0, t: 0 });
+    let selectionEnd = $state({ s: 0, t: 0 });
     let selectedAutomationPoint: { laneId: string; point: AutomationPoint } | null = $state(null);
 
     const previewCache = new Map<string, PreviewNote[]>();
 
-
     function selectAutomationPoint(lane: Lane | null, point: AutomationPoint | null) {
-        selectedAutomationPoint = point && lane ? {laneId: lane.id, point} : null;
+        selectedAutomationPoint = point && lane ? { laneId: lane.id, point } : null;
     }
 
     // timeline interaction: click = place playback cursor, drag = mark loop region
     let loopDragging = false;
     let loopAnchor = 0;
     let loopPreview: { start: number; end: number } | null = $state(null);
-
 
     function timelineStep(e: MouseEvent): number {
         const grid = playlistEl?.querySelector('.grid-container') as HTMLElement;
@@ -147,7 +144,8 @@
         if ($rendering) {
             return;
         }
-        if (e.button === 2) { // right-click clears the loop
+        if (e.button === 2) {
+            // right-click clears the loop
             if ($project?.loop) {
                 $project.loop = null;
                 touch();
@@ -173,7 +171,6 @@
     let draggingAutomationLane: string | null = null;
     let dragInsertionRow: number | null = $state(null);
 
-
     // Clip transpose: one number instead of a duplicated pattern for "the same
     // hook, a fourth up" — the scheduler shifts the notes while playing.
     const TRANSPOSE_MAX = 24;
@@ -183,7 +180,10 @@
             return;
         }
         selectedClips.forEach(c => {
-            c.transpose = Math.max(-TRANSPOSE_MAX, Math.min(TRANSPOSE_MAX, (c.transpose || 0) + delta));
+            c.transpose = Math.max(
+                -TRANSPOSE_MAX,
+                Math.min(TRANSPOSE_MAX, (c.transpose || 0) + delta),
+            );
         });
         touch();
     }
@@ -192,7 +192,7 @@
         if (!$project || !selectedClips.length) {
             return;
         }
-        selectedClips.forEach(c => c.transpose = 0);
+        selectedClips.forEach(c => (c.transpose = 0));
         touch();
     }
 
@@ -200,7 +200,7 @@
 
     function clearSelection() {
         if ($project) {
-            $project.arrangement.forEach(c => c.selected = false);
+            $project.arrangement.forEach(c => (c.selected = false));
             touch();
         }
     }
@@ -209,7 +209,9 @@
         if (!$project) {
             return;
         }
-        const found = $project.arrangement.find(c => c.track === t && s_raw >= c.start && s_raw < c.start + c.len);
+        const found = $project.arrangement.find(
+            c => c.track === t && s_raw >= c.start && s_raw < c.start + c.len,
+        );
         if (found) {
             $project.arrangement = $project.arrangement.filter(c => c !== found);
             touch();
@@ -224,10 +226,20 @@
             return;
         }
 
-        const snap = cellWidth > 160 ? 0.0625 : (cellWidth > 80 ? 0.125 : (cellWidth > 40 ? 0.25 : (cellWidth > 20 ? 0.5 : 1)));
+        const snap =
+            cellWidth > 160
+                ? 0.0625
+                : cellWidth > 80
+                  ? 0.125
+                  : cellWidth > 40
+                    ? 0.25
+                    : cellWidth > 20
+                      ? 0.5
+                      : 1;
         const s = Math.round(s_raw / snap) * snap;
 
-        if (e.button === 2) { // Right click delete
+        if (e.button === 2) {
+            // Right click delete
             isRightDragging = true;
             deleteClipAt(t, s_raw);
             return;
@@ -242,12 +254,14 @@
             return;
         }
 
-        const found = $project.arrangement.find(c => c.track === t && s_raw >= c.start && s_raw < c.start + c.len) as ExtendedClip;
+        const found = $project.arrangement.find(
+            c => c.track === t && s_raw >= c.start && s_raw < c.start + c.len,
+        ) as ExtendedClip;
 
         if (e.ctrlKey && !found) {
             isSelecting = true;
-            selectionStart = {s: s_raw, t};
-            selectionEnd = {s: s_raw, t};
+            selectionStart = { s: s_raw, t };
+            selectionEnd = { s: s_raw, t };
             if (!e.shiftKey) {
                 clearSelection();
             }
@@ -265,15 +279,17 @@
             }
             dragClip = found;
             dragStartRawS = s_raw;
-            dragStartPos = {s, t};
+            dragStartPos = { s, t };
 
-            const targetClips = found.selected ? ($project.arrangement.filter(c => c.selected) as ExtendedClip[]) : [found];
+            const targetClips = found.selected
+                ? ($project.arrangement.filter(c => c.selected) as ExtendedClip[])
+                : [found];
             if ((e.target as HTMLElement).classList.contains('resize-handle')) {
                 resizeMode = true;
-                targetClips.forEach(c => c._initLen = c.len);
+                targetClips.forEach(c => (c._initLen = c.len));
             } else {
                 resizeMode = false;
-                dragOffset = {s: s - found.start, t: t - found.track};
+                dragOffset = { s: s - found.start, t: t - found.track };
                 targetClips.forEach(c => {
                     c._initStart = c.start;
                     c._initTrack = c.track;
@@ -294,14 +310,14 @@
                 patternId: $selPatId || '',
                 track: t,
                 start: s,
-                len: pat ? (pat.steps || 32) : 32,
-                selected: true
+                len: pat ? pat.steps || 32 : 32,
+                selected: true,
             };
             $project.arrangement = [...$project.arrangement, newClip];
             dragClip = newClip;
             dragStartRawS = s_raw;
-            dragStartPos = {s, t};
-            dragOffset = {s: 0, t: 0};
+            dragStartPos = { s, t };
+            dragOffset = { s: 0, t: 0 };
             newClip._initStart = newClip.start;
             newClip._initTrack = newClip.track;
             touch();
@@ -315,14 +331,18 @@
         }
 
         if (isSelecting && $project) {
-            selectionEnd = {s: s_raw, t};
+            selectionEnd = { s: s_raw, t };
             const s_min = Math.min(selectionStart.s, selectionEnd.s);
             const s_max = Math.max(selectionStart.s, selectionEnd.s);
             const t_min = Math.min(selectionStart.t, selectionEnd.t);
             const t_max = Math.max(selectionStart.t, selectionEnd.t);
 
             $project.arrangement.forEach(c => {
-                const inRect = c.start < s_max && (c.start + c.len) > s_min && c.track >= t_min && c.track <= t_max;
+                const inRect =
+                    c.start < s_max &&
+                    c.start + c.len > s_min &&
+                    c.track >= t_min &&
+                    c.track <= t_max;
                 if (e.shiftKey) {
                     if (inRect) {
                         c.selected = true;
@@ -339,7 +359,16 @@
             return;
         }
 
-        const snap = cellWidth > 160 ? 0.0625 : (cellWidth > 80 ? 0.125 : (cellWidth > 40 ? 0.25 : (cellWidth > 20 ? 0.5 : 1)));
+        const snap =
+            cellWidth > 160
+                ? 0.0625
+                : cellWidth > 80
+                  ? 0.125
+                  : cellWidth > 40
+                    ? 0.25
+                    : cellWidth > 20
+                      ? 0.5
+                      : 1;
 
         if (resizeMode) {
             const deltaLen = s_raw - dragStartRawS;
@@ -372,12 +401,14 @@
         }
         if (loopDragging) {
             loopDragging = false;
-            if (loopPreview) { // a real drag → set the loop region
+            if (loopPreview) {
+                // a real drag → set the loop region
                 if ($project) {
                     $project.loop = loopPreview;
                     touch();
                 }
-            } else { // just a click → place the playback cursor
+            } else {
+                // just a click → place the playback cursor
                 seekSong(loopAnchor);
             }
             loopPreview = null;
@@ -416,10 +447,10 @@
 
         if (loopDragging) {
             const s = timelineStep(e);
-            const timing = $project ?? {bpm: 112};
+            const timing = $project ?? { bpm: 112 };
             const a = snapToBeat(timing, Math.min(loopAnchor, s));
             const b = snapToBeat(timing, Math.max(loopAnchor, s));
-            loopPreview = b > a ? {start: a, end: b} : null;
+            loopPreview = b > a ? { start: a, end: b } : null;
             return;
         }
 
@@ -486,7 +517,6 @@
             touch();
         }
     }
-
 
     function toggleTrackMute(t: number) {
         if (!$project) {
@@ -569,7 +599,15 @@
 
     function dropTrack(event: DragEvent, trackIndex: number) {
         if (draggingAutomationLane) {
-            moveAutomationLane(draggingAutomationLane, trackIndex + (event.clientY > (event.currentTarget as HTMLElement).getBoundingClientRect().top + (event.currentTarget as HTMLElement).getBoundingClientRect().height / 2 ? 1 : 0));
+            moveAutomationLane(
+                draggingAutomationLane,
+                trackIndex +
+                    (event.clientY >
+                    (event.currentTarget as HTMLElement).getBoundingClientRect().top +
+                        (event.currentTarget as HTMLElement).getBoundingClientRect().height / 2
+                        ? 1
+                        : 0),
+            );
             dragInsertionRow = null;
             return;
         }
@@ -577,8 +615,14 @@
             return;
         }
         const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
-        const insertionIndex = trackIndex + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
-        const updated = moveArrangementTrack($project.tracks, $project.arrangement, draggingTrack, insertionIndex);
+        const insertionIndex =
+            trackIndex + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
+        const updated = moveArrangementTrack(
+            $project.tracks,
+            $project.arrangement,
+            draggingTrack,
+            insertionIndex,
+        );
         $project.tracks = updated.tracks;
         $project.arrangement = updated.arrangement;
         clearDragState();
@@ -605,9 +649,11 @@
         }
         $project.automationPositions = {
             ...($project.automationPositions || {}),
-            [laneId]: Math.max(0, Math.min($project.tracks.length, slot))
+            [laneId]: Math.max(0, Math.min($project.tracks.length, slot)),
         };
-        const order = [...($project.automationOrder || lanes.map(item => item.id))].filter(id => id !== laneId);
+        const order = [...($project.automationOrder || lanes.map(item => item.id))].filter(
+            id => id !== laneId,
+        );
         if (beforeLaneId) {
             order.splice(Math.max(0, order.indexOf(beforeLaneId)), 0, laneId);
         } else {
@@ -626,13 +672,19 @@
         const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
         const order = $project?.automationOrder || autoLanes.map(item => item.id);
         const targetIndex = order.indexOf(lane.id);
-        const targetSlot = $project?.automationPositions?.[lane.id] ?? ($project?.tracks.length || 0);
-        moveAutomationLane(draggingAutomationLane, targetSlot,
-            event.clientY <= bounds.top + bounds.height / 2 ? lane.id : order[targetIndex + 1]);
+        const targetSlot =
+            $project?.automationPositions?.[lane.id] ?? ($project?.tracks.length || 0);
+        moveAutomationLane(
+            draggingAutomationLane,
+            targetSlot,
+            event.clientY <= bounds.top + bounds.height / 2 ? lane.id : order[targetIndex + 1],
+        );
     }
 
     function rowBoundaryTop(boundary: number): number {
-        return arrangerRows.slice(0, boundary).reduce((height, row) => height + (row.kind === 'track' ? cellHeight : LANE_H), 0);
+        return arrangerRows
+            .slice(0, boundary)
+            .reduce((height, row) => height + (row.kind === 'track' ? cellHeight : LANE_H), 0);
     }
 
     function requestRemoveTrack(trackIndex: number) {
@@ -650,7 +702,11 @@
         if (!$project || trackToRemove === null) {
             return;
         }
-        const updated = removeArrangementTrack($project.tracks, $project.arrangement, trackToRemove);
+        const updated = removeArrangementTrack(
+            $project.tracks,
+            $project.arrangement,
+            trackToRemove,
+        );
         $project.tracks = updated.tracks;
         $project.arrangement = updated.arrangement;
         if ($project.automationPositions) {
@@ -668,12 +724,10 @@
         touch();
     }
 
-
     /* ---- automation lanes ----
      * Extra rows under the tracks, one per automated parameter: the curve is
      * read by the scheduler at every 16th step (see lib/automation.ts). */
     const LANE_H = 54;
-
 
     function laneValueLabel(lane: Lane, step: number): string {
         const d = autoParamDef(lane);
@@ -681,7 +735,10 @@
             return '';
         }
         const v = laneValueAt(lane, Math.max(0, step));
-        return (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 100) / 100) + (d.unit ? ' ' + d.unit : '');
+        return (
+            (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 100) / 100) +
+            (d.unit ? ' ' + d.unit : '')
+        );
     }
 
     function rowIndexForTrack(trackIndex: number): number {
@@ -713,11 +770,9 @@
         return previousTrack;
     }
 
-
     let showAddAuto = $state(false);
     let showRemoveAutoLane = $state(false);
     let autoLaneToRemove: Lane | null = null;
-
 
     function openAddAuto() {
         if (!$project) {
@@ -740,8 +795,14 @@
         const cur = automationCurrentValue($project, target, param, master);
         const lane = newLane(target, param, cur ?? def.min);
         $project.automation = [...autoLanes, lane];
-        $project.automationOrder = [...($project.automationOrder || autoLanes.map(l => l.id)), lane.id];
-        $project.automationPositions = {...($project.automationPositions || {}), [lane.id]: $project.tracks.length};
+        $project.automationOrder = [
+            ...($project.automationOrder || autoLanes.map(l => l.id)),
+            lane.id,
+        ];
+        $project.automationPositions = {
+            ...($project.automationPositions || {}),
+            [lane.id]: $project.tracks.length,
+        };
         showAddAuto = false;
         touch();
     }
@@ -778,50 +839,526 @@
     });
     const viewportOptions = $derived({
         getContainer: () => playlistEl!,
-        getZoom: () => ({width: cellWidth, height: cellHeight}),
+        getZoom: () => ({ width: cellWidth, height: cellHeight }),
         setZoom,
-        sidebarWidth: 0
+        sidebarWidth: 0,
     });
     const currentPattern = $derived($project?.patterns.find(pattern => pattern.id === $selPatId));
-    const currentPatternClips = $derived($project?.arrangement.filter(clip => clip.patternId === $selPatId) ?? []);
-    const currentPatternLocations = $derived(currentPatternClips.map(clip => `bar ${barAt($project!, clip.start).bar}`).join(', '));
-    const selectionRect = $derived(isSelecting ? {
-        left: Math.min(selectionStart.s, selectionEnd.s) * cellWidth,
-        top: Math.min(rowTopForTrack(selectionStart.t), rowTopForTrack(selectionEnd.t)),
-        width: Math.abs(selectionStart.s - selectionEnd.s) * cellWidth,
-        height: Math.max(rowBottomForTrack(selectionStart.t), rowBottomForTrack(selectionEnd.t))
-            - Math.min(rowTopForTrack(selectionStart.t), rowTopForTrack(selectionEnd.t))
-    } : null);
+    const currentPatternClips = $derived(
+        $project?.arrangement.filter(clip => clip.patternId === $selPatId) ?? [],
+    );
+    const currentPatternLocations = $derived(
+        currentPatternClips.map(clip => `bar ${barAt($project!, clip.start).bar}`).join(', '),
+    );
+    const selectionRect = $derived(
+        isSelecting
+            ? {
+                  left: Math.min(selectionStart.s, selectionEnd.s) * cellWidth,
+                  top: Math.min(rowTopForTrack(selectionStart.t), rowTopForTrack(selectionEnd.t)),
+                  width: Math.abs(selectionStart.s - selectionEnd.s) * cellWidth,
+                  height:
+                      Math.max(
+                          rowBottomForTrack(selectionStart.t),
+                          rowBottomForTrack(selectionEnd.t),
+                      ) -
+                      Math.min(rowTopForTrack(selectionStart.t), rowTopForTrack(selectionEnd.t)),
+              }
+            : null,
+    );
     const loopRect = $derived(loopPreview || $project?.loop || null);
-    const selectedClips = $derived(($project?.arrangement.filter(c => c.selected) || []) as ExtendedClip[]);
+    const selectedClips = $derived(
+        ($project?.arrangement.filter(c => c.selected) || []) as ExtendedClip[],
+    );
     // lane mute/solo — same rule as the scheduler: any soloed lane silences the rest
-    const laneSilent = $derived(($project?.tracks || []).map((t, _i, all) => !!t.mute || (all.some(o => o.solo) && !t.solo)));
-    const totalLength = $derived(Math.max(128,
-        ...($project?.arrangement.map(c => c.start + c.len) ?? []),
-        ...($project?.conductor?.tempos.map(marker => marker.step) ?? []),
-        ...($project?.conductor?.meters.map(marker => marker.step) ?? []),
-        ...($project?.conductor?.sections.map(marker => marker.step) ?? [])) + 64);
-    const visibleBars = $derived($project ? barsInRange($project, scrollLeft / cellWidth,
-        Math.min(totalLength, (scrollLeft + viewportWidth) / cellWidth)) : []);
+    const laneSilent = $derived(
+        ($project?.tracks || []).map(
+            (t, _i, all) => !!t.mute || (all.some(o => o.solo) && !t.solo),
+        ),
+    );
+    const totalLength = $derived(
+        Math.max(
+            128,
+            ...($project?.arrangement.map(c => c.start + c.len) ?? []),
+            ...($project?.conductor?.tempos.map(marker => marker.step) ?? []),
+            ...($project?.conductor?.meters.map(marker => marker.step) ?? []),
+            ...($project?.conductor?.sections.map(marker => marker.step) ?? []),
+        ) + 64,
+    );
+    const visibleBars = $derived(
+        $project
+            ? barsInRange(
+                  $project,
+                  scrollLeft / cellWidth,
+                  Math.min(totalLength, (scrollLeft + viewportWidth) / cellWidth),
+              )
+            : [],
+    );
     const autoLanes = $derived(($project?.automation || []) as Lane[]);
-    const arrangerRows = $derived((() => {
-        const positions = $project?.automationPositions || {};
-        const order = $project?.automationOrder || autoLanes.map(lane => lane.id);
-        const ordered = [...autoLanes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-        const rows: ({ kind: 'track'; trackIndex: number } | { kind: 'automation'; lane: Lane })[] = [];
-        for (let slot = 0; slot <= ($project?.tracks.length || 0); slot++) {
-            ordered.filter(lane => (positions[lane.id] ?? ($project?.tracks.length || 0)) === slot)
-                .forEach(lane => rows.push({kind: 'automation', lane}));
-            if (slot < ($project?.tracks.length || 0)) {
-                rows.push({kind: 'track', trackIndex: slot});
+    const arrangerRows = $derived(
+        (() => {
+            const positions = $project?.automationPositions || {};
+            const order = $project?.automationOrder || autoLanes.map(lane => lane.id);
+            const ordered = [...autoLanes].sort(
+                (a, b) => order.indexOf(a.id) - order.indexOf(b.id),
+            );
+            const rows: (
+                { kind: 'track'; trackIndex: number } | { kind: 'automation'; lane: Lane }
+            )[] = [];
+            for (let slot = 0; slot <= ($project?.tracks.length || 0); slot++) {
+                ordered
+                    .filter(lane => (positions[lane.id] ?? ($project?.tracks.length || 0)) === slot)
+                    .forEach(lane => rows.push({ kind: 'automation', lane }));
+                if (slot < ($project?.tracks.length || 0)) {
+                    rows.push({ kind: 'track', trackIndex: slot });
+                }
             }
-        }
-        return rows;
-    })());
+            return rows;
+        })(),
+    );
     // the value a lane is feeding the engine right now (playhead, else cursor)
     const autoStep = $derived($playing && $curStep >= 0 ? $curStep : $songCursor);
-    const gridHeight = $derived(arrangerRows.reduce((height, row) => height + (row.kind === 'track' ? cellHeight : LANE_H), 0));
+    const gridHeight = $derived(
+        arrangerRows.reduce(
+            (height, row) => height + (row.kind === 'track' ? cellHeight : LANE_H),
+            0,
+        ),
+    );
 </script>
+
+<svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp} />
+
+<div class="playlist-container" class:resizing={resizeMode && !!dragClip}>
+    <div class="playlist-header">
+        <div class="playlist-controls">
+            {#if currentPattern}
+                <div
+                    class="pattern-usage"
+                    title={`Open pattern: ${currentPattern.name}. Used ${currentPatternClips.length} time${currentPatternClips.length === 1 ? '' : 's'}${currentPatternLocations ? ` — ${currentPatternLocations}` : ''}.`}
+                >
+                    {currentPattern.name} · {currentPatternClips.length}
+                    use{currentPatternClips.length === 1 ? '' : 's'}{currentPatternLocations
+                        ? ` · ${currentPatternLocations}`
+                        : ''}
+                </div>
+            {/if}
+            {#if selectedClips.length}
+                <div class="clip-tools">
+                    <span class="sel-count"
+                        >{selectedClips.length} clip{selectedClips.length > 1 ? 's' : ''}</span
+                    >
+                    <span class="lbl">Transpose</span>
+                    <Button
+                        compact
+                        title="An octave down"
+                        variant="secondary"
+                        on:click={() => transposeClips(-12)}
+                    >
+                        −12
+                    </Button>
+                    <Button
+                        compact
+                        title="A semitone down"
+                        variant="secondary"
+                        on:click={() => transposeClips(-1)}
+                        >−1
+                    </Button>
+                    <span class="semis">{semiLabel(selectedClips[0].transpose || 0)}</span>
+                    <Button
+                        compact
+                        title="A semitone up"
+                        variant="secondary"
+                        on:click={() => transposeClips(1)}
+                        >+1
+                    </Button>
+                    <Button
+                        compact
+                        title="An octave up"
+                        variant="secondary"
+                        on:click={() => transposeClips(12)}
+                        >+12
+                    </Button>
+                    <Button
+                        compact
+                        title="Back to the written pitch"
+                        variant="secondary"
+                        on:click={resetClipTranspose}
+                    >
+                        0
+                    </Button>
+                    <span class="tip">(or Alt + wheel)</span>
+                </div>
+            {/if}
+        </div>
+    </div>
+    <div class="playlist-scroll">
+        <div class="corner frozen-corner">
+            <div class="corner-actions">
+                <button aria-label="Add track" onclick={addTrack} title="Add track">
+                    <i class="fa fa-plus"></i>
+                </button>
+                <button
+                    class="auto-add"
+                    aria-label="Add automation lane"
+                    onclick={openAddAuto}
+                    title="Add automation lane"
+                >
+                    <i class="fa fa-wave-square"></i>
+                </button>
+            </div>
+        </div>
+        <div style="max-width: {viewportWidth}px;" class="timeline-viewport">
+            <div
+                style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
+                class="timeline"
+                oncontextmenu={preventDefault(bubble('contextmenu'))}
+                onmousedown={handleTimelineMouseDown}
+            >
+                {#each visibleBars as bar (bar.start)}
+                    <div
+                        style="left: {bar.start * cellWidth}px; width: {(bar.end - bar.start) *
+                            cellWidth}px;"
+                        class="time-marker"
+                        title={`Bar ${bar.bar} · ${bar.numerator}/${bar.denominator} · step ${bar.start}`}
+                    >
+                        {bar.bar}
+                    </div>
+                {/each}
+                {#if loopRect}
+                    <div
+                        style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end -
+                            loopRect.start) *
+                            cellWidth}px;"
+                        class="loop-band"
+                    ></div>
+                {/if}
+            </div>
+        </div>
+        <div class="conductor-row">
+            <Conductor {cellWidth} {scrollLeft} {totalLength} {viewportWidth} />
+        </div>
+        <div class="frozen-track-labels">
+            <div style="transform: translateY(-{scrollTop}px);" class="track-labels">
+                {#if dragInsertionRow !== null}
+                    <div
+                        style="top: {rowBoundaryTop(dragInsertionRow)}px;"
+                        class="drop-indicator"
+                    ></div>
+                {/if}
+                <div class="track-divider top-track-divider">
+                    <button
+                        class="track-insert"
+                        aria-label="Insert track"
+                        onclick={stopPropagation(() => insertTrack(0))}
+                        ondblclick={stopPropagation(bubble('dblclick'))}
+                        ondragover={preventDefault(() => (dragInsertionRow = 0))}
+                        onmousedown={stopPropagation(bubble('mousedown'))}
+                        title="Insert track at the top"><i class="fa fa-plus"></i></button
+                    >
+                </div>
+                {#each arrangerRows as row, rowIndex}
+                    {#if row.kind === 'track'}
+                        {@const t = row.trackIndex}
+                        {@const track = $project!.tracks[t]}
+                        <div class="track-row">
+                            {#if t > 0}
+                                <div class="track-divider">
+                                    <button
+                                        class="track-insert"
+                                        aria-label="Insert track"
+                                        onclick={stopPropagation(() => insertTrack(t))}
+                                        ondblclick={stopPropagation(bubble('dblclick'))}
+                                        onmousedown={stopPropagation(bubble('mousedown'))}
+                                        title="Insert track here"
+                                        ><i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                            {/if}
+                            <div
+                                style="height: {cellHeight}px; border-left: 4px solid {track.color}"
+                                class="track-label"
+                                class:dragging={draggingTrack === t}
+                                class:silent={laneSilent[t]}
+                                draggable="true"
+                                ondblclick={() => editTrack(t)}
+                                ondragend={clearDragState}
+                                ondragover={preventDefault(event =>
+                                    updateDragInsertion(event as DragEvent, rowIndex),
+                                )}
+                                ondragstart={event => startTrackDrag(event as DragEvent, t)}
+                                ondrop={event => dropTrack(event as DragEvent, t)}
+                                title="Double click to rename, Right click for color; drag to reorder"
+                            >
+                                <div
+                                    class="track-name"
+                                    oncontextmenu={stopPropagation(
+                                        preventDefault(() => changeTrackColor(t)),
+                                    )}
+                                >
+                                    {track.name}
+                                </div>
+                                <button
+                                    class="ms"
+                                    class:on={track.mute}
+                                    aria-label="Mute lane"
+                                    onclick={stopPropagation(() => toggleTrackMute(t))}
+                                    ondblclick={stopPropagation(bubble('dblclick'))}
+                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    title="Mute lane"><i class="fa fa-volume-xmark"></i></button
+                                >
+                                <button
+                                    class="ms solo"
+                                    class:on={track.solo}
+                                    aria-label="Solo lane"
+                                    onclick={stopPropagation(() => toggleTrackSolo(t))}
+                                    ondblclick={stopPropagation(bubble('dblclick'))}
+                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    title="Solo lane"><i class="fa fa-headphones"></i></button
+                                >
+                                <button
+                                    class="ms remove-track"
+                                    aria-label="Remove track"
+                                    disabled={$project!.tracks.length <= 1}
+                                    onclick={stopPropagation(() => requestRemoveTrack(t))}
+                                    ondblclick={stopPropagation(bubble('dblclick'))}
+                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    title="Remove track"><i class="fa fa-trash"></i></button
+                                >
+                            </div>
+                        </div>
+                    {/if}
+                    {#if row.kind === 'automation'}
+                        {@const lane = row.lane}
+                        <div
+                            style="height: {LANE_H}px; border-left: 4px solid {laneColor(
+                                $project!,
+                                lane,
+                            )}"
+                            class="auto-label track-label"
+                            draggable="true"
+                            ondragend={clearDragState}
+                            ondragover={preventDefault(event =>
+                                updateDragInsertion(event as DragEvent, rowIndex),
+                            )}
+                            ondragstart={event => startAutomationDrag(event as DragEvent, lane)}
+                            ondrop={stopPropagation(event =>
+                                dropAutomationLane(event as DragEvent, lane),
+                            )}
+                            title="{laneTitle(
+                                $project!,
+                                lane,
+                            )} — click the curve to add a point, drag to move, right-click a point to remove"
+                        >
+                            <div class="auto-name" title={laneTitle($project!, lane)}>
+                                <span class="auto-target">{laneTargetTitle($project!, lane)}</span>
+                                <span class="auto-param"
+                                    >{autoParamDef(lane)?.label || lane.param}</span
+                                >
+                            </div>
+                            <div
+                                class="auto-val"
+                                class:live={$playing}
+                                title="Value at the playhead"
+                            >
+                                {laneValueLabel(lane, autoStep)}
+                            </div>
+                            <button
+                                class="ms remove-track"
+                                aria-label="Remove automation lane"
+                                onclick={stopPropagation(() => requestRemoveAutoLane(lane))}
+                                onmousedown={stopPropagation(bubble('mousedown'))}
+                                title="Remove this automation lane"
+                                ><i class="fa fa-trash"></i></button
+                            >
+                        </div>
+                    {/if}
+                {/each}
+            </div>
+        </div>
+        <div
+            bind:this={playlistEl}
+            class="grid-viewport"
+            oncontextmenu={preventDefault(bubble('contextmenu'))}
+            onmousedown={handlePlaylistMouseDown}
+            onscroll={syncFrozenPanes}
+            onwheel={handleWheel}
+            bind:clientWidth={viewportWidth}
+        >
+            <div
+                style="width: {totalLength *
+                    cellWidth}px; height: {gridHeight}px; --cell-width: {cellWidth}px;"
+                class="grid-container"
+            >
+                {#if dragInsertionRow !== null}
+                    <div
+                        style="top: {rowBoundaryTop(dragInsertionRow)}px;"
+                        class="drop-indicator"
+                    ></div>
+                {/if}
+                <div class="grid-bg">
+                    {#each arrangerRows as row}
+                        {#if row.kind === 'track'}
+                            {@const t = row.trackIndex}
+                            <div
+                                style="height: {cellHeight}px;"
+                                class="grid-row"
+                                class:silent={laneSilent[t]}
+                                onmousedown={e => {
+                                    const s_raw =
+                                        (e.clientX - e.currentTarget.getBoundingClientRect().left) /
+                                        cellWidth;
+                                    handleMouseDown(e, t, s_raw);
+                                }}
+                            ></div>
+                        {:else}
+                            {@const lane = row.lane}
+                            {@const def = autoParamDef(lane)}
+                            {#if def}
+                                <AutomationLane
+                                    canEdit={shouldEditAutomation(selectedClips.length > 0)}
+                                    {cellWidth}
+                                    color={laneColor($project!, lane)}
+                                    {def}
+                                    editorKey={`automation:${lane.id}`}
+                                    hasSelectedPoint={!!selectedAutomationPoint}
+                                    height={LANE_H}
+                                    {lane}
+                                    onblocked={clearSelection}
+                                    onselect={point => selectAutomationPoint(lane, point)}
+                                    selectedPoint={selectedAutomationPoint?.laneId === lane.id
+                                        ? selectedAutomationPoint.point
+                                        : null}
+                                    width={totalLength * cellWidth}
+                                    bind:contextualEditor
+                                />
+                            {/if}
+                        {/if}
+                    {/each}
+                </div>
+
+                {#each visibleBars as bar (bar.start)}
+                    <div style="left: {bar.start * cellWidth}px;" class="bar-line"></div>
+                {/each}
+
+                <div class="clips-layer">
+                    {#if selectionRect}
+                        <div
+                            style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
+                            class="selection-rect"
+                        ></div>
+                    {/if}
+                    {#each $project!.arrangement as clip (clip.id)}
+                        <div
+                            style="left: {clip.start * cellWidth}px; width: {clip.len *
+                                cellWidth}px; top: {rowTopForTrack(clip.track) +
+                                2}px; height: {cellHeight - 4}px; background: {getPatternColor(
+                                clip.patternId,
+                            )}"
+                            class="clip"
+                            class:open-pattern={clip.patternId === $selPatId}
+                            class:selected={clip.selected}
+                            class:silent={laneSilent[clip.track]}
+                            ondblclick={() => ($selPatId = clip.patternId)}
+                            onmousedown={stopPropagation(e => {
+                                const mouseEvent = e as MouseEvent;
+                                const rect = (
+                                    mouseEvent.currentTarget as HTMLElement
+                                ).parentElement!.getBoundingClientRect();
+                                const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
+                                handleMouseDown(mouseEvent, clip.track, s_raw);
+                            })}
+                        >
+                            <div class="clip-name">{getPatternName(clip.patternId)}</div>
+                            {#if clip.transpose}
+                                <div
+                                    class="clip-transpose"
+                                    title="Transposed by {clip.transpose} semitones"
+                                >
+                                    {semiLabel(clip.transpose)}
+                                </div>
+                            {/if}
+                            <div class="clip-preview">
+                                {#each getPatternNotes(clip.patternId, clip.len) as n}
+                                    <div
+                                        style="left: {(n.start / (clip.len || 1)) * 100}%;
+                                                width: {(n.len / (clip.len || 1)) * 100}%;
+                                                top: {n.y * 60 + 25}%;
+                                                height: 2px;"
+                                        class="preview-note"
+                                    ></div>
+                                {/each}
+                            </div>
+                            <div
+                                style="width: {Math.min(
+                                    clip.len * cellWidth,
+                                    Math.max(8, cellWidth * 0.2),
+                                )}px"
+                                class="resize-handle"
+                            ></div>
+                        </div>
+                    {/each}
+                </div>
+
+                {#if loopRect}
+                    <div
+                        style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end -
+                            loopRect.start) *
+                            cellWidth}px;"
+                        class="loop-overlay"
+                    ></div>
+                {/if}
+
+                <div style="left: {$songCursor * cellWidth}px" class="song-cursor"></div>
+                {#if $playing && $playMode === 'song'}
+                    <div style="left: {$curStep * cellWidth}px" class="playhead"></div>
+                {/if}
+            </div>
+        </div>
+    </div>
+    <div class="playlist-footer">
+        <div class="tip">
+            Click an empty lane to clear the selection, then click again to place the selected
+            pattern • Add tracks or automation above the track names • MMB drag to pan • Right-click
+            to remove • Timeline: click = cursor, drag = loop, right-click = clear loop
+        </div>
+    </div>
+</div>
+
+<Dialog title="Add Automation Lane" width="720px" bind:show={showAddAuto}>
+    {#if $project}
+        <AutomationPicker onadd={addAutoLane} project={$project} />
+    {/if}
+</Dialog>
+<Prompt
+    label="New Name"
+    title="Rename Track"
+    bind:show={showRenameTrack}
+    bind:value={renameTrackValue}
+    on:submit={onRenameTrack}
+/>
+<Dialog title="Track Color" bind:show={showTrackColor}>
+    {#if editingTrackIdx !== null}
+        <ColorPicker
+            value={$project!.tracks[editingTrackIdx].color}
+            on:change={onTrackColorChange}
+        />
+    {/if}
+</Dialog>
+<Confirm
+    confirmLabel="Remove track"
+    destructive
+    message="This track has clips. Removing it will permanently remove those clips."
+    title="Remove Track"
+    bind:show={showRemoveTrack}
+    on:confirm={removeTrack}
+/>
+<Confirm
+    confirmLabel="Remove lane"
+    destructive
+    message="Removing this lane will permanently remove all of its automation points."
+    title="Remove Automation Lane"
+    bind:show={showRemoveAutoLane}
+    on:confirm={removeAutoLane}
+/>
 
 <style>
     .playlist-container {
@@ -949,7 +1486,9 @@
     }
 
     .clip.open-pattern {
-        box-shadow: inset 0 0 0 1px var(--accent2), 0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent);
+        box-shadow:
+            inset 0 0 0 1px var(--accent2),
+            0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent);
     }
 
     .frozen-track-labels {
@@ -1010,7 +1549,7 @@
     }
 
     .track-label.dragging {
-        opacity: .45;
+        opacity: 0.45;
     }
 
     .track-insert {
@@ -1034,7 +1573,9 @@
         opacity: 0;
         pointer-events: none;
         cursor: pointer;
-        transition: opacity .12s ease, background .12s ease;
+        transition:
+            opacity 0.12s ease,
+            background 0.12s ease;
     }
 
     .track-divider {
@@ -1059,7 +1600,7 @@
         left: 0;
         border-top: 1px solid transparent;
         transform: translateY(-50%);
-        transition: border-color .12s ease;
+        transition: border-color 0.12s ease;
         pointer-events: none;
     }
 
@@ -1091,7 +1632,7 @@
     }
 
     .track-label.silent .track-name {
-        opacity: .45;
+        opacity: 0.45;
         text-decoration: line-through;
     }
 
@@ -1103,14 +1644,17 @@
         border: none;
         color: var(--secondary-text);
         font-size: 11px;
-        opacity: .7;
+        opacity: 0.7;
         cursor: pointer;
         padding: 0;
         border-radius: 3px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: color .12s ease, background .12s ease, opacity .12s ease;
+        transition:
+            color 0.12s ease,
+            background 0.12s ease,
+            opacity 0.12s ease;
     }
 
     .track-label .ms:hover {
@@ -1135,7 +1679,7 @@
     }
 
     .track-label .ms:disabled {
-        opacity: .2;
+        opacity: 0.2;
         cursor: default;
     }
 
@@ -1145,7 +1689,7 @@
 
     .track-label .remove-track:disabled {
         cursor: default;
-        opacity: .12;
+        opacity: 0.12;
     }
 
     .grid-row.silent {
@@ -1259,7 +1803,7 @@
         bottom: 0;
         width: 2px;
         background: var(--color-playhead);
-        box-shadow: 0 0 8px rgba(255, 244, 244, .7);
+        box-shadow: 0 0 8px rgba(255, 244, 244, 0.7);
         z-index: 20;
         pointer-events: none;
     }
@@ -1289,7 +1833,7 @@
     }
 
     .clip-tools .lbl {
-        opacity: .6;
+        opacity: 0.6;
     }
 
     .clip-tools .semis {
@@ -1297,7 +1841,6 @@
         text-align: center;
         font-weight: bold;
     }
-
 
     .clip-transpose {
         position: absolute;
@@ -1308,7 +1851,7 @@
         font-weight: bold;
         padding: 0 3px;
         border-radius: 3px;
-        background: rgba(0, 0, 0, .45);
+        background: rgba(0, 0, 0, 0.45);
         pointer-events: none;
     }
 
@@ -1335,9 +1878,9 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        background: rgba(231, 109, 117, .07);
-        border-left: 1px solid rgba(231, 109, 117, .5);
-        border-right: 1px solid rgba(231, 109, 117, .5);
+        background: rgba(231, 109, 117, 0.07);
+        border-left: 1px solid rgba(231, 109, 117, 0.5);
+        border-right: 1px solid rgba(231, 109, 117, 0.5);
         box-sizing: border-box;
         pointer-events: none;
         z-index: 5;
@@ -1412,334 +1955,3 @@
         color: var(--accent);
     }
 </style>
-
-<svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp}/>
-
-<div class="playlist-container" class:resizing={resizeMode && !!dragClip}>
-    <div class="playlist-header">
-        <div class="playlist-controls">
-            {#if currentPattern}
-                <div
-                        class="pattern-usage"
-                        title={`Open pattern: ${currentPattern.name}. Used ${currentPatternClips.length} time${currentPatternClips.length === 1 ? '' : 's'}${currentPatternLocations ? ` — ${currentPatternLocations}` : ''}.`}>
-                    {currentPattern.name} · {currentPatternClips.length}
-                    use{currentPatternClips.length === 1 ? '' : 's'}{currentPatternLocations ? ` · ${currentPatternLocations}` : ''}
-                </div>
-            {/if}
-            {#if selectedClips.length}
-                <div class="clip-tools">
-                    <span class="sel-count">{selectedClips.length} clip{selectedClips.length > 1 ? 's' : ''}</span>
-                    <span class="lbl">Transpose</span>
-                    <Button compact title="An octave down" variant="secondary" on:click={() => transposeClips(-12)}>
-                        −12
-                    </Button>
-                    <Button compact title="A semitone down" variant="secondary" on:click={() => transposeClips(-1)}>−1
-                    </Button>
-                    <span class="semis">{semiLabel(selectedClips[0].transpose || 0)}</span>
-                    <Button compact title="A semitone up" variant="secondary" on:click={() => transposeClips(1)}>+1
-                    </Button>
-                    <Button compact title="An octave up" variant="secondary" on:click={() => transposeClips(12)}>+12
-                    </Button>
-                    <Button compact title="Back to the written pitch" variant="secondary" on:click={resetClipTranspose}>
-                        0
-                    </Button>
-                    <span class="tip">(or Alt + wheel)</span>
-                </div>
-            {/if}
-        </div>
-    </div>
-    <div class="playlist-scroll">
-        <div class="corner frozen-corner">
-            <div class="corner-actions">
-                <button aria-label="Add track" onclick={addTrack} title="Add track">
-                    <i class="fa fa-plus"></i>
-                </button>
-                <button
-                        class="auto-add"
-                        aria-label="Add automation lane"
-                        onclick={openAddAuto}
-                        title="Add automation lane">
-                    <i class="fa fa-wave-square"></i>
-                </button>
-            </div>
-        </div>
-        <div style="max-width: {viewportWidth}px;" class="timeline-viewport">
-            <div
-                    style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
-                    class="timeline"
-                    oncontextmenu={preventDefault(bubble('contextmenu'))}
-                    onmousedown={handleTimelineMouseDown}>
-                {#each visibleBars as bar (bar.start)}
-                    <div
-                            style="left: {bar.start * cellWidth}px; width: {(bar.end - bar.start) * cellWidth}px;"
-                            class="time-marker"
-                            title={`Bar ${bar.bar} · ${bar.numerator}/${bar.denominator} · step ${bar.start}`}>
-                        {bar.bar}
-                    </div>
-                {/each}
-                {#if loopRect}
-                    <div
-                            style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
-                            class="loop-band"></div>
-                {/if}
-            </div>
-        </div>
-        <div class="conductor-row">
-            <Conductor
-                    {cellWidth}
-                    {scrollLeft}
-                    {totalLength}
-                    {viewportWidth}/>
-        </div>
-        <div class="frozen-track-labels">
-            <div style="transform: translateY(-{scrollTop}px);" class="track-labels">
-                {#if dragInsertionRow !== null}
-                    <div style="top: {rowBoundaryTop(dragInsertionRow)}px;" class="drop-indicator"></div>
-                {/if}
-                <div class="track-divider top-track-divider">
-                    <button
-                            class="track-insert"
-                            aria-label="Insert track"
-                            onclick={stopPropagation(() => insertTrack(0))}
-                            ondblclick={stopPropagation(bubble('dblclick'))}
-                            ondragover={preventDefault(() => dragInsertionRow = 0)}
-                            onmousedown={stopPropagation(bubble('mousedown'))}
-                            title="Insert track at the top"><i class="fa fa-plus"></i></button>
-                </div>
-                {#each arrangerRows as row, rowIndex}
-                    {#if row.kind === 'track'}
-                        {@const t = row.trackIndex}
-                        {@const track = $project!.tracks[t]}
-                        <div class="track-row">
-                            {#if t > 0}
-                                <div class="track-divider">
-                                    <button
-                                            class="track-insert"
-                                            aria-label="Insert track"
-                                            onclick={stopPropagation(() => insertTrack(t))}
-                                            ondblclick={stopPropagation(bubble('dblclick'))}
-                                            onmousedown={stopPropagation(bubble('mousedown'))}
-                                            title="Insert track here"><i class="fa fa-plus"></i>
-                                    </button>
-                                </div>
-                            {/if}
-                            <div
-                                    style="height: {cellHeight}px; border-left: 4px solid {track.color}"
-                                    class="track-label"
-                                    class:dragging={draggingTrack === t}
-                                    class:silent={laneSilent[t]}
-                                    draggable="true"
-                                    ondblclick={() => editTrack(t)}
-                                    ondragend={clearDragState}
-                                    ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
-                                    ondragstart={(event) => startTrackDrag(event as DragEvent, t)}
-                                    ondrop={(event) => dropTrack(event as DragEvent, t)}
-                                    title="Double click to rename, Right click for color; drag to reorder">
-                                <div
-                                        class="track-name"
-                                        oncontextmenu={stopPropagation(preventDefault(() => changeTrackColor(t)))}>{track.name}</div>
-                                <button
-                                        class="ms"
-                                        class:on={track.mute}
-                                        aria-label="Mute lane"
-                                        onclick={stopPropagation(() => toggleTrackMute(t))}
-                                        ondblclick={stopPropagation(bubble('dblclick'))}
-                                        onmousedown={stopPropagation(bubble('mousedown'))}
-                                        title="Mute lane"><i class="fa fa-volume-xmark"></i></button>
-                                <button
-                                        class="ms solo"
-                                        class:on={track.solo}
-                                        aria-label="Solo lane"
-                                        onclick={stopPropagation(() => toggleTrackSolo(t))}
-                                        ondblclick={stopPropagation(bubble('dblclick'))}
-                                        onmousedown={stopPropagation(bubble('mousedown'))}
-                                        title="Solo lane"><i class="fa fa-headphones"></i></button>
-                                <button
-                                        class="ms remove-track"
-                                        aria-label="Remove track"
-                                        disabled={$project!.tracks.length <= 1}
-                                        onclick={stopPropagation(() => requestRemoveTrack(t))}
-                                        ondblclick={stopPropagation(bubble('dblclick'))}
-                                        onmousedown={stopPropagation(bubble('mousedown'))}
-                                        title="Remove track"><i class="fa fa-trash"></i></button>
-                            </div>
-                        </div>
-                    {/if}
-                    {#if row.kind === 'automation'}
-                        {@const lane = row.lane}
-                        <div
-                                style="height: {LANE_H}px; border-left: 4px solid {laneColor($project!, lane)}"
-                                class="auto-label track-label"
-                                draggable="true"
-                                ondragend={clearDragState}
-                                ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
-                                ondragstart={(event) => startAutomationDrag(event as DragEvent, lane)}
-                                ondrop={stopPropagation((event) => dropAutomationLane(event as DragEvent, lane))}
-                                title="{laneTitle($project!, lane)} — click the curve to add a point, drag to move, right-click a point to remove">
-                            <div class="auto-name" title={laneTitle($project!, lane)}>
-                                <span class="auto-target">{laneTargetTitle($project!, lane)}</span>
-                                <span class="auto-param">{autoParamDef(lane)?.label || lane.param}</span>
-                            </div>
-                            <div
-                                    class="auto-val"
-                                    class:live={$playing}
-                                    title="Value at the playhead">{laneValueLabel(lane, autoStep)}</div>
-                            <button
-                                    class="ms remove-track"
-                                    aria-label="Remove automation lane"
-                                    onclick={stopPropagation(() => requestRemoveAutoLane(lane))}
-                                    onmousedown={stopPropagation(bubble('mousedown'))}
-                                    title="Remove this automation lane"><i class="fa fa-trash"></i></button>
-                        </div>
-                    {/if}
-                {/each}
-            </div>
-        </div>
-        <div
-                bind:this={playlistEl}
-                class="grid-viewport"
-                oncontextmenu={preventDefault(bubble('contextmenu'))}
-                onmousedown={handlePlaylistMouseDown}
-                onscroll={syncFrozenPanes}
-                onwheel={handleWheel}
-                bind:clientWidth={viewportWidth}>
-            <div
-                    style="width: {totalLength * cellWidth}px; height: {gridHeight}px; --cell-width: {cellWidth}px;"
-                    class="grid-container">
-                {#if dragInsertionRow !== null}
-                    <div style="top: {rowBoundaryTop(dragInsertionRow)}px;" class="drop-indicator"></div>
-                {/if}
-                <div class="grid-bg">
-                    {#each arrangerRows as row}
-                        {#if row.kind === 'track'}
-                            {@const t = row.trackIndex}
-                            <div
-                                    style="height: {cellHeight}px;"
-                                    class="grid-row"
-                                    class:silent={laneSilent[t]}
-                                    onmousedown={(e) => {
-                                        const s_raw = (e.clientX - e.currentTarget.getBoundingClientRect().left) / cellWidth;
-                                        handleMouseDown(e, t, s_raw);
-                                    }}>
-                            </div>
-                        {:else}
-                            {@const lane = row.lane}
-                            {@const def = autoParamDef(lane)}
-                            {#if def}
-                                <AutomationLane
-                                        canEdit={shouldEditAutomation(selectedClips.length > 0)}
-                                        {cellWidth}
-                                        color={laneColor($project!, lane)}
-                                        {def}
-                                        editorKey={`automation:${lane.id}`}
-                                        hasSelectedPoint={!!selectedAutomationPoint}
-                                        height={LANE_H}
-                                        {lane}
-                                        onblocked={clearSelection}
-                                        onselect={point => selectAutomationPoint(lane, point)}
-                                        selectedPoint={selectedAutomationPoint?.laneId === lane.id ? selectedAutomationPoint.point : null}
-                                        width={totalLength * cellWidth}
-                                        bind:contextualEditor/>
-                            {/if}
-                        {/if}
-                    {/each}
-                </div>
-
-                {#each visibleBars as bar (bar.start)}
-                    <div style="left: {bar.start * cellWidth}px;" class="bar-line"></div>
-                {/each}
-
-                <div class="clips-layer">
-                    {#if selectionRect}
-                        <div
-                                style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
-                                class="selection-rect"></div>
-                    {/if}
-                    {#each $project!.arrangement as clip (clip.id)}
-                        <div
-                                style="left: {clip.start * cellWidth}px; width: {clip.len * cellWidth}px; top: {rowTopForTrack(clip.track) + 2}px; height: {cellHeight - 4}px; background: {getPatternColor(clip.patternId)}"
-                                class="clip"
-                                class:open-pattern={clip.patternId === $selPatId}
-                                class:selected={clip.selected}
-                                class:silent={laneSilent[clip.track]}
-                                ondblclick={() => $selPatId = clip.patternId}
-                                onmousedown={stopPropagation((e) => {
-                                    const mouseEvent = e as MouseEvent;
-                                    const rect = (mouseEvent.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
-                                    const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
-                                    handleMouseDown(mouseEvent, clip.track, s_raw);
-                                })}>
-                            <div class="clip-name">{getPatternName(clip.patternId)}</div>
-                            {#if clip.transpose}
-                                <div
-                                        class="clip-transpose"
-                                        title="Transposed by {clip.transpose} semitones">{semiLabel(clip.transpose)}</div>
-                            {/if}
-                            <div class="clip-preview">
-                                {#each getPatternNotes(clip.patternId, clip.len) as n}
-                                    <div
-                                            style="left: {(n.start / (clip.len || 1)) * 100}%;
-                                                width: {(n.len / (clip.len || 1)) * 100}%;
-                                                top: {n.y * 60 + 25}%;
-                                                height: 2px;"
-                                            class="preview-note"></div>
-                                {/each}
-                            </div>
-                            <div
-                                    style="width: {Math.min(clip.len * cellWidth, Math.max(8, cellWidth * 0.2))}px"
-                                    class="resize-handle"></div>
-                        </div>
-                    {/each}
-                </div>
-
-                {#if loopRect}
-                    <div
-                            style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
-                            class="loop-overlay"></div>
-                {/if}
-
-                <div style="left: {$songCursor * cellWidth}px" class="song-cursor"></div>
-                {#if $playing && $playMode === 'song'}
-                    <div style="left: {$curStep * cellWidth}px" class="playhead"></div>
-                {/if}
-            </div>
-        </div>
-    </div>
-    <div class="playlist-footer">
-        <div class="tip">Click an empty lane to clear the selection, then click again to place the selected pattern •
-            Add tracks or automation above the track names • MMB drag to pan • Right-click to remove • Timeline: click =
-            cursor, drag = loop, right-click = clear loop
-        </div>
-    </div>
-</div>
-
-<Dialog title="Add Automation Lane" width="720px" bind:show={showAddAuto}>
-    {#if $project}
-        <AutomationPicker onadd={addAutoLane} project={$project}/>
-    {/if}
-</Dialog>
-<Prompt
-        label="New Name"
-        title="Rename Track"
-        bind:show={showRenameTrack}
-        bind:value={renameTrackValue}
-        on:submit={onRenameTrack}/>
-<Dialog title="Track Color" bind:show={showTrackColor}>
-    {#if editingTrackIdx !== null}
-        <ColorPicker value={$project!.tracks[editingTrackIdx].color} on:change={onTrackColorChange}/>
-    {/if}
-</Dialog>
-<Confirm
-        confirmLabel="Remove track"
-        destructive
-        message="This track has clips. Removing it will permanently remove those clips."
-        title="Remove Track"
-        bind:show={showRemoveTrack}
-        on:confirm={removeTrack}/>
-<Confirm
-        confirmLabel="Remove lane"
-        destructive
-        message="Removing this lane will permanently remove all of its automation points."
-        title="Remove Automation Lane"
-        bind:show={showRemoveAutoLane}
-        on:confirm={removeAutoLane}/>

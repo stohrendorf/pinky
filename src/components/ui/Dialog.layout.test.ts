@@ -1,12 +1,6 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    describe, expect, it
-} from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const dialog = readFileSync(fileURLToPath(new URL('./Dialog.svelte', import.meta.url)), 'utf8');
 

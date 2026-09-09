@@ -1,25 +1,22 @@
-import {
-    describe, expect, it, vi
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-    createExportEta, formatStageEta
-} from './export-eta';
+import { createExportEta, formatStageEta } from './export-eta';
 
 function fixture() {
     let time = 0;
     const estimator = createExportEta(() => time);
     return {
-        estimator, sample: (at: number, progress: number | null, stage = 'rendering') => {
+        estimator,
+        sample: (at: number, progress: number | null, stage = 'rendering') => {
             time = at;
             return estimator.update(stage, progress);
-        }
+        },
     };
 }
 
 describe('stage-local export ETA', () => {
     it('waits for at least a second and meaningful observed progress', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         expect(sample(0, 0)).toBeNull();
         expect(sample(500, 0.002)).toBeNull();
         expect(sample(999, 0.005)).toBeNull();
@@ -28,7 +25,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('produces finite decreasing estimates for monotone frames at a steady speed', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         const totalFrames = 4410000;
         expect(sample(0, 0)).toBeNull();
         let previous = Infinity;
@@ -46,7 +43,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('smooths speed changes rather than using the latest interval alone', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         sample(0, 0);
         expect(sample(1000, 0.1)).toBeCloseTo(9);
         const faster = sample(2000, 0.3)!;
@@ -58,7 +55,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('resets warmup and speed for encoding and for a new export', () => {
-        const {sample, estimator} = fixture();
+        const { sample, estimator } = fixture();
         sample(0, 0);
         expect(sample(1000, 0.1)).toBeCloseTo(9);
         expect(sample(1100, 0, 'encoding')).toBeNull();
@@ -71,7 +68,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('never infers progress or counts down an ETA from elapsed time alone', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         expect(sample(0, null)).toBeNull();
         expect(sample(60000, null)).toBeNull();
         expect(sample(61000, 0)).toBeNull();
@@ -85,7 +82,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('needs a second sample even if the first frame count arrives late', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         expect(sample(0, null)).toBeNull();
         expect(sample(20000, 0.5)).toBeNull();
         expect(sample(20500, 0.6)).toBeNull();
@@ -93,7 +90,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('does not show an ETA for very short stages or completed work', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         expect(sample(0, 0)).toBeNull();
         expect(sample(100, 0.5)).toBeNull();
         expect(sample(200, 1)).toBeNull();
@@ -101,7 +98,7 @@ describe('stage-local export ETA', () => {
     });
 
     it('rejects invalid inputs and starts fresh after regressing frames or timestamps', () => {
-        const {sample} = fixture();
+        const { sample } = fixture();
         for (const progress of [NaN, Infinity, -Infinity, -0.1, 1.1]) {
             expect(sample(1000, progress)).toBeNull();
         }
@@ -129,12 +126,21 @@ describe('stage-local export ETA', () => {
 
 describe('stage ETA formatting', () => {
     it.each<[number, string]>([
-        [0, '1 s'], [3.4, '3 s'], [12, '10 s'], [58, '1 min'], [125, '2 min'], [3590, '1 h'], [7500, '2 h']
+        [0, '1 s'],
+        [3.4, '3 s'],
+        [12, '10 s'],
+        [58, '1 min'],
+        [125, '2 min'],
+        [3590, '1 h'],
+        [7500, '2 h'],
     ])('formats %s seconds as a short approximate stage duration', (seconds, duration) => {
         expect(formatStageEta(seconds)).toBe(`Approx. ${duration} left in this stage`);
     });
 
-    it.each([null, undefined, NaN, Infinity, -1])('hides unavailable or invalid estimates (%s)', seconds => {
-        expect(formatStageEta(seconds)).toBeNull();
-    });
+    it.each([null, undefined, NaN, Infinity, -1])(
+        'hides unavailable or invalid estimates (%s)',
+        seconds => {
+            expect(formatStageEta(seconds)).toBeNull();
+        },
+    );
 });

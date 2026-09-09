@@ -1,10 +1,6 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-    clampPartialLevel
-} from './instruments';
+import { clampPartialLevel } from './instruments';
 
 describe('clampPartialLevel', () => {
     it('rounds manually typed levels to the partial precision', () => {

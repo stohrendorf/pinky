@@ -1,17 +1,9 @@
 <script lang="ts">
-    import type {
-        NamedTreeItem
-    } from '../lib/name-tree';
-    import type {
-        Instrument
-    } from '../lib/types';
+    import type { NamedTreeItem } from '../lib/name-tree';
+    import type { Instrument } from '../lib/types';
 
-    import {
-        createInstrument
-    } from '../lib/instruments';
-    import {
-        project, selInstId, touch
-    } from '../lib/project';
+    import { createInstrument } from '../lib/instruments';
+    import { project, selInstId, touch } from '../lib/project';
     import Confirm from './ui/Confirm.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
@@ -20,24 +12,24 @@
         onEdit?: () => void;
     }
 
-    const {
-        onEdit = () => {
-        }
-    }: Props = $props();
+    const { onEdit = () => {} }: Props = $props();
     let showRename = $state(false);
     let showDelete = $state(false);
     let renameValue = $state('');
     let target: Instrument | undefined = $state();
 
     const itemActions = [
-        {id: 'edit', label: 'Edit instrument', icon: 'fa-sliders'},
-        {id: 'rename', label: 'Rename', icon: 'fa-pencil'},
-        {id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark'},
-        {id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones'},
-        {id: 'delete', label: 'Delete', icon: 'fa-trash'}
+        { id: 'edit', label: 'Edit instrument', icon: 'fa-sliders' },
+        { id: 'rename', label: 'Rename', icon: 'fa-pencil' },
+        { id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark' },
+        { id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones' },
+        { id: 'delete', label: 'Delete', icon: 'fa-trash' },
     ];
 
-    const selected = $derived(($project?.instruments.find(i => i.id === $selInstId) || $project?.instruments[0]) as Instrument);
+    const selected = $derived(
+        ($project?.instruments.find(i => i.id === $selInstId) ||
+            $project?.instruments[0]) as Instrument,
+    );
 
     function choose(item: NamedTreeItem): Instrument | null {
         const instrument = $project?.instruments.find(candidate => candidate.id === item.id);
@@ -157,40 +149,44 @@
 
 <div class="instrument-tree-panel">
     <TreeView
-            folderActions={[{id: 'rename', label: 'Rename folder', icon: 'fa-pencil'}]}
-            itemActions={itemActions}
-            items={$project?.instruments ?? []}
-            onaction={action}
-            onfolderaction={folderAction}
-            onmute={toggleMute}
-            onselect={id => selInstId.set(id)}
-            onsolo={toggleSolo}
-            selectedId={selected?.id}
-            showMuteSolo={true}
-            title="Instruments">
+        folderActions={[{ id: 'rename', label: 'Rename folder', icon: 'fa-pencil' }]}
+        {itemActions}
+        items={$project?.instruments ?? []}
+        onaction={action}
+        onfolderaction={folderAction}
+        onmute={toggleMute}
+        onselect={id => selInstId.set(id)}
+        onsolo={toggleSolo}
+        selectedId={selected?.id}
+        showMuteSolo={true}
+        title="Instruments"
+    >
         {#snippet headerActions()}
             <button
-                    class="header-add"
-                    aria-label="New instrument"
-                    onclick={add}
-                    title="New instrument"
-                    type="button"><i class="fa fa-add"></i></button>
+                class="header-add"
+                aria-label="New instrument"
+                onclick={add}
+                title="New instrument"
+                type="button"><i class="fa fa-add"></i></button
+            >
         {/snippet}
     </TreeView>
 </div>
 <Prompt
-        label="New Name"
-        title={folderToRename ? 'Rename Folder' : 'Rename Instrument'}
-        bind:show={showRename}
-        bind:value={renameValue}
-        on:submit={submitRename}/>
+    label="New Name"
+    title={folderToRename ? 'Rename Folder' : 'Rename Instrument'}
+    bind:show={showRename}
+    bind:value={renameValue}
+    on:submit={submitRename}
+/>
 <Confirm
-        confirmLabel="Delete instrument"
-        destructive
-        message={`Delete "${target?.name}"? Notes using it will be removed.`}
-        title="Delete Instrument"
-        bind:show={showDelete}
-        on:confirm={remove}/>
+    confirmLabel="Delete instrument"
+    destructive
+    message={`Delete "${target?.name}"? Notes using it will be removed.`}
+    title="Delete Instrument"
+    bind:show={showDelete}
+    on:confirm={remove}
+/>
 
 <style>
     .instrument-tree-panel {

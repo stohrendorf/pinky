@@ -1,7 +1,5 @@
 <script lang="ts">
-    import type {
-        MixerBus, MixerChannel
-    } from '../lib/mixer';
+    import type { MixerBus, MixerChannel } from '../lib/mixer';
 
     import MixerFader from './MixerFader.svelte';
 
@@ -21,7 +19,8 @@
 
     // Props must keep following project edits, history and live meters.
     // eslint-disable-next-line prefer-const
-    let {channel, name, kind, selected, outputs, peak, rms, onselect, onedit, id, color}: Props = $props();
+    let { channel, name, kind, selected, outputs, peak, rms, onselect, onedit, id, color }: Props =
+        $props();
 
     function level(value: number): string {
         return value > 0 ? (20 * Math.log10(value)).toFixed(1) : '−∞';
@@ -34,72 +33,91 @@
         }
         const min = key === 'pan' ? -1 : 0;
         const max = key === 'volume' ? 2 : 1;
-        onedit(c => c[key] = Math.max(min, Math.min(max, value)));
+        onedit(c => (c[key] = Math.max(min, Math.min(max, value))));
     }
 </script>
 
 <section
-        style:--strip-color={color}
-        class="strip"
-        class:bus={kind !== 'Instrument'}
-        class:delay-return={kind === 'Delay return'}
-        class:muted={channel.mute}
-        class:selected
-        aria-label={`${name} ${kind}`}>
+    style:--strip-color={color}
+    class="strip"
+    class:bus={kind !== 'Instrument'}
+    class:delay-return={kind === 'Delay return'}
+    class:muted={channel.mute}
+    class:selected
+    aria-label={`${name} ${kind}`}
+>
     <button
-            class="strip-heading"
-            aria-controls="mixer-details"
-            aria-expanded={selected}
-            aria-label={`${name} settings`}
-            data-strip={id}
-            onclick={onselect}
-            title={name}
-            type="button">
+        class="strip-heading"
+        aria-controls="mixer-details"
+        aria-expanded={selected}
+        aria-label={`${name} settings`}
+        data-strip={id}
+        onclick={onselect}
+        title={name}
+        type="button"
+    >
         <span class="kind">{kind}</span>
         <strong title={name}>{name.split('/').at(-1) || name}</strong>
         <span class="edit-hint" aria-hidden="true">···</span>
     </button>
     <label class="pan">
-        <span>Pan <output>{channel.pan === 0 ? 'C' : `${channel.pan < 0 ? 'L' : 'R'} ${Math.round(Math.abs(channel.pan) * 100)}`}</output></span>
+        <span
+            >Pan <output
+                >{channel.pan === 0
+                    ? 'C'
+                    : `${channel.pan < 0 ? 'L' : 'R'} ${Math.round(Math.abs(channel.pan) * 100)}`}</output
+            ></span
+        >
         <input
-                aria-label={`${name} pan`}
-                aria-valuetext={channel.pan === 0 ? 'Center' : `${Math.round(Math.abs(channel.pan) * 100)}% ${channel.pan < 0 ? 'left' : 'right'}`}
-                max="1"
-                min="-1"
-                oninput={e => changeNumber(e.currentTarget, 'pan')}
-                step="0.01"
-                type="range"
-                value={channel.pan}>
+            aria-label={`${name} pan`}
+            aria-valuetext={channel.pan === 0
+                ? 'Center'
+                : `${Math.round(Math.abs(channel.pan) * 100)}% ${channel.pan < 0 ? 'left' : 'right'}`}
+            max="1"
+            min="-1"
+            oninput={e => changeNumber(e.currentTarget, 'pan')}
+            step="0.01"
+            type="range"
+            value={channel.pan}
+        />
     </label>
     <div class="switches">
         <button
-                class="channel-toggle"
-                class:active={channel.mute}
-                aria-label={`Mute ${name}`}
-                aria-pressed={channel.mute}
-                onclick={() => onedit(c => c.mute = !c.mute)}
-                title="Mute — effect tails decay"
-                type="button"><i class="fa fa-volume-xmark" aria-hidden="true"></i>
+            class="channel-toggle"
+            class:active={channel.mute}
+            aria-label={`Mute ${name}`}
+            aria-pressed={channel.mute}
+            onclick={() => onedit(c => (c.mute = !c.mute))}
+            title="Mute — effect tails decay"
+            type="button"
+            ><i class="fa fa-volume-xmark" aria-hidden="true"></i>
         </button>
         <button
-                class="channel-toggle"
-                class:active={channel.solo}
-                aria-label={`Solo ${name}`}
-                aria-pressed={channel.solo}
-                onclick={() => onedit(c => c.solo = !c.solo)}
-                title="Solo — includes contributing sources and sends"
-                type="button"><i class="fa fa-headphones" aria-hidden="true"></i>
+            class="channel-toggle"
+            class:active={channel.solo}
+            aria-label={`Solo ${name}`}
+            aria-pressed={channel.solo}
+            onclick={() => onedit(c => (c.solo = !c.solo))}
+            title="Solo — includes contributing sources and sends"
+            type="button"
+            ><i class="fa fa-headphones" aria-hidden="true"></i>
         </button>
     </div>
     <div class="channel-level" title={`Peak ${level(peak)} dBFS · RMS ${level(rms)} dBFS`}>
-        <MixerFader {name} onchange={value => onedit(c => c.volume = value)} peaks={[peak]} value={channel.volume}/>
+        <MixerFader
+            {name}
+            onchange={value => onedit(c => (c.volume = value))}
+            peaks={[peak]}
+            value={channel.volume}
+        />
     </div>
     <button
-            class="route"
-            aria-label={`${name} routing and effects`}
-            onclick={onselect}
-            title={`Output: ${outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}`}
-            type="button">
+        class="route"
+        aria-label={`${name} routing and effects`}
+        onclick={onselect}
+        title={`Output: ${outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}`}
+        type="button"
+    >
         Out → {outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}
     </button>
 </section>
@@ -197,7 +215,7 @@
     }
 
     .channel-toggle.active,
-    .channel-toggle[aria-pressed=true] {
+    .channel-toggle[aria-pressed='true'] {
         background: var(--accent);
         color: var(--action-text);
         border-color: var(--accent);
@@ -234,10 +252,11 @@
     }
 
     .muted .channel-level {
-        opacity: .45;
+        opacity: 0.45;
     }
 
-    button:focus-visible, input:focus-visible {
+    button:focus-visible,
+    input:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
     }

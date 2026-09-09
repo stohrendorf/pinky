@@ -20,7 +20,7 @@ export interface MasterControlsOptions {
     rampTo: (param: AudioParam, value: number, at: number, duration: number, from?: number) => void;
 }
 
-const EPSILON: Record<MasterId, number> = {vol: 0.004, rev: 0.004, tilt: 0.05};
+const EPSILON: Record<MasterId, number> = { vol: 0.004, rev: 0.004, tilt: 0.05 };
 
 const isMasterId = (id: string): id is MasterId => id === 'vol' || id === 'rev' || id === 'tilt';
 
@@ -73,7 +73,7 @@ export class MasterControls {
         const targets = this.targets();
         return {
             vol: targets ? targets.volume.value : this.values.vol,
-            tilt: targets ? targets.tiltHigh.value : this.values.tilt
+            tilt: targets ? targets.tiltHigh.value : this.values.tilt,
         };
     }
 

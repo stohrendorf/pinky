@@ -33,11 +33,14 @@ export interface NameTreeItemEntry<T extends NamedTreeItem> {
 export type NameTreeEntry<T extends NamedTreeItem> = NameTreeFolderEntry | NameTreeItemEntry<T>;
 
 function pathParts(name: string): string[] {
-    return name.split('/').map(part => part.trim()).filter(Boolean);
+    return name
+        .split('/')
+        .map(part => part.trim())
+        .filter(Boolean);
 }
 
 function createFolder<T extends NamedTreeItem>(label: string, path: string): NameTreeFolder<T> {
-    return {label, path, folders: [], items: []};
+    return { label, path, folders: [], items: [] };
 }
 
 export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEntry<T>[] {
@@ -62,7 +65,8 @@ export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEn
     }
 
     const entries: NameTreeEntry<T>[] = [];
-    const countItems = (folder: NameTreeFolder<T>): number => folder.items.length + folder.folders.reduce((total, child) => total + countItems(child), 0);
+    const countItems = (folder: NameTreeFolder<T>): number =>
+        folder.items.length + folder.folders.reduce((total, child) => total + countItems(child), 0);
     const visit = (folder: NameTreeFolder<T>, depth: number, ancestors: string[]) => {
         for (const child of folder.folders) {
             entries.push({
@@ -71,7 +75,7 @@ export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEn
                 path: child.path,
                 depth,
                 ancestors,
-                itemCount: countItems(child)
+                itemCount: countItems(child),
             });
             visit(child, depth + 1, [...ancestors, child.path]);
         }
@@ -82,7 +86,7 @@ export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEn
                 item,
                 label: parts.pop() || 'Untitled',
                 depth,
-                ancestors
+                ancestors,
             });
         }
     };

@@ -1,9 +1,11 @@
-import {
-    describe, expect, it
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-    componentMarkup, componentSource, elements, hasAttribute, styleRules
+    componentMarkup,
+    componentSource,
+    elements,
+    hasAttribute,
+    styleRules,
 } from '../test/svelte-semantics';
 
 const preview = componentSource(new URL('./FilterPreview.svelte', import.meta.url));
@@ -11,7 +13,9 @@ const preview = componentSource(new URL('./FilterPreview.svelte', import.meta.ur
 describe('FilterPreview', () => {
     it('uses a dense response curve so narrow resonances remain visible', () => {
         const svg = elements(componentMarkup(preview), 'svg')[0];
-        const response = elements(componentMarkup(preview), 'path').find(node => hasAttribute(node, 'class', 'response'));
+        const response = elements(componentMarkup(preview), 'path').find(node =>
+            hasAttribute(node, 'class', 'response'),
+        );
 
         expect(svg).toBeDefined();
         expect(hasAttribute(svg, 'role', 'img')).toBe(true);
@@ -26,7 +30,9 @@ describe('FilterPreview', () => {
     });
 
     it('scales the plotted response to its measured range instead of clipping quiet values', () => {
-        const response = elements(componentMarkup(preview), 'path').find(node => hasAttribute(node, 'class', 'response'));
+        const response = elements(componentMarkup(preview), 'path').find(node =>
+            hasAttribute(node, 'class', 'response'),
+        );
 
         expect(response).toBeDefined();
         expect(hasAttribute(response!, 'd')).toBe(true);
@@ -37,7 +43,9 @@ describe('FilterPreview', () => {
     });
 
     it('keeps its input props reactive so parameter changes redraw the curve immediately', () => {
-        const previewRoot = elements(componentMarkup(preview), 'section').find(node => hasAttribute(node, 'class', 'filter-preview'));
+        const previewRoot = elements(componentMarkup(preview), 'section').find(node =>
+            hasAttribute(node, 'class', 'filter-preview'),
+        );
 
         expect(previewRoot).toBeDefined();
         expect(hasAttribute(previewRoot!, 'aria-label', 'Filter response preview')).toBe(true);

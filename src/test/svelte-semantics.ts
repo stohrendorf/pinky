@@ -1,18 +1,8 @@
-import {
-    readFileSync
-} from 'node:fs';
-import {
-    fileURLToPath
-} from 'node:url';
-import {
-    runInNewContext
-} from 'node:vm';
-import {
-    parse
-} from 'svelte/compiler';
-import {
-    ScriptTarget, transpileModule
-} from 'typescript';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
+import { parse } from 'svelte/compiler';
+import { ScriptTarget, transpileModule } from 'typescript';
 
 interface Node {
     alternate?: Fragment | null;
@@ -37,7 +27,7 @@ interface Fragment {
 interface Attribute {
     name: string;
     type: string;
-    value?: {data?: string; expression?: unknown; type: string}[] | true;
+    value?: { data?: string; expression?: unknown; type: string }[] | true;
 }
 
 export function componentSource(url: URL): string {
@@ -45,7 +35,7 @@ export function componentSource(url: URL): string {
 }
 
 export function componentMarkup(source: string): Node[] {
-    return parse(source, {modern: true}).fragment.nodes as Node[];
+    return parse(source, { modern: true }).fragment.nodes as Node[];
 }
 
 export function elements(nodes: Node[], name: string): Node[] {
@@ -61,23 +51,32 @@ export function eachBlocks(nodes: Node[]): Node[] {
 }
 
 export function hasAttribute(node: Node, name: string, value?: string): boolean {
-    const attribute = node.attributes?.find(candidate => candidate.type === 'Attribute' && candidate.name === name);
+    const attribute = node.attributes?.find(
+        candidate => candidate.type === 'Attribute' && candidate.name === name,
+    );
     if (!attribute) {
         return false;
     }
     if (value === undefined) {
         return true;
     }
-    return attribute.value !== true && attribute.value?.some(part => part.type === 'Text' && part.data === value) === true;
+    return (
+        attribute.value !== true &&
+        attribute.value?.some(part => part.type === 'Text' && part.data === value) === true
+    );
 }
 
 export function textContent(node: Node): string {
-    return walk([node]).flatMap(current => current.type === 'Text' ? [current] : [])
-        .map(text => (text as {data?: string}).data ?? '').join('').replace(/\s+/g, ' ').trim();
+    return walk([node])
+        .flatMap(current => (current.type === 'Text' ? [current] : []))
+        .map(text => (text as { data?: string }).data ?? '')
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 export function styleRules(source: string): Map<string, Map<string, string>> {
-    const stylesheet = parse(source, {modern: true}).css;
+    const stylesheet = parse(source, { modern: true }).css;
     const rules = new Map<string, Map<string, string>>();
     for (const child of stylesheet?.children ?? []) {
         if (child.type !== 'Rule') {
@@ -94,47 +93,92 @@ export function styleRules(source: string): Map<string, Map<string, string>> {
     return rules;
 }
 
-export function functionHasAssignment(source: string, functionName: string, identifier: string): boolean {
-    const script = parse(source, {modern: true}).instance?.content;
-    const declaration = astNodes(script).find(node => node.type === 'FunctionDeclaration'
-        && isAstNode(node.id) && node.id.name === functionName);
+export function functionHasAssignment(
+    source: string,
+    functionName: string,
+    identifier: string,
+): boolean {
+    const script = parse(source, { modern: true }).instance?.content;
+    const declaration = astNodes(script).find(
+        node =>
+            node.type === 'FunctionDeclaration' &&
+            isAstNode(node.id) &&
+            node.id.name === functionName,
+    );
 
-    return astNodes(declaration).some(node => node.type === 'AssignmentExpression'
-        && isAstNode(node.left) && node.left.type === 'Identifier' && node.left.name === identifier);
+    return astNodes(declaration).some(
+        node =>
+            node.type === 'AssignmentExpression' &&
+            isAstNode(node.left) &&
+            node.left.type === 'Identifier' &&
+            node.left.name === identifier,
+    );
 }
 
 export function functionHasCall(source: string, functionName: string, calleeName: string): boolean {
-    const script = parse(source, {modern: true}).instance?.content;
-    const declaration = astNodes(script).find(node => node.type === 'FunctionDeclaration'
-        && isAstNode(node.id) && node.id.name === functionName);
+    const script = parse(source, { modern: true }).instance?.content;
+    const declaration = astNodes(script).find(
+        node =>
+            node.type === 'FunctionDeclaration' &&
+            isAstNode(node.id) &&
+            node.id.name === functionName,
+    );
 
-    return astNodes(declaration).some(node => node.type === 'CallExpression'
-        && isAstNode(node.callee) && node.callee.type === 'Identifier' && node.callee.name === calleeName);
+    return astNodes(declaration).some(
+        node =>
+            node.type === 'CallExpression' &&
+            isAstNode(node.callee) &&
+            node.callee.type === 'Identifier' &&
+            node.callee.name === calleeName,
+    );
 }
 
 export function componentFunction<T>(source: string, functionName: string, scope: object): T {
-    const script = parse(source, {modern: true}).instance?.content;
-    const declaration = astNodes(script).find(node => node.type === 'FunctionDeclaration'
-        && isAstNode(node.id) && node.id.name === functionName);
-    if (!declaration || typeof declaration.start !== 'number' || typeof declaration.end !== 'number') {
+    const script = parse(source, { modern: true }).instance?.content;
+    const declaration = astNodes(script).find(
+        node =>
+            node.type === 'FunctionDeclaration' &&
+            isAstNode(node.id) &&
+            node.id.name === functionName,
+    );
+    if (
+        !declaration ||
+        typeof declaration.start !== 'number' ||
+        typeof declaration.end !== 'number'
+    ) {
         throw new Error(`No function named ${functionName} was found`);
     }
     const js = transpileModule(source.slice(declaration.start, declaration.end), {
-        compilerOptions: {target: ScriptTarget.ES2022}
+        compilerOptions: { target: ScriptTarget.ES2022 },
     }).outputText;
     return runInNewContext(`${js}\n${functionName}`, scope) as T;
 }
 
-export function ifConditionForElement(source: string, name: string, className: string): {identifiers: string[]; strings: string[]} | null {
-    const conditional = walk(componentMarkup(source)).find(node => node.type === 'IfBlock'
-        && elements(node.consequent?.nodes ?? [], name).some(element => hasAttribute(element, 'class', className)));
+export function ifConditionForElement(
+    source: string,
+    name: string,
+    className: string,
+): { identifiers: string[]; strings: string[] } | null {
+    const conditional = walk(componentMarkup(source)).find(
+        node =>
+            node.type === 'IfBlock' &&
+            elements(node.consequent?.nodes ?? [], name).some(element =>
+                hasAttribute(element, 'class', className),
+            ),
+    );
     if (!conditional || !isAstNode(conditional.test)) {
         return null;
     }
     const expressions = astNodes(conditional.test);
     return {
-        identifiers: expressions.filter(node => node.type === 'Identifier').map(node => node.name).filter((name): name is string => typeof name === 'string'),
-        strings: expressions.filter(node => node.type === 'Literal').map(node => node.value).filter((value): value is string => typeof value === 'string')
+        identifiers: expressions
+            .filter(node => node.type === 'Identifier')
+            .map(node => node.name)
+            .filter((name): name is string => typeof name === 'string'),
+        strings: expressions
+            .filter(node => node.type === 'Literal')
+            .map(node => node.value)
+            .filter((value): value is string => typeof value === 'string'),
     };
 }
 
@@ -152,7 +196,7 @@ function childNodes(node: Node): Node[] {
         ...(node.fallback?.nodes ?? []),
         ...(node.pending?.nodes ?? []),
         ...(node.then?.nodes ?? []),
-        ...(node.catch?.nodes ?? [])
+        ...(node.catch?.nodes ?? []),
     ];
 }
 
