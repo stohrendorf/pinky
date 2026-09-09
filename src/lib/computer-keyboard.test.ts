@@ -3,7 +3,13 @@ import {
 } from 'vitest';
 
 import {
-    bindingForCode, COMPUTER_KEY_BINDINGS, computerKeySource, HeldNoteSources, learnKeyboardLabel, MAX_PREVIEW_OCTAVE, MIN_PREVIEW_OCTAVE
+    bindingForCode,
+    COMPUTER_KEY_BINDINGS,
+    computerKeySource,
+    HeldNoteSources,
+    learnKeyboardLabel,
+    MAX_PREVIEW_OCTAVE,
+    MIN_PREVIEW_OCTAVE
 } from './computer-keyboard';
 
 describe('computer keyboard preview mapping', () => {
@@ -30,7 +36,9 @@ describe('computer keyboard preview mapping', () => {
         const labels: Record<string, string> = {};
         for (const binding of COMPUTER_KEY_BINDINGS) {
             const mapped = bindingForCode(binding.code, 5);
-            if (mapped) {labels[mapped.note] = binding.character;}
+            if (mapped) {
+                labels[mapped.note] = binding.character;
+            }
         }
         expect(labels.C5).toBe('z');
         expect(labels['C#5']).toBe('s');

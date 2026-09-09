@@ -6,6 +6,7 @@ import type {
     Instrument, Pattern
 } from './types';
 
+import * as engine from './engine';
 import {
     DEFAULT_PARAMS
 } from './instruments';
@@ -18,8 +19,6 @@ vi.mock('./engine', () => ({
     noteOffAt: vi.fn(),
     noteOnAt: vi.fn()
 }));
-
-import * as engine from './engine';
 
 const lead: Instrument = {
     id: 'lead',

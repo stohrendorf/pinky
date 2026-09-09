@@ -49,10 +49,10 @@
 
 <div class="tree-select" class:minimal class:open>
     <button
-class="tree-trigger"
-aria-expanded={open}
-aria-haspopup="tree"
-aria-label={ariaLabel}
+            class="tree-trigger"
+            aria-expanded={open}
+            aria-haspopup="tree"
+            aria-label={ariaLabel}
             onclick={() => open = !open}
             type="button">
         {#if selected?.color}
@@ -64,20 +64,20 @@ aria-label={ariaLabel}
 
     {#if open}
         <div
-class="tree-menu"
-aria-label={ariaLabel}
-onkeydown={handleKeydown}
-role="tree"
-tabindex="-1">
+                class="tree-menu"
+                aria-label={ariaLabel}
+                onkeydown={handleKeydown}
+                role="tree"
+                tabindex="-1">
             {#each visibleEntries as entry (entry.kind === 'folder' ? `folder-${entry.path}` : entry.item.id)}
                 {#if entry.kind === 'folder'}
                     <button
-style="--indent: {entry.depth * 18}px"
-class="tree-row folder-row"
-aria-expanded={!collapsedPaths.has(entry.path)}
-aria-level={entry.depth + 1}
+                            style="--indent: {entry.depth * 18}px"
+                            class="tree-row folder-row"
+                            aria-expanded={!collapsedPaths.has(entry.path)}
+                            aria-level={entry.depth + 1}
                             aria-selected="false"
-onclick={() => toggleFolder(entry.path)}
+                            onclick={() => toggleFolder(entry.path)}
                             role="treeitem"
                             type="button">
                         <i class="fa fa-chevron-{collapsedPaths.has(entry.path) ? 'right' : 'down'}"></i>
@@ -86,12 +86,12 @@ onclick={() => toggleFolder(entry.path)}
                     </button>
                 {:else}
                     <button
-style="--indent: {entry.depth * 18}px"
-class="tree-row item-row"
-class:selected={entry.item.id === selected?.id}
+                            style="--indent: {entry.depth * 18}px"
+                            class="tree-row item-row"
+                            class:selected={entry.item.id === selected?.id}
                             aria-level={entry.depth + 1}
                             aria-selected={entry.item.id === selected?.id}
-onclick={() => choose(entry.item.id)}
+                            onclick={() => choose(entry.item.id)}
                             role="treeitem"
                             type="button">
                         {#if entry.item.color}

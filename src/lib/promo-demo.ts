@@ -71,17 +71,44 @@ const COLOR: Record<PromoPart, string> = {
  * values *are* those faders: each part was rendered solo through the real
  * engine (`node promo/bounce.mjs --measure`) and its gain set so that the same
  * 99th-percentile 50 ms RMS lands on the same target. */
-const harmonic = (count: number, falloff: number): PartialSpec[] => genPartials({shape: 'Harmonic', count, falloff, stretch: 0});
+const harmonic = (count: number, falloff: number): PartialSpec[] => genPartials({
+    shape: 'Harmonic',
+    count,
+    falloff,
+    stretch: 0
+});
 const CHOIR: PartialSpec[] = [1, 0.5, 0.33, 0.24, 0.18, 0.13].map((level, index) => ({ratio: index + 1, level}));
-const SOPRANO: PartialSpec[] = [1, 0.6, 0.42, 0.3, 0.22, 0.16, 0.12, 0.09].map((level, index) => ({ratio: index + 1, level}));
+const SOPRANO: PartialSpec[] = [1, 0.6, 0.42, 0.3, 0.22, 0.16, 0.12, 0.09].map((level, index) => ({
+    ratio: index + 1,
+    level
+}));
 
 const instrument = (part: PromoPart, name: string, params: Partial<InstrumentParams>): Instrument =>
     ({id: PROMO_ID[part], name, color: COLOR[part], params: ensurePartials({...DEFAULT_PARAMS, ...params})});
 
 function buildInstruments(): Instrument[] {
     return [
-        instrument('air', 'FX/Air', {tone: 0, noise: 1, noiseFreq: 2200, att: 2.6, dec: 0.5, sus: 1, rel: 2, gain: 0.03}),
-        instrument('sub', 'Bass/Sub', {q: 30, harm: 2, falloff: 0.5, partials: harmonic(2, 0.5), att: 1.2, dec: 0.3, sus: 1, rel: 0.6, gain: 0.82}),
+        instrument('air', 'FX/Air', {
+            tone: 0,
+            noise: 1,
+            noiseFreq: 2200,
+            att: 2.6,
+            dec: 0.5,
+            sus: 1,
+            rel: 2,
+            gain: 0.03
+        }),
+        instrument('sub', 'Bass/Sub', {
+            q: 30,
+            harm: 2,
+            falloff: 0.5,
+            partials: harmonic(2, 0.5),
+            att: 1.2,
+            dec: 0.3,
+            sus: 1,
+            rel: 0.6,
+            gain: 0.82
+        }),
         instrument('boom', 'Percussion/Boom', {
             q: 8, harm: 1, partials: harmonic(1, 1), pitchDrop: 26, pitchTime: 0.09, noise: 0.12, noiseFreq: 3200,
             att: 0.002, dec: 0.55, sus: 0, rel: 0.5, gain: 0.56
@@ -98,38 +125,153 @@ function buildInstruments(): Instrument[] {
             tone: 0.15, q: 5, harm: 1, partials: harmonic(1, 1), noise: 1, noiseFreq: 1800,
             att: 0.004, dec: 0.12, sus: 0, rel: 0.15, gain: 0.16
         }),
-        instrument('hat', 'Drums/Hi-Hat', {tone: 0, noise: 1, noiseFreq: 9500, att: 0.002, dec: 0.05, sus: 0, rel: 0.05, gain: 0.11}),
-        instrument('ohat', 'Drums/Open Hat', {tone: 0, noise: 1, noiseFreq: 8500, att: 0.002, dec: 0.3, sus: 0, rel: 0.3, gain: 0.06}),
-        instrument('bass', 'Bass/Pulse', {q: 25, harm: 3, falloff: 0.5, partials: harmonic(3, 0.5), att: 0.005, dec: 0.25, sus: 0.6, rel: 0.15, gain: 0.55}),
+        instrument('hat', 'Drums/Hi-Hat', {
+            tone: 0,
+            noise: 1,
+            noiseFreq: 9500,
+            att: 0.002,
+            dec: 0.05,
+            sus: 0,
+            rel: 0.05,
+            gain: 0.11
+        }),
+        instrument('ohat', 'Drums/Open Hat', {
+            tone: 0,
+            noise: 1,
+            noiseFreq: 8500,
+            att: 0.002,
+            dec: 0.3,
+            sus: 0,
+            rel: 0.3,
+            gain: 0.06
+        }),
+        instrument('bass', 'Bass/Pulse', {
+            q: 25,
+            harm: 3,
+            falloff: 0.5,
+            partials: harmonic(3, 0.5),
+            att: 0.005,
+            dec: 0.25,
+            sus: 0.6,
+            rel: 0.15,
+            gain: 0.55
+        }),
         instrument('pad', 'Vocals/Choir (oo)', {
-            tone: 0.82, q: 36, harm: 6, falloff: 0.6, partials: CHOIR, formant: 0.85, f1: 350, f2: 800, f3: 2600, formantQ: 2.8,
-            vib: 12, vibRate: 4.6, vibDelay: 0.6, voices: 4, detune: 18, att: 0.45, dec: 0.6, sus: 0.9, rel: 1.1, gain: 0.22
+            tone: 0.82,
+            q: 36,
+            harm: 6,
+            falloff: 0.6,
+            partials: CHOIR,
+            formant: 0.85,
+            f1: 350,
+            f2: 800,
+            f3: 2600,
+            formantQ: 2.8,
+            vib: 12,
+            vibRate: 4.6,
+            vibDelay: 0.6,
+            voices: 4,
+            detune: 18,
+            att: 0.45,
+            dec: 0.6,
+            sus: 0.9,
+            rel: 1.1,
+            gain: 0.22
         }),
         instrument('strings', 'Orchestra/Strings', {
             q: 35, harm: 8, falloff: 0.75, partials: harmonic(8, 0.75), voices: 5, detune: 26,
             att: 0.25, dec: 0.8, sus: 0.9, rel: 1.2, gain: 0.07
         }),
-        instrument('pluck', 'Synth/Pluck', {q: 60, harm: 5, falloff: 0.55, partials: harmonic(5, 0.55), att: 0.003, dec: 0.28, sus: 0.12, rel: 0.35, gain: 0.47}),
+        instrument('pluck', 'Synth/Pluck', {
+            q: 60,
+            harm: 5,
+            falloff: 0.55,
+            partials: harmonic(5, 0.55),
+            att: 0.003,
+            dec: 0.28,
+            sus: 0.12,
+            rel: 0.35,
+            gain: 0.47
+        }),
         instrument('lead', 'Synth/Lead (saw)', {
-            q: 45, harmShape: 'Saw / Reed', harm: 6, falloff: 1, partials: genPartials({shape: 'Saw / Reed', count: 6, falloff: 1, stretch: 0}),
-            voices: 3, detune: 14, att: 0.02, dec: 0.3, sus: 0.7, rel: 0.3, gain: 0.4
+            q: 45,
+            harmShape: 'Saw / Reed',
+            harm: 6,
+            falloff: 1,
+            partials: genPartials({shape: 'Saw / Reed', count: 6, falloff: 1, stretch: 0}),
+            voices: 3,
+            detune: 14,
+            att: 0.02,
+            dec: 0.3,
+            sus: 0.7,
+            rel: 0.3,
+            gain: 0.4
         }),
         instrument('voice', 'Vocals/Soprano (ah)', {
-            tone: 0.95, q: 42, harm: 8, falloff: 0.7, partials: SOPRANO, formant: 0.9, f1: 800, f2: 1150, f3: 2900, formantQ: 3.2,
-            vib: 34, vibRate: 5.6, vibDelay: 0.4, noise: 0.03, noiseFreq: 3800, voices: 2, detune: 9,
-            att: 0.09, dec: 0.3, sus: 0.85, rel: 0.45, gain: 0.48
+            tone: 0.95,
+            q: 42,
+            harm: 8,
+            falloff: 0.7,
+            partials: SOPRANO,
+            formant: 0.9,
+            f1: 800,
+            f2: 1150,
+            f3: 2900,
+            formantQ: 3.2,
+            vib: 34,
+            vibRate: 5.6,
+            vibDelay: 0.4,
+            noise: 0.03,
+            noiseFreq: 3800,
+            voices: 2,
+            detune: 9,
+            att: 0.09,
+            dec: 0.3,
+            sus: 0.85,
+            rel: 0.45,
+            gain: 0.48
         }),
         instrument('bell', 'Percussion/Bell', {
-            q: 80, harmShape: 'Bell partials', harm: 8, falloff: 1, partials: genPartials({shape: 'Bell partials', count: 8, falloff: 1, stretch: 0}),
-            att: 0.002, dec: 1.4, sus: 0, rel: 1.6, gain: 0.8
+            q: 80,
+            harmShape: 'Bell partials',
+            harm: 8,
+            falloff: 1,
+            partials: genPartials({shape: 'Bell partials', count: 8, falloff: 1, stretch: 0}),
+            att: 0.002,
+            dec: 1.4,
+            sus: 0,
+            rel: 1.6,
+            gain: 0.8
         }),
         instrument('impact', 'FX/Impact', {
-            q: 6, harm: 1, partials: harmonic(1, 1), pitchDrop: 30, pitchTime: 0.28, noise: 0.5, noiseFreq: 1500, noiseBend: 1,
-            att: 0.002, dec: 1.1, sus: 0, rel: 1.6, gain: 0.84
+            q: 6,
+            harm: 1,
+            partials: harmonic(1, 1),
+            pitchDrop: 30,
+            pitchTime: 0.28,
+            noise: 0.5,
+            noiseFreq: 1500,
+            noiseBend: 1,
+            att: 0.002,
+            dec: 1.1,
+            sus: 0,
+            rel: 1.6,
+            gain: 0.84
         }),
         instrument('riser', 'FX/Riser', {
-            q: 30, harm: 1, partials: harmonic(1, 1), noise: 0.35, noiseFreq: 3500, pitchDrop: -24, pitchTime: 4.6, noiseBend: 1,
-            att: 0.6, dec: 0.3, sus: 1, rel: 0.4, gain: 0.11
+            q: 30,
+            harm: 1,
+            partials: harmonic(1, 1),
+            noise: 0.35,
+            noiseFreq: 3500,
+            pitchDrop: -24,
+            pitchTime: 4.6,
+            noiseBend: 1,
+            att: 0.6,
+            dec: 0.3,
+            sus: 1,
+            rel: 0.4,
+            gain: 0.11
         })
     ];
 }
@@ -193,14 +335,18 @@ class Score {
     n(part: PromoPart, pitch: string, bar: number, step: number, len: number, vel = 1): void {
         const at = bar * BAR + step;
         const section = SECTIONS.find(s => at >= s.start && at < s.start + s.len);
-        if (!section) {throw new Error(`promo: step ${at} is outside of the song`);}
+        if (!section) {
+            throw new Error(`promo: step ${at} is outside of the song`);
+        }
         const notes = this.tracks.get(section) || {};
         (notes[part] ||= []).push({pitch, start: at - section.start, len, vel});
         this.tracks.set(section, notes);
     }
 
     chord(part: PromoPart, name: ChordName, bar: number, step: number, len: number, vel = 1, octave = 0): void {
-        for (const pitch of CHORDS[name]) {this.n(part, up(pitch, octave), bar, step, len, vel);}
+        for (const pitch of CHORDS[name]) {
+            this.n(part, up(pitch, octave), bar, step, len, vel);
+        }
     }
 
     kick(bar: number, step: number, vel = 1): void {
@@ -244,7 +390,9 @@ function compose(): Score {
     s.chord('pad', 'Dm', 4, 0, 32, 1);
     s.n('riser', 'D4', 4, 2, 30, 0.9);
     s.n('sub', 'D3', 4, 0, 32, 1);
-    for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', 5, st, 1, st % 4 === 0 ? 0.85 : 0.55);}
+    for (let st = 0; st < 16; st += 2) {
+        s.n('hat', 'A6', 5, st, 1, st % 4 === 0 ? 0.85 : 0.55);
+    }
     s.kick(5, 8, 0.7);
     s.kick(5, 14, 0.8);
 
@@ -253,15 +401,21 @@ function compose(): Score {
     progression.forEach((ch, i) => {
         const bar = 6 + i;
         s.chord('pad', ch, bar, 0, 16, 0.9);
-        if (i >= 4) {s.chord('strings', ch, bar, 0, 16, 0.8, 1);}
+        if (i >= 4) {
+            s.chord('strings', ch, bar, 0, 16, 0.8, 1);
+        }
         for (const st of [0, 3, 6, 8, 11, 14]) {
             s.n('bass', ROOTS[ch], bar, st, st % 8 === 0 ? 2 : 1.5, st % 8 === 0 ? 1 : 0.75);
         }
         ARPS[ch].forEach((pitch, k) => s.n('pluck', pitch, bar, k * 2, 1.5, k % 2 === 0 ? 1 : 0.8));
-        for (const st of i % 2 === 0 ? [0, 6, 8] : [0, 8, 10]) {s.kick(bar, st, st % 8 === 0 ? 1 : 0.85);}
+        for (const st of i % 2 === 0 ? [0, 6, 8] : [0, 8, 10]) {
+            s.kick(bar, st, st % 8 === 0 ? 1 : 0.85);
+        }
         s.snare(bar, 4, 0.9);
         s.snare(bar, 12, 1);
-        for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', bar, st, 1, st % 4 === 0 ? 0.85 : 0.5);}
+        for (let st = 0; st < 16; st += 2) {
+            s.n('hat', 'A6', bar, st, 1, st % 4 === 0 ? 0.85 : 0.5);
+        }
         s.n('ohat', 'A6', bar, 14, 2, 0.8);
     });
     // a lead motif over the second half of the groove
@@ -271,16 +425,24 @@ function compose(): Score {
         [12, 0, 'F6', 3], [12, 4, 'G6', 2], [12, 6, 'A6', 2], [12, 8, 'G6', 6],
         [13, 0, 'F6', 4], [13, 4, 'E6', 3], [13, 8, 'D6', 8]
     ];
-    for (const [bar, st, pitch, len] of motif) {s.n('lead', pitch, bar, st, len, 0.9);}
+    for (const [bar, st, pitch, len] of motif) {
+        s.n('lead', pitch, bar, st, len, 0.9);
+    }
 
     // bars 14-15: the break — the floor drops away, then the roll and the riser
     s.boom(14, 0, 1);
     s.chord('pad', 'Dm', 14, 0, 32, 1);
     s.n('sub', 'D3', 14, 0, 32, 1);
     s.n('riser', 'D4', 14, 2, 30, 1);
-    for (let st = 0; st < 16; st += 2) {s.n('hat', 'A6', 14, st, 1, 0.5);}
-    for (let st = 0; st < 8; st += 2) {s.n('snare', 'D4', 15, st, 1, 0.55 + st * 0.04);}
-    for (let st = 8; st < 16; st++) {s.n('snare', 'D4', 15, st, 1, 0.7 + (st - 8) * 0.04);}
+    for (let st = 0; st < 16; st += 2) {
+        s.n('hat', 'A6', 14, st, 1, 0.5);
+    }
+    for (let st = 0; st < 8; st += 2) {
+        s.n('snare', 'D4', 15, st, 1, 0.55 + st * 0.04);
+    }
+    for (let st = 8; st < 16; st++) {
+        s.n('snare', 'D4', 15, st, 1, 0.7 + (st - 8) * 0.04);
+    }
     s.n('lead', 'D6', 14, 0, 8, 0.8);
     s.n('lead', 'A5', 14, 8, 8, 0.7);
 
@@ -289,16 +451,22 @@ function compose(): Score {
         const bar = 16 + i;
         s.chord('pad', ch, bar, 0, 16, 1);
         s.chord('strings', ch, bar, 0, 16, 1, 1);
-        for (let st = 0; st < 16; st += 2) {s.n('bass', ROOTS[ch], bar, st, 1.5, st % 4 === 0 ? 1 : 0.8);}
+        for (let st = 0; st < 16; st += 2) {
+            s.n('bass', ROOTS[ch], bar, st, 1.5, st % 4 === 0 ? 1 : 0.8);
+        }
         ARPS[ch].forEach((pitch, k) => {
             s.n('pluck', pitch, bar, k * 2, 1.5, 0.9);
             s.n('pluck', pitch, bar, k * 2 + 1, 1, 0.5);
         });
-        for (const st of [0, 4, 8, 12]) {s.kick(bar, st, 1);}
+        for (const st of [0, 4, 8, 12]) {
+            s.kick(bar, st, 1);
+        }
         s.kick(bar, 14, 0.8);
         s.snare(bar, 4, 1);
         s.snare(bar, 12, 1);
-        for (let st = 0; st < 16; st++) {s.n('hat', 'A6', bar, st, 1, 0.45 + (st % 4 === 0 ? 0.4 : 0) + (st % 2 === 0 ? 0.15 : 0));}
+        for (let st = 0; st < 16; st++) {
+            s.n('hat', 'A6', bar, st, 1, 0.45 + (st % 4 === 0 ? 0.4 : 0) + (st % 2 === 0 ? 0.15 : 0));
+        }
         s.n('ohat', 'A6', bar, 14, 2, 0.9);
     });
     const aria: [number, number, string, number][] = [
@@ -306,7 +474,9 @@ function compose(): Score {
         [17, 0, 'E6', 4], [17, 4, 'D6', 4], [17, 8, 'C6', 4], [17, 12, 'D6', 4],
         [18, 0, 'F6', 6], [18, 6, 'E6', 2], [18, 8, 'D6', 8]
     ];
-    for (const [bar, st, pitch, len] of aria) {s.n('voice', pitch, bar, st, len, 1);}
+    for (const [bar, st, pitch, len] of aria) {
+        s.n('voice', pitch, bar, st, len, 1);
+    }
 
     // bar 19: the last hit, ringing out
     s.impact(19, 0, 1);
@@ -320,8 +490,13 @@ function compose(): Score {
 /* ---- the arrangement ----
  * Every section is split over the production lanes below, so that each part
  * of the mix is its own editable clip in the arranger. */
-const LANES: {name: string; label: string; color: string; parts: PromoPart[]}[] = [
-    {name: '01 FX & Impacts', label: 'FX & Impacts', color: '#7ed6df', parts: ['air', 'boom', 'bell', 'impact', 'riser']},
+const LANES: { name: string; label: string; color: string; parts: PromoPart[] }[] = [
+    {
+        name: '01 FX & Impacts',
+        label: 'FX & Impacts',
+        color: '#7ed6df',
+        parts: ['air', 'boom', 'bell', 'impact', 'riser']
+    },
     {name: '02 Drums', label: 'Drums', color: '#ff9f43', parts: ['kick', 'snare', 'clap', 'hat', 'ohat']},
     {name: '03 Low End', label: 'Low End', color: '#10ac84', parts: ['sub', 'bass']},
     {name: '04 Harmony', label: 'Harmony', color: '#a29bfe', parts: ['pad', 'strings']},
@@ -346,7 +521,9 @@ export function buildPromoDemo(): Project {
     const arrangement = SECTIONS.flatMap(section => LANES.flatMap((lane, track) => {
         const notes = score.tracks.get(section) || {};
         const tracks = Object.fromEntries(lane.parts.filter(part => notes[part]?.length).map(part => [PROMO_ID[part], notes[part]!]));
-        if (!Object.keys(tracks).length) {return [];}
+        if (!Object.keys(tracks).length) {
+            return [];
+        }
         const pat: Pattern = {
             id: `1c02ba01-71ab-435d-9337-1450f257${(4001 + patterns.length).toString().padStart(4, '0')}`,
             name: `${section.name} — ${lane.label}`,
@@ -377,12 +554,14 @@ export function buildPromoDemo(): Project {
             // the trailer arc: whisper (-11 dB), swell (-6), and the title hit opens
             // the master up; the break drops it 3 dB until the climax hits. FULL is
             // where the master limiter catches the climax at its -1 dBFS ceiling.
-            {id: MASTER_VOL_LANE, target: 'master', param: 'vol', points: [
-                {step: 0, value: dB(FULL, -11), curve: 'hold'}, {step: 32, value: dB(FULL, -6), curve: 'ease-in'},
-                {step: 63, value: dB(FULL, -3), curve: 'hold'}, {step: 64, value: FULL},
-                {step: 224, value: FULL, curve: 'ease-out'}, {step: 226, value: dB(FULL, -3), curve: 'hold'},
-                {step: 255, value: dB(FULL, -3), curve: 'hold'}, {step: 256, value: FULL}
-            ]},
+            {
+                id: MASTER_VOL_LANE, target: 'master', param: 'vol', points: [
+                    {step: 0, value: dB(FULL, -11), curve: 'hold'}, {step: 32, value: dB(FULL, -6), curve: 'ease-in'},
+                    {step: 63, value: dB(FULL, -3), curve: 'hold'}, {step: 64, value: FULL},
+                    {step: 224, value: FULL, curve: 'ease-out'}, {step: 226, value: dB(FULL, -3), curve: 'hold'},
+                    {step: 255, value: dB(FULL, -3), curve: 'hold'}, {step: 256, value: FULL}
+                ]
+            },
             // the video's reverb: a 28 % wet mix of the engine's 2.2 s burst
             {id: MASTER_REV_LANE, target: 'master', param: 'rev', points: [{step: 0, value: 0.74, curve: 'hold'}]}
         ],

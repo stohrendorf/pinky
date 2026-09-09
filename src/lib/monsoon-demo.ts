@@ -1,5 +1,14 @@
 import type {
-    ArrangementClip, AutomationLane, AutomationPoint, CurveShape, Instrument, InstrumentParams, Note, Pattern, Project, Track
+    ArrangementClip,
+    AutomationLane,
+    AutomationPoint,
+    CurveShape,
+    Instrument,
+    InstrumentParams,
+    Note,
+    Pattern,
+    Project,
+    Track
 } from './types';
 
 import {
@@ -84,14 +93,29 @@ const COLOR = {
 };
 
 const TRACK = {
-    weather: 0, taiko: 1, ground: 2, gender: 3, pemade: 4, jublag: 5, shakuhachi: 6, duduk: 7, khoomei: 8, strings: 9, bowl: 10
+    weather: 0,
+    taiko: 1,
+    ground: 2,
+    gender: 3,
+    pemade: 4,
+    jublag: 5,
+    shakuhachi: 6,
+    duduk: 7,
+    khoomei: 8,
+    strings: 9,
+    bowl: 10
 } as const;
 const TRACK_NAMES = [
     'Weather', 'Taiko & Kendang', 'Gong & Sub', 'Gendér', 'Gendér Pemade', 'Jublag', 'Shakuhachi', 'Duduk', 'Khoomei', 'Kora & Handpan', 'Singing Bowl'
 ];
 const TRACK_COLORS = ['#8395a7', '#ee5253', '#c8a951', '#48dbfb', '#0abde3', '#1dd1a1', '#a29bfe', '#e056fd', '#5f27cd', '#10ac84', '#feca57'];
 
-const notes = (...items: NoteSpec[]): Note[] => items.map(([pitch, start, len = 1, vel = 0.8]) => ({pitch, start, len, vel}));
+const notes = (...items: NoteSpec[]): Note[] => items.map(([pitch, start, len = 1, vel = 0.8]) => ({
+    pitch,
+    start,
+    len,
+    vel
+}));
 const pattern = (id: string, name: string, steps: number, color: string, tracks: TrackNotes): Pattern => ({
     id,
     name,
@@ -121,14 +145,20 @@ const legato = (patterns: Pattern[], patternId: string, instrumentId: string, fr
 /* Kotekan: one sixteenth-note stream split between two players. The polos
  * takes the on-beats, the sangsih the off-beats, and both strike together on
  * the stressed first note of each half — heard as one line, panned wide. */
-const kotekan = (stream: (string | null)[]): {polos: NoteSpec[]; sangsih: NoteSpec[]} => {
+const kotekan = (stream: (string | null)[]): { polos: NoteSpec[]; sangsih: NoteSpec[] } => {
     const polos: NoteSpec[] = [], sangsih: NoteSpec[] = [];
     stream.forEach((pitch, step) => {
-        if (!pitch) {return;}
+        if (!pitch) {
+            return;
+        }
         const stressed = step % 16 === 0;
         const vel = stressed ? 0.92 : step % 4 === 0 ? 0.78 : 0.58;
-        if (step % 2 === 0 || stressed) {polos.push([pitch, step, 1, vel]);}
-        if (step % 2 === 1 || stressed) {sangsih.push([pitch, step, 1, stressed ? 0.8 : vel]);}
+        if (step % 2 === 0 || stressed) {
+            polos.push([pitch, step, 1, vel]);
+        }
+        if (step % 2 === 1 || stressed) {
+            sangsih.push([pitch, step, 1, stressed ? 0.8 : vel]);
+        }
     });
     return {polos, sangsih};
 };
@@ -190,15 +220,30 @@ function buildInstruments(): Instrument[] {
             att: 0.002, dec: 0.22, sus: 0, rel: 0.15, gain: 0.6, pan: -0.25
         }),
         instrument(ID.ceng, 'Percussion/Ceng-ceng', COLOR.ceng, {
-            tone: 0.35, q: 12, partials: [{ratio: 1, level: 1}, {ratio: 1.41, level: 0.8}, {ratio: 2.24, level: 0.7}, {ratio: 2.83, level: 0.6}],
-            noise: 1, noiseFreq: 6500, att: 0.002, dec: 0.12, sus: 0, rel: 0.15, gain: 0.2, pan: 0.2
+            tone: 0.35,
+            q: 12,
+            partials: [{ratio: 1, level: 1}, {ratio: 1.41, level: 0.8}, {ratio: 2.24, level: 0.7}, {
+                ratio: 2.83,
+                level: 0.6
+            }],
+            noise: 1,
+            noiseFreq: 6500,
+            att: 0.002,
+            dec: 0.12,
+            sus: 0,
+            rel: 0.15,
+            gain: 0.2,
+            pan: 0.2
         }),
         // Gong ageng: two ranks 30 cents apart beat at ~1.3 Hz — the ombak. q 12
         // so that the 73 Hz fundamental blooms in half a second, not in three.
         // (A lane widens the detune towards the storm: the beat speeds up.)
         instrument(ID.gong, 'Percussion/Tuned/Gong Ageng', COLOR.gong, {
             tone: 1, q: 12,
-            partials: [{ratio: 1, level: 1}, {ratio: 2.02, level: 0.55}, {ratio: 2.94, level: 0.3}, {ratio: 4.1, level: 0.15}, {ratio: 5.6, level: 0.08}],
+            partials: [{ratio: 1, level: 1}, {ratio: 2.02, level: 0.55}, {ratio: 2.94, level: 0.3}, {
+                ratio: 4.1,
+                level: 0.15
+            }, {ratio: 5.6, level: 0.08}],
             voices: 2, detune: 30, att: 0.01, dec: 3, sus: 0.35, rel: 3.5, gain: 0.6
         }),
         // Gendér: free-bar modes 1 : 2.76 : 5.4, paired tuning as a slight
@@ -233,15 +278,35 @@ function buildInstruments(): Instrument[] {
         // Shakuhachi: breath as a wide band, an upward scoop into every note,
         // late wide vibrato and a loose mouth resonance around the tube
         instrument(ID.shakuhachi, 'Winds/Shakuhachi', COLOR.shakuhachi, {
-            tone: 1, q: 22, partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.35}, {ratio: 3, level: 0.2}, {ratio: 4, level: 0.08}],
-            noise: 0.2, noiseFreq: 3000, formant: 0.35, f1: 800, f2: 1700, f3: 3300, formantQ: 2,
-            vib: 22, vibRate: 4.6, vibDelay: 0.5, pitchDrop: -2, pitchTime: 0.14,
-            att: 0.09, dec: 0.4, sus: 0.8, rel: 0.4, gain: 0.6, pan: 0.2
+            tone: 1,
+            q: 22,
+            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.35}, {ratio: 3, level: 0.2}, {ratio: 4, level: 0.08}],
+            noise: 0.2,
+            noiseFreq: 3000,
+            formant: 0.35,
+            f1: 800,
+            f2: 1700,
+            f3: 3300,
+            formantQ: 2,
+            vib: 22,
+            vibRate: 4.6,
+            vibDelay: 0.5,
+            pitchDrop: -2,
+            pitchTime: 0.14,
+            att: 0.09,
+            dec: 0.4,
+            sus: 0.8,
+            rel: 0.4,
+            gain: 0.6,
+            pan: 0.2
         }),
         // Duduk: a reed's full harmonic series under a dark, nasal formant set
         instrument(ID.duduk, 'Winds/Duduk', COLOR.duduk, {
             tone: 1, q: 30,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.8}, {ratio: 3, level: 0.65}, {ratio: 4, level: 0.5}, {ratio: 5, level: 0.4}, {ratio: 6, level: 0.3}, {ratio: 7, level: 0.22}, {ratio: 8, level: 0.16}],
+            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.8}, {ratio: 3, level: 0.65}, {
+                ratio: 4,
+                level: 0.5
+            }, {ratio: 5, level: 0.4}, {ratio: 6, level: 0.3}, {ratio: 7, level: 0.22}, {ratio: 8, level: 0.16}],
             formant: 0.7, f1: 850, f2: 1350, f3: 2700, formantQ: 3.5, vib: 14, vibRate: 5, vibDelay: 0.45,
             att: 0.07, dec: 0.5, sus: 0.85, rel: 0.35, gain: 0.6
         }),
@@ -251,14 +316,20 @@ function buildInstruments(): Instrument[] {
         // on f1 moves the jaw between lower harmonics along with it
         instrument(ID.khoomei, 'Vocals/Khoomei Drone', COLOR.khoomei, {
             tone: 1, q: 26,
-            partials: [1, 0.9, 0.85, 0.8, 0.8, 0.78, 0.76, 0.74, 0.72, 0.7, 0.66, 0.62].map((level, index) => ({ratio: index + 1, level})),
+            partials: [1, 0.9, 0.85, 0.8, 0.8, 0.78, 0.76, 0.74, 0.72, 0.7, 0.66, 0.62].map((level, index) => ({
+                ratio: index + 1,
+                level
+            })),
             formant: 1, f1: overtone(3), f2: overtone(8), f3: 2600, formantQ: 16, vib: 6, vibRate: 5.2, vibDelay: 1.2,
             att: 0.35, dec: 0.6, sus: 1, rel: 0.9, gain: 0.45
         }),
         // Kora: a harp-lute — bright plucked harmonics plus the faint buzz of its bridge
         instrument(ID.kora, 'Strings/Kora', COLOR.kora, {
             tone: 1, q: 55,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.75}, {ratio: 3, level: 0.5}, {ratio: 4, level: 0.35}, {ratio: 5, level: 0.22}, {ratio: 6, level: 0.12}],
+            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.75}, {ratio: 3, level: 0.5}, {
+                ratio: 4,
+                level: 0.35
+            }, {ratio: 5, level: 0.22}, {ratio: 6, level: 0.12}],
             noise: 0.06, noiseFreq: 5000, att: 0.002, dec: 0.5, sus: 0.04, rel: 0.35, gain: 0.75, pan: 0.3
         }),
         instrument(ID.sub, 'Bass/Bronze Sub', COLOR.sub, {
@@ -294,22 +365,58 @@ function overtone(harmonic: number, root: string = DRONE): number {
 }
 
 const P = {
-    rain: uuid(2, 1), prayer: uuid(2, 2), ground: uuid(2, 3), thunder: uuid(2, 4), turn: uuid(2, 5), drone: uuid(2, 6),
-    squall: uuid(2, 7), bowlDrift: uuid(2, 8),
-    kotekanOne: uuid(3, 1), kotekanTwo: uuid(3, 2), kendang: uuid(3, 3), call: uuid(3, 4), answer: uuid(3, 5),
-    pulse: uuid(3, 6), kendangBreak: uuid(3, 7), odaikoRoll: uuid(3, 8), pokokOne: uuid(3, 9), pokokTwo: uuid(3, 10),
-    taikoSeven: uuid(4, 1), genderSeven: uuid(4, 2), cascade: uuid(4, 3), groundSeven: uuid(4, 4), lament: uuid(4, 5),
-    droneSeven: uuid(4, 6), shakuhachiSeven: uuid(4, 7), fillSeven: uuid(4, 8), pokokSeven: uuid(4, 9),
-    stormTaiko: uuid(5, 1), stormKora: uuid(5, 2), stormKotekan: uuid(5, 3), stormGround: uuid(5, 4), theme: uuid(5, 5),
-    stormShakuhachi: uuid(5, 6), climb: uuid(5, 7), eye: uuid(5, 8), stormDrone: uuid(5, 9), finalHit: uuid(5, 10), hold: uuid(5, 11),
-    pokokStorm: uuid(5, 12), hemiola: uuid(5, 13), eyeSquall: uuid(5, 14)
+    rain: uuid(2, 1),
+    prayer: uuid(2, 2),
+    ground: uuid(2, 3),
+    thunder: uuid(2, 4),
+    turn: uuid(2, 5),
+    drone: uuid(2, 6),
+    squall: uuid(2, 7),
+    bowlDrift: uuid(2, 8),
+    kotekanOne: uuid(3, 1),
+    kotekanTwo: uuid(3, 2),
+    kendang: uuid(3, 3),
+    call: uuid(3, 4),
+    answer: uuid(3, 5),
+    pulse: uuid(3, 6),
+    kendangBreak: uuid(3, 7),
+    odaikoRoll: uuid(3, 8),
+    pokokOne: uuid(3, 9),
+    pokokTwo: uuid(3, 10),
+    taikoSeven: uuid(4, 1),
+    genderSeven: uuid(4, 2),
+    cascade: uuid(4, 3),
+    groundSeven: uuid(4, 4),
+    lament: uuid(4, 5),
+    droneSeven: uuid(4, 6),
+    shakuhachiSeven: uuid(4, 7),
+    fillSeven: uuid(4, 8),
+    pokokSeven: uuid(4, 9),
+    stormTaiko: uuid(5, 1),
+    stormKora: uuid(5, 2),
+    stormKotekan: uuid(5, 3),
+    stormGround: uuid(5, 4),
+    theme: uuid(5, 5),
+    stormShakuhachi: uuid(5, 6),
+    climb: uuid(5, 7),
+    eye: uuid(5, 8),
+    stormDrone: uuid(5, 9),
+    finalHit: uuid(5, 10),
+    hold: uuid(5, 11),
+    pokokStorm: uuid(5, 12),
+    hemiola: uuid(5, 13),
+    eyeSquall: uuid(5, 14)
 } as const;
 
 function buildPatterns(): Pattern[] {
-    const one = kotekan(STREAM_ONE), two = kotekan(STREAM_TWO), seven = kotekan(STREAM_SEVEN), storm = kotekan(STREAM_STORM);
+    const one = kotekan(STREAM_ONE), two = kotekan(STREAM_TWO), seven = kotekan(STREAM_SEVEN),
+        storm = kotekan(STREAM_STORM);
     const patterns = [
         pattern(P.rain, '01 Rain/rain wash', FOUR, COLOR.rain, {[ID.rain]: [['A5', 0, FOUR, 0.8]]}),
-        pattern(P.squall, '01 Rain/squall', FOUR, COLOR.wind, {[ID.rain]: [['A5', 0, FOUR, 0.8]], [ID.wind]: [['A4', 0, FOUR, 0.9]]}),
+        pattern(P.squall, '01 Rain/squall', FOUR, COLOR.wind, {
+            [ID.rain]: [['A5', 0, FOUR, 0.8]],
+            [ID.wind]: [['A4', 0, FOUR, 0.9]]
+        }),
         pattern(P.prayer, '01 Rain/handpan prayer', FOUR, COLOR.handpan, {
             [ID.handpan]: [['D5', 0, 4, 0.9], ['A5', 4, 4, 0.7], ['A#5', 8, 3, 0.75], ['A5', 11, 1, 0.5], ['G5', 12, 4, 0.7],
                 ['D5', 16, 4, 0.85], ['G5', 20, 4, 0.65], ['A5', 24, 8, 0.75], ['D6', 26, 6, 0.45]]
@@ -329,8 +436,14 @@ function buildPatterns(): Pattern[] {
         }),
         pattern(P.drone, '01 Rain/khoomei drone', FOUR, COLOR.khoomei, {[ID.khoomei]: [[DRONE, 0, FOUR, 0.9]]}),
 
-        pattern(P.kotekanOne, '02 Bronze/kotekan one', FOUR, COLOR.polos, {[ID.polos]: one.polos, [ID.sangsih]: one.sangsih}),
-        pattern(P.kotekanTwo, '02 Bronze/kotekan two', FOUR, COLOR.sangsih, {[ID.polos]: two.polos, [ID.sangsih]: two.sangsih}),
+        pattern(P.kotekanOne, '02 Bronze/kotekan one', FOUR, COLOR.polos, {
+            [ID.polos]: one.polos,
+            [ID.sangsih]: one.sangsih
+        }),
+        pattern(P.kotekanTwo, '02 Bronze/kotekan two', FOUR, COLOR.sangsih, {
+            [ID.polos]: two.polos,
+            [ID.sangsih]: two.sangsih
+        }),
         pattern(P.pokokOne, '02 Bronze/pokok one', FOUR, COLOR.jublag, {[ID.jublag]: pokok(STREAM_ONE, 4)}),
         pattern(P.pokokTwo, '02 Bronze/pokok two', FOUR, COLOR.jublag, {[ID.jublag]: pokok(STREAM_TWO, 4)}),
         pattern(P.kendang, '02 Bronze/kendang groove', FOUR, COLOR.kendang, {
@@ -365,7 +478,10 @@ function buildPatterns(): Pattern[] {
             [ID.shime]: hits('E5', [2, 4, 8, 12, 13, 16, 18, 22, 26, 27], step => [12, 26].includes(step) ? 0.7 : [13, 27].includes(step) ? 0.45 : 0.52),
             [ID.ceng]: hits('A6', odd(SEVEN), step => [5, 9, 19, 23].includes(step) ? 0.6 : 0.4)
         }),
-        pattern(P.genderSeven, '03 Seven Rains/gendér seven', SEVEN, COLOR.polos, {[ID.polos]: seven.polos, [ID.sangsih]: seven.sangsih}),
+        pattern(P.genderSeven, '03 Seven Rains/gendér seven', SEVEN, COLOR.polos, {
+            [ID.polos]: seven.polos,
+            [ID.sangsih]: seven.sangsih
+        }),
         pattern(P.pokokSeven, '03 Seven Rains/pokok seven', SEVEN, COLOR.jublag, {[ID.jublag]: pokok(STREAM_SEVEN, 7)}),
         pattern(P.cascade, '03 Seven Rains/kora cascade', SEVEN, COLOR.kora, {
             [ID.kora]: run(KORA_SEVEN, step => step % 7 === 0 ? 0.8 : step % 2 === 0 ? 0.55 : 0.48)
@@ -404,7 +520,10 @@ function buildPatterns(): Pattern[] {
         pattern(P.stormKora, '04 Storm/storm kora', FOUR, COLOR.kora, {
             [ID.kora]: run(KORA_STORM, step => step % 8 === 0 ? 0.8 : step % 2 === 0 ? 0.62 : 0.55)
         }),
-        pattern(P.stormKotekan, '04 Storm/storm kotekan', FOUR, COLOR.polos, {[ID.polos]: storm.polos, [ID.sangsih]: storm.sangsih}),
+        pattern(P.stormKotekan, '04 Storm/storm kotekan', FOUR, COLOR.polos, {
+            [ID.polos]: storm.polos,
+            [ID.sangsih]: storm.sangsih
+        }),
         pattern(P.pokokStorm, '04 Storm/pokok storm', FOUR, COLOR.jublag, {[ID.jublag]: pokok(STREAM_STORM, 8)}),
         // the ground is one sliding line: Bb glides into C, C into D
         pattern(P.stormGround, '04 Storm/storm ground', FOUR, COLOR.gong, {
@@ -462,12 +581,25 @@ function buildPatterns(): Pattern[] {
  * pattern cycles inside it: that is how the 24- and 12-step patterns run
  * against the 32-step grid. */
 type Layer = readonly [patternId: string, track: number, transpose?: number, span?: number];
+
 interface Section {
     len: number;
     layers: readonly Layer[];
 }
 
-const {weather: W, taiko: T, ground: G, gender: D, pemade: M, jublag: J, shakuhachi: S, duduk: U, khoomei: K, strings: R, bowl: B} = TRACK;
+const {
+    weather: W,
+    taiko: T,
+    ground: G,
+    gender: D,
+    pemade: M,
+    jublag: J,
+    shakuhachi: S,
+    duduk: U,
+    khoomei: K,
+    strings: R,
+    bowl: B
+} = TRACK;
 const four = (...layers: Layer[]): Section => ({len: FOUR, layers});
 const seven = (...layers: Layer[]): Section => ({len: SEVEN, layers});
 // the sections whose drone is transposed to G along with everything else
@@ -516,7 +648,7 @@ const SECTIONS: Section[] = [
     four([P.rain, W])
 ];
 
-const sectionStarts = (sections: Section[]): number[] => sections.reduce<number[]>((starts, section, index) => {
+const sectionStarts = (sections: Section[]): number[] => sections.reduce<number[]>((starts, _section, index) => {
     starts.push(index === 0 ? 0 : starts[index - 1] + sections[index - 1].len);
     return starts;
 }, []);
@@ -542,7 +674,10 @@ function buildAutomation(starts: number[], end: number): AutomationLane[] {
     const at = (section: number, offset = 0): number => section < starts.length ? starts[section] + offset : end;
     const lane = (id: string, target: string, param: string, points: Point[]): AutomationLane => ({
         id, target, param,
-        points: points.map(([section, offset, value, curve]) => ({step: at(section, offset), value, ...(curve ? {curve} : {})}))
+        points: points.map(([section, offset, value, curve]) => ({
+            step: at(section, offset),
+            value, ...(curve ? {curve} : {})
+        }))
     });
     /* The overtone melody: the singer holds one D (a G where the clip is
      * transposed) and moves the F2 resonance from harmonic to harmonic —
@@ -569,15 +704,25 @@ function buildAutomation(starts: number[], end: number): AutomationLane[] {
     const fall: Melody = [[12, 8], [10, 8], [9, 8], [8, 8]];
     const stormRun: Melody = [[8, 4], [9, 4], [10, 4], [12, 4], [10, 4], [9, 4], [8, 4], [7, 4]];
     const phrases: Record<number, Melody> = {
-        2: rise, 3: fall, 4: [[8, 16], [9, 8], [8, 8]],
-        10: [[10, 8], [12, 8], [9, 8], [8, 8]], 11: [[8, 8], [9, 8], [10, 8], [12, 8]],
-        12: [[8, 7], [9, 7], [10, 7], [9, 7]], 13: [[8, 7], [10, 7], [12, 7], [9, 7]], 14: [[10, 7], [9, 7], [8, 7], [7, 7]],
+        2: rise,
+        3: fall,
+        4: [[8, 16], [9, 8], [8, 8]],
+        10: [[10, 8], [12, 8], [9, 8], [8, 8]],
+        11: [[8, 8], [9, 8], [10, 8], [12, 8]],
+        12: [[8, 7], [9, 7], [10, 7], [9, 7]],
+        13: [[8, 7], [10, 7], [12, 7], [9, 7]],
+        14: [[10, 7], [9, 7], [8, 7], [7, 7]],
         // over G: its 6th, 9th and 12th harmonics are the D drone's 8th, 12th and 16th
-        16: [[8, 7], [9, 7], [10, 7], [9, 7]], 17: [[6, 7], [8, 7], [9, 7], [12, 7]], 18: [[10, 7], [9, 7], [8, 7], [6, 7]],
+        16: [[8, 7], [9, 7], [10, 7], [9, 7]],
+        17: [[6, 7], [8, 7], [9, 7], [12, 7]],
+        18: [[10, 7], [9, 7], [8, 7], [6, 7]],
         24: [[8, 8], [9, 8], [10, 8], [12, 8]],
-        25: stormRun, 26: [[12, 4], [10, 4], [9, 4], [8, 4], [9, 4], [10, 4], [12, 4], [10, 4]],
-        27: [[8, 4], [9, 4], [10, 4], [12, 4], [10, 4], [9, 4], [8, 8]], 28: [[9, 4], [10, 4], [12, 4], [10, 4], [12, 4], [10, 4], [9, 4], [8, 4]],
-        30: [[12, 16], [10, 16]], 31: [[9, 16], [8, 16]]
+        25: stormRun,
+        26: [[12, 4], [10, 4], [9, 4], [8, 4], [9, 4], [10, 4], [12, 4], [10, 4]],
+        27: [[8, 4], [9, 4], [10, 4], [12, 4], [10, 4], [9, 4], [8, 8]],
+        28: [[9, 4], [10, 4], [12, 4], [10, 4], [12, 4], [10, 4], [9, 4], [8, 4]],
+        30: [[12, 16], [10, 16]],
+        31: [[9, 16], [8, 16]]
     };
     // the two gendér players trade sides during the doubled storm kotekan
     const swap = (side: number): Point[] => [[0, 0, side, 'hold'], [26, 0, side, 'smooth'], [27, 16, -side, 'smooth'], [29, 0, side]];

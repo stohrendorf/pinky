@@ -54,7 +54,9 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     noteOnAt(track: string, name: string, atTime: number, params: Params, velocity = 1): void {
         const note = this.findNote(name);
         const now = this.currentTime();
-        if (!note || now === null) {return;}
+        if (!note || now === null) {
+            return;
+        }
 
         const key = track + ':' + name;
         const at = Math.max(atTime, now);
@@ -72,7 +74,9 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
 
     noteOffAt(track: string, name: string, atTime: number): void {
         const now = this.currentTime();
-        if (now === null) {return;}
+        if (now === null) {
+            return;
+        }
         const key = track + ':' + name;
         this.voices.noteOff(key, Math.max(atTime, now));
     }
@@ -84,17 +88,23 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     glideAt(track: string, from: string, to: string, atTime: number, time: number, curve: CurveShape = 'linear'): boolean {
         const note = this.findNote(to);
         const now = this.currentTime();
-        if (!note || now === null) {return false;}
+        if (!note || now === null) {
+            return false;
+        }
         const at = Math.max(atTime, now);
         return this.voices.glide(track, track + ':' + from, track + ':' + to, at, note.freq, time, curve);
     }
 
     allNotesOff(): void {
         const now = this.currentTime();
-        if (now !== null) {this.voices.allNotesOff(now);}
+        if (now !== null) {
+            this.voices.allNotesOff(now);
+        }
     }
 
     automateInstrument(inst: string, params: Params, at: number, ramp: number): void {
-        if (this.currentTime() !== null) {this.voices.automate(inst, params, at, ramp);}
+        if (this.currentTime() !== null) {
+            this.voices.automate(inst, params, at, ramp);
+        }
     }
 }

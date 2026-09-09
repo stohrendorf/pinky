@@ -15,7 +15,9 @@ export function supportsOfflineSuspension(context: OfflineAudioContext): boolean
 }
 
 export function checkAbort(signal?: AbortSignal): void {
-    if (signal?.aborted) {throw new DOMException('Export cancelled', 'AbortError');}
+    if (signal?.aborted) {
+        throw new DOMException('Export cancelled', 'AbortError');
+    }
 }
 
 // Yield to input/paint, not just the microtask queue. Time never drives progress.
@@ -27,15 +29,23 @@ export async function yieldExport(signal?: AbortSignal): Promise<void> {
 
 // Only use for work that cannot mutate the swapped engine after it settles.
 export async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
-    if (!signal) {return work;}
-    let cancel = () => {};
+    if (!signal) {
+        return work;
+    }
+    let cancel = () => {
+    };
     const aborted = new Promise<never>((_resolve, reject) => {
         cancel = () => reject(new DOMException('Export cancelled', 'AbortError'));
         signal.addEventListener('abort', cancel, {once: true});
-        if (signal.aborted) {cancel();}
+        if (signal.aborted) {
+            cancel();
+        }
     });
-    try {return await Promise.race([work, aborted]);}
-    finally {signal.removeEventListener('abort', cancel);}
+    try {
+        return await Promise.race([work, aborted]);
+    } finally {
+        signal.removeEventListener('abort', cancel);
+    }
 }
 
 /** OfflineAudioContext has no close/cancel primitive. Stop at an actual render
@@ -46,7 +56,9 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
     const {signal, onProgress} = options;
     checkAbort(signal);
     // Legacy callers need neither checkpoints nor event-loop yields.
-    if (!signal && !onProgress) {return context.startRendering();}
+    if (!signal && !onProgress) {
+        return context.startRendering();
+    }
     const hasFrameProgress = !!options.subscribeFrames;
     const canSuspend = supportsOfflineSuspension(context);
     if (hasFrameProgress || !canSuspend) {
@@ -55,36 +67,57 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
          * those messages on dense graphs, so reserve it for contexts that have
          * no frame source. Retain ownership until native work finishes either
          * way: an uninterrupted render cannot be cancelled mid-pass. */
-        if (!canSuspend) {onProgress?.(null);}
+        if (!canSuspend) {
+            onProgress?.(null);
+        }
         checkAbort(signal);
         let active = true, last = 0, observerFailed = false;
         let observerError: unknown;
         const unsubscribe = onProgress ? options.subscribeFrames?.(frames => {
-            if (!active || signal?.aborted || observerFailed || !Number.isFinite(frames) || frames <= last) {return;}
+            if (!active || signal?.aborted || observerFailed || !Number.isFinite(frames) || frames <= last) {
+                return;
+            }
             // The final quantum can extend beyond length. Only native
             // completion, not a queued port message, is allowed to report 100%.
             const completed = Math.min(context.length - 1, frames);
-            if (completed <= last) {return;}
+            if (completed <= last) {
+                return;
+            }
             last = completed;
-            try {onProgress(last / context.length);}
-            catch (error) {observerFailed = true; observerError = error;}
+            try {
+                onProgress(last / context.length);
+            } catch (error) {
+                observerFailed = true;
+                observerError = error;
+            }
         }) : undefined;
         try {
             const native = context.startRendering();
-            let abort = () => {};
+            let abort = () => {
+            };
             const aborted = options.onAbandon && signal ? new Promise<never>((_resolve, reject) => {
                 abort = () => {
-                    try {options.onAbandon?.(native.then(() => undefined, () => undefined));}
-                    finally {reject(new DOMException('Export cancelled', 'AbortError'));}
+                    try {
+                        options.onAbandon?.(native.then(() => undefined, () => undefined));
+                    } finally {
+                        reject(new DOMException('Export cancelled', 'AbortError'));
+                    }
                 };
                 signal.addEventListener('abort', abort, {once: true});
-                if (signal.aborted) {abort();}
+                if (signal.aborted) {
+                    abort();
+                }
             }) : undefined;
             let buffer: AudioBuffer;
-            try {buffer = await (aborted ? Promise.race([native, aborted]) : native);}
-            finally {signal?.removeEventListener('abort', abort);}
+            try {
+                buffer = await (aborted ? Promise.race([native, aborted]) : native);
+            } finally {
+                signal?.removeEventListener('abort', abort);
+            }
             checkAbort(signal);
-            if (observerFailed) {throw observerError;}
+            if (observerFailed) {
+                throw observerError;
+            }
             onProgress?.(1);
             checkAbort(signal);
             return buffer;
@@ -105,7 +138,9 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
     try {
         while (true) {
             const result = await Promise.race([completed, checkpoint]);
-            if (result.kind === 'failed') {throw result.error;}
+            if (result.kind === 'failed') {
+                throw result.error;
+            }
             checkAbort(signal);
             if (result.kind === 'done') {
                 onProgress?.(1);
@@ -118,7 +153,8 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
             if (frame < context.length) {
                 checkpoint = context.suspend(frame / context.sampleRate).then(() => ({kind: 'paused' as const}));
             } else {
-                checkpoint = new Promise<never>(() => {});
+                checkpoint = new Promise<never>(() => {
+                });
             }
             await context.resume();
         }
@@ -126,6 +162,8 @@ export async function renderWithProgress(context: OfflineAudioContext, options: 
         // Normally errors/abort arrive while suspended or after completion.
         // If a native suspension/resume fails while running, do not release a
         // swapped engine while audio work still owns it.
-        if (context.state === 'running') {await completed;}
+        if (context.state === 'running') {
+            await completed;
+        }
     }
 }

@@ -3,7 +3,16 @@ import {
 } from 'vitest';
 
 import {
-    addMixerBus, audibleMixerIds, canRoute, createMixer, ensureMixer, isMixerState, MAX_MIXER_BUSES, mixerTailSeconds, removeMixerBus, resolveMixer
+    addMixerBus,
+    audibleMixerIds,
+    canRoute,
+    createMixer,
+    ensureMixer,
+    isMixerState,
+    MAX_MIXER_BUSES,
+    mixerTailSeconds,
+    removeMixerBus,
+    resolveMixer
 } from './mixer';
 import {
     buildDemoProject, importProject, isProject, newEmptyProject, project
@@ -38,7 +47,9 @@ describe('mixer project model', () => {
         expect(isMixerState(mixer)).toBe(true);
         expect(importProject(JSON.stringify(p))).toBe(true);
         let imported = null;
-        const unsubscribe = project.subscribe(value => {imported = value;});
+        const unsubscribe = project.subscribe(value => {
+            imported = value;
+        });
         unsubscribe();
         expect(imported).toEqual(p);
     });
@@ -81,7 +92,9 @@ describe('mixer project model', () => {
             {...mixer, buses: [{...bus, sends: [{busId: bus.id, level: 0.3}]}]},
             {...mixer, channels: {[bus.id]: Object.values(mixer.channels)[0]}}
         ];
-        for (const candidate of invalid) {expect(isMixerState(candidate)).toBe(false);}
+        for (const candidate of invalid) {
+            expect(isMixerState(candidate)).toBe(false);
+        }
         const channel = Object.values(mixer.channels)[0];
         channel.sends = [{busId: bus.id, level: 0.2}, {busId: bus.id, level: 0.3}];
         expect(isMixerState(mixer)).toBe(false);
@@ -104,7 +117,9 @@ describe('mixer project model', () => {
 
     it('bounds graph size and gives new instruments independent default strips', () => {
         const p = newEmptyProject(), mixer = p.mixer!;
-        for (let i = 0; i < MAX_MIXER_BUSES; i++) {expect(addMixerBus(mixer)).not.toBeNull();}
+        for (let i = 0; i < MAX_MIXER_BUSES; i++) {
+            expect(addMixerBus(mixer)).not.toBeNull();
+        }
         expect(addMixerBus(mixer)).toBeNull();
         const id = createId();
         const copy = {...p.instruments[0], id};

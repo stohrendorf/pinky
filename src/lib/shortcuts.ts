@@ -103,14 +103,21 @@ function togglePlay(pattern: boolean): void {
         stopTransport();
         return;
     }
-    if (pattern) {playPattern();}
-    else {playSong();}
+    if (pattern) {
+        playPattern();
+    } else {
+        playSong();
+    }
 }
 
 export function handleShortcut(e: KeyboardEvent): void {
     if (e.key === 'MediaPlayPause' || e.key === 'MediaPlay') {
         e.preventDefault();
-        if (get(playing)) {stopTransport();} else {playSong();}
+        if (get(playing)) {
+            stopTransport();
+        } else {
+            playSong();
+        }
         return;
     }
     if (e.key === 'MediaTrackNext') {
@@ -131,14 +138,20 @@ export function handleShortcut(e: KeyboardEvent): void {
 
     const t = e.target as HTMLElement | null;
     const tag = t?.tagName;
-    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t?.isContentEditable) {return;}
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t?.isContentEditable) {
+        return;
+    }
 
     const ctrl = e.ctrlKey || e.metaKey;
     const k = e.key.toLowerCase();
 
     if (ctrl && k === 'z') {
         e.preventDefault();
-        if (e.shiftKey) {redo();} else {undo();}
+        if (e.shiftKey) {
+            redo();
+        } else {
+            undo();
+        }
         return;
     }
     if (ctrl && k === 'y') {
@@ -186,7 +199,9 @@ export function handleShortcut(e: KeyboardEvent): void {
         velocitySelectedNotes(e.key === 'ArrowUp' ? 0.1 : -0.1);
         return;
     }
-    if (ctrl || e.altKey) {return;}
+    if (ctrl || e.altKey) {
+        return;
+    }
 
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();

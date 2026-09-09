@@ -30,11 +30,16 @@
         headerActions,
         itemActions = [],
         items = [],
-        onaction = () => {},
-        onfolderaction = () => {},
-        onmute = () => {},
-        onselect = () => {},
-        onsolo = () => {},
+        onaction = () => {
+        },
+        onfolderaction = () => {
+        },
+        onmute = () => {
+        },
+        onselect = () => {
+        },
+        onsolo = () => {
+        },
         selectedId = null,
         showMuteSolo = false,
         title = 'Items'
@@ -95,61 +100,62 @@
             {#each visibleEntries as entry (entry.kind === 'folder' ? `folder-${entry.path}` : entry.item.id)}
                 {#if entry.kind === 'folder'}
                     <div
-style="--indent: {entry.depth * 16}px"
-class="tree-row folder-row"
-aria-expanded={!collapsedFolders.has(entry.path)}
-                         aria-level={entry.depth + 1}
-role="treeitem">
+                            style="--indent: {entry.depth * 16}px"
+                            class="tree-row folder-row"
+                            aria-expanded={!collapsedFolders.has(entry.path)}
+                            aria-level={entry.depth + 1}
+                            role="treeitem">
                         <button class="row-main" type="button" on:click={() => toggleFolder(entry.path)}>
                             <span
-class="folder-chevron"
-class:collapsed={collapsedFolders.has(entry.path)}
-                                  aria-hidden="true"></span><i class="fa fa-folder"></i><span>{entry.label}</span><span
-class="folder-count"
-                                                                                         aria-label={`${entry.itemCount} items`}>{entry.itemCount}</span>
+                                    class="folder-chevron"
+                                    class:collapsed={collapsedFolders.has(entry.path)}
+                                    aria-hidden="true"></span><i class="fa fa-folder"></i><span>{entry.label}</span><span
+                                class="folder-count"
+                                aria-label={`${entry.itemCount} items`}>{entry.itemCount}</span>
                         </button>
                         {#if folderActions.length}
                             <button
-class="dots"
-aria-label="Folder actions"
-type="button"
+                                    class="dots"
+                                    aria-label="Folder actions"
+                                    type="button"
                                     on:click={(event) => toggleMenu(`folder:${entry.path}`, event)}><i class="fa fa-ellipsis-vertical"></i></button>
                         {/if}
                     </div>
                 {:else}
                     <div
-style="--indent: {entry.depth * 16}px"
-class="tree-row item-row"
-class:selected={entry.item.id === selectedId}
-                         aria-level={entry.depth + 1}
-aria-selected={entry.item.id === selectedId}
-                         role="treeitem">
+                            style="--indent: {entry.depth * 16}px"
+                            class="tree-row item-row"
+                            class:selected={entry.item.id === selectedId}
+                            aria-level={entry.depth + 1}
+                            aria-selected={entry.item.id === selectedId}
+                            role="treeitem">
                         <button class="row-main" type="button" on:click={() => select(entry.item)}>
                             {#if entry.item.color}<span
-style="background: {entry.item.color}"
-                                                        class="color-tag"></span>{:else}<span class="item-icon"><i class="fa fa-music"></i></span>{/if}<span>{entry.label}</span>
+                                    style="background: {entry.item.color}"
+                                    class="color-tag"></span>{:else}<span class="item-icon"><i class="fa fa-music"></i></span>{/if}
+                            <span>{entry.label}</span>
                         </button>
                         {#if showMuteSolo}
                             <button
-class="toggle"
-class:active={entry.item.mute}
-aria-label="{entry.label} mute"
+                                    class="toggle"
+                                    class:active={entry.item.mute}
+                                    aria-label="{entry.label} mute"
                                     aria-pressed={entry.item.mute}
-type="button"
+                                    type="button"
                                     on:click={() => onmute(entry.item)}><i class="fa fa-volume-xmark"></i></button>
                             <button
-class="toggle"
-class:active={entry.item.solo}
-aria-label="{entry.label} solo"
+                                    class="toggle"
+                                    class:active={entry.item.solo}
+                                    aria-label="{entry.label} solo"
                                     aria-pressed={entry.item.solo}
-type="button"
+                                    type="button"
                                     on:click={() => onsolo(entry.item)}><i class="fa fa-headphones"></i></button>
                         {/if}
                         {#if itemActions.length}
                             <button
-class="dots"
-aria-label="{entry.label} actions"
-type="button"
+                                    class="dots"
+                                    aria-label="{entry.label} actions"
+                                    type="button"
                                     on:click={(event) => toggleMenu(entry.item.id, event)}><i class="fa fa-ellipsis-vertical"></i></button>
                         {/if}
                     </div>
@@ -162,17 +168,17 @@ type="button"
 </div>
 
 <ContextMenu
-actions={openMenu?.startsWith('folder:') ? folderActions : itemActions}
-anchor={menuAnchor}
-             onclose={closeMenu}
-onselect={(actionId) => {
-    if (openMenu?.startsWith('folder:')) {folderAction(actionId, openMenu.slice('folder:'.length));}
-    else {
-        const item = items.find(candidate => candidate.id === openMenu);
-        if (item) {action(actionId, item);}
-    }
-}}
-open={openMenu !== null}/>
+        actions={openMenu?.startsWith('folder:') ? folderActions : itemActions}
+        anchor={menuAnchor}
+        onclose={closeMenu}
+        onselect={(actionId) => {
+            if (openMenu?.startsWith('folder:')) {folderAction(actionId, openMenu.slice('folder:'.length));}
+            else {
+                const item = items.find(candidate => candidate.id === openMenu);
+                if (item) {action(actionId, item);}
+            }
+        }}
+        open={openMenu !== null}/>
 
 <style>
     .tree-view {

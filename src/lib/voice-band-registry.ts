@@ -49,18 +49,24 @@ export class VoiceBandRegistry {
 
     snapshot(now: number): VoiceSnapshot[] {
         for (let i = this.records.length - 1; i >= 0; i--) {
-            if (this.records[i].end < now) {this.records.splice(i, 1);}
+            if (this.records[i].end < now) {
+                this.records.splice(i, 1);
+            }
         }
         const out: VoiceSnapshot[] = [];
         for (const record of this.records) {
-            if (record.start > now) {continue;}
+            if (record.start > now) {
+                continue;
+            }
             const elapsed = now - record.start;
             let env = adsrLevel(record, elapsed);
             if (now > record.release) {
                 env = adsrLevel(record, record.release - record.start)
                     * Math.exp(-(now - record.release) / Math.max(0.01, record.rel / 3));
             }
-            if (env < 0.004) {continue;}
+            if (env < 0.004) {
+                continue;
+            }
             const bend = record.pitchTime > 0
                 ? Math.min(1, Math.max(0, (now - record.bendStart) / record.pitchTime))
                 : 1;
@@ -91,15 +97,21 @@ export class VoiceBandRegistry {
     }
 
     private trim(now: number): void {
-        if (this.records.length <= this.capacity) {return;}
+        if (this.records.length <= this.capacity) {
+            return;
+        }
         for (let i = this.records.length - 1; i >= 0 && this.records.length > this.capacity; i--) {
-            if (this.records[i].end < now) {this.records.splice(i, 1);}
+            if (this.records[i].end < now) {
+                this.records.splice(i, 1);
+            }
         }
         while (this.records.length > this.capacity) {
             let worst = 0;
             for (let i = 1; i < this.records.length; i++) {
                 // "most nearly finished", held voices (end === Infinity) last
-                if (this.records[i].end < this.records[worst].end) {worst = i;}
+                if (this.records[i].end < this.records[worst].end) {
+                    worst = i;
+                }
             }
             this.records.splice(worst, 1);
         }
@@ -107,7 +119,9 @@ export class VoiceBandRegistry {
 }
 
 export function adsrLevel(record: BandRecord, elapsed: number): number {
-    if (elapsed < record.att) {return record.att > 0 ? elapsed / record.att : 1;}
+    if (elapsed < record.att) {
+        return record.att > 0 ? elapsed / record.att : 1;
+    }
     return record.sus + (1 - record.sus) * Math.exp(
         -(elapsed - record.att) / Math.max(0.01, record.dec / 3)
     );

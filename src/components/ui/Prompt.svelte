@@ -24,7 +24,7 @@
         inputMode = undefined
     }: Props = $props();
 
-    const dispatch = createEventDispatcher<{cancel: void; submit: string}>();
+    const dispatch = createEventDispatcher<{ cancel: void; submit: string }>();
 
     function submit() {
         dispatch('submit', value);
@@ -48,13 +48,13 @@
     <div class="prompt-body">
         {#if label}<label for="prompt-input">{label}</label>{/if}
         <input
-id="prompt-input"
-aria-label={label || title}
-inputmode={inputMode}
-onkeydown={(e) => e.key === 'Enter' && submit()}
-               type={inputType}
-               bind:value
-use:selectOnMount/>
+                id="prompt-input"
+                aria-label={label || title}
+                inputmode={inputMode}
+                onkeydown={(e) => e.key === 'Enter' && submit()}
+                type={inputType}
+                bind:value
+                use:selectOnMount/>
         <div class="actions">
             <Button variant="secondary" on:click={cancel}>Cancel</Button>
             <Button on:click={submit}>OK</Button>

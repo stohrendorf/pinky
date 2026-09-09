@@ -36,14 +36,18 @@
     ];
 
     function add() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const np = createPattern('pattern ' + ($project.patterns.length + 1));
         $project.patterns = [...$project.patterns, np];
         selPatId.set(np.id);
     }
 
     function duplicate() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const np = createPattern(pat.name + ' copy', pat.steps || STEPS);
         np.tracks = Object.fromEntries(Object.entries(pat.tracks).map(([id, notes]) => [id, notes.map(n => ({...n}))]));
         $project.patterns = [...$project.patterns, np];
@@ -68,12 +72,16 @@
     }
 
     function remove() {
-        if (!$project || $project.patterns.length <= 1) {return;}
+        if (!$project || $project.patterns.length <= 1) {
+            return;
+        }
         showConfirmDelete = true;
     }
 
     function onConfirmDelete() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const id = pat.id;
         $project.arrangement = $project.arrangement.filter(s => s.patternId !== id);
         $project.patterns = $project.patterns.filter(p => p.id !== id);
@@ -95,67 +103,88 @@
 
     function onTreeAction(action: string, item: NamedTreeItem) {
         const pattern = $project?.patterns.find(candidate => candidate.id === item.id);
-        if (!pattern) {return;}
+        if (!pattern) {
+            return;
+        }
         selPatId.set(pattern.id);
-        if (action === 'rename') {openRename();}
-        if (action === 'color') {openColor();}
-        if (action === 'duplicate') {duplicate();}
-        if (action === 'clear') {clearPat();}
-        if (action === 'delete') {remove();}
+        if (action === 'rename') {
+            openRename();
+        }
+        if (action === 'color') {
+            openColor();
+        }
+        if (action === 'duplicate') {
+            duplicate();
+        }
+        if (action === 'clear') {
+            clearPat();
+        }
+        if (action === 'delete') {
+            remove();
+        }
     }
 
     function onFolderAction(action: string, path: string) {
-        if (action === 'rename') {renameFolder(path);}
+        if (action === 'rename') {
+            renameFolder(path);
+        }
     }
 
     function onRenameSubmit(e: CustomEvent<string>) {
-        if (!e.detail) {return;}
+        if (!e.detail) {
+            return;
+        }
         if (folderToRename) {
             const prefix = folderToRename + '/';
             $project?.patterns.forEach(pattern => {
-                if (pattern.name === folderToRename) {pattern.name = e.detail;}
-                else if (pattern.name.startsWith(prefix)) {pattern.name = e.detail + pattern.name.slice(folderToRename!.length);}
+                if (pattern.name === folderToRename) {
+                    pattern.name = e.detail;
+                } else if (pattern.name.startsWith(prefix)) {
+                    pattern.name = e.detail + pattern.name.slice(folderToRename!.length);
+                }
             });
             folderToRename = null;
             touch();
-        } else {onRename(e);}
+        } else {
+            onRename(e);
+        }
     }
 </script>
 
 <div class="pattern-tree-panel">
     <TreeView
-folderActions={[{id: 'rename', label: 'Rename folder', icon: 'fa-pencil'}]}
-itemActions={itemActions}
-              items={$project?.patterns ?? []}
-onaction={onTreeAction}
-              onfolderaction={onFolderAction}
-              onselect={id => selPatId.set(id)}
-selectedId={pat?.id}
-title="Patterns">
+            folderActions={[{id: 'rename', label: 'Rename folder', icon: 'fa-pencil'}]}
+            itemActions={itemActions}
+            items={$project?.patterns ?? []}
+            onaction={onTreeAction}
+            onfolderaction={onFolderAction}
+            onselect={id => selPatId.set(id)}
+            selectedId={pat?.id}
+            title="Patterns">
         {#snippet headerActions()}
             <button
-class="header-add"
-aria-label="New pattern"
-onclick={add}
-title="New pattern"
-                type="button"><i class="fa fa-add"></i></button>
+                    class="header-add"
+                    aria-label="New pattern"
+                    onclick={add}
+                    title="New pattern"
+                    type="button"><i class="fa fa-add"></i></button>
         {/snippet}
     </TreeView>
 </div>
 
 <Prompt
-label="New Name"
-title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
-bind:show={showRename}
+        label="New Name"
+        title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
+        bind:show={showRename}
         bind:value={renameValue}
-on:submit={onRenameSubmit}/>
+        on:submit={onRenameSubmit}/>
 <Confirm
-confirmLabel="Delete pattern"
-destructive
-         message={`Are you sure you want to delete "${pat.name}"? It will be removed from the song arrangement.`}
-         title="Delete Pattern"
-         bind:show={showConfirmDelete}
-on:confirm={onConfirmDelete}/>
+        confirmLabel="Delete pattern"
+        destructive
+        message={`Are you sure you want to delete "${pat.name}"? It will be removed from the song arrangement.`}
+        title="Delete Pattern"
+        bind:show={showConfirmDelete}
+        on:confirm={onConfirmDelete}/>
 <Dialog title="Pattern Color" bind:show={showColor}>
     <ColorPicker value={pat.color} on:change={(e) => { pat.color = e.detail; touch(); }}/>
 </Dialog>

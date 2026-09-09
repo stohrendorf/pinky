@@ -1,9 +1,8 @@
 <script lang="ts">
     import {
-        run, createBubbler, preventDefault, stopPropagation 
+        createBubbler, preventDefault, run, stopPropagation
     } from 'svelte/legacy';
 
-    const bubble = createBubbler();
     import type {
         AutoParamDef
     } from '../lib/automation';
@@ -20,6 +19,8 @@
     import {
         touch
     } from '../lib/project';
+
+    const bubble = createBubbler();
 
     interface Props {
         lane: AutomationLane;
@@ -65,7 +66,6 @@
     let editorInput: HTMLInputElement | undefined = $state();
 
 
-
     function local(e: MouseEvent): { step: number; value: number } {
         const r = svgEl!.getBoundingClientRect();
         return {step: (e.clientX - r.left) / cellWidth, value: yToVal(e.clientY - r.top)};
@@ -87,20 +87,30 @@
     }
 
     function onDown(e: MouseEvent) {
-        if (e.button === 1) {return;} // middle drag = the playlist's pan gesture
+        if (e.button === 1) {
+            return;
+        } // middle drag = the playlist's pan gesture
         e.stopPropagation();
-        if (contextualEditor !== editorKey) {contextualEditor = null;}
+        if (contextualEditor !== editorKey) {
+            contextualEditor = null;
+        }
         const hit = pointAt(e);
         if (e.button === 2) { // right-click removes a point (never the last one)
             if (hit && pts.length > 1) {
                 lane.points = pts.filter(p => p !== hit);
-                if (selectedPoint === hit) {onselect(null);}
-                if (editingPoint === hit) {closePointEditor();}
+                if (selectedPoint === hit) {
+                    onselect(null);
+                }
+                if (editingPoint === hit) {
+                    closePointEditor();
+                }
                 touch();
             }
             return;
         }
-        if (e.button !== 0) {return;}
+        if (e.button !== 0) {
+            return;
+        }
         if (!canEdit) {
             onblocked();
             return;
@@ -126,7 +136,9 @@
     }
 
     function onMove(e: MouseEvent) {
-        if (!drag) {return;}
+        if (!drag) {
+            return;
+        }
         const l = local(e);
         drag.step = l.step;
         drag.value = l.value;
@@ -147,11 +159,15 @@
     function closePointEditor() {
         editingPoint = null;
         editingError = '';
-        if (contextualEditor === editorKey) {contextualEditor = null;}
+        if (contextualEditor === editorKey) {
+            contextualEditor = null;
+        }
     }
 
     function savePointEditor() {
-        if (!editingPoint) {return;}
+        if (!editingPoint) {
+            return;
+        }
         if (setAutomationPointValue(lane, editingPoint, editingValue)) {
             onselect(editingPoint);
             touch();
@@ -162,7 +178,9 @@
     }
 
     function updatePointValue(point: AutomationPoint, value: string) {
-        if (!setAutomationPointValue(lane, point, value)) {return;}
+        if (!setAutomationPointValue(lane, point, value)) {
+            return;
+        }
         onselect(point);
         touch();
     }
@@ -200,14 +218,20 @@
             e.preventDefault();
             e.stopPropagation();
             lane.points = pts.filter(p => p !== point);
-            if (selectedPoint === point) {onselect(null);}
-            if (editingPoint === point) {closePointEditor();}
+            if (selectedPoint === point) {
+                onselect(null);
+            }
+            if (editingPoint === point) {
+                closePointEditor();
+            }
             touch();
         }
     }
 
     function curvePath(points: AutomationPoint[]): string {
-        if (!points.length) {return '';}
+        if (!points.length) {
+            return '';
+        }
         const segments = [`M 0 ${valToY(points[0].value)}`];
         for (let index = 1; index < points.length; index++) {
             const from = points[index - 1];
@@ -229,7 +253,9 @@
     }
 
     function setPointCurve(point: AutomationPoint, curve: string) {
-        if (!CURVE_SHAPES.some(shape => shape.id === curve)) {return;}
+        if (!CURVE_SHAPES.some(shape => shape.id === curve)) {
+            return;
+        }
         point.curve = curve as AutomationPoint['curve'];
         lane.points = [...lane.points];
         touch();
@@ -260,36 +286,36 @@
 
 <div style="width: {width}px" class="auto-lane-wrap">
     <svg
-bind:this={svgEl}
-class="auto-lane"
-{height}
-oncontextmenu={preventDefault(bubble('contextmenu'))}
-         onmousedown={onDown}
-{width}>
+            bind:this={svgEl}
+            class="auto-lane"
+            {height}
+            oncontextmenu={preventDefault(bubble('contextmenu'))}
+            onmousedown={onDown}
+            {width}>
         <line
-class="mid"
-x1="0"
-x2={width}
-y1={valToY(def.min + span / 2)}
-y2={valToY(def.min + span / 2)}/>
-{#if path}
-    <path style="fill: {color}" class="curve-fill" d={fillPath}/>
-    <path style="stroke: {color}" class="curve" d={path}/>
-    {#each pts as p}
+                class="mid"
+                x1="0"
+                x2={width}
+                y1={valToY(def.min + span / 2)}
+                y2={valToY(def.min + span / 2)}/>
+        {#if path}
+            <path style="fill: {color}" class="curve-fill" d={fillPath}/>
+            <path style="stroke: {color}" class="curve" d={path}/>
+            {#each pts as p}
                 <g
-class="pt"
-class:active={selectedPoint === p || editingPoint === p}
-aria-label={`${def.label}: ${fmt(p.value)} at step ${Math.round(p.step)}`}
-onfocus={() => onselect(p)}
-                   onkeydown={e => onPointKeydown(e, p)}
-                   role="button"
-                   tabindex="0">
+                        class="pt"
+                        class:active={selectedPoint === p || editingPoint === p}
+                        aria-label={`${def.label}: ${fmt(p.value)} at step ${Math.round(p.step)}`}
+                        onfocus={() => onselect(p)}
+                        onkeydown={e => onPointKeydown(e, p)}
+                        role="button"
+                        tabindex="0">
                     <circle
-style="stroke: {color}"
-class="curve-node"
-cx={p.step * cellWidth}
-cy={valToY(p.value)}
-r="3.5"/>
+                            style="stroke: {color}"
+                            class="curve-node"
+                            cx={p.step * cellWidth}
+                            cy={valToY(p.value)}
+                            r="3.5"/>
                     <title>{fmt(p.value)} @ step {Math.round(p.step)}</title>
                 </g>
             {/each}
@@ -300,26 +326,26 @@ r="3.5"/>
 
     {#if selectedPoint && !editingPoint}
         <div
-style="left: {pointControlPosition(selectedPoint)}px;"
-class="point-readout"
-             aria-live="polite">
+                style="left: {pointControlPosition(selectedPoint)}px;"
+                class="point-readout"
+                aria-live="polite">
             <label>
                 <input
-aria-label={`Set ${def.label} value`}
-inputmode="decimal"
-max={def.max}
-min={def.min}
-                       oninput={(event) => updatePointValue(selectedPoint, event.currentTarget.value)}
-onkeydown={stopPropagation(bubble('keydown'))}
-step={def.step}
-                       type="number"
-                       value={selectedPoint.value}>
+                        aria-label={`Set ${def.label} value`}
+                        inputmode="decimal"
+                        max={def.max}
+                        min={def.min}
+                        oninput={(event) => updatePointValue(selectedPoint, event.currentTarget.value)}
+                        onkeydown={stopPropagation(bubble('keydown'))}
+                        step={def.step}
+                        type="number"
+                        value={selectedPoint.value}>
             </label>
             <span>· step {Math.round(selectedPoint.step)}</span>
             {#if selectedPoint !== pts[pts.length - 1]}
                 <select
-aria-label="Curve to next point"
-onchange={(event) => setPointCurve(selectedPoint, event.currentTarget.value)}
+                        aria-label="Curve to next point"
+                        onchange={(event) => setPointCurve(selectedPoint, event.currentTarget.value)}
                         value={selectedPoint.curve || 'linear'}>
                     {#each CURVE_SHAPES as shape}
                         <option value={shape.id}>{shape.label}</option>
@@ -331,20 +357,20 @@ onchange={(event) => setPointCurve(selectedPoint, event.currentTarget.value)}
 
     {#if editingPoint}
         <form
-style="left: {pointControlPosition(editingPoint)}px;"
-class="point-editor"
-              aria-label={`Set ${def.label} value`}
-              onkeydown={onPointEditorKeydown}
-onsubmit={preventDefault(savePointEditor)}>
+                style="left: {pointControlPosition(editingPoint)}px;"
+                class="point-editor"
+                aria-label={`Set ${def.label} value`}
+                onkeydown={onPointEditorKeydown}
+                onsubmit={preventDefault(savePointEditor)}>
             <input
-bind:this={editorInput}
-aria-label={`Set ${def.label} value`}
-inputmode="decimal"
-max={def.max}
-min={def.min}
-                   step={def.step}
-type="number"
-bind:value={editingValue}>
+                    bind:this={editorInput}
+                    aria-label={`Set ${def.label} value`}
+                    inputmode="decimal"
+                    max={def.max}
+                    min={def.min}
+                    step={def.step}
+                    type="number"
+                    bind:value={editingValue}>
             <span>Enter to apply · Esc to cancel</span>
             {#if editingError}<small>{editingError}</small>{/if}
         </form>

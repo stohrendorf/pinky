@@ -22,10 +22,16 @@ try {
         browser = await chromium.launch({executablePath: process.env.PINKY_BROWSER, args: ['--mute-audio']});
     } else {
         for (const channel of ['chrome', 'msedge', 'chromium']) {
-            try {browser = await chromium.launch({channel, args: ['--mute-audio']}); break;} catch { /* try the next installed browser */ }
+            try {
+                browser = await chromium.launch({channel, args: ['--mute-audio']});
+                break;
+            } catch { /* try the next installed browser */
+            }
         }
     }
-    if (!browser) {throw new Error('Install Chrome/Edge or set PINKY_BROWSER.');}
+    if (!browser) {
+        throw new Error('Install Chrome/Edge or set PINKY_BROWSER.');
+    }
     const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
     const errors = [], downloads = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -50,14 +56,20 @@ try {
         const model = await import('/src/lib/project.ts');
         const p = model.newEmptyProject(), id = p.instruments[0].id;
         p.bpm = 120;
-        p.instruments[0].params = {...p.instruments[0].params, voices: 1, vib: 0, noise: 0, tone: 1, q: 10,
-            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.3}], gain: 0.3, rel: 0.04};
+        p.instruments[0].params = {
+            ...p.instruments[0].params, voices: 1, vib: 0, noise: 0, tone: 1, q: 10,
+            partials: [{ratio: 1, level: 1}, {ratio: 2, level: 0.3}], gain: 0.3, rel: 0.04
+        };
         p.patterns[0].tracks[id] = [{pitch: 'C5', start: 0, len: 2}, {pitch: 'G5', start: 8, len: 2}];
-        model.project.set(p); model.selPatId.set(p.patterns[0].id); model.selInstId.set(id);
+        model.project.set(p);
+        model.selPatId.set(p.patterns[0].id);
+        model.selInstId.set(id);
         window.testSong = JSON.parse(JSON.stringify(p));
         window.testProgress = [];
         (await import('/src/lib/render.ts')).exportProgress.subscribe(state => {
-            if (state) {window.testProgress.push({...state});}
+            if (state) {
+                window.testProgress.push({...state});
+            }
         });
     });
     const conductor = page.getByRole('dialog', {name: /^(Add|Edit) marker$/});
@@ -67,7 +79,10 @@ try {
             const lane = await page.locator('.conductor-lanes').boundingBox();
             const width = await page.evaluate(async () => {
                 const {project} = await import('/src/lib/project.ts');
-                let p; project.subscribe(value => {p = value;})();
+                let p;
+                project.subscribe(value => {
+                    p = value;
+                })();
                 return p.zoom.arr.width;
             });
             await page.mouse.click(lane.x + step * width, lane.y + 12);
@@ -108,7 +123,10 @@ try {
     await conductor.waitFor({state: 'hidden'});
     const edited = await page.evaluate(async () => {
         const {project} = await import('/src/lib/project.ts');
-        let p; project.subscribe(value => {p = value;})();
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
         return {conductor: p.conductor, loop: p.loop, patterns: p.patterns, original: window.testSong.patterns};
     });
     assert.equal(edited.loop ?? null, null, 'opening markers leaves the loop alone');
@@ -127,7 +145,9 @@ try {
     await conductor.getByRole('button', {name: 'Save', exact: true}).click();
     await conductor.getByRole('alert').waitFor();
     await conductor.getByLabel('Title', {exact: true}).fill('Unsaved');
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'marker-editor-check.png')});}
+    if (process.argv.includes('--screenshot')) {
+        await page.screenshot({path: join(root, 'marker-editor-check.png')});
+    }
     await conductor.getByRole('button', {name: 'Save', exact: true}).focus();
     await page.keyboard.press('Tab');
     assert.equal(await conductor.evaluate(node => node.contains(document.activeElement)), true, 'marker editor traps Tab');
@@ -142,7 +162,10 @@ try {
     await page.mouse.up();
     const draggedLoop = await page.evaluate(async () => {
         const {project} = await import('/src/lib/project.ts');
-        let p; project.subscribe(value => {p = value;})();
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
         return p.loop;
     });
     assert.deepEqual(draggedLoop, {start: 0, end: 14}, 'dragged loops snap to real 7/8 beat boundaries');
@@ -161,13 +184,27 @@ try {
         await new Promise(resolve => setTimeout(resolve, 400));
         const {project, touch} = await import('/src/lib/project.ts');
         const {undo, redo} = await import('/src/lib/history.ts');
-        let p; project.subscribe(value => {p = value;})();
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
         const before = JSON.stringify(p.conductor);
-        p.conductor.sections[0].name = 'Undo probe'; touch(); undo();
-        project.subscribe(value => {p = value;})();
-        if (JSON.stringify(p.conductor) !== before) {throw new Error('Conductor undo did not restore markers');}
-        redo(); project.subscribe(value => {p = value;})();
-        if (p.conductor.sections[0].name !== 'Undo probe') {throw new Error('Conductor redo failed');}
+        p.conductor.sections[0].name = 'Undo probe';
+        touch();
+        undo();
+        project.subscribe(value => {
+            p = value;
+        })();
+        if (JSON.stringify(p.conductor) !== before) {
+            throw new Error('Conductor undo did not restore markers');
+        }
+        redo();
+        project.subscribe(value => {
+            p = value;
+        })();
+        if (p.conductor.sections[0].name !== 'Undo probe') {
+            throw new Error('Conductor redo failed');
+        }
         window.testSong = JSON.parse(JSON.stringify(p));
         const long = JSON.parse(JSON.stringify(p));
         long.arrangement[0].len = 512;
@@ -182,7 +219,9 @@ try {
     assert.equal(await exporting.evaluate(node => node.contains(document.activeElement)), true, 'export owns keyboard focus');
     await page.keyboard.press('Tab');
     assert.equal(await exporting.evaluate(node => node.contains(document.activeElement)), true, 'Tab remains in export');
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'export-check.png')});}
+    if (process.argv.includes('--screenshot')) {
+        await page.screenshot({path: join(root, 'export-check.png')});
+    }
     const cancelStarted = Date.now();
     await page.keyboard.press('Escape');
     await exporting.waitFor({state: 'hidden', timeout: 10000});
@@ -218,7 +257,9 @@ try {
     await exporting.waitFor({state: 'hidden'});
     const stream = await download.createReadStream();
     const chunks = [];
-    for await (const chunk of stream) {chunks.push(chunk);}
+    for await (const chunk of stream) {
+        chunks.push(chunk);
+    }
     const wav = Buffer.concat(chunks);
     assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
     assert.equal(wav.toString('ascii', 8, 12), 'WAVE');
@@ -234,9 +275,13 @@ try {
     const encodingCancellation = await page.evaluate(async () => {
         const {exportWav} = await import('/src/lib/render.ts');
         const controller = new AbortController();
-        const message = await exportWav({signal: controller.signal, onProgress: state => {
-            if (state.stage === 'encoding' && state.progress > 0) {controller.abort();}
-        }});
+        const message = await exportWav({
+            signal: controller.signal, onProgress: state => {
+                if (state.stage === 'encoding' && state.progress > 0) {
+                    controller.abort();
+                }
+            }
+        });
         return {message, aborted: controller.signal.aborted};
     });
     assert.deepEqual(encodingCancellation, {message: '', aborted: true});
@@ -281,7 +326,9 @@ try {
     const fallbackDownload = await fallbackDownloadEvent;
     await exporting.waitFor({state: 'hidden'});
     const fallbackChunks = [];
-    for await (const chunk of await fallbackDownload.createReadStream()) {fallbackChunks.push(chunk);}
+    for await (const chunk of await fallbackDownload.createReadStream()) {
+        fallbackChunks.push(chunk);
+    }
     const fallbackWav = Buffer.concat(fallbackChunks);
     assert.deepEqual(fallbackWav.subarray(0, 44), wav.subarray(0, 44), 'fallback preserves WAV format and exact duration');
     assert.ok(fallbackWav.subarray(44).some(value => value !== 0), 'fallback renders actual audio, not silence');
@@ -292,13 +339,18 @@ try {
     assert.ok(measured.some(value => value > 0 && value < 1), 'actual frame updates before completion');
     assert.ok(measured.every((value, i) => i === 0 || value >= measured[i - 1]));
     assert.equal(downloads.length, 2, 'only successful renders download files');
-    await page.evaluate(() => {window.testNoOfflinePause = false;});
+    await page.evaluate(() => {
+        window.testNoOfflinePause = false;
+    });
 
     await page.evaluate(async () => (await import('/src/lib/project.ts')).loadDemoProject('monsoon'));
     const seven = page.getByRole('button', {name: /^Edit Seven Rains/});
     await page.locator('.grid-viewport').evaluate(async node => {
         const {project} = await import('/src/lib/project.ts');
-        let p; project.subscribe(value => {p = value;})();
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
         node.scrollLeft = 384 * p.zoom.arr.width - 40;
     });
     await seven.click();
@@ -306,12 +358,24 @@ try {
     assert.equal(await conductor.getByLabel('Time signature', {exact: true}).inputValue(), '7/8');
     await page.keyboard.press('Escape');
     await page.mouse.move(20, 20);
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'conductor-check.png')});}
+    if (process.argv.includes('--screenshot')) {
+        await page.screenshot({path: join(root, 'conductor-check.png')});
+    }
     assert.deepEqual(errors, [], 'no browser runtime errors');
-    console.log(JSON.stringify({browser: browser.version(), conductor: 'direct lane editing, no picker/repeated meters, real 7/8 ruler, ruler loop, history, playback lock and scrolling passed',
-        export: {cancelMs, stopped, frames: expectedFrames, wavBytes: wav.length, stages: [...new Set(stages.map(state => state.stage))],
-            downloads: downloads.length, fallback: {stopped: fallbackStopped, progress: fallbackProgress, wavBytes: fallbackWav.length},
-            checks: 'native suspension, missing pause APIs, focus, Escape, live playback recovery, retry, encoding cancel'}}, null, 2));
+    console.log(JSON.stringify({
+        browser: browser.version(),
+        conductor: 'direct lane editing, no picker/repeated meters, real 7/8 ruler, ruler loop, history, playback lock and scrolling passed',
+        export: {
+            cancelMs,
+            stopped,
+            frames: expectedFrames,
+            wavBytes: wav.length,
+            stages: [...new Set(stages.map(state => state.stage))],
+            downloads: downloads.length,
+            fallback: {stopped: fallbackStopped, progress: fallbackProgress, wavBytes: fallbackWav.length},
+            checks: 'native suspension, missing pause APIs, focus, Escape, live playback recovery, retry, encoding cancel'
+        }
+    }, null, 2));
 } finally {
     await browser?.close();
     await server.close();

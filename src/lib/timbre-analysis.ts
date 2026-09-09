@@ -132,7 +132,9 @@ export function usedPartials(params: InstrumentParams): UsedPartial[] {
 /** Unison rank ratios exactly as `makeVoice` spreads them (1 = a single rank). */
 export function unisonRatios(params: InstrumentParams): number[] {
     const n = Math.max(1, Math.min(8, Math.round(params.voices || 1)));
-    if (n === 1 || params.detune <= 0) {return [1];}
+    if (n === 1 || params.detune <= 0) {
+        return [1];
+    }
     return Array.from({length: n}, (_, i) => {
         const x = (2 * i) / (n - 1) - 1;
         return Math.pow(2, (x * params.detune / 2) / 1200);
@@ -183,7 +185,9 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
         ? [{hz: params.f1, w: 1}, {hz: params.f2, w: 0.75}, {hz: params.f3, w: 0.45}]
             .filter(f => f.hz > 0 && f.hz <= nyquist * 0.9 && FORMANT_DB * params.formant * f.w >= MIN_BAND_DB)
         : [];
-    if (formantSpecs.length) {formantWeight = formantSpecs[0].w;}
+    if (formantSpecs.length) {
+        formantWeight = formantSpecs[0].w;
+    }
     const level = 0.9 * params.gain * rankLevel
         * (formantWeight ? Math.pow(10, -FORMANT_DB * params.formant * formantWeight / 40) : 1);
 
@@ -193,7 +197,9 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
         if (params.tone > 0) {
             for (const part of partials) {
                 const f = base * part.ratio;
-                if (f > nyquist * 0.9) {continue;}
+                if (f > nyquist * 0.9) {
+                    continue;
+                }
                 const from = params.pitchDrop !== 0 ? f * bendRatio : f;
                 bands.push({
                     filter: new Peaking(sampleRate, from, part.q, 40 * params.tone * part.level),
@@ -233,19 +239,31 @@ export function renderNote(params: InstrumentParams, frequency: number, hold: nu
                     : 1;
                 for (const band of bands) {
                     let f = band.from === band.target ? band.target : band.from * Math.pow(band.target / band.from, sweep);
-                    if (band.vibrato) {f *= wobble;}
+                    if (band.vibrato) {
+                        f *= wobble;
+                    }
                     band.filter.tune(f);
                 }
             }
             const x = noise[i];
             let y = x;
-            for (const band of bands) {y = band.filter.process(y);}
+            for (const band of bands) {
+                y = band.filter.process(y);
+            }
             y = (y - x) * level;
-            for (const formant of formants) {y = formant.process(y);}
-            if (i < attackSamples) {env = peak * (i + 1) / attackSamples;}
-            else if (i < holdSamples) {env += (params.sus * peak - env) * decayCoefficient;}
-            else {env += (0 - env) * releaseCoefficient;}
-            if (env >= peak * 0.1) {loudSamples++;}
+            for (const formant of formants) {
+                y = formant.process(y);
+            }
+            if (i < attackSamples) {
+                env = peak * (i + 1) / attackSamples;
+            } else if (i < holdSamples) {
+                env += (params.sus * peak - env) * decayCoefficient;
+            } else {
+                env += (0 - env) * releaseCoefficient;
+            }
+            if (env >= peak * 0.1) {
+                loudSamples++;
+            }
             out[i] += y * env;
         }
     }
@@ -260,7 +278,9 @@ function fft(re: Float64Array, im: Float64Array): void {
     const n = re.length;
     for (let i = 1, j = 0; i < n; i++) {
         let bit = n >> 1;
-        for (; j & bit; bit >>= 1) {j ^= bit;}
+        for (; j & bit; bit >>= 1) {
+            j ^= bit;
+        }
         j ^= bit;
         if (i < j) {
             [re[i], re[j]] = [re[j], re[i]];
@@ -322,7 +342,9 @@ const summarize = ({harmonic, total, peak}: EnergySplit): NoteAnalysis => ({
 function splitEnergy(note: RenderedNote): EnergySplit {
     const {samples, sampleRate, partialFrequencies} = note;
     let size = 1 << 15;
-    while (size < samples.length) {size <<= 1;}
+    while (size < samples.length) {
+        size <<= 1;
+    }
     // resolution matters at the bottom: ±25 cents of 40 Hz is ±0.6 Hz
     size = Math.max(size, 1 << 17);
     const re = new Float64Array(size), im = new Float64Array(size);
@@ -332,8 +354,12 @@ function splitEnergy(note: RenderedNote): EnergySplit {
     for (let i = 0; i < samples.length; i++) {
         re[i] = samples[i];
         acc += samples[i] * samples[i];
-        if (i >= window) {acc -= samples[i - window] * samples[i - window];}
-        if (i >= window - 1) {peak = Math.max(peak, acc / window);}
+        if (i >= window) {
+            acc -= samples[i - window] * samples[i - window];
+        }
+        if (i >= window - 1) {
+            peak = Math.max(peak, acc / window);
+        }
     }
     fft(re, im);
     const binHz = sampleRate / size;
@@ -345,13 +371,17 @@ function splitEnergy(note: RenderedNote): EnergySplit {
         const halfWidth = Math.max(f * spread - f, uncertainty);
         const from = Math.max(low, Math.floor((f - halfWidth) / binHz));
         const to = Math.min(high, Math.ceil((f + halfWidth) / binHz));
-        for (let k = from; k <= to; k++) {onPitch[k] = 1;}
+        for (let k = from; k <= to; k++) {
+            onPitch[k] = 1;
+        }
     }
     let total = 0, harmonic = 0;
     for (let k = low; k <= high; k++) {
         const power = re[k] * re[k] + im[k] * im[k];
         total += power;
-        if (onPitch[k]) {harmonic += power;}
+        if (onPitch[k]) {
+            harmonic += power;
+        }
     }
     return {harmonic, total, peak};
 }
@@ -370,7 +400,9 @@ const MEASURE_SEEDS = 3;
 /** Render + analyze one note by name, `steps` sixteenths long at `bpm`. */
 export function measureNote(params: InstrumentParams, pitch: string, steps: number, bpm: number): InstrumentClarity {
     const frequency = noteByName[pitch]?.freq;
-    if (!frequency) {throw new Error(`Unknown pitch ${pitch}`);}
+    if (!frequency) {
+        throw new Error(`Unknown pitch ${pitch}`);
+    }
     // long pads are measured on their first two seconds — that is what decides
     // whether they read as a chord or as a wash
     const hold = Math.min(2, Math.max(0.05, steps * 60 / bpm / 4));
@@ -391,9 +423,17 @@ export function measureNote(params: InstrumentParams, pitch: string, steps: numb
  * band is a drum skin (timpani). Everything else is expected to hold a note.
  */
 export function isPitched(params: InstrumentParams): boolean {
-    if (params.tone < 0.5 || params.noise >= 0.5) {return false;}
-    if (Math.abs(params.pitchDrop) >= 10) {return false;}
-    if (params.sus === 0 && params.dec <= 0.08) {return false;}
-    if (params.q < 8 && params.noise > 0.1) {return false;}
+    if (params.tone < 0.5 || params.noise >= 0.5) {
+        return false;
+    }
+    if (Math.abs(params.pitchDrop) >= 10) {
+        return false;
+    }
+    if (params.sus === 0 && params.dec <= 0.08) {
+        return false;
+    }
+    if (params.q < 8 && params.noise > 0.1) {
+        return false;
+    }
     return usedPartials(params).length > 0;
 }

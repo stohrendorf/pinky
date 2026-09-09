@@ -59,7 +59,9 @@ describe('demo production mixes', () => {
 
     it('leaves the remaining demos on their legacy mixes', () => {
         for (const {id} of DEMO_LIBRARY) {
-            if (id === 'monsoon' || id === 'winter' || id === 'pocket' || id === 'promo') {continue;}
+            if (id === 'monsoon' || id === 'winter' || id === 'pocket' || id === 'promo') {
+                continue;
+            }
             expect(buildDemoProject(id).mixer, id).toBeUndefined();
         }
     });

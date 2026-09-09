@@ -13,9 +13,15 @@ import {
 // limiter samples are exercised independently in limiter-dsp/worklet tests.
 class Param {
     cancelScheduledValues = vi.fn();
-    constructor(public value = 0) {}
-    setValueAtTime = vi.fn((value: number) => {this.value = value;});
-    linearRampToValueAtTime = vi.fn((value: number) => {this.value = value;});
+    setValueAtTime = vi.fn((value: number) => {
+        this.value = value;
+    });
+    linearRampToValueAtTime = vi.fn((value: number) => {
+        this.value = value;
+    });
+
+    constructor(public value = 0) {
+    }
 }
 
 class Node {
@@ -30,34 +36,53 @@ class Node {
     type: string;
     signal = 0;
     port = {postMessage: vi.fn(), close: vi.fn(), onmessage: null};
+    start = vi.fn();
+    stop = vi.fn();
+
     constructor(public context: Context, public kind: string, public options: Record<string, unknown> = {}) {
         context.nodes.push(this);
         this.gain = new Param(Number(options.gain ?? (kind === 'GainNode' ? 1 : 0)));
         this.frequency = new Param(Number(options.frequency ?? 350));
         this.type = typeof options.type === 'string' ? options.type : '';
     }
+
     connect(node: Node) {
-        if (node.context !== this.context) {throw new Error('Cross-context connection');}
+        if (node.context !== this.context) {
+            throw new Error('Cross-context connection');
+        }
         this.connections.add(node);
         return node;
     }
+
     disconnect(node?: Node) {
-        if (node) {this.connections.delete(node);} else {this.connections.clear();}
+        if (node) {
+            this.connections.delete(node);
+        } else {
+            this.connections.clear();
+        }
     }
-    start = vi.fn();
-    stop = vi.fn();
-    getFloatTimeDomainData(samples: Float32Array) {samples.fill(this.signal);}
+
+    getFloatTimeDomainData(samples: Float32Array) {
+        samples.fill(this.signal);
+    }
 }
 
 class Buffer {
     data: Float32Array[];
     duration: number;
+
     constructor(public numberOfChannels: number, public length: number, public sampleRate: number) {
         this.data = Array.from({length: numberOfChannels}, () => new Float32Array(length));
         this.duration = length / sampleRate;
     }
-    getChannelData(channel: number) {return this.data[channel];}
-    copyToChannel(data: Float32Array, channel: number, offset = 0) {this.data[channel].set(data, offset);}
+
+    getChannelData(channel: number) {
+        return this.data[channel];
+    }
+
+    copyToChannel(data: Float32Array, channel: number, offset = 0) {
+        this.data[channel].set(data, offset);
+    }
 }
 
 class Context {
@@ -69,21 +94,47 @@ class Context {
     destination = new Node(this, 'destination');
     currentTime = 0;
     state = 'running';
-    audioWorklet = {addModule: vi.fn(() => Context.moduleLoad ??
-        (Context.moduleError ? Promise.reject(new Error('module failed')) : Promise.resolve()))};
-    constructor(public channels = 2, public length = 4800, public sampleRate = 48000) {Context.instances.push(this);}
-    createBuffer(channels: number, length: number, rate: number) {return new Buffer(channels, length, rate);}
-    pause = () => {};
+    audioWorklet = {
+        addModule: vi.fn(() => Context.moduleLoad ??
+            (Context.moduleError ? Promise.reject(new Error('module failed')) : Promise.resolve()))
+    };
+    resume = vi.fn(() => {
+        this.state = 'running';
+        return Promise.resolve();
+    });
+
+    constructor(public channels = 2, public length = 4800, public sampleRate = 48000) {
+        Context.instances.push(this);
+    }
+
+    createBuffer(channels: number, length: number, rate: number) {
+        return new Buffer(channels, length, rate);
+    }
+
+    pause = () => {
+    };
+
     suspend = vi.fn((time: number) => new Promise<void>(resolve => {
-        this.pause = () => {this.currentTime = time; this.state = 'suspended'; resolve();};
+        this.pause = () => {
+            this.currentTime = time;
+            this.state = 'suspended';
+            resolve();
+        };
     }));
-    resume = vi.fn(() => {this.state = 'running'; return Promise.resolve();});
-    close() {return Promise.resolve();}
+
+    close() {
+        return Promise.resolve();
+    }
+
     startRendering() {
-        if (Context.render) {return Context.render(this);}
+        if (Context.render) {
+            return Context.render(this);
+        }
         const result = this.createBuffer(this.channels, this.length, this.sampleRate);
         for (let channel = 0; channel < 2; channel++) {
-            for (let i = 0; i < this.length; i++) {result.data[channel][i] = i / this.length;}
+            for (let i = 0; i < this.length; i++) {
+                result.data[channel][i] = i / this.length;
+            }
         }
         return Promise.resolve(result);
     }
@@ -98,11 +149,15 @@ beforeEach(() => {
     for (const kind of ['GainNode', 'BiquadFilterNode', 'StereoPannerNode', 'DynamicsCompressorNode',
         'DelayNode', 'ChannelSplitterNode', 'AnalyserNode', 'AudioBufferSourceNode', 'ConvolverNode']) {
         vi.stubGlobal(kind, class extends Node {
-            constructor(context: Context, options?: Record<string, unknown>) {super(context, kind, options);}
+            constructor(context: Context, options?: Record<string, unknown>) {
+                super(context, kind, options);
+            }
         });
     }
     vi.stubGlobal('AudioWorkletNode', class extends Node {
-        constructor(context: Context, name: string, options?: Record<string, unknown>) {super(context, name, options);}
+        constructor(context: Context, name: string, options?: Record<string, unknown>) {
+            super(context, name, options);
+        }
     });
     vi.stubGlobal('OfflineAudioContext', Context);
     vi.stubGlobal('window', {AudioContext: Context, addEventListener: vi.fn()});
@@ -296,7 +351,7 @@ describe('persistent mixer audio routing', () => {
         const unsubscribe = limiter.trackProgress(48000 * 600, listener);
         const node = limiter.node as unknown as Node;
         expect(node.port.postMessage).toHaveBeenLastCalledWith({type: 'progress', intervalFrames: 144000});
-        const receive = node.port.onmessage as unknown as (event: {data: unknown}) => void;
+        const receive = node.port.onmessage as unknown as (event: { data: unknown }) => void;
         const meter = {peak: [0.1, 0.2], rms: [0.05, 0.1], reduction: 3};
         receive({data: meter});
         receive({data: {type: 'progress', frames: 128}});
@@ -391,10 +446,13 @@ describe('engine graph isolation and latency trimming', () => {
             engine.applyMaster('vol', 0.99);
             engine.applyMaster('rev', 0.01);
             engine.applyMaster('tilt', 12);
-            if (fail) {throw new Error('schedule failed');}
+            if (fail) {
+                throw new Error('schedule failed');
+            }
         });
-        if (fail) {await expect(request).rejects.toThrow('schedule failed');}
-        else {
+        if (fail) {
+            await expect(request).rejects.toThrow('schedule failed');
+        } else {
             const buffer = await request;
             expect(buffer.length).toBe(4410);
             expect(buffer.sampleRate).toBe(44100);
@@ -417,8 +475,15 @@ describe('engine graph isolation and latency trimming', () => {
         engine.applyMaster('vol', 0.91);
         let finish!: (buffer: Buffer) => void;
         let ready!: () => void;
-        const started = new Promise<void>(resolve => {ready = resolve;});
-        Context.render = () => {ready(); return new Promise(resolve => {finish = resolve;});};
+        const started = new Promise<void>(resolve => {
+            ready = resolve;
+        });
+        Context.render = () => {
+            ready();
+            return new Promise(resolve => {
+                finish = resolve;
+            });
+        };
         const rendering = engine.renderOffline(0.1, 48000, () => undefined);
         await started;
         await expect(engine.renderOffline(0.1, 48000, () => undefined)).rejects.toThrow('already in progress');
@@ -478,7 +543,10 @@ describe('engine graph isolation and latency trimming', () => {
             const limiter = c.nodes.find(n => n.kind === 'pinky-mixer-limiter')!;
             const master = c.nodes.find(n => n.connections.has(limiter))!;
             expect(master.gain.value).toBe(0.17);
-            expect(limiter.options.processorOptions).toMatchObject({metering: false, settings: {enabled: true, driveDb: 12}});
+            expect(limiter.options.processorOptions).toMatchObject({
+                metering: false,
+                settings: {enabled: true, driveDb: 12}
+            });
             engine.configureMixer(mixer, ['offline']);
             expect(limiter.port.postMessage).not.toHaveBeenCalled();
         }, {mixer, instrumentIds: ['offline']});
@@ -540,7 +608,9 @@ describe('engine graph isolation and latency trimming', () => {
         const analyser = engine.getAnalyser();
         const controller = new AbortController();
         let loaded!: () => void;
-        Context.moduleLoad = new Promise<void>(resolve => {loaded = resolve;});
+        Context.moduleLoad = new Promise<void>(resolve => {
+            loaded = resolve;
+        });
         const schedule = vi.fn();
         const pending = engine.renderOffline(1, 48000, schedule, undefined, {signal: controller.signal});
         const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
@@ -564,7 +634,9 @@ describe('engine graph isolation and latency trimming', () => {
     it('can cancel while waiting for live initialization without swapping its unfinished graph', async () => {
         const engine = await freshEngine();
         let loaded!: () => void;
-        Context.moduleLoad = new Promise<void>(resolve => {loaded = resolve;});
+        Context.moduleLoad = new Promise<void>(resolve => {
+            loaded = resolve;
+        });
         const initializing = engine.ensureAudio();
         const controller = new AbortController();
         const schedule = vi.fn();
@@ -642,7 +714,7 @@ describe('engine graph isolation and latency trimming', () => {
         expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: null, canSuspend: false});
         const limiter = offline.nodes.find(node => node.kind === 'pinky-mixer-limiter')!;
         expect(limiter.port.postMessage).toHaveBeenCalledWith({type: 'progress', intervalFrames: 12032});
-        const receive = limiter.port.onmessage as unknown as (event: {data: unknown}) => void;
+        const receive = limiter.port.onmessage as unknown as (event: { data: unknown }) => void;
         receive({data: {type: 'progress', frames: 12060}});
         expect(progress).toHaveBeenLastCalledWith({stage: 'rendering', progress: 0.25, canSuspend: false});
         controller.abort();

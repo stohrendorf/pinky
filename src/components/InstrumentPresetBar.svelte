@@ -36,7 +36,9 @@
     }
 
     function createFromPreset() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const instrument = createInstrument(presetName, allPresets[presetName]);
         $project.instruments = [...$project.instruments, instrument];
         selInstId.set(instrument.id);
@@ -49,13 +51,17 @@
 
     function onSavePreset(e: CustomEvent<string>) {
         const name = (e.detail || '').trim();
-        if (!name) {return;}
+        if (!name) {
+            return;
+        }
         userPresets = saveUserPreset(name, inst.params);
         presetName = name;
     }
 
     function removePreset() {
-        if (!isUserPreset) {return;}
+        if (!isUserPreset) {
+            return;
+        }
         userPresets = deleteUserPreset(presetName);
         presetName = Object.keys(PRESETS)[0];
     }
@@ -80,34 +86,34 @@
         </select>
     </label>
     <IconButton
-ariaLabel="Apply selected preset"
-icon="fa-check"
-title="Apply selected preset"
-                on:click={applyPreset}/>
+            ariaLabel="Apply selected preset"
+            icon="fa-check"
+            title="Apply selected preset"
+            on:click={applyPreset}/>
     <IconButton
-ariaLabel="Save selected instrument as a preset"
-icon="fa-floppy-disk"
-title="Save selected instrument as a preset"
-                on:click={openSavePreset}/>
+            ariaLabel="Save selected instrument as a preset"
+            icon="fa-floppy-disk"
+            title="Save selected instrument as a preset"
+            on:click={openSavePreset}/>
     {#if isUserPreset}
         <IconButton
-ariaLabel="Delete selected preset"
-icon="fa-xmark"
-title="Delete selected preset"
-                    on:click={removePreset}/>
+                ariaLabel="Delete selected preset"
+                icon="fa-xmark"
+                title="Delete selected preset"
+                on:click={removePreset}/>
     {/if}
     <IconButton
-ariaLabel="Create an instrument from this preset"
-icon="fa-add"
-title="Create an instrument from this preset"
-                on:click={createFromPreset}/>
+            ariaLabel="Create an instrument from this preset"
+            icon="fa-add"
+            title="Create an instrument from this preset"
+            on:click={createFromPreset}/>
 </div>
 
 <Prompt
-label="Preset Name"
-title="Save Preset"
-bind:show={showSavePreset}
-bind:value={savePresetValue}
+        label="Preset Name"
+        title="Save Preset"
+        bind:show={showSavePreset}
+        bind:value={savePresetValue}
         on:submit={onSavePreset}/>
 
 <style>

@@ -39,16 +39,13 @@ export class NodePool {
 
     /** Start pooling for a live context, discarding nodes from an old graph. */
     attach(context: BaseAudioContext, flushBus: GainNode, now: () => number): void {
-        if (this.context !== context) {this.clear();}
+        if (this.context !== context) {
+            this.clear();
+        }
         this.context = context;
         this.flushBus = flushBus;
         this.now = now;
         this.enabled = true;
-    }
-
-    /** Disable reuse without changing the nodes already owned by the pool. */
-    detach(): void {
-        this.enabled = false;
     }
 
     takeGain(gain: number, context: BaseAudioContext): GainNode {
@@ -84,13 +81,21 @@ export class NodePool {
 
     /** Return a disconnected node to this pool when it belongs to this graph. */
     give(node: AudioNode): void {
-        if (!this.enabled || node.context !== this.context) {return;}
+        if (!this.enabled || node.context !== this.context) {
+            return;
+        }
         if (node instanceof GainNode) {
-            if (this.gains.length < this.capacity) {this.gains.push(node);}
+            if (this.gains.length < this.capacity) {
+                this.gains.push(node);
+            }
         } else if (node instanceof BiquadFilterNode) {
-            if (this.biquads.length + this.cooling.length < this.capacity) {this.coolDown(node);}
+            if (this.biquads.length + this.cooling.length < this.capacity) {
+                this.coolDown(node);
+            }
         } else if (node instanceof StereoPannerNode) {
-            if (this.panners.length < this.capacity) {this.panners.push(node);}
+            if (this.panners.length < this.capacity) {
+                this.panners.push(node);
+            }
         }
     }
 
@@ -99,7 +104,9 @@ export class NodePool {
         while (this.cooling.length && this.cooling[0].at <= now) {
             const cooled = this.cooling.shift()!;
             safe(() => cooled.node.disconnect(cooled.sink));
-            if (this.biquads.length < this.capacity) {this.biquads.push(cooled.node);}
+            if (this.biquads.length < this.capacity) {
+                this.biquads.push(cooled.node);
+            }
         }
     }
 
@@ -113,7 +120,9 @@ export class NodePool {
     private now: () => number = () => 0;
 
     private coolDown(node: BiquadFilterNode): void {
-        if (!this.flushBus) {return;}
+        if (!this.flushBus) {
+            return;
+        }
         node.type = 'peaking';
         this.reset(node.frequency, 2000);
         this.reset(node.Q, 0.7);
@@ -134,6 +143,7 @@ interface CoolingNode {
 function resetParam(param: AudioParam, value: number): void {
     try {
         param.cancelScheduledValues(0);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
         // A node may already have been detached by the teardown sweep.
     }
@@ -143,6 +153,7 @@ function resetParam(param: AudioParam, value: number): void {
 function safe(action: () => void): void {
     try {
         action();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
         // Disconnecting an already disconnected node is harmless.
     }

@@ -40,10 +40,14 @@
     }
 
     function setSplitFromPointer(event: PointerEvent) {
-        if (!workspaceMain) {return;}
+        if (!workspaceMain) {
+            return;
+        }
         const rect = workspaceMain.getBoundingClientRect();
         const flexibleHeight = availableFlexibleHeight(rect);
-        if (!flexibleHeight) {return;}
+        if (!flexibleHeight) {
+            return;
+        }
 
         const dividerCenter = event.clientY - rect.top;
         const arrangerHeight = dividerCenter - verticalPadding - panelGap - dividerHeight / 2;
@@ -59,7 +63,9 @@
     }
 
     function handleDividerPointerMove(event: PointerEvent) {
-        if (dividerDragging) {setSplitFromPointer(event);}
+        if (dividerDragging) {
+            setSplitFromPointer(event);
+        }
     }
 
     function stopDividerDrag(event?: PointerEvent) {
@@ -92,13 +98,13 @@
         <Shortcuts/>
         <TopBar/>
         <main
-bind:this={workspaceMain}
-style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"
-              class="workspace-main"
-              class:divider-dragging={dividerDragging}
-              onpointercancel={stopDividerDrag}
-onpointermove={handleDividerPointerMove}
-              onpointerup={stopDividerDrag}>
+                bind:this={workspaceMain}
+                style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"
+                class="workspace-main"
+                class:divider-dragging={dividerDragging}
+                onpointercancel={stopDividerDrag}
+                onpointermove={handleDividerPointerMove}
+                onpointerup={stopDividerDrag}>
             <section class="arranger-panel" aria-label="Song arranger">
                 <div class="editor-with-tree">
                     <PatternBar/>
@@ -106,20 +112,20 @@ onpointermove={handleDividerPointerMove}
                 </div>
             </section>
             <div
-class="split-divider"
-aria-label="Resize arranger and pattern editor"
-aria-orientation="horizontal"
-aria-valuemax="100"
-                 aria-valuemin="0"
-aria-valuenow={Math.round(splitRatio * 100)}
-onkeydown={handleDividerKeydown}
-                 onpointercancel={stopDividerDrag}
-onpointerdown={startDividerDrag}
-                 onpointermove={handleDividerPointerMove}
-onpointerup={stopDividerDrag}
-                 role="separator"
-tabindex="0"
-                 title="Click or drag to resize editors"></div>
+                    class="split-divider"
+                    aria-label="Resize arranger and pattern editor"
+                    aria-orientation="horizontal"
+                    aria-valuemax="100"
+                    aria-valuemin="0"
+                    aria-valuenow={Math.round(splitRatio * 100)}
+                    onkeydown={handleDividerKeydown}
+                    onpointercancel={stopDividerDrag}
+                    onpointerdown={startDividerDrag}
+                    onpointermove={handleDividerPointerMove}
+                    onpointerup={stopDividerDrag}
+                    role="separator"
+                    tabindex="0"
+                    title="Click or drag to resize editors"></div>
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
                     <InstrumentTree onEdit={() => showInstrumentEditor = true}/>
@@ -139,11 +145,11 @@ tabindex="0"
     </div>
 
     <Dialog
-bodyClass="instrument-editor-body"
-height="min(720px, calc(100dvh - 32px))"
-title="Instrument editor"
+            bodyClass="instrument-editor-body"
+            height="min(720px, calc(100dvh - 32px))"
+            title="Instrument editor"
             width="min(1040px, calc(100vw - 32px))"
-bind:show={showInstrumentEditor}>
+            bind:show={showInstrumentEditor}>
         {#snippet headerActions()}
             <InstrumentPresetBar/>
         {/snippet}

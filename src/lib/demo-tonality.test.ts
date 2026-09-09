@@ -49,7 +49,9 @@ interface Played {
 
 function playedNotes(project: Project, instrumentId: string): Played | null {
     const notes = project.patterns.flatMap(pattern => pattern.tracks[instrumentId] || []);
-    if (!notes.length) {return null;}
+    if (!notes.length) {
+        return null;
+    }
     const byPitch = [...notes].sort((a, b) => noteByName[a.pitch].freq - noteByName[b.pitch].freq);
     const byLength = notes.map(note => note.len).sort((a, b) => a - b);
     return {median: byPitch[Math.floor(byPitch.length / 2)].pitch, steps: byLength[Math.floor(byLength.length / 2)]};
@@ -59,7 +61,9 @@ const pitchedParts = (song: DemoSong) => {
     const project = buildDemoProject(song);
     return project.instruments.flatMap(instrument => {
         const played = playedNotes(project, instrument.id);
-        if (!played || !isPitched(instrument.params)) {return [];}
+        if (!played || !isPitched(instrument.params)) {
+            return [];
+        }
         return [{name: instrument.name, params: instrument.params, played, bpm: project.bpm}];
     });
 };
@@ -72,7 +76,10 @@ describe('demo instrument tonality', () => {
     it.each(DEMO_LIBRARY.map(demo => demo.id))('renders every pitched part of %s as a pitch, not as noise', song => {
         const parts = pitchedParts(song);
         expect(parts.length).toBeGreaterThan(0);
-        const subsonic = parts.filter(({params, played}) => noteByName[played.median].freq < SUB_HZ && !isSubDrone(played) && !carriesOctave(params))
+        const subsonic = parts.filter(({
+            params,
+            played
+        }) => noteByName[played.median].freq < SUB_HZ && !isSubDrone(played) && !carriesOctave(params))
             .map(({name, played}) => `${name} @${played.median}: ${noteByName[played.median].freq.toFixed(0)} Hz`);
         const report = parts.filter(({played}) => !isSubDrone(played))
             .map(({name, params, played, bpm}) => ({name, ...measureNote(params, played.median, played.steps, bpm)}));
@@ -103,7 +110,13 @@ describe('timbre analysis model', () => {
 
     it('hears a narrow-band note as a pitch and a wide noise burst as noise', () => {
         const note = analyzeNote(renderNote(pluck, 440, 0.5));
-        const hiss = analyzeNote(renderNote({...pluck, tone: 0, noise: 1, noiseFreq: 4000, partials: [{ratio: 1, level: 1}]}, 440, 0.5));
+        const hiss = analyzeNote(renderNote({
+            ...pluck,
+            tone: 0,
+            noise: 1,
+            noiseFreq: 4000,
+            partials: [{ratio: 1, level: 1}]
+        }, 440, 0.5));
 
         expect(note.clarity).toBeGreaterThan(0.8);
         expect(hiss.clarity).toBeLessThan(0.2);

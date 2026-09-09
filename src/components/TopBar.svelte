@@ -118,15 +118,21 @@
     });
 
     function setMaster(id: MasterId, v: number) {
-        if (!$project || $rendering || !Number.isFinite(v)) {return;}
+        if (!$project || $rendering || !Number.isFinite(v)) {
+            return;
+        }
         const slider = MASTER_SLIDERS.find(s => s.id === id);
-        if (!slider) {return;}
+        if (!slider) {
+            return;
+        }
         ensureMixer($project).master[id] = Math.max(slider.min, Math.min(slider.max, v));
         touch();
     }
 
     function setBpm(input: HTMLInputElement) {
-        if (!$project || $playing || $rendering || !Number.isFinite(input.valueAsNumber)) {return;}
+        if (!$project || $playing || $rendering || !Number.isFinite(input.valueAsNumber)) {
+            return;
+        }
         $project.bpm = Math.max(30, Math.min(300, input.valueAsNumber));
         touch();
     }
@@ -222,9 +228,17 @@
                 <i class="fa fa-caret-down menu-caret" aria-hidden="true"></i>
             </button>
             <div class="transport-controls">
-                <Button className="compact-button" disabled={$playing || $rendering} title="Play Pattern" on:click={playPattern}><i class="fa fa-play"></i> Pattern
+                <Button
+className="compact-button"
+disabled={$playing || $rendering}
+title="Play Pattern"
+                        on:click={playPattern}><i class="fa fa-play"></i> Pattern
                 </Button>
-                <Button className="compact-button" disabled={$playing || $rendering} title="Play Song" on:click={playSong}><i class="fa fa-music"></i> Song
+                <Button
+className="compact-button"
+disabled={$playing || $rendering}
+title="Play Song"
+                        on:click={playSong}><i class="fa fa-music"></i> Song
                 </Button>
                 <Button
                         className="compact-button"
@@ -273,11 +287,14 @@
             <div class="sidebar-column">
                 <div class="sidebar-section">
                     <span class="menu-heading">Project</span>
-                    <Button variant="secondary" on:click={() => runUtilityAction(saveProject)}><i class="fa fa-save"></i> Save</Button>
-                    <Button variant="secondary" on:click={() => runUtilityAction(exportProject)}><i class="fa fa-download"></i> Export</Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(saveProject)}><i class="fa fa-save"></i> Save
+                    </Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(exportProject)}><i class="fa fa-download"></i> Export
+                    </Button>
                     <Button variant="secondary" on:click={() => runUtilityAction(() => fileInput?.click())}><i class="fa fa-upload"></i> Import
                     </Button>
-                    <Button variant="secondary" on:click={() => runUtilityAction(newProject, false)}><i class="fa fa-add"></i> New</Button>
+                    <Button variant="secondary" on:click={() => runUtilityAction(newProject, false)}><i class="fa fa-add"></i> New
+                    </Button>
                 </div>
                 <div class="sidebar-section">
                     <span class="menu-heading">Render</span>
@@ -294,12 +311,12 @@
                     <span class="menu-heading">Mix</span>
                     <div class="master-controls" aria-label="Master controls">
                         <fieldset class="master-editing" disabled={$rendering || !$project}>
-                        {#each MASTER_SLIDERS as s (s.id)}
-                            <Slider
-                                    {...s}
-                                    onchange={v => setMaster(s.id as MasterId, v)}
-                                    value={masterParams[s.id as MasterId]}/>
-                        {/each}
+                            {#each MASTER_SLIDERS as s (s.id)}
+                                <Slider
+                                        {...s}
+                                        onchange={v => setMaster(s.id as MasterId, v)}
+                                        value={masterParams[s.id as MasterId]}/>
+                            {/each}
                         </fieldset>
                     </div>
                 </div>
@@ -316,13 +333,16 @@
                                 value={swingPct}>
                         <span class="swing-val">{swingPct}%</span>
                     </label>
-                    {#if $project}<label class="bpm-label" title="Base tempo for pattern preview and before the first conductor marker. Stop to edit.">BPM <input
-                            disabled={$playing || $rendering}
-                            max="300"
-                            min="30"
-                            onchange={e => setBpm(e.currentTarget)}
-                            type="number"
-                            value={$project.bpm}></label>{/if}
+                    {#if $project}<label
+class="bpm-label"
+                                         title="Base tempo for pattern preview and before the first conductor marker. Stop to edit.">BPM
+                        <input
+                                disabled={$playing || $rendering}
+                                max="300"
+                                min="30"
+                                onchange={e => setBpm(e.currentTarget)}
+                                type="number"
+                                value={$project.bpm}></label>{/if}
                 </div>
             </div>
             <div class="sidebar-section library-section">
@@ -483,10 +503,6 @@
 
     .utility-sidebar {
         min-width: 0;
-    }
-
-    .help-button {
-        min-width: 36px;
     }
 
     .utility-sidebar {

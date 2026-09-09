@@ -63,7 +63,9 @@ export function cancelExport(): void {
 }
 
 export function dismissExportError(): void {
-    if (!get(rendering)) {progressState.set(null);}
+    if (!get(rendering)) {
+        progressState.set(null);
+    }
 }
 
 const RENDER_RATE = 44100;
@@ -78,15 +80,21 @@ export async function renderSongToWav(options: WavExportOptions = {}): Promise<B
 }
 
 async function performExport(download: boolean, options: WavExportOptions): Promise<Blob | null> {
-    if (get(rendering) || eng.isRendering()) {throw new Error('An offline render is already in progress');}
+    if (get(rendering) || eng.isRendering()) {
+        throw new Error('An offline render is already in progress');
+    }
     checkAbort(options.signal);
     const current = get(project);
-    if (!current || !current.arrangement.length) {return null;}
+    if (!current || !current.arrangement.length) {
+        return null;
+    }
     const p = JSON.parse(JSON.stringify(current)) as Project;
     const lp = p.loop;
     const from = lp && lp.end > lp.start ? Math.max(0, Math.round(lp.start)) : 0;
     const to = lp && lp.end > lp.start ? Math.round(lp.end) : songLengthSteps(p);
-    if (to <= from) {return null;}
+    if (to <= from) {
+        return null;
+    }
     const release = Math.max(0, ...p.instruments.map(inst => inst.params.rel),
         ...(p.automation || []).filter(lane => lane.param === 'rel').flatMap(lane => lane.points.map(point => point.value)));
     const seconds = createTimingMap(p).secondsBetween(from, to) + release * 1.5 + TAIL + mixerTailSeconds(p.mixer);
@@ -101,7 +109,13 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
     }, {once: true});
     const report = (stage: ExportProgressState['stage'], progress: number | null, canSuspend?: boolean) => {
         checkAbort(signal);
-        const state: ExportProgressState = {stage, progress, canSuspend, cancelling: false, etaSeconds: eta.update(stage, progress)};
+        const state: ExportProgressState = {
+            stage,
+            progress,
+            canSuspend,
+            cancelling: false,
+            etaSeconds: eta.update(stage, progress)
+        };
         progressState.set(state);
         options.onProgress?.(state);
         checkAbort(signal);
@@ -111,7 +125,9 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
         report('preparing', null);
         // Let the modal mount before allocating the offline graph.
         await yieldExport(signal);
-        if (get(playing)) {stopTransport();}
+        if (get(playing)) {
+            stopTransport();
+        }
         const buf = await eng.renderOffline(seconds, RENDER_RATE, () => scheduleRangeAsync(p, from, to, {
             signal, onProgress: progress => report('scheduling', progress)
         }), {
@@ -124,7 +140,9 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
         const blob = await encodeWavAsync(buf, {signal, onProgress: progress => report('encoding', progress)});
         // Include the download in the same cancellation/ownership boundary.
         checkAbort(signal);
-        if (download) {downloadBlob(blob, 'pinky-song.wav');}
+        if (download) {
+            downloadBlob(blob, 'pinky-song.wav');
+        }
         progressState.set(null);
         return blob;
     } catch (error) {
@@ -132,8 +150,10 @@ async function performExport(download: boolean, options: WavExportOptions): Prom
             progressState.set(null);
             throw new DOMException('Export cancelled', 'AbortError');
         }
-        progressState.set({stage: 'error', progress: null, cancelling: false,
-            error: 'Render failed: ' + (error instanceof Error ? error.message : String(error))});
+        progressState.set({
+            stage: 'error', progress: null, cancelling: false,
+            error: 'Render failed: ' + (error instanceof Error ? error.message : String(error))
+        });
         throw error;
     } finally {
         options.signal?.removeEventListener('abort', abort);
@@ -147,8 +167,11 @@ export function downloadBlob(blob: Blob, name: string): void {
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
-    try {a.click();}
-    finally {setTimeout(() => URL.revokeObjectURL(url), 1000);}
+    try {
+        a.click();
+    } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
 }
 
 // Returns '' on success, an error message otherwise
@@ -162,7 +185,9 @@ export async function exportWav(options: WavExportOptions = {}): Promise<string>
         }
         return '';
     } catch (e) {
-        if (e instanceof Error && e.name === 'AbortError') {return '';}
+        if (e instanceof Error && e.name === 'AbortError') {
+            return '';
+        }
         return 'Render failed: ' + (e instanceof Error ? e.message : String(e));
     }
 }

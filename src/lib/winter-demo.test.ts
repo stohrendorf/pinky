@@ -317,7 +317,9 @@ describe('Vivaldi Winter demo', () => {
         for (const inst of demo.instruments) {
             const notes = notesOf(inst.id);
             expect(notes.length, inst.name).toBeGreaterThan(0);
-            if (inst.name.startsWith('Orchestra/Venti/')) {continue;} // the winds are noise by design
+            if (inst.name.startsWith('Orchestra/Venti/')) {
+                continue;
+            } // the winds are noise by design
             expect(isPitched(inst.params), inst.name).toBe(true);
             const sorted = [...notes].sort((a, b) => noteByName[a.pitch].freq - noteByName[b.pitch].freq);
             const len = median(notes.map(note => note.len));

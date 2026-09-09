@@ -23,10 +23,13 @@ import ExportProgress from './ExportProgress.svelte';
 const current = vi.hoisted(() => ({value: null as ExportProgressState | null}));
 const source = readFileSync(fileURLToPath(new URL('./ExportProgress.svelte', import.meta.url)), 'utf8');
 vi.mock('../lib/render', () => ({
-    exportProgress: {subscribe: (run: (value: ExportProgressState | null) => void) => {
-        run(current.value);
-        return () => {};
-    }},
+    exportProgress: {
+        subscribe: (run: (value: ExportProgressState | null) => void) => {
+            run(current.value);
+            return () => {
+            };
+        }
+    },
     cancelExport: vi.fn(), dismissExportError: vi.fn(), exportWav: vi.fn()
 }));
 

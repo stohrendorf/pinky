@@ -23,7 +23,7 @@ export interface ViewportOptions {
     maxHeight?: number;
 }
 
-export function handleViewportWheel(e: WheelEvent, state: ViewportState, options: ViewportOptions) {
+export function handleViewportWheel(e: WheelEvent, options: ViewportOptions) {
     if (e.ctrlKey) {
         e.preventDefault();
         const {getContainer, getZoom, setZoom, sidebarWidth, minWidth = 4, maxWidth = 200} = options;
@@ -81,8 +81,16 @@ export function handleViewportMouseMove(e: MouseEvent, state: ViewportState, opt
         let nw = zoom.width;
         let nh = zoom.height;
 
-        if (dx > 0) {nw *= factor;} else if (dx < 0) {nw /= factor;}
-        if (dy > 0) {nh *= factor;} else if (dy < 0) {nh /= factor;}
+        if (dx > 0) {
+            nw *= factor;
+        } else if (dx < 0) {
+            nw /= factor;
+        }
+        if (dy > 0) {
+            nh *= factor;
+        } else if (dy < 0) {
+            nh /= factor;
+        }
 
         nw = Math.max(minWidth, Math.min(maxWidth, nw));
         nh = Math.max(minHeight, Math.min(maxHeight, nh));

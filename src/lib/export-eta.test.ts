@@ -9,10 +9,12 @@ import {
 function fixture() {
     let time = 0;
     const estimator = createExportEta(() => time);
-    return {estimator, sample: (at: number, progress: number | null, stage = 'rendering') => {
-        time = at;
-        return estimator.update(stage, progress);
-    }};
+    return {
+        estimator, sample: (at: number, progress: number | null, stage = 'rendering') => {
+            time = at;
+            return estimator.update(stage, progress);
+        }
+    };
 }
 
 describe('stage-local export ETA', () => {
@@ -119,7 +121,9 @@ describe('stage-local export ETA', () => {
             const estimator = createExportEta();
             expect(estimator.update('rendering', 0)).toBeNull();
             expect(estimator.update('rendering', 0.1)).toBeCloseTo(9);
-        } finally {clock.mockRestore();}
+        } finally {
+            clock.mockRestore();
+        }
     });
 });
 

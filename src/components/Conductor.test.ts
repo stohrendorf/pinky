@@ -41,9 +41,17 @@ const source = readFileSync(fileURLToPath(new URL('./Conductor.svelte', import.m
 const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.meta.url)), 'utf8');
 
 interface Drag {
-    id: string; pointer: number; x: number; scroll: number; from: number; to: number;
-    moved: boolean; problem: string; snapshot: string;
+    id: string;
+    pointer: number;
+    x: number;
+    scroll: number;
+    from: number;
+    to: number;
+    moved: boolean;
+    problem: string;
+    snapshot: string;
 }
+
 interface Actions {
     newMarker: (at?: number) => void;
     addAtPointer: (event: MouseEvent) => void;
@@ -61,7 +69,7 @@ interface Actions {
     clickMarker: (event: MouseEvent, id: string) => void;
     markerKey: (event: KeyboardEvent, point: MarkerPoint) => void;
     handleDialogKey: (event: KeyboardEvent, dialog: HTMLElement) => void;
-    dialogKeyboard: (node: HTMLElement) => {destroy: () => void};
+    dialogKeyboard: (node: HTMLElement) => { destroy: () => void };
 }
 
 // Exercise the actual component handlers without starting the audio engine.
@@ -91,8 +99,12 @@ function fixture(grouped = false) {
     }
     const scope = {
         $project: p as Project | null, $playing: false, $rendering: false, $songCursor: 19.3,
-        get conductor() {return this.$project?.conductor ?? {tempos: [], meters: [], sections: []};},
-        get points() {return markerPoints(this.conductor);},
+        get conductor() {
+            return this.$project?.conductor ?? {tempos: [], meters: [], sections: []};
+        },
+        get points() {
+            return markerPoints(this.conductor);
+        },
         cellWidth: 24, scrollLeft: 0, totalLength: 128,
         editingId: null as string | null, selectedId: null as string | null, markerStep: 0,
         tempoBpm: undefined as number | undefined, tempoCurve: 'hold', signature: '',
@@ -100,7 +112,8 @@ function fixture(grouped = false) {
         drag: null as Drag | null, dragProject: null as Project | null,
         editorProject: null as Project | null, editorSnapshot: '',
         opener: {focus: vi.fn(), isConnected: true},
-        document: {activeElement: null as unknown, querySelector: vi.fn()}, HTMLElement: class {},
+        document: {activeElement: null as unknown, querySelector: vi.fn()}, HTMLElement: class {
+        },
         touch: vi.fn(), markerPoints, moveMarkerAt, removeMarkerAt, updateMarkerAt, createTimingMap, barAt, tick
     };
     return {p, scope, actions: handlers(scope)};
@@ -109,10 +122,14 @@ function fixture(grouped = false) {
 function keyboard(key: string, shiftKey = false) {
     return {key, shiftKey, preventDefault: vi.fn(), stopPropagation: vi.fn()} as unknown as KeyboardEvent;
 }
+
 function pointer(clientX: number, pointerId = 1) {
-    return {clientX, pointerId, button: 0, stopPropagation: vi.fn(),
-        currentTarget: {setPointerCapture: vi.fn()}} as unknown as PointerEvent;
+    return {
+        clientX, pointerId, button: 0, stopPropagation: vi.fn(),
+        currentTarget: {setPointerCapture: vi.fn()}
+    } as unknown as PointerEvent;
 }
+
 function click(detail = 1) {
     return {detail, stopPropagation: vi.fn()} as unknown as MouseEvent;
 }
@@ -160,7 +177,10 @@ describe('Conductor component', () => {
     it('places at the clicked step with a scrolled/zoomed lane and clamps the start', () => {
         const {p, scope, actions} = fixture();
         scope.cellWidth = 12;
-        actions.addAtPointer({clientX: 260, currentTarget: {getBoundingClientRect: () => ({left: -220})}} as unknown as MouseEvent);
+        actions.addAtPointer({
+            clientX: 260,
+            currentTarget: {getBoundingClientRect: () => ({left: -220})}
+        } as unknown as MouseEvent);
         expect(p.conductor?.sections[0].step).toBe(40);
         actions.newMarker(-12);
         expect(p.conductor?.sections.map(marker => marker.step)).toEqual([0, 40]);
@@ -178,9 +198,11 @@ describe('Conductor component', () => {
         scope.signature = '3/4';
         actions.saveMarker();
         expect(scope.show).toBe(false);
-        expect(scope.points[0]).toMatchObject({id: ids.id,
+        expect(scope.points[0]).toMatchObject({
+            id: ids.id,
             section: {id: ids.section!.id, name: 'Bronze'}, tempo: {id: ids.tempo!.id, bpm: 108, curve: 'linear'},
-            meter: {id: ids.meter!.id, numerator: 3, denominator: 4}});
+            meter: {id: ids.meter!.id, numerator: 3, denominator: 4}
+        });
         expect(scope.touch).toHaveBeenCalledTimes(1);
         expect(JSON.stringify({...p, conductor: undefined})).toBe(before);
     });
@@ -240,7 +262,13 @@ describe('Conductor component', () => {
         expect(JSON.stringify(p)).toBe(before);
         expect(scope.touch).not.toHaveBeenCalled();
         actions.finishDrag(pointer(300 + 24 * 8));
-        expect(scope.points[0]).toMatchObject({id: point.id, step: 8, section: {step: 8}, tempo: {step: 8}, meter: {step: 8}});
+        expect(scope.points[0]).toMatchObject({
+            id: point.id,
+            step: 8,
+            section: {step: 8},
+            tempo: {step: 8},
+            meter: {step: 8}
+        });
         expect(scope.touch).toHaveBeenCalledTimes(1);
         actions.clickMarker(click(), point.id);
         expect(scope.show).toBe(false);
@@ -270,8 +298,11 @@ describe('Conductor component', () => {
         const point = scope.points[0];
         actions.startDrag(pointer(300), point);
         actions.updateDrag(pointer(600));
-        if (how === 'escape') {actions.markerKey(keyboard('Escape'), point);}
-        else {actions.cancelDrag();}
+        if (how === 'escape') {
+            actions.markerKey(keyboard('Escape'), point);
+        } else {
+            actions.cancelDrag();
+        }
         actions.finishDrag(pointer(600));
         actions.clickMarker(click(), point.id);
         expect(scope.drag).toBeNull();
@@ -352,8 +383,11 @@ describe('Conductor component', () => {
         const point = scope.points[0];
         actions.editMarker(point.id);
         actions.startDrag(pointer(300), point);
-        if (change === 'deleted') {p.conductor = {sections: [], tempos: [], meters: []};}
-        else {scope.$project = structuredClone(p);}
+        if (change === 'deleted') {
+            p.conductor = {sections: [], tempos: [], meters: []};
+        } else {
+            scope.$project = structuredClone(p);
+        }
         const before = JSON.stringify(scope.$project);
         actions.saveMarker();
         actions.deleteMarker();
@@ -365,7 +399,11 @@ describe('Conductor component', () => {
 
     it('traps focus, filters hidden/disabled controls and shields input from app shortcuts', () => {
         const {scope, actions} = fixture();
-        const control = (disabled = false, visible = true) => ({focus: vi.fn(), matches: () => disabled, getClientRects: () => visible ? [{}] : []});
+        const control = (disabled = false, visible = true) => ({
+            focus: vi.fn(),
+            matches: () => disabled,
+            getClientRects: () => visible ? [{}] : []
+        });
         const first = control(), last = control();
         const dialog = {querySelectorAll: () => [first, control(true), control(false, false), last], focus: vi.fn()};
         scope.document.activeElement = last;

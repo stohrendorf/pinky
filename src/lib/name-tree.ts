@@ -45,7 +45,7 @@ export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEn
 
     for (const item of items) {
         const parts = pathParts(item.name);
-        const label = parts.pop() || 'Untitled';
+        parts.pop();
         let folder = root;
 
         for (const part of parts) {

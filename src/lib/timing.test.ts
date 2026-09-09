@@ -17,7 +17,12 @@ import {
 } from './types';
 
 const tempo = (step: number, bpm: number, curve: 'hold' | 'linear' = 'hold') => ({id: createId(), step, bpm, curve});
-const meter = (step: number, numerator: number, denominator: 4 | 8 | 16) => ({id: createId(), step, numerator, denominator});
+const meter = (step: number, numerator: number, denominator: 4 | 8 | 16) => ({
+    id: createId(),
+    step,
+    numerator,
+    denominator
+});
 const empty = (): ConductorData => ({tempos: [], meters: [], sections: []});
 
 describe('conductor timing map', () => {

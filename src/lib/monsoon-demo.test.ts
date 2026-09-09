@@ -23,7 +23,7 @@ const lane = (targetName: string, param: string) => {
     return demo.automation!.find(candidate => candidate.target === target && candidate.param === param)!;
 };
 const songEnd = Math.max(...demo.arrangement.map(clip => clip.start + clip.len));
-const patternOf = (clip: {patternId: string}) => demo.patterns.find(pattern => pattern.id === clip.patternId)!;
+const patternOf = (clip: { patternId: string }) => demo.patterns.find(pattern => pattern.id === clip.patternId)!;
 const clipsOf = (patternName: string) => demo.arrangement.filter(clip => patternOf(clip).name === patternName);
 
 describe('Bronze Monsoon demo', () => {
@@ -242,7 +242,9 @@ describe('Bronze Monsoon demo', () => {
 
     it('measures every pitched part as a clear pitch at a mix level that can be heard', () => {
         for (const {name, params, id} of demo.instruments) {
-            if (!isPitched(params)) {continue;}
+            if (!isPitched(params)) {
+                continue;
+            }
             const notes = demo.patterns.flatMap(pattern => pattern.tracks[id] || []);
             const byPitch = [...notes].sort((a, b) => noteByName[a.pitch].freq - noteByName[b.pitch].freq);
             const shortest = Math.min(...notes.map(note => note.len));

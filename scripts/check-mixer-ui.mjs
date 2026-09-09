@@ -26,7 +26,11 @@ try {
         browser = await chromium.launch({executablePath: process.env.PINKY_BROWSER, args: ['--mute-audio']});
     } else {
         for (const channel of ['chrome', 'msedge', 'chromium']) {
-            try {browser = await chromium.launch({channel, args: ['--mute-audio']}); break;} catch { /* next installed browser */ }
+            try {
+                browser = await chromium.launch({channel, args: ['--mute-audio']});
+                break;
+            } catch { /* next installed browser */
+            }
         }
     }
     assert.ok(browser, 'Install a supported browser first');
@@ -37,10 +41,14 @@ try {
     const initial = await page.evaluate(async () => {
         const model = await import('/src/lib/project.ts');
         model.loadDemoProject('monsoon');
-        model.project.subscribe(value => {window.mixerSong = value;});
+        model.project.subscribe(value => {
+            window.mixerSong = value;
+        });
         const p = window.mixerSong;
-        return {name: p.instruments[0].name, id: p.instruments[0].id, volume: p.mixer.channels[p.instruments[0].id].volume,
-            mixer: JSON.stringify(p.mixer), instruments: JSON.stringify(p.instruments)};
+        return {
+            name: p.instruments[0].name, id: p.instruments[0].id, volume: p.mixer.channels[p.instruments[0].id].volume,
+            mixer: JSON.stringify(p.mixer), instruments: JSON.stringify(p.instruments)
+        };
     });
 
     const appMenu = page.getByRole('button', {name: 'Pinky application menu', exact: true});
@@ -57,14 +65,28 @@ try {
     const instrumentEditor = page.getByRole('dialog', {name: 'Instrument editor', exact: true});
     await instrumentEditor.waitFor();
     assert.equal(await instrumentEditor.getByText('Range C4–B6', {exact: true}).count(), 1);
-    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {key: 'y', code: 'KeyZ', bubbles: true})));
+    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'y',
+        code: 'KeyZ',
+        bubbles: true
+    })));
     await page.waitForFunction(async id => ((await import('/src/lib/engine.ts')).mixerMeters().channels[id]?.peak ?? 0) > 0.0001,
         initial.id, {timeout: 5000});
-    assert.equal((await instrumentEditor.getByRole('button', {name: 'Play C5', exact: true}).locator('kbd').textContent())?.toLowerCase(), 'y',
-        'QWERTZ keeps the lowest note on the first physical key');
-    assert.equal((await instrumentEditor.getByRole('button', {name: 'Play A6', exact: true}).locator('kbd').textContent())?.toLowerCase(), 'z',
-        'learning one swapped key updates its paired label');
-    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', {key: 'y', code: 'KeyZ', bubbles: true})));
+    assert.equal((await instrumentEditor.getByRole('button', {
+        name: 'Play C5',
+        exact: true
+    }).locator('kbd').textContent())?.toLowerCase(), 'y',
+    'QWERTZ keeps the lowest note on the first physical key');
+    assert.equal((await instrumentEditor.getByRole('button', {
+        name: 'Play A6',
+        exact: true
+    }).locator('kbd').textContent())?.toLowerCase(), 'z',
+    'learning one swapped key updates its paired label');
+    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', {
+        key: 'y',
+        code: 'KeyZ',
+        bubbles: true
+    })));
     await instrumentEditor.getByRole('button', {name: 'Octave up', exact: true}).click();
     assert.equal(await instrumentEditor.getByText('Range C5–B7', {exact: true}).count(), 1);
     await page.keyboard.press('Escape');
@@ -79,8 +101,10 @@ try {
     await automation.getByRole('button', {name: 'Add lane', exact: true}).click();
     assert.deepEqual(await page.evaluate(id => {
         const lane = window.mixerSong.automation.at(-1);
-        return {mixerTarget: lane.target.startsWith('mixer|channel|'), param: lane.param, value: lane.points[0].value,
-            channelValue: window.mixerSong.mixer.channels[id].volume};
+        return {
+            mixerTarget: lane.target.startsWith('mixer|channel|'), param: lane.param, value: lane.points[0].value,
+            channelValue: window.mixerSong.mixer.channels[id].volume
+        };
     }, initial.id), {mixerTarget: true, param: 'volume', value: initial.volume, channelValue: initial.volume});
     await page.getByRole('button', {name: 'Add automation lane', exact: true}).click();
     await automation.getByRole('tab', {name: 'Global FX', exact: true}).click();
@@ -96,7 +120,9 @@ try {
     assert.equal(await page.evaluate(() => JSON.stringify(window.mixerSong.mixer)), initial.mixer, 'opening changes no sound');
     const initialBounds = await dialog.boundingBox();
     assert.ok(initialBounds.height < 600, 'compact mixer does not reserve a tall empty panel');
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: join(root, 'mixer-simple-check.png')});}
+    if (process.argv.includes('--screenshot')) {
+        await page.screenshot({path: join(root, 'mixer-simple-check.png')});
+    }
 
     const fader = dialog.getByRole('slider', {name: `${initial.name} fader`, exact: true});
     const bounds = await fader.boundingBox();
@@ -144,11 +170,17 @@ try {
     await panel.getByRole('slider', {name: 'Delay time', exact: true}).press('End');
     assert.equal(await page.evaluate(() => window.mixerSong.mixer.buses.at(-1).delayTime), 2);
     await heading.click();
-    assert.equal(await panel.getByRole('slider', {name: 'High-pass', exact: true}).isVisible(), false, 'disclosures reset for a new selection');
+    assert.equal(await panel.getByRole('slider', {
+        name: 'High-pass',
+        exact: true
+    }).isVisible(), false, 'disclosures reset for a new selection');
     await panel.getByLabel('Add send', {exact: true}).selectOption(bus);
     await panel.getByRole('slider', {name: 'Send to Test echo', exact: true}).press('End');
-    assert.equal(await page.evaluate(({id, bus}) => window.mixerSong.mixer.channels[id].sends.find(s => s.busId === bus).level,
-        {id: initial.id, bus}), 1);
+    assert.equal(await page.evaluate(({
+        id,
+        bus
+    }) => window.mixerSong.mixer.channels[id].sends.find(s => s.busId === bus).level,
+    {id: initial.id, bus}), 1);
     await panel.getByLabel(`${initial.name} output`, {exact: true}).selectOption(bus);
     await dialog.getByRole('button', {name: 'Test echo settings', exact: true}).click();
     await panel.getByRole('button', {name: 'Delete bus', exact: true}).click();
@@ -167,15 +199,20 @@ try {
     const summary = panel.locator('summary', {hasText: 'Limiter settings'});
     await summary.focus();
     await page.keyboard.press('Tab');
-    assert.equal(await dialog.getByRole('button', {name: 'Close dialog', exact: true}).evaluate(el => el === document.activeElement), true,
-        'focus trap excludes controls inside closed disclosures');
+    assert.equal(await dialog.getByRole('button', {
+        name: 'Close dialog',
+        exact: true
+    }).evaluate(el => el === document.activeElement), true,
+    'focus trap excludes controls inside closed disclosures');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await summary.evaluate(el => el === document.activeElement), true);
     await panel.getByRole('button', {name: 'Close channel settings', exact: true}).click();
 
     const master = dialog.getByRole('region', {name: 'Master strip', exact: true});
     const before = await master.boundingBox();
-    await dialog.locator('.strips').evaluate(el => {el.scrollLeft = el.scrollWidth;});
+    await dialog.locator('.strips').evaluate(el => {
+        el.scrollLeft = el.scrollWidth;
+    });
     assert.deepEqual(await master.boundingBox(), before, 'master stays fixed while scrolling channels');
     await dialog.getByRole('button', {name: 'Master settings', exact: true}).click();
     assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), true, 'settings do not overflow horizontally');
@@ -184,8 +221,10 @@ try {
     await dialog.waitFor({state: 'hidden'});
     assert.equal(await opener.evaluate(el => el === document.activeElement), true);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({browser: browserName, version: browser.version(), initialHeight: initialBounds.height,
-        checks: 'preview audio, QWERTZ layout, logo menu, automation trees/mixer lane, compact mixer, faders, mute/solo, history, routing, delay, limiter, focus'}));
+    console.log(JSON.stringify({
+        browser: browserName, version: browser.version(), initialHeight: initialBounds.height,
+        checks: 'preview audio, QWERTZ layout, logo menu, automation trees/mixer lane, compact mixer, faders, mute/solo, history, routing, delay, limiter, focus'
+    }));
 } finally {
     await browser?.close();
     await server.close();

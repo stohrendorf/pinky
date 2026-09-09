@@ -43,21 +43,33 @@ const finite = (v: unknown, min: number, max: number): v is number =>
     typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
 export function isConductorData(value: unknown): value is ConductorData {
-    if (!object(value)) {return false;}
+    if (!object(value)) {
+        return false;
+    }
     const ids = new Set<string>();
     for (const kind of ['tempos', 'meters', 'sections'] as const) {
         const markers = value[kind];
-        if (!Array.isArray(markers) || markers.length > 512) {return false;}
+        if (!Array.isArray(markers) || markers.length > 512) {
+            return false;
+        }
         let previous = -1;
         for (const marker of markers as unknown[]) {
             if (!object(marker) || !isProjectId(marker.id) || ids.has(marker.id)
-                || !finite(marker.step, 0, 1_000_000) || !Number.isInteger(marker.step) || marker.step <= previous) {return false;}
+                || !finite(marker.step, 0, 1_000_000) || !Number.isInteger(marker.step) || marker.step <= previous) {
+                return false;
+            }
             ids.add(marker.id);
             previous = marker.step;
-            if (kind === 'tempos' && (!finite(marker.bpm, 30, 300) || !['hold', 'linear'].includes(String(marker.curve)))) {return false;}
+            if (kind === 'tempos' && (!finite(marker.bpm, 30, 300) || !['hold', 'linear'].includes(String(marker.curve)))) {
+                return false;
+            }
             if (kind === 'meters' && (!finite(marker.numerator, 1, 32) || !Number.isInteger(marker.numerator)
-                || ![1, 2, 4, 8, 16].includes(marker.denominator as number))) {return false;}
-            if (kind === 'sections' && (typeof marker.name !== 'string' || !marker.name.trim() || marker.name.length > 80)) {return false;}
+                || ![1, 2, 4, 8, 16].includes(marker.denominator as number))) {
+                return false;
+            }
+            if (kind === 'sections' && (typeof marker.name !== 'string' || !marker.name.trim() || marker.name.length > 80)) {
+                return false;
+            }
         }
     }
     return true;
@@ -68,7 +80,11 @@ function boundary<T>(items: T[], value: number, key: (item: T) => number): numbe
     let lo = 0, hi = items.length;
     while (lo < hi) {
         const mid = (lo + hi) >>> 1;
-        if (key(items[mid]) <= value) {lo = mid + 1;} else {hi = mid;}
+        if (key(items[mid]) <= value) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
     return Math.max(0, lo - 1);
 }
@@ -97,7 +113,9 @@ export function createTimingMap(p: TimingProject) {
     };
     return {
         secondsAt,
-        secondsBetween(from: number, to: number): number {return secondsAt(to) - secondsAt(from);},
+        secondsBetween(from: number, to: number): number {
+            return secondsAt(to) - secondsAt(from);
+        },
         bpmAt(step: number): number {
             step = Math.max(0, step);
             const seg = segments[boundary(segments, step, item => item.step)];
@@ -152,7 +170,9 @@ export function barAt(p: TimingProject, step: number): BarPosition {
 
 export function barsInRange(p: TimingProject, from: number, to: number): BarPosition[] {
     const bars: BarPosition[] = [];
-    if (to <= from) {return bars;}
+    if (to <= from) {
+        return bars;
+    }
     let bar = barAt(p, from);
     while (bar.start < to) {
         bars.push(bar);

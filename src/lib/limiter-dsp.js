@@ -55,7 +55,9 @@ export class LimiterDSP {
             const peak = Math.max(Math.abs(left), Math.abs(right));
             while (this.head !== this.tail) {
                 const previous = (this.tail + this.size - 1) % this.size;
-                if (this.peaks[previous] > peak) {break;}
+                if (this.peaks[previous] > peak) {
+                    break;
+                }
                 this.tail = previous;
             }
             this.peaks[this.tail] = peak;
@@ -77,10 +79,14 @@ export class LimiterDSP {
                 this.meterSquares[0] += outputLeft[i] * outputLeft[i];
                 this.meterSquares[1] += outputRight[i] * outputRight[i];
                 this.meterFrames++;
-                if (this.enabled) {minimumGain = Math.min(minimumGain, this.gain);}
+                if (this.enabled) {
+                    minimumGain = Math.min(minimumGain, this.gain);
+                }
             }
         }
-        if (meter) {this.meterReduction = Math.max(this.meterReduction, -20 * Math.log10(minimumGain));}
+        if (meter) {
+            this.meterReduction = Math.max(this.meterReduction, -20 * Math.log10(minimumGain));
+        }
     }
 
     readMeters() {

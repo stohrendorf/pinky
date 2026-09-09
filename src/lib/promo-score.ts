@@ -58,16 +58,28 @@ export function promoScore(p: Project): PromoScore {
     const notes: ScoreNote[] = [];
     for (const clip of p.arrangement) {
         const pat = p.patterns.find(x => x.id === clip.patternId);
-        if (!pat) {continue;}
+        if (!pat) {
+            continue;
+        }
         const patSteps = pat.steps || STEPS;
         for (const [instId, list] of Object.entries(pat.tracks)) {
             const inst = PROMO_PART_OF[instId];
-            if (!inst) {continue;}
+            if (!inst) {
+                continue;
+            }
             for (const note of list) {
                 const pitch = clip.transpose ? transposePitch(note.pitch, clip.transpose) : note.pitch;
-                if (!pitch) {continue;}
+                if (!pitch) {
+                    continue;
+                }
                 for (let rel = note.start; rel < clip.len; rel += patSteps) {
-                    notes.push({inst, midi: midiOf(pitch), t: (clip.start + rel) * step, dur: note.len * step, vel: note.vel ?? 1});
+                    notes.push({
+                        inst,
+                        midi: midiOf(pitch),
+                        t: (clip.start + rel) * step,
+                        dur: note.len * step,
+                        vel: note.vel ?? 1
+                    });
                 }
             }
         }
@@ -81,16 +93,28 @@ export function promoScore(p: Project): PromoScore {
     const impacts = at('impact'), claps = at('clap');
     const events: ScoreEvent[] = [];
     for (const n of notes) {
-        if (n.inst === 'kick') {events.push({t: n.t, kind: 'kick', strength: n.vel});}
-        else if (n.inst === 'impact') {events.push({t: n.t, kind: 'hit', strength: n.vel});}
-        else if (n.inst === 'boom' && !impacts.has(n.t)) {events.push({t: n.t, kind: 'boom', strength: n.vel});}
-        else if (n.inst === 'snare' && claps.has(n.t)) {events.push({t: n.t, kind: 'snare', strength: n.vel});}
+        if (n.inst === 'kick') {
+            events.push({t: n.t, kind: 'kick', strength: n.vel});
+        } else if (n.inst === 'impact') {
+            events.push({t: n.t, kind: 'hit', strength: n.vel});
+        } else if (n.inst === 'boom' && !impacts.has(n.t)) {
+            events.push({t: n.t, kind: 'boom', strength: n.vel});
+        } else if (n.inst === 'snare' && claps.has(n.t)) {
+            events.push({t: n.t, kind: 'snare', strength: n.vel});
+        }
     }
 
     const instruments: PromoScore['instruments'] = {};
     for (const inst of p.instruments) {
         const part = PROMO_PART_OF[inst.id];
-        if (part) {instruments[part] = {name: inst.name, color: inst.color, params: inst.params, voiceGain: 0.9 * inst.params.gain};}
+        if (part) {
+            instruments[part] = {
+                name: inst.name,
+                color: inst.color,
+                params: inst.params,
+                voiceGain: 0.9 * inst.params.gain
+            };
+        }
     }
     const sections = Object.fromEntries(Object.entries(PROMO_CHAPTERS)
         .map(([name, [from, to]]) => [name, [from * step, to * step] as [number, number]]));

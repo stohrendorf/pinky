@@ -50,7 +50,9 @@ export function createPattern(name: string, steps = STEPS): Pattern {
 }
 
 export function trackNotes(pattern: Pattern, instId: string): Note[] { // lazily created per instrument
-    if (!pattern.tracks[instId]) {pattern.tracks[instId] = [];}
+    if (!pattern.tracks[instId]) {
+        pattern.tracks[instId] = [];
+    }
     return pattern.tracks[instId];
 }
 
@@ -78,7 +80,9 @@ export function defaultZoom(): NonNullable<Project['zoom']> {
 
 export function selectedInstrument(): Instrument {
     const p = get(project);
-    if (!p) {throw new Error('Project not initialized');}
+    if (!p) {
+        throw new Error('Project not initialized');
+    }
     return p.instruments.find(i => i.id === get(selInstId)) || p.instruments[0];
 }
 
@@ -131,7 +135,9 @@ const CURRENT_PARAM_KEYS = [
 ] as const;
 
 const projectJson = (value: unknown): Project => {
-    if (!isProject(value)) {throw new Error('Bundled demo does not match the current project format');}
+    if (!isProject(value)) {
+        throw new Error('Bundled demo does not match the current project format');
+    }
     return value;
 };
 
@@ -148,7 +154,9 @@ const DEMO_SONGS: Record<DemoSong, Project> = {
 };
 
 export function isProject(value: unknown): value is Project {
-    if (!value || typeof value !== 'object') {return false;}
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
     const candidate = value as Partial<Project>;
     return candidate.formatVersion === PROJECT_FORMAT_VERSION
         && Array.isArray(candidate.instruments) && Array.isArray(candidate.patterns) && Array.isArray(candidate.arrangement)
@@ -169,8 +177,7 @@ export function isProject(value: unknown): value is Project {
 }
 
 export function buildDemoProject(song: DemoSong = 'axelf'): Project {
-    const demo = JSON.parse(JSON.stringify(DEMO_SONGS[song])) as Project;
-    return demo;
+    return JSON.parse(JSON.stringify(DEMO_SONGS[song])) as Project;
 }
 
 export function newEmptyProject(): Project {
@@ -194,7 +201,9 @@ const LS_KEY = 'pinky-project-v1';
 
 export function saveProject(): void {
     const cur = get(project);
-    if (!cur) {return;}
+    if (!cur) {
+        return;
+    }
     localStorage.setItem(LS_KEY, JSON.stringify(cur));
     savedAt.set(Date.now());
 }
@@ -202,7 +211,9 @@ export function saveProject(): void {
 export function loadSavedProject(): Project | null {
     try {
         const raw = localStorage.getItem(LS_KEY);
-        if (!raw) {return null;}
+        if (!raw) {
+            return null;
+        }
         const saved: unknown = JSON.parse(raw) as unknown;
         return isProject(saved) ? saved : null;
     } catch {
@@ -213,7 +224,9 @@ export function loadSavedProject(): Project | null {
 /* ---- import / export ---- */
 export function exportProject(): void {
     const cur = get(project);
-    if (!cur) {return;}
+    if (!cur) {
+        return;
+    }
     const blob = new Blob([JSON.stringify(cur, null, 2)], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -230,7 +243,9 @@ export function importProject(json: string): boolean { // returns true on succes
     } catch {
         return false;
     }
-    if (!isProject(p)) {return false;}
+    if (!isProject(p)) {
+        return false;
+    }
     activeDemo.set(null);
     project.set(p);
     selInstId.set(p.instruments[0].id);

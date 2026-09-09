@@ -22,7 +22,7 @@
         destructive = false
     }: Props = $props();
 
-    const dispatch = createEventDispatcher<{cancel: void; confirm: void}>();
+    const dispatch = createEventDispatcher<{ cancel: void; confirm: void }>();
 
     function confirm() {
         dispatch('confirm');

@@ -9,7 +9,9 @@ export interface VoiceCapacity {
 
 /** Gives offline graphs the live allocation policy with more safe headroom. */
 export function capacityForRender(nodeBudget: number, offline: boolean): VoiceCapacity {
-    if (!offline) {return {nodes: nodeBudget, voices: LIVE_MAX_VOICES};}
+    if (!offline) {
+        return {nodes: nodeBudget, voices: LIVE_MAX_VOICES};
+    }
     return {
         nodes: Math.min(OFFLINE_NODE_BUDGET_MAX, nodeBudget * OFFLINE_CAPACITY_MULTIPLIER),
         voices: LIVE_MAX_VOICES * OFFLINE_CAPACITY_MULTIPLIER

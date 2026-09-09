@@ -13,7 +13,9 @@ class MixerLimiterProcessor extends AudioWorkletProcessor {
         this.progressInterval = 0;
         this.nextProgressFrame = 0;
         this.port.onmessage = ({data}) => {
-            if (data.type === 'configure') {this.dsp.configure(data.settings);}
+            if (data.type === 'configure') {
+                this.dsp.configure(data.settings);
+            }
             if (data.type === 'progress') {
                 this.progressInterval = Number.isFinite(data.intervalFrames) ? Math.max(0, data.intervalFrames) : 0;
                 this.nextProgressFrame = 0;
@@ -23,7 +25,9 @@ class MixerLimiterProcessor extends AudioWorkletProcessor {
 
     process(inputs, outputs) {
         const output = outputs[0];
-        if (!output || output.length < 2) {return true;}
+        if (!output || output.length < 2) {
+            return true;
+        }
         this.dsp.process(inputs[0]?.[0], inputs[0]?.[1], output[0], output[1], this.metering);
         if (this.metering && this.dsp.meterFrames >= this.interval) {
             this.port.postMessage(this.dsp.readMeters());

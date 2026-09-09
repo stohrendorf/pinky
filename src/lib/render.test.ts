@@ -23,7 +23,11 @@ import {
 } from './timing';
 
 const audio = vi.hoisted(() => ({renderOffline: vi.fn(), isRendering: vi.fn(() => false)}));
-const transport = vi.hoisted(() => ({scheduleRangeAsync: vi.fn(), songLengthSteps: vi.fn(() => 32), stopTransport: vi.fn()}));
+const transport = vi.hoisted(() => ({
+    scheduleRangeAsync: vi.fn(),
+    songLengthSteps: vi.fn(() => 32),
+    stopTransport: vi.fn()
+}));
 const wav = vi.hoisted(() => ({encodeWavAsync: vi.fn()}));
 vi.mock('./engine', () => audio);
 vi.mock('./transport', () => transport);
@@ -43,17 +47,22 @@ beforeEach(() => {
     });
 });
 
-afterEach(() => {vi.unstubAllGlobals(); vi.restoreAllMocks();});
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+});
 
 describe('mixer WAV export integration', () => {
     it('renders loop boundaries with release, room and delay tails and an explicit mix snapshot', async () => {
         const p = newEmptyProject();
         p.loop = {start: 4, end: 12};
         const echo = addMixerBus(p.mixer!, 'delay')!;
-        echo.delayTime = 0.5; echo.feedback = 0.5;
+        echo.delayTime = 0.5;
+        echo.feedback = 0.5;
         p.mixer!.channels[p.instruments[0].id].sends = [{busId: echo.id, level: 0.2}];
         p.mixer!.master.vol = 0.37;
-        project.set(p); playing.set(true);
+        project.set(p);
+        playing.set(true);
         expect(await renderSongToWav()).toBeInstanceOf(Blob);
         const seconds = 8 * 60 / p.bpm / 4 + p.instruments[0].params.rel * 1.5 + 3 + mixerTailSeconds(p.mixer);
         expect(audio.renderOffline).toHaveBeenCalledWith(seconds, 44100, expect.any(Function), {
@@ -72,7 +81,9 @@ describe('mixer WAV export integration', () => {
         let finish!: () => void, schedule!: () => void;
         audio.renderOffline.mockImplementation((_seconds: number, _rate: number, callback: () => void) => {
             schedule = callback;
-            return new Promise(resolve => {finish = () => resolve({});});
+            return new Promise(resolve => {
+                finish = () => resolve({});
+            });
         });
         const pending = renderSongToWav();
         expect(get(rendering)).toBe(true);
@@ -100,10 +111,12 @@ describe('mixer WAV export integration', () => {
     it('uses the conductor timing map for loop duration', async () => {
         const p = newEmptyProject();
         p.loop = {start: 4, end: 24};
-        p.conductor = {tempos: [
-            {id: 'ramp', step: 0, bpm: 60, curve: 'linear'},
-            {id: 'fast', step: 16, bpm: 180, curve: 'hold'}
-        ], meters: [], sections: []};
+        p.conductor = {
+            tempos: [
+                {id: 'ramp', step: 0, bpm: 60, curve: 'linear'},
+                {id: 'fast', step: 16, bpm: 180, curve: 'hold'}
+            ], meters: [], sections: []
+        };
         project.set(p);
         await renderSongToWav();
         expect(audio.renderOffline.mock.calls[0][0]).toBeCloseTo(createTimingMap(p).secondsBetween(4, 24)
@@ -131,7 +144,9 @@ describe('mixer WAV export integration', () => {
     it('retains the render guard until the engine acknowledges cancellation', async () => {
         project.set(newEmptyProject());
         let finish!: () => void;
-        audio.renderOffline.mockImplementation(() => new Promise(resolve => {finish = () => resolve({});}));
+        audio.renderOffline.mockImplementation(() => new Promise(resolve => {
+            finish = () => resolve({});
+        }));
         const pending = renderSongToWav();
         const cancelled = expect(pending).rejects.toMatchObject({name: 'AbortError'});
         await vi.waitFor(() => expect(audio.renderOffline).toHaveBeenCalled());
@@ -146,7 +161,7 @@ describe('mixer WAV export integration', () => {
 
     it('passes cancellation through scheduling and does not encode', async () => {
         project.set(newEmptyProject());
-        transport.scheduleRangeAsync.mockImplementation((_p, _from, _to, options: {signal: AbortSignal}) => {
+        transport.scheduleRangeAsync.mockImplementation((_p, _from, _to, options: { signal: AbortSignal }) => {
             cancelExport();
             expect(options.signal.aborted).toBe(true);
             return Promise.reject(new DOMException('cancelled', 'AbortError'));
@@ -165,7 +180,14 @@ describe('mixer WAV export integration', () => {
         let finish!: () => void;
         let lateProgress!: () => void;
         audio.renderOffline.mockImplementation((_seconds, _rate, _schedule, _config,
-            options: {signal: AbortSignal; onProgress: (value: {stage: string; progress: number; canSuspend: boolean}) => void}) => {
+            options: {
+                                                    signal: AbortSignal;
+                                                    onProgress: (value: {
+                                                        stage: string;
+                                                        progress: number;
+                                                        canSuspend: boolean
+                                                    }) => void
+                                                }) => {
             options.onProgress({stage: 'rendering', progress: 0, canSuspend: false});
             time += 1000;
             options.onProgress({stage: 'rendering', progress: 0.45, canSuspend: false});
@@ -186,7 +208,13 @@ describe('mixer WAV export integration', () => {
         expect(await pending).toBe('');
         expect(active).toMatchObject({stage: 'rendering', progress: 0.45, canSuspend: false, cancelling: false});
         expect(active?.etaSeconds).toBeGreaterThan(0);
-        expect(cancelled).toMatchObject({stage: 'rendering', progress: 0.45, canSuspend: false, cancelling: true, etaSeconds: null});
+        expect(cancelled).toMatchObject({
+            stage: 'rendering',
+            progress: 0.45,
+            canSuspend: false,
+            cancelling: true,
+            etaSeconds: null
+        });
         expect(locked).toBe(true);
         expect(wav.encodeWavAsync).not.toHaveBeenCalled();
         expect(download).not.toHaveBeenCalled();
@@ -200,7 +228,9 @@ describe('mixer WAV export integration', () => {
         const click = vi.fn();
         vi.stubGlobal('document', {createElement: () => ({click})});
         let finish!: (blob: Blob) => void;
-        wav.encodeWavAsync.mockImplementationOnce(() => new Promise<Blob>(resolve => {finish = resolve;}));
+        wav.encodeWavAsync.mockImplementationOnce(() => new Promise<Blob>(resolve => {
+            finish = resolve;
+        }));
         const pending = exportWav();
         await vi.waitFor(() => expect(wav.encodeWavAsync).toHaveBeenCalled());
         expect(get(exportProgress)?.stage).toBe('encoding');
@@ -233,7 +263,12 @@ describe('mixer WAV export integration', () => {
         project.set(newEmptyProject());
         const updates: [string, number | null][] = [];
         audio.renderOffline.mockImplementation(async (_seconds, _rate, schedule: () => Promise<number>, _config,
-            options: {onProgress: (value: {stage: string; progress: number | null}) => void}) => {
+            options: {
+                                                          onProgress: (value: {
+                                                              stage: string;
+                                                              progress: number | null
+                                                          }) => void
+                                                      }) => {
             options.onProgress({stage: 'preparing', progress: null});
             options.onProgress({stage: 'scheduling', progress: 0});
             await schedule();
@@ -242,12 +277,14 @@ describe('mixer WAV export integration', () => {
             options.onProgress({stage: 'rendering', progress: 1});
             return {};
         });
-        transport.scheduleRangeAsync.mockImplementation((_p, _from, _to, options: {onProgress: (progress: number) => void}) => {
+        transport.scheduleRangeAsync.mockImplementation((_p, _from, _to, options: {
+            onProgress: (progress: number) => void
+        }) => {
             options.onProgress(0.5);
             options.onProgress(1);
             return Promise.resolve(0);
         });
-        wav.encodeWavAsync.mockImplementation((_buf, options: {onProgress: (progress: number) => void}) => {
+        wav.encodeWavAsync.mockImplementation((_buf, options: { onProgress: (progress: number) => void }) => {
             options.onProgress(0.5);
             options.onProgress(1);
             return Promise.resolve(new Blob(['wav']));
@@ -264,7 +301,13 @@ describe('mixer WAV export integration', () => {
         let time = 0;
         vi.spyOn(performance, 'now').mockImplementation(() => time);
         audio.renderOffline.mockImplementation(async (_seconds, _rate, schedule: () => Promise<number>, _config,
-            options: {onProgress: (value: {stage: string; progress: number; canSuspend: boolean}) => void}) => {
+            options: {
+                                                          onProgress: (value: {
+                                                              stage: string;
+                                                              progress: number;
+                                                              canSuspend: boolean
+                                                          }) => void
+                                                      }) => {
             await schedule();
             options.onProgress({stage: 'rendering', progress: 0, canSuspend: false});
             time += 1000;
@@ -275,7 +318,7 @@ describe('mixer WAV export integration', () => {
             expect(get(exportProgress)).toBe(reported);
             return {};
         });
-        wav.encodeWavAsync.mockImplementation((_buf, options: {onProgress: (progress: number) => void}) => {
+        wav.encodeWavAsync.mockImplementation((_buf, options: { onProgress: (progress: number) => void }) => {
             time += 500;
             options.onProgress(0.25);
             time += 500;
@@ -305,20 +348,32 @@ describe('mixer WAV export integration', () => {
         const download = vi.fn();
         vi.stubGlobal('document', {createElement: download});
         audio.renderOffline.mockImplementation(async (_seconds, _rate, schedule: () => Promise<number>, _config,
-            options: {onProgress: (value: {stage: string; progress: number}) => void}) => {
+            options: {
+                                                          onProgress: (value: {
+                                                              stage: string;
+                                                              progress: number
+                                                          }) => void
+                                                      }) => {
             await schedule();
             options.onProgress({stage: 'rendering', progress: 0.5});
             return {};
         });
-        wav.encodeWavAsync.mockImplementation((_buf, options: {onProgress: (progress: number) => void}) => {
+        wav.encodeWavAsync.mockImplementation((_buf, options: { onProgress: (progress: number) => void }) => {
             options.onProgress(1);
             return Promise.resolve(new Blob(['wav']));
         });
-        expect(await exportWav({onProgress: state => {
-            if (state.stage === stage && state.progress !== 0) {cancelExport();}
-        }})).toBe('');
-        if (stage === 'rendering') {expect(wav.encodeWavAsync).not.toHaveBeenCalled();}
-        else {expect(wav.encodeWavAsync).toHaveBeenCalledOnce();}
+        expect(await exportWav({
+            onProgress: state => {
+                if (state.stage === stage && state.progress !== 0) {
+                    cancelExport();
+                }
+            }
+        })).toBe('');
+        if (stage === 'rendering') {
+            expect(wav.encodeWavAsync).not.toHaveBeenCalled();
+        } else {
+            expect(wav.encodeWavAsync).toHaveBeenCalledOnce();
+        }
         expect(download).not.toHaveBeenCalled();
         expect(get(exportProgress)).toBeNull();
         expect(get(rendering)).toBe(false);

@@ -1,9 +1,10 @@
 <script lang="ts">
     import {
-        createEventDispatcher 
+        createEventDispatcher
     } from 'svelte';
 
-    const dispatch = createEventDispatcher<{click: MouseEvent}>();
+    const dispatch = createEventDispatcher<{ click: MouseEvent }>();
+
     interface Props {
         variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
         disabled?: boolean;

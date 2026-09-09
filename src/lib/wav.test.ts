@@ -41,7 +41,9 @@ describe('yielding WAV encoder', () => {
             signal: controller.signal,
             onProgress: value => {
                 progress.push(value);
-                if (value >= threshold) {controller.abort();}
+                if (value >= threshold) {
+                    controller.abort();
+                }
             }
         })).rejects.toMatchObject({name: 'AbortError'});
         expect(progress.at(-1)).toBe(threshold);

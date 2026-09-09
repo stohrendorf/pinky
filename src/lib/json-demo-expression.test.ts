@@ -83,7 +83,7 @@ describe('refined JSON demos', () => {
         const formantMotion = lane('noise', 'FX/Wind', 'formant');
 
         expect(formantMotion?.points.length).toBeGreaterThanOrEqual(4);
-        expect(formantMotion!.points.every(point => point.value >= 0.12 && point.value <= 0.42)).toBe(true);
+        expect(formantMotion.points.every(point => point.value >= 0.12 && point.value <= 0.42)).toBe(true);
     });
 
     it('keeps Diva Machina’s authored formant performance visible and active', () => {

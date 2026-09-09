@@ -39,7 +39,9 @@ export function quadraticFrequencySamples(points: number, upper: number, lower: 
     );
 
     for (const {frequency, q} of anchors) {
-        if (!Number.isFinite(frequency) || !Number.isFinite(q) || frequency <= 0) {continue;}
+        if (!Number.isFinite(frequency) || !Number.isFinite(q) || frequency <= 0) {
+            continue;
+        }
         const halfWidth = frequency / Math.max(1, q);
         samples.push(frequency - halfWidth, frequency, frequency + halfWidth);
     }
@@ -53,7 +55,9 @@ export function quadraticFrequencySamples(points: number, upper: number, lower: 
  * Its overall level is fitted to the analyser, while this exact transfer keeps
  * relative low-frequency levels aligned with the generated buffer. */
 export function pinkNoisePower(frequency: number, sampleRate = 48000): number {
-    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {return 0;}
+    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {
+        return 0;
+    }
     const w = 2 * Math.PI * frequency / sampleRate;
     const cosW = Math.cos(w), sinW = Math.sin(w);
     let real = PINK_DIRECT + PINK_DELAY * cosW;
@@ -71,7 +75,9 @@ export function pinkNoisePower(frequency: number, sampleRate = 48000): number {
 }
 
 function partialsFor(params: InstrumentParams): PartialSpec[] {
-    if (params.partials?.length) {return params.partials;}
+    if (params.partials?.length) {
+        return params.partials;
+    }
     return Array.from({length: Math.max(0, Math.round(params.harm))}, (_, index) => {
         const ratio = Math.pow(index + 1, 1 + params.stretch);
         return {ratio, level: Math.pow(params.falloff, index)};
@@ -89,7 +95,9 @@ function responseBands(params: InstrumentParams, fundamental: number, sampleRate
         for (const partial of partialsFor(params)) {
             const gain = 40 * tone * partial.level;
             const frequency = fundamental * partial.ratio;
-            if (partial.level <= 0 || frequency > nyquist * 0.9 || gain < MIN_GAIN_DB) {continue;}
+            if (partial.level <= 0 || frequency > nyquist * 0.9 || gain < MIN_GAIN_DB) {
+                continue;
+            }
             pre.push({frequency, q: params.q * Math.sqrt(partial.ratio), gain});
         }
     }
@@ -106,7 +114,9 @@ function responseBands(params: InstrumentParams, fundamental: number, sampleRate
             {frequency: params.f3, weight: 0.45}
         ]) {
             const gain = FORMANT_DB * params.formant * weight;
-            if (!(frequency > 0) || frequency > nyquist * 0.9 || gain < MIN_GAIN_DB) {continue;}
+            if (!(frequency > 0) || frequency > nyquist * 0.9 || gain < MIN_GAIN_DB) {
+                continue;
+            }
             post.push({frequency, q: formantQ, gain, post: true});
         }
     }
@@ -121,7 +131,9 @@ function unisonRankCount(params: InstrumentParams): number {
 
 function unisonBands(params: InstrumentParams, fundamental: number, sampleRate: number): ResponseBand[] {
     const ranks = unisonRankCount(params);
-    if (ranks === 1) {return responseBands(params, fundamental, sampleRate);}
+    if (ranks === 1) {
+        return responseBands(params, fundamental, sampleRate);
+    }
 
     return Array.from({length: ranks}, (_, index) => {
         const position = 2 * index / (ranks - 1) - 1;
@@ -151,9 +163,13 @@ function bandTerms(band: ResponseBand, cosW: number, sinW: number, cos2W: number
 }
 
 export function filterMagnitude(params: InstrumentParams, note: string, frequency: number, sampleRate = 48000): number {
-    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {return 0;}
+    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {
+        return 0;
+    }
     const fundamental = noteByName[note]?.freq;
-    if (!fundamental) {return 0;}
+    if (!fundamental) {
+        return 0;
+    }
     return filterMagnitudeForFundamental(params, fundamental, frequency, sampleRate);
 }
 
@@ -213,9 +229,13 @@ function filterResponseForBands(bands: ResponseBand[], frequency: number, sample
  * between detuned resonances. */
 export function unisonFilterMagnitude(params: InstrumentParams, note: string,
     frequency: number, sampleRate = 48000): number {
-    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {return 0;}
+    if (!Number.isFinite(frequency) || frequency <= 0 || !Number.isFinite(sampleRate) || sampleRate <= 0) {
+        return 0;
+    }
     const fundamental = noteByName[note]?.freq;
-    if (!fundamental) {return 0;}
+    if (!fundamental) {
+        return 0;
+    }
     const ranks = unisonRankCount(params);
     let power = 0;
     for (let index = 0; index < ranks; index++) {
@@ -231,7 +251,9 @@ export function filterResponseCurve(params: InstrumentParams, note: string, poin
     const upper = Math.min(18000, sampleRate / 4);
     const lower = Math.min(20, upper / 2);
     const fundamental = noteByName[note]?.freq;
-    if (!fundamental) {return [];}
+    if (!fundamental) {
+        return [];
+    }
     const bands = unisonBands(params, fundamental, sampleRate);
     const count = Math.max(2, Math.round(points));
     const samples = Array.from({length: count}, (_, index) =>
@@ -239,7 +261,9 @@ export function filterResponseCurve(params: InstrumentParams, note: string, poin
     );
 
     for (const {frequency} of bands) {
-        if (frequency >= lower && frequency <= upper) {samples.push(frequency);}
+        if (frequency >= lower && frequency <= upper) {
+            samples.push(frequency);
+        }
     }
 
     return samples.sort((a, b) => a - b).filter((frequency, index) => index === 0 || frequency !== samples[index - 1]).map(frequency => {

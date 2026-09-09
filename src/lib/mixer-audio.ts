@@ -51,11 +51,15 @@ export class MasterLimiter {
             channelCount: 2, channelCountMode: 'explicit',
             processorOptions: {settings: values, metering}
         });
-        this.node.onprocessorerror = () => {this.error = new Error('Master limiter processor failed');};
-        this.node.port.onmessage = ({data}: MessageEvent<MasterMeter | {type: 'progress'; frames: number}>) => {
+        this.node.onprocessorerror = () => {
+            this.error = new Error('Master limiter processor failed');
+        };
+        this.node.port.onmessage = ({data}: MessageEvent<MasterMeter | { type: 'progress'; frames: number }>) => {
             if ('type' in data && data.type === 'progress') {
                 this.onFrames?.(data.frames);
-            } else if (metering && 'peak' in data) {this.latest = data;}
+            } else if (metering && 'peak' in data) {
+                this.latest = data;
+            }
         };
     }
 
@@ -73,7 +77,9 @@ export class MasterLimiter {
     configure(settings: MixerMaster): void {
         const values = this.settings(settings);
         const signature = JSON.stringify(values);
-        if (signature === this.signature) {return;}
+        if (signature === this.signature) {
+            return;
+        }
         this.signature = signature;
         this.node.port.postMessage({type: 'configure', settings: values});
     }
@@ -130,7 +136,8 @@ export class MixerAudio {
     private mixed = false;
 
     constructor(private readonly context: BaseAudioContext, private readonly master: AudioNode,
-        private readonly reverb: AudioNode, private readonly metering: boolean) {}
+                private readonly reverb: AudioNode, private readonly metering: boolean) {
+    }
 
     input(id: string): AudioNode | undefined {
         return this.strips.get(id)?.input;
@@ -148,18 +155,6 @@ export class MixerAudio {
         return tap;
     }
 
-    private routeVoice(id: string, tap: GainNode): void {
-        const channelId = this.strips.has(id) ? id : id.startsWith('live-') ? id.slice(5) : id;
-        const target = this.mixed ? this.input(channelId) : this.master;
-        if (this.voiceTargets.get(id) === target) {return;}
-        tap.disconnect();
-        this.voiceTargets.delete(id);
-        if (target) {
-            tap.connect(target);
-            this.voiceTargets.set(id, target);
-        }
-    }
-
     configure(mixer: MixerState | undefined): void {
         this.mixed = !!mixer;
         const entries: [string, MixerChannel | MixerBus][] = mixer
@@ -172,22 +167,30 @@ export class MixerAudio {
             }
         }
         for (const [id] of entries) {
-            if (!this.strips.has(id)) {this.strips.set(id, this.create());}
+            if (!this.strips.has(id)) {
+                this.strips.set(id, this.create());
+            }
         }
         const audible = mixer ? audibleMixerIds(mixer) : new Set<string>();
         const busIds = new Set(mixer?.buses.map(bus => bus.id));
         for (const [id, settings] of entries) {
             const strip = this.strips.get(id)!;
             this.update(strip, settings, audible.has(id));
-            const routes = new Map<string, {target: AudioNode; level: number}>();
+            const routes = new Map<string, { target: AudioNode; level: number }>();
             const target = busIds.has(settings.output) ? this.strips.get(settings.output)?.input : this.master;
-            if (target) {routes.set('output', {target, level: 1});}
+            if (target) {
+                routes.set('output', {target, level: 1});
+            }
             for (const send of settings.sends) {
                 const target = busIds.has(send.busId) ? this.strips.get(send.busId)?.input : undefined;
-                if (target) {routes.set(`send:${send.busId}`, {target, level: bounded(send.level, 0, 1)});}
+                if (target) {
+                    routes.set(`send:${send.busId}`, {target, level: bounded(send.level, 0, 1)});
+                }
             }
             for (const [key, route] of strip.routes) {
-                if (routes.get(key)?.target === route.target) {continue;}
+                if (routes.get(key)?.target === route.target) {
+                    continue;
+                }
                 strip.gate.disconnect(route.gain);
                 route.gain.disconnect();
                 strip.routes.delete(key);
@@ -204,7 +207,9 @@ export class MixerAudio {
                 this.set(edge.gain.gain, route.level);
             }
         }
-        for (const [id, tap] of this.voiceInputs) {this.routeVoice(id, tap);}
+        for (const [id, tap] of this.voiceInputs) {
+            this.routeVoice(id, tap);
+        }
     }
 
     reset(mixer: MixerState): void {
@@ -214,7 +219,9 @@ export class MixerAudio {
         ];
         for (const [id, settings] of entries) {
             const strip = this.strips.get(id);
-            if (strip) {this.update(strip, settings, audible.has(id), true);}
+            if (strip) {
+                this.update(strip, settings, audible.has(id), true);
+            }
         }
     }
 
@@ -225,7 +232,9 @@ export class MixerAudio {
             for (const analyser of strip.analysers) {
                 analyser.getFloatTimeDomainData(strip.samples);
                 for (const v of strip.samples) {
-                    if (!Number.isFinite(v)) {continue;}
+                    if (!Number.isFinite(v)) {
+                        continue;
+                    }
                     peak = Math.max(peak, Math.abs(v));
                     squares += v * v;
                 }
@@ -239,9 +248,13 @@ export class MixerAudio {
      * remains untouched so lookahead ramps are not cancelled between steps. */
     automate(id: string, param: string, value: number, at: number, ramp: number): boolean {
         const strip = this.strips.get(id);
-        if (!strip || !Number.isFinite(value) || !Number.isFinite(at) || !Number.isFinite(ramp)) {return false;}
+        if (!strip || !Number.isFinite(value) || !Number.isFinite(at) || !Number.isFinite(ramp)) {
+            return false;
+        }
         const schedule = (audioParam: AudioParam | null, next: number): boolean => {
-            if (!audioParam) {return false;}
+            if (!audioParam) {
+                return false;
+            }
             const previous = this.scheduled.get(audioParam);
             const from = previous && previous.at <= at ? previous.value : audioParam.value;
             audioParam.cancelScheduledValues(at);
@@ -251,25 +264,55 @@ export class MixerAudio {
             this.values.set(audioParam, next);
             return true;
         };
-        if (param === 'volume') {return schedule(strip.volume.gain, bounded(value, 0, 2));}
-        if (param === 'pan') {return schedule(strip.pan.pan, bounded(value, -1, 1));}
-        if (param === 'reverb') {return schedule(strip.reverb.gain, bounded(value, 0, 1));}
-        if (param === 'highpass') {return schedule(strip.highpass.frequency, bounded(value, 20, 1000));}
+        if (param === 'volume') {
+            return schedule(strip.volume.gain, bounded(value, 0, 2));
+        }
+        if (param === 'pan') {
+            return schedule(strip.pan.pan, bounded(value, -1, 1));
+        }
+        if (param === 'reverb') {
+            return schedule(strip.reverb.gain, bounded(value, 0, 1));
+        }
+        if (param === 'highpass') {
+            return schedule(strip.highpass.frequency, bounded(value, 20, 1000));
+        }
         if (param === 'tilt') {
             const next = bounded(value, -12, 12);
             return schedule(strip.low.gain, -next) && schedule(strip.high.gain, next);
         }
-        if (param === 'delayTime') {return schedule(strip.delay?.delayTime ?? null, bounded(value, 0.02, 2));}
-        if (param === 'feedback') {return schedule(strip.feedback?.gain ?? null, bounded(value, 0, 0.8));}
+        if (param === 'delayTime') {
+            return schedule(strip.delay?.delayTime ?? null, bounded(value, 0.02, 2));
+        }
+        if (param === 'feedback') {
+            return schedule(strip.feedback?.gain ?? null, bounded(value, 0, 0.8));
+        }
         return false;
     }
 
     dispose(): void {
-        for (const strip of this.strips.values()) {this.disconnect(strip);}
+        for (const strip of this.strips.values()) {
+            this.disconnect(strip);
+        }
         this.strips.clear();
-        for (const tap of this.voiceInputs.values()) {tap.disconnect();}
+        for (const tap of this.voiceInputs.values()) {
+            tap.disconnect();
+        }
         this.voiceInputs.clear();
         this.voiceTargets.clear();
+    }
+
+    private routeVoice(id: string, tap: GainNode): void {
+        const channelId = this.strips.has(id) ? id : id.startsWith('live-') ? id.slice(5) : id;
+        const target = this.mixed ? this.input(channelId) : this.master;
+        if (this.voiceTargets.get(id) === target) {
+            return;
+        }
+        tap.disconnect();
+        this.voiceTargets.delete(id);
+        if (target) {
+            tap.connect(target);
+            this.voiceTargets.set(id, target);
+        }
     }
 
     private create(): Strip {
@@ -305,7 +348,10 @@ export class MixerAudio {
         const delay = 'effect' in settings && settings.effect === 'delay';
         if (delay !== !!strip.delay) {
             strip.input.disconnect();
-            if (strip.delay) {strip.delay.disconnect(); strip.feedback!.disconnect();}
+            if (strip.delay) {
+                strip.delay.disconnect();
+                strip.feedback!.disconnect();
+            }
             strip.delay = delay ? new DelayNode(this.context, {maxDelayTime: 2, delayTime: settings.delayTime}) : null;
             strip.feedback = delay ? new GainNode(this.context, {gain: bounded(settings.feedback, 0, 0.8)}) : null;
             if (strip.delay && strip.feedback) {
@@ -313,7 +359,9 @@ export class MixerAudio {
                 strip.delay.connect(strip.feedback);
                 strip.feedback.connect(strip.delay);
                 strip.delay.connect(strip.highpass);
-            } else {strip.input.connect(strip.highpass);}
+            } else {
+                strip.input.connect(strip.highpass);
+            }
         }
         if (strip.delay && strip.feedback && 'delayTime' in settings) {
             this.set(strip.delay.delayTime, bounded(settings.delayTime, 0.02, 2), force);
@@ -323,10 +371,15 @@ export class MixerAudio {
             strip.high.disconnect();
             strip.compressor?.disconnect();
             strip.compressor = settings.compressor.enabled ? new DynamicsCompressorNode(this.context, {
-                threshold: bounded(settings.compressor.threshold, -60, 0), ratio: bounded(settings.compressor.ratio, 1, 20)
+                threshold: bounded(settings.compressor.threshold, -60, 0),
+                ratio: bounded(settings.compressor.ratio, 1, 20)
             }) : null;
-            if (strip.compressor) {strip.high.connect(strip.compressor); strip.compressor.connect(strip.volume);}
-            else {strip.high.connect(strip.volume);}
+            if (strip.compressor) {
+                strip.high.connect(strip.compressor);
+                strip.compressor.connect(strip.volume);
+            } else {
+                strip.high.connect(strip.volume);
+            }
         }
         if (strip.compressor) {
             this.set(strip.compressor.threshold, bounded(settings.compressor.threshold, -60, 0), force);
@@ -343,7 +396,9 @@ export class MixerAudio {
     }
 
     private set(param: AudioParam, value: number, force = false): void {
-        if (!force && this.values.get(param) === value) {return;}
+        if (!force && this.values.get(param) === value) {
+            return;
+        }
         this.values.set(param, value);
         this.scheduled.delete(param);
         // Mixer edits are infrequent and constant: do not leave filter automation
@@ -354,7 +409,9 @@ export class MixerAudio {
 
     private disconnect(strip: Strip): void {
         strip.gate.gain.value = 0;
-        for (const route of strip.routes.values()) {route.gain.disconnect();}
+        for (const route of strip.routes.values()) {
+            route.gain.disconnect();
+        }
         for (const node of [strip.input, strip.highpass, strip.low, strip.high, strip.compressor,
             strip.volume, strip.pan, strip.gate, strip.reverb, strip.delay, strip.feedback, strip.splitter, ...strip.analysers]) {
             node?.disconnect();

@@ -1,12 +1,10 @@
 <script lang="ts">
     import {
-        run, createBubbler, preventDefault, stopPropagation 
-    } from 'svelte/legacy';
-
-    const bubble = createBubbler();
-    import {
         onDestroy, onMount, tick
     } from 'svelte';
+    import {
+        createBubbler, preventDefault, run, stopPropagation
+    } from 'svelte/legacy';
 
     import type {
         Note, Pattern
@@ -50,29 +48,41 @@
         handleViewportWheel
     } from '../lib/viewport';
 
+    const bubble = createBubbler();
+
     interface Props {
         contextualEditor?: string | null;
         onEditInstrument?: () => void;
     }
 
-    let { contextualEditor = $bindable(null), onEditInstrument = () => {
-    } }: Props = $props();
+    let {
+        contextualEditor = $bindable(null), onEditInstrument = () => {
+        }
+    }: Props = $props();
 
     const NOTE_EDITOR_KEY = 'note';
     const DRAG_PREVIEW_TRACK = 'drag-preview';
 
 
     function patternPlayheadStep(): number | null {
-        if (!$playing || !$project || $curStep < 0) {return null;}
-        if ($playMode === 'pattern') {return $curStep % steps;}
-        if ($playMode !== 'song') {return null;}
+        if (!$playing || !$project || $curStep < 0) {
+            return null;
+        }
+        if ($playMode === 'pattern') {
+            return $curStep % steps;
+        }
+        if ($playMode !== 'song') {
+            return null;
+        }
         const activeClip = $project.arrangement.find(clip => clip.patternId === pat.id
             && $curStep >= clip.start && $curStep < clip.start + clip.len);
         return activeClip ? ($curStep - activeClip.start) % steps : null;
     }
 
     function scrollPlayheadIntoView(container: HTMLElement | undefined, step: number, width: number, sidebarWidth: number) {
-        if (!container) {return;}
+        if (!container) {
+            return;
+        }
         const position = sidebarWidth + step * width - container.scrollLeft;
         const padding = Math.min(48, container.clientWidth / 4);
         // The piano-key strip is a sticky overlay `sidebarWidth` wide, so the
@@ -80,7 +90,9 @@
         // past `padding` as on screen let a manual scroll strand the line under
         // the keys, where it blends in and auto-follow never pulls it back.
         const leftEdge = Math.max(padding, sidebarWidth + 8);
-        if (position >= leftEdge && position <= container.clientWidth - padding) {return;}
+        if (position >= leftEdge && position <= container.clientWidth - padding) {
+            return;
+        }
         const nextLeft = sidebarWidth + step * width - container.clientWidth * 0.35;
         container.scrollLeft = Math.max(0, Math.min(nextLeft, container.scrollWidth - container.clientWidth));
     }
@@ -91,7 +103,9 @@
 
     function setPatternSteps(nextSteps: number) {
         nextSteps = Math.max(1, Math.min(512, Math.round(nextSteps)));
-        if (nextSteps === steps || !$project) {return;}
+        if (nextSteps === steps || !$project) {
+            return;
+        }
         const tracks = Object.fromEntries(Object.entries(pat.tracks)
             .map(([id, track]) => [id, track.filter(note => note.start < nextSteps)]));
         $project.patterns = $project.patterns.map(pattern => pattern.id === pat.id
@@ -107,7 +121,9 @@
     }
 
     function handlePatternResize(event: MouseEvent) {
-        if (!resizingPattern || !patternTimelineEl) {return;}
+        if (!resizingPattern || !patternTimelineEl) {
+            return;
+        }
         const rect = patternTimelineEl.getBoundingClientRect();
         setPatternSteps((event.clientX - rect.left) / cellWidth);
     }
@@ -151,7 +167,9 @@
 
 
     function setZoom(w: number, h: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.zoom.seq.width = w;
         $project.zoom.seq.height = h;
         touch();
@@ -168,7 +186,6 @@
     let noteEditorPosition = $state({left: 4, top: 4});
     let noteEditorError = $state('');
     let noteEditorInput: HTMLInputElement | undefined = $state();
-
 
 
     onMount(async () => {
@@ -188,21 +205,29 @@
     async function previewDraggedNote(note: Note) {
         const pitch = note.pitch;
         const velocity = note.vel ?? 1;
-        if (previewPitch === pitch) {return;}
+        if (previewPitch === pitch) {
+            return;
+        }
         previewPitch = pitch;
         lastPlayedPitch.set(pitch);
         await ensureAudio();
-        if (previewPitch !== pitch) {return;}
+        if (previewPitch !== pitch) {
+            return;
+        }
         const previousPitch = activePreviewPitch;
         if (!previousPitch || !glideAt(DRAG_PREVIEW_TRACK, previousPitch, pitch, 0, 0.015)) {
-            if (previousPitch) {noteOff(DRAG_PREVIEW_TRACK, previousPitch);}
+            if (previousPitch) {
+                noteOff(DRAG_PREVIEW_TRACK, previousPitch);
+            }
             noteOnAt(DRAG_PREVIEW_TRACK, pitch, 0, selectedInstrument().params, velocity);
         }
         activePreviewPitch = pitch;
     }
 
     function stopDragPreview() {
-        if (activePreviewPitch) {noteOff(DRAG_PREVIEW_TRACK, activePreviewPitch);}
+        if (activePreviewPitch) {
+            noteOff(DRAG_PREVIEW_TRACK, activePreviewPitch);
+        }
         activePreviewPitch = null;
         previewPitch = null;
     }
@@ -214,11 +239,15 @@
 
     function updateNoteSelection(selectionForNote: (note: ExtendedNote) => boolean | undefined): Map<ExtendedNote, ExtendedNote> {
         const replacements = new Map<ExtendedNote, ExtendedNote>();
-        if (!$selInstId) {return replacements;}
+        if (!$selInstId) {
+            return replacements;
+        }
         const track = pat.tracks[$selInstId] ?? [];
         pat.tracks[$selInstId] = track.map((note) => {
             const selected = selectionForNote(note as ExtendedNote);
-            if (note.selected === selected) {return note;}
+            if (note.selected === selected) {
+                return note;
+            }
             const replacement = {...note, selected} as ExtendedNote;
             replacements.set(note as ExtendedNote, replacement);
             return replacement;
@@ -238,14 +267,18 @@
     }
 
     function commitCurrentTrack() {
-        if (!$selInstId) {return;}
+        if (!$selInstId) {
+            return;
+        }
         pat.tracks[$selInstId] = [...(pat.tracks[$selInstId] ?? [])];
         touch();
     }
 
     function replaceEditedNotes(editedNotes: ExtendedNote[]): Map<Note, ExtendedNote> {
         const replacements = new Map<Note, ExtendedNote>(editedNotes.map(note => [note, {...note}] as const));
-        if (!$selInstId) {return replacements;}
+        if (!$selInstId) {
+            return replacements;
+        }
         const track = pat.tracks[$selInstId] ?? [];
         pat.tracks[$selInstId] = track.map(note => replacements.get(note) ?? note);
         dragTargets = dragTargets.map(note => replacements.get(note) ?? note);
@@ -263,7 +296,9 @@
         dragNote = note;
         dragStartRawS = s_raw;
         dragStartPos = {s, r};
-        if (!$selInstId) {return [note];}
+        if (!$selInstId) {
+            return [note];
+        }
         const targetNotes = note.selected ? (pat.tracks[$selInstId] ?? []).filter(current => current.selected) as ExtendedNote[] : [note];
         dragTargets = targetNotes;
         dragOffset = {s: s - note.start, r: r - rowOfNote[note.pitch]};
@@ -280,12 +315,16 @@
     }
 
     function addLegato() {
-        if (createLegatoBetweenSelected()) {commitCurrentTrack();}
+        if (createLegatoBetweenSelected()) {
+            commitCurrentTrack();
+        }
     }
 
 
     function updateLegatoCurve(curve: string) {
-        if (!selectedLegato?.source.legatoTo || !CURVE_SHAPES.some(shape => shape.id === curve)) {return;}
+        if (!selectedLegato?.source.legatoTo || !CURVE_SHAPES.some(shape => shape.id === curve)) {
+            return;
+        }
         selectedLegato.source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
         commitCurrentTrack();
     }
@@ -332,11 +371,15 @@
     function closeNoteEditor() {
         noteEditor = null;
         noteEditorError = '';
-        if (contextualEditor === NOTE_EDITOR_KEY) {contextualEditor = null;}
+        if (contextualEditor === NOTE_EDITOR_KEY) {
+            contextualEditor = null;
+        }
     }
 
     function saveNoteEditor() {
-        if (!noteEditor) {return;}
+        if (!noteEditor) {
+            return;
+        }
         const vel = Number(noteDraft.vel);
         if (!ROW_NOTES.some(note => note.name === noteDraft.pitch) || !Number.isFinite(vel)) {
             noteEditorError = 'Enter valid note values';
@@ -359,7 +402,9 @@
     }
 
     function deleteNoteAt(r: number, s: number) {
-        if (!$selInstId) {return;}
+        if (!$selInstId) {
+            return;
+        }
         const track = pat.tracks[$selInstId] ?? [];
         const found = track.find(n => rowOfNote[n.pitch] === r && s >= n.start && s < n.start + n.len);
         if (found) {
@@ -369,7 +414,9 @@
     }
 
     function handleMouseDown(e: MouseEvent, r: number, s_raw: number) {
-        if (e.button === 1) {return;}
+        if (e.button === 1) {
+            return;
+        }
 
         const snap = snapStep();
         const s = Math.round(s_raw / snap) * snap;
@@ -380,7 +427,9 @@
             return;
         }
 
-        if (e.button !== 0) {return;}
+        if (e.button !== 0) {
+            return;
+        }
 
         let found = notes.find(n => rowOfNote[n.pitch] === r && s_raw >= n.start && s_raw < n.start + n.len) as ExtendedNote;
         lastPlayedPitch.set(found?.pitch || ROW_NOTES[r].name);
@@ -404,7 +453,9 @@
             isSelecting = true;
             selectionStart = {s: s_raw, r};
             selectionEnd = {s: s_raw, r};
-            if (!e.shiftKey) {clearSelection();}
+            if (!e.shiftKey) {
+                clearSelection();
+            }
             return;
         }
 
@@ -425,8 +476,12 @@
             }
             commitCurrentTrack();
         } else {
-            if (!e.shiftKey) {clearSelection();}
-            if (!$selInstId) {return;}
+            if (!e.shiftKey) {
+                clearSelection();
+            }
+            if (!$selInstId) {
+                return;
+            }
             const newNote: ExtendedNote = {pitch: ROW_NOTES[r].name, start: s, len: 1, selected: true};
             const track = [...(pat.tracks[$selInstId] ?? []), newNote];
             pat.tracks[$selInstId] = track;
@@ -470,7 +525,9 @@
             return;
         }
 
-        if (!dragNote || isNaN(r) || isNaN(s_raw)) {return;}
+        if (!dragNote || isNaN(r) || isNaN(s_raw)) {
+            return;
+        }
 
         const snap = snapStep();
 
@@ -502,7 +559,9 @@
                 const targetRow = Math.max(0, Math.min(ROW_NOTES.length - 1, initRow + deltaR));
                 n.pitch = ROW_NOTES[targetRow].name;
             });
-            if (deltaS === 0 && deltaR === 0) {return;}
+            if (deltaS === 0 && deltaR === 0) {
+                return;
+            }
             updateLegatoTargets(notes, originalPositions, dragLegatoTargets);
             const replacements = replaceEditedNotes(targetNotes);
             dragNote = replacements.get(dragNote) ?? dragNote;
@@ -533,17 +592,21 @@
     }
 
     function handleWheel(e: WheelEvent) {
-        handleViewportWheel(e, viewport, viewportOptions);
+        handleViewportWheel(e, viewportOptions);
     }
 
     function handleRollMouseDown(e: MouseEvent) {
         handleViewportMouseDown(e, viewport);
     }
 
-    function gridPositionAt(e: MouseEvent): {r: number; s: number} {
-        if (!rollEl) {return {r: NaN, s: NaN};}
+    function gridPositionAt(e: MouseEvent): { r: number; s: number } {
+        if (!rollEl) {
+            return {r: NaN, s: NaN};
+        }
         const grid = rollEl.querySelector('.grid-container') as HTMLElement;
-        if (!grid) {return {r: NaN, s: NaN};}
+        if (!grid) {
+            return {r: NaN, s: NaN};
+        }
         const rect = grid.getBoundingClientRect();
         return {
             r: Math.floor((e.clientY - rect.top) / cellHeight),
@@ -556,11 +619,14 @@
             handlePatternResize(e);
             return;
         }
-        if (handleViewportMouseMove(e, viewport, viewportOptions)) {return;}
+        if (handleViewportMouseMove(e, viewport, viewportOptions)) {
+            return;
+        }
 
         const gridPosition = gridPositionAt(e);
         handleMouseMove(e, gridPosition.r, gridPosition.s);
     }
+
     const pat = $derived(($project?.patterns.find(p => p.id === $selPatId) || $project?.patterns[0]) as Pattern);
     const steps = $derived(pat.steps || STEPS);
     const notes = $derived($project && $selInstId ? (pat.tracks[$selInstId] ?? []) : []);
@@ -589,9 +655,13 @@
     } : null);
     const selectedNotes = $derived(notes.filter(n => n.selected) as ExtendedNote[]);
     const legatoLines = $derived(notes.flatMap(source => {
-        if (!source.legatoTo) {return [];}
+        if (!source.legatoTo) {
+            return [];
+        }
         const target = notes.find(note => note.start === source.legatoTo?.start && note.pitch === source.legatoTo.pitch);
-        if (!target) {return [];}
+        if (!target) {
+            return [];
+        }
         return [{source, target}];
     }));
     const selectedLegato = $derived(legatoLines.find(({source, target}) => source.selected && target.selected) || null);
@@ -646,37 +716,6 @@
         padding: 5px 12px;
     }
 
-    .pattern-controls {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .pattern-controls :global(.pat-bar) {
-        margin-bottom: 6px;
-    }
-
-    .instrument-controls {
-        display: flex;
-        align-items: center;
-        flex: 0 1 auto;
-        min-width: 0;
-        gap: 12px;
-        margin-left: auto;
-        padding-top: 1px;
-        justify-content: flex-end;
-        justify-self: end;
-    }
-
-    .editor-status {
-        display: flex;
-        align-items: center;
-        min-height: 25px;
-        box-sizing: border-box;
-        padding: 0 12px 6px;
-        color: var(--secondary-text);
-        font-size: 11px;
-    }
-
     .toolbar-hint {
         align-self: center;
         min-width: 0;
@@ -685,18 +724,6 @@
         white-space: nowrap;
         text-align: center;
         color: var(--color-text-muted);
-        font-size: 11px;
-    }
-
-    .editor-status {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-        min-height: 25px;
-        box-sizing: border-box;
-        padding: 0 12px 6px;
-        color: var(--secondary-text);
         font-size: 11px;
     }
 
@@ -764,14 +791,6 @@
         flex: 1;
         position: relative;
         background: var(--color-border-subtle);
-    }
-
-    .note-value-readout {
-        display: inline-block;
-        margin-left: 8px;
-        color: var(--accent2);
-        font-size: 11px;
-        white-space: nowrap;
     }
 
     .time-marker {
@@ -1041,7 +1060,6 @@
         min-height: 28px;
     }
 
-    .legato-controls input,
     .legato-controls select {
         width: 54px;
         padding: 3px 4px;
@@ -1071,11 +1089,11 @@
 <svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp}/>
 
 <div
-class="piano-roll-container"
-class:pattern-resizing={resizingPattern}
-class:resizing={resizeMode && !!dragNote}
-     class:vel-dragging={velMode && !!dragNote}>
-    <!-- PatternBar is intentionally hosted beside the arranger; keeping its own component boundary prevents the piano-roll header from widening. <PatternBar/> aria-label="Pattern controls" class="pattern-controls" class="toolbar-hint" class="instrument-controls" -->
+        class="piano-roll-container"
+        class:pattern-resizing={resizingPattern}
+        class:resizing={resizeMode && !!dragNote}
+        class:vel-dragging={velMode && !!dragNote}>
+    <!-- PatternBar is intentionally hosted beside the arranger; keeping its own component boundary prevents the piano-roll header from widening. -->
     <div class="editor-toolbar">
         <div class="toolbar-row">
             <span class="toolbar-hint">Alt+drag = velocity</span>
@@ -1083,89 +1101,89 @@ class:resizing={resizeMode && !!dragNote}
                 {#if selectedLegato}
                     <div class="legato-controls" aria-label="Selected legato transition">
                         <select
-aria-label="Legato curve"
-onchange={(event) => updateLegatoCurve(event.currentTarget.value)}
+                                aria-label="Legato curve"
+                                onchange={(event) => updateLegatoCurve(event.currentTarget.value)}
                                 value={selectedLegato.source.legatoTo?.curve || 'linear'}>
-                            {#each CURVE_SHAPES as shape}
+                            {#each CURVE_SHAPES as shape (shape.id)}
                                 <option value={shape.id}>{shape.label}</option>
                             {/each}
                         </select>
                     </div>
                 {:else if selectedNotes.length === 2}
                     <button
-class="legato-action"
-onclick={addLegato}
-title="Move pitch from the earlier note to the later note"
+                            class="legato-action"
+                            onclick={addLegato}
+                            title="Move pitch from the earlier note to the later note"
                             type="button">
                         <i class="fa fa-arrow-right"></i> Move pitch to second note
                     </button>
                 {/if}
             </div>
             <button
-class="instrument-edit"
-onclick={onEditInstrument}
-title="Edit the selected instrument"
+                    class="instrument-edit"
+                    onclick={onEditInstrument}
+                    title="Edit the selected instrument"
                     type="button"><i class="fa fa-sliders"></i> Edit instrument
             </button>
         </div>
     </div>
 
     <div
-bind:this={rollEl}
-         class="piano-roll"
-         oncontextmenu={preventDefault(bubble('contextmenu'))}
-         onmousedown={handleRollMouseDown}
-         onwheel={handleWheel}>
+            bind:this={rollEl}
+            class="piano-roll"
+            oncontextmenu={preventDefault(bubble('contextmenu'))}
+            onmousedown={handleRollMouseDown}
+            onwheel={handleWheel}>
         <div class="piano-roll-header">
             <div class="corner">
                 <div class="length-counter" aria-label="Pattern length">{steps} steps</div>
             </div>
             <div bind:this={patternTimelineEl} style="width: {steps * cellWidth}px;" class="timeline">
-                {#each Array.from({length: Math.ceil(steps / 4)}) as _, i}
+                {#each Array.from({length: Math.ceil(steps / 4)}) as _, i (i)}
                     <div style="left: {i * 4 * cellWidth}px" class="time-marker">
                         {i + 1}
                     </div>
                 {/each}
                 <div
-style="left: {steps * cellWidth}px;"
-class="pattern-end-handle"
-aria-label="Resize pattern length"
-aria-valuemax="512"
-                     aria-valuemin="1"
-aria-valuenow={steps}
-                     onkeydown={handlePatternResizeKeydown}
-onmousedown={startPatternResize}
-                     role="slider"
-tabindex="0"
-                     title="Drag to resize pattern length"></div>
+                        style="left: {steps * cellWidth}px;"
+                        class="pattern-end-handle"
+                        aria-label="Resize pattern length"
+                        aria-valuemax="512"
+                        aria-valuemin="1"
+                        aria-valuenow={steps}
+                        onkeydown={handlePatternResizeKeydown}
+                        onmousedown={startPatternResize}
+                        role="slider"
+                        tabindex="0"
+                        title="Drag to resize pattern length"></div>
             </div>
         </div>
         <div class="piano-roll-content">
             <div class="side-bar">
-                {#each ROW_NOTES as note}
+                {#each ROW_NOTES as note (note.name)}
                     <div
-style="height: {cellHeight}px;"
-                         class="row-label"
-                         class:black={note.black}
-                         class:octave={note.name.startsWith('C') && !note.black}>
+                            style="height: {cellHeight}px;"
+                            class="row-label"
+                            class:black={note.black}
+                            class:octave={note.name.startsWith('C') && !note.black}>
                         {note.name}
                     </div>
                 {/each}
             </div>
             <div
-style="width: {steps * cellWidth}px; height: {ROW_NOTES.length * cellHeight}px; --cell-width: {cellWidth}px;"
-                 class="grid-container">
+                    style="width: {steps * cellWidth}px; height: {ROW_NOTES.length * cellHeight}px; --cell-width: {cellWidth}px;"
+                    class="grid-container">
                 <div class="grid-bg">
-                    {#each ROW_NOTES as note, r}
+                    {#each ROW_NOTES as note (note.name)}
                         <div
-style="height: {cellHeight}px;"
-                             class="grid-row"
-                             class:black={note.black}
-                             class:octave={note.name.startsWith('C') && !note.black}
-                             onmousedown={(e) => {
-                                 const gridPosition = gridPositionAt(e);
-                                 handleMouseDown(e, gridPosition.r, gridPosition.s);
-                             }}>
+                                style="height: {cellHeight}px;"
+                                class="grid-row"
+                                class:black={note.black}
+                                class:octave={note.name.startsWith('C') && !note.black}
+                                onmousedown={(e) => {
+                                    const gridPosition = gridPositionAt(e);
+                                    handleMouseDown(e, gridPosition.r, gridPosition.s);
+                                }}>
                         </div>
                     {/each}
                 </div>
@@ -1173,14 +1191,14 @@ style="height: {cellHeight}px;"
                 <div class="notes-layer">
                     {#if selectionRect}
                         <div
-style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
-                             class="selection-rect"></div>
+                                style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
+                                class="selection-rect"></div>
                     {/if}
                     <svg
-class="legato-layer"
-aria-hidden="true"
-height="{ROW_NOTES.length * cellHeight}"
-                         width="{steps * cellWidth}">
+                            class="legato-layer"
+                            aria-hidden="true"
+                            height="{ROW_NOTES.length * cellHeight}"
+                            width="{steps * cellWidth}">
                         {#each legatoLines as line}
                             <path class="legato-line" d={legatoPath(line.source, line.target)}/>
                         {/each}
@@ -1188,55 +1206,55 @@ height="{ROW_NOTES.length * cellHeight}"
                     {#each ghosts as n}
                         {@const r = rowOfNote[n.pitch]}
                         <div
-style="left: {n.start * cellWidth}px; width: {n.len * cellWidth}px; top: {r * cellHeight + 1}px; height: {cellHeight - 2}px;"
-                             class="note ghost"></div>
+                                style="left: {n.start * cellWidth}px; width: {n.len * cellWidth}px; top: {r * cellHeight + 1}px; height: {cellHeight - 2}px;"
+                                class="note ghost"></div>
                     {/each}
                     {#each notes as n (n)}
                         {@const r = rowOfNote[n.pitch]}
                         {@const v = n.vel ?? 1}
                         <div
-style="left: {n.start * cellWidth}px; width: {n.len * cellWidth}px; top: {r * cellHeight + 1}px; height: {cellHeight - 2}px; background: {pat.color || 'var(--accent)'}; opacity: {0.4 + 0.6 * v}"
-                             class="note"
-                             class:selected={n.selected}
-                             ondblclick={stopPropagation((e) => openNoteEditor(e as MouseEvent, n))}
-                             onmousedown={stopPropagation((e) => {
-                                 const mouseEvent = e as MouseEvent;
-                                 const gridPosition = gridPositionAt(mouseEvent);
-                                 handleMouseDown(mouseEvent, gridPosition.r, gridPosition.s);
-                             })}
-                             title="{n.pitch} • velocity {Math.round(v * 100)}% (Alt+drag)">
+                                style="left: {n.start * cellWidth}px; width: {n.len * cellWidth}px; top: {r * cellHeight + 1}px; height: {cellHeight - 2}px; background: {pat.color || 'var(--accent)'}; opacity: {0.4 + 0.6 * v}"
+                                class="note"
+                                class:selected={n.selected}
+                                ondblclick={stopPropagation((e) => openNoteEditor(e as MouseEvent, n))}
+                                onmousedown={stopPropagation((e) => {
+                                    const mouseEvent = e as MouseEvent;
+                                    const gridPosition = gridPositionAt(mouseEvent);
+                                    handleMouseDown(mouseEvent, gridPosition.r, gridPosition.s);
+                                })}
+                                title="{n.pitch} • velocity {Math.round(v * 100)}% (Alt+drag)">
                             {n.pitch}
                             <div style="width: {v * 100}%" class="vel-bar"></div>
                             <div
-style="width: {Math.min(n.len * cellWidth, Math.max(8, cellWidth * 0.2))}px"
-                                 class="resize-handle"></div>
+                                    style="width: {Math.min(n.len * cellWidth, Math.max(8, cellWidth * 0.2))}px"
+                                    class="resize-handle"></div>
                         </div>
                     {/each}
                 </div>
 
                 {#if noteEditor}
                     <form
-style="left: {noteEditorPosition.left}px; top: {noteEditorPosition.top}px;"
-class="note-editor"
-                          aria-label="Edit note values"
-                          onkeydown={onNoteEditorKeydown}
-onmousedown={stopPropagation(bubble('mousedown'))}
-                          onsubmit={preventDefault(saveNoteEditor)}>
+                            style="left: {noteEditorPosition.left}px; top: {noteEditorPosition.top}px;"
+                            class="note-editor"
+                            aria-label="Edit note values"
+                            onkeydown={onNoteEditorKeydown}
+                            onmousedown={stopPropagation(bubble('mousedown'))}
+                            onsubmit={preventDefault(saveNoteEditor)}>
                         <label>Pitch
                             <select bind:value={noteDraft.pitch}>
-                                {#each ROW_NOTES as note}
+                                {#each ROW_NOTES as note (note.name)}
                                     <option value={note.name}>{note.name}</option>
                                 {/each}
                             </select>
                         </label>
                         <label>Velocity
                             <input
-bind:this={noteEditorInput}
-max="1"
-min="0.05"
-step="0.01"
-type="number"
-                                   bind:value={noteDraft.vel}>
+                                    bind:this={noteEditorInput}
+                                    max="1"
+                                    min="0.05"
+                                    step="0.01"
+                                    type="number"
+                                    bind:value={noteDraft.vel}>
                         </label>
                         {#if noteEditorError}<small>{noteEditorError}</small>{/if}
                         <div class="note-editor-actions">

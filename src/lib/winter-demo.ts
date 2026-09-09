@@ -1,5 +1,14 @@
 import type {
-    ArrangementClip, AutomationLane, AutomationPoint, CurveShape, Instrument, InstrumentParams, Note, Pattern, Project, Track
+    ArrangementClip,
+    AutomationLane,
+    AutomationPoint,
+    CurveShape,
+    Instrument,
+    InstrumentParams,
+    Note,
+    Pattern,
+    Project,
+    Track
 } from './types';
 
 import {
@@ -15,7 +24,11 @@ import {
     PROJECT_FORMAT_VERSION
 } from './types';
 import {
-    WINTER_ALPHABET, WINTER_PITCH_BASE, WINTER_SCORE, type WinterMovementData, type WinterPart
+    WINTER_ALPHABET,
+    WINTER_PITCH_BASE,
+    WINTER_SCORE,
+    type WinterMovementData,
+    type WinterPart
 } from './winter-score';
 
 /* ---- Vivaldi: L'Inverno (Winter), Op. 8 No. 4, RV 297 ----
@@ -52,12 +65,32 @@ const GAP = 24;
 
 const uuid = (group: number, index: number): string => `9f2a4c60-${String(group).padStart(4, '0')}-4e1b-8b7d-${String(index).padStart(12, '0')}`;
 
-export type WinterVoice = 'solo' | 'vn1' | 'vn2' | 'vla' | 'vc' | 'violone' | 'pizz1' | 'pizz2' | 'hpsd' | 'borea' | 'sirocco';
+export type WinterVoice =
+    'solo'
+    | 'vn1'
+    | 'vn2'
+    | 'vla'
+    | 'vc'
+    | 'violone'
+    | 'pizz1'
+    | 'pizz2'
+    | 'hpsd'
+    | 'borea'
+    | 'sirocco';
 export type WinterWind = 'borea' | 'sirocco';
 
 export const WINTER_ID: Record<WinterVoice, string> = {
-    solo: uuid(1, 1), vn1: uuid(1, 2), vn2: uuid(1, 3), vla: uuid(1, 4), vc: uuid(1, 5),
-    violone: uuid(1, 6), pizz1: uuid(1, 7), pizz2: uuid(1, 8), hpsd: uuid(1, 9), borea: uuid(1, 10), sirocco: uuid(1, 11)
+    solo: uuid(1, 1),
+    vn1: uuid(1, 2),
+    vn2: uuid(1, 3),
+    vla: uuid(1, 4),
+    vc: uuid(1, 5),
+    violone: uuid(1, 6),
+    pizz1: uuid(1, 7),
+    pizz2: uuid(1, 8),
+    hpsd: uuid(1, 9),
+    borea: uuid(1, 10),
+    sirocco: uuid(1, 11)
 };
 
 const COLOR: Record<WinterVoice, string> = {
@@ -86,7 +119,12 @@ const PIZZ_PARTIALS = [1, 0.6, 0.4, 0.25, 0.15].map((level, index) => ({ratio: i
 const HARPSICHORD_PARTIALS = [0.8, 1, 0.85, 0.7, 0.6, 0.5].map((level, index) => ({ratio: index + 1, level}));
 
 const instrument = (voice: WinterVoice, name: string, params: Partial<InstrumentParams>): Instrument =>
-    ({id: WINTER_ID[voice], name, color: COLOR[voice], params: ensurePartials({...DEFAULT_PARAMS, pan: PAN[voice], ...params})});
+    ({
+        id: WINTER_ID[voice],
+        name,
+        color: COLOR[voice],
+        params: ensurePartials({...DEFAULT_PARAMS, pan: PAN[voice], ...params})
+    });
 
 function buildInstruments(): Instrument[] {
     const bowed = {tone: 1, att: 0.05, dec: 0.3, sus: 0.85, rel: 0.15};
@@ -103,16 +141,48 @@ function buildInstruments(): Instrument[] {
         }),
         // the sections: two detuned ranks each, a slower and shallower vibrato
         instrument('vn1', 'Orchestra/Strings/Violins I', {
-            ...bowed, q: 30, partials: SECTION_PARTIALS, voices: 2, detune: 12, vib: 8, vibRate: 5.2, vibDelay: 0.3, gain: 0.3
+            ...bowed,
+            q: 30,
+            partials: SECTION_PARTIALS,
+            voices: 2,
+            detune: 12,
+            vib: 8,
+            vibRate: 5.2,
+            vibDelay: 0.3,
+            gain: 0.3
         }),
         instrument('vn2', 'Orchestra/Strings/Violins II', {
-            ...bowed, q: 30, partials: SECTION_PARTIALS, voices: 2, detune: 10, vib: 8, vibRate: 5, vibDelay: 0.3, gain: 0.3
+            ...bowed,
+            q: 30,
+            partials: SECTION_PARTIALS,
+            voices: 2,
+            detune: 10,
+            vib: 8,
+            vibRate: 5,
+            vibDelay: 0.3,
+            gain: 0.3
         }),
         instrument('vla', 'Orchestra/Strings/Violas', {
-            ...bowed, q: 26, partials: VIOLA_PARTIALS, voices: 2, detune: 10, vib: 8, vibRate: 5, vibDelay: 0.3, gain: 0.28
+            ...bowed,
+            q: 26,
+            partials: VIOLA_PARTIALS,
+            voices: 2,
+            detune: 10,
+            vib: 8,
+            vibRate: 5,
+            vibDelay: 0.3,
+            gain: 0.28
         }),
         instrument('vc', 'Orchestra/Strings/Violoncelli', {
-            ...bowed, q: 18, partials: CELLO_PARTIALS, voices: 2, detune: 9, vib: 7, vibRate: 4.8, vibDelay: 0.3, gain: 0.3
+            ...bowed,
+            q: 18,
+            partials: CELLO_PARTIALS,
+            voices: 2,
+            detune: 9,
+            vib: 7,
+            vibRate: 4.8,
+            vibDelay: 0.3,
+            gain: 0.3
         }),
         // the 16' of the band: the bass line an octave down, wide bands so the
         // low notes speak inside an eighth
@@ -162,8 +232,12 @@ export function decodeWinterPart(packed: string): ScoreNote[] {
     let pos = 0, last = 0;
     const read = (): number => {
         const value = WINTER_ALPHABET.indexOf(packed[pos++]);
-        if (value < 0) {throw new Error(`bad character in score at ${pos - 1}`);}
-        if (value < 63) {return value;}
+        if (value < 0) {
+            throw new Error(`bad character in score at ${pos - 1}`);
+        }
+        if (value < 63) {
+            return value;
+        }
         return WINTER_ALPHABET.indexOf(packed[pos++]) * 64 + WINTER_ALPHABET.indexOf(packed[pos++]);
     };
     while (pos < packed.length) {
@@ -249,7 +323,12 @@ const FIRST: Movement = {
     violone: true,
     chords: true,
     winds: [
-        {wind: 'borea', bar: 12, bars: 2, vel: 0.45}, {wind: 'borea', bar: 14, bars: 2, vel: 0.6}, {wind: 'borea', bar: 16, bars: 3, vel: 0.75},
+        {wind: 'borea', bar: 12, bars: 2, vel: 0.45}, {wind: 'borea', bar: 14, bars: 2, vel: 0.6}, {
+            wind: 'borea',
+            bar: 16,
+            bars: 3,
+            vel: 0.75
+        },
         {wind: 'borea', bar: 27, bars: 2, vel: 0.4}, {wind: 'borea', bar: 30, bars: 2, vel: 0.5},
         {wind: 'borea', bar: 33, bars: 2, vel: 0.45}, {wind: 'borea', bar: 36, bars: 3, vel: 0.55},
         {wind: 'borea', bar: 47, bars: 4, vel: 0.3}, {wind: 'borea', bar: 52, bars: 4, vel: 0.35}
@@ -305,11 +384,21 @@ const THIRD: Movement = {
     violone: true,
     chords: true,
     winds: [
-        {wind: 'sirocco', bar: 101, bars: 6, vel: 0.5}, {wind: 'sirocco', bar: 108, bars: 6, vel: 0.65}, {wind: 'sirocco', bar: 115, bars: 5, vel: 0.55},
+        {wind: 'sirocco', bar: 101, bars: 6, vel: 0.5}, {
+            wind: 'sirocco',
+            bar: 108,
+            bars: 6,
+            vel: 0.65
+        }, {wind: 'sirocco', bar: 115, bars: 5, vel: 0.55},
         {wind: 'borea', bar: 120, bars: 4, vel: 0.6}, {wind: 'borea', bar: 125, bars: 4, vel: 0.7},
         {wind: 'borea', bar: 130, bars: 4, vel: 0.8}, {wind: 'borea', bar: 134, bars: 3, vel: 0.9},
         {wind: 'borea', bar: 137, bars: 4, vel: 0.9}, {wind: 'sirocco', bar: 141, bars: 4, vel: 0.8},
-        {wind: 'borea', bar: 145, bars: 4, vel: 1}, {wind: 'sirocco', bar: 149, bars: 3, vel: 0.85}, {wind: 'borea', bar: 151, bars: 2, vel: 0.9}
+        {wind: 'borea', bar: 145, bars: 4, vel: 1}, {wind: 'sirocco', bar: 149, bars: 3, vel: 0.85}, {
+            wind: 'borea',
+            bar: 151,
+            bars: 2,
+            vel: 0.9
+        }
     ]
 };
 
@@ -352,26 +441,41 @@ export function performMovement(movement: Movement): Performed[] {
     // an accent on the beat, so that repeated notes ("batter li piedi") phrase
     const accent = (step: number): number => step % movement.beat === 0 ? 1 : 0.92;
     const add = (voice: WinterVoice, note: ScoreNote, level: number, midiShift = 0): void => {
-        out.push({...note, midi: note.midi + midiShift, voice, vel: Math.round(level * accent(note.start) * 100) / 100});
+        out.push({
+            ...note,
+            midi: note.midi + midiShift,
+            voice,
+            vel: Math.round(level * accent(note.start) * 100) / 100
+        });
     };
 
     for (const note of parts.solo) {
         const bar = barOf(movement, note.start);
         const level = dynamic(movement, bar).solo;
         if (movement === FIRST && isTrilled(note, bar)) {
-            for (const step of trill(note)) {add('solo', step, level);}
+            for (const step of trill(note)) {
+                add('solo', step, level);
+            }
         } else {
             add('solo', note, level);
         }
     }
-    for (const note of parts.vn1) {add(movement.pizzicato ? 'pizz1' : 'vn1', note, dynamic(movement, barOf(movement, note.start)).tutti);}
-    for (const note of parts.vn2) {add(movement.pizzicato ? 'pizz2' : 'vn2', note, dynamic(movement, barOf(movement, note.start)).tutti);}
+    for (const note of parts.vn1) {
+        add(movement.pizzicato ? 'pizz1' : 'vn1', note, dynamic(movement, barOf(movement, note.start)).tutti);
+    }
+    for (const note of parts.vn2) {
+        add(movement.pizzicato ? 'pizz2' : 'vn2', note, dynamic(movement, barOf(movement, note.start)).tutti);
+    }
     // "Pianissimo con l'arco" — the violas under the rain
-    for (const note of parts.vla) {add('vla', note, movement.pizzicato ? 0.4 : dynamic(movement, barOf(movement, note.start)).tutti);}
+    for (const note of parts.vla) {
+        add('vla', note, movement.pizzicato ? 0.4 : dynamic(movement, barOf(movement, note.start)).tutti);
+    }
     for (const note of parts.vc) {
         const level = dynamic(movement, barOf(movement, note.start)).bass;
         add('vc', note, level);
-        if (movement.violone) {add('violone', note, level, -12);}
+        if (movement.violone) {
+            add('violone', note, level, -12);
+        }
         // the continuo's left hand: the bass line, a little under the strings
         add('hpsd', note, level * (movement.pizzicato ? 0.7 : 0.85));
     }
@@ -382,11 +486,15 @@ export function performMovement(movement: Movement): Performed[] {
         const total = movement.data.bars * movement.data.stepsPerBar;
         for (let step = 0; step < total; step += movement.beat) {
             const voices = [onBeat(parts.vn1, step), onBeat(parts.vn2, step), onBeat(parts.vla, step)];
-            if (voices.some(v => !v.length)) {continue;}
+            if (voices.some(v => !v.length)) {
+                continue;
+            }
             const level = dynamic(movement, barOf(movement, step)).tutti * 0.8;
             const seen = new Set<number>();
             for (const note of voices.flat()) {
-                if (seen.has(note.midi)) {continue;}
+                if (seen.has(note.midi)) {
+                    continue;
+                }
                 seen.add(note.midi);
                 add('hpsd', {...note, len: Math.min(note.len, movement.beat)}, level);
             }
@@ -394,7 +502,13 @@ export function performMovement(movement: Movement): Performed[] {
     }
     for (const gust of movement.winds ?? []) {
         const {stepsPerBar} = movement.data;
-        out.push({voice: gust.wind, start: (gust.bar - 1) * stepsPerBar, len: gust.bars * stepsPerBar, midi: WIND_NOTE, vel: gust.vel});
+        out.push({
+            voice: gust.wind,
+            start: (gust.bar - 1) * stepsPerBar,
+            len: gust.bars * stepsPerBar,
+            midi: WIND_NOTE,
+            vel: gust.vel
+        });
     }
     return out;
 }
@@ -411,7 +525,9 @@ export function slur(notes: Note[], beat: number): void {
     for (let i = 1; i < notes.length; i++) {
         const from = notes[i - 1], to = notes[i];
         const interval = Math.abs(idxOfNote[to.pitch] - idxOfNote[from.pitch]);
-        if (from.start + from.len !== to.start || from.len < beat / 2 || !interval || interval > 5) {continue;}
+        if (from.start + from.len !== to.start || from.len < beat / 2 || !interval || interval > 5) {
+            continue;
+        }
         from.len -= SLIDE;
         from.legatoTo = {pitch: to.pitch, start: to.start, curve: 'smooth'};
     }
@@ -420,7 +536,7 @@ export function slur(notes: Note[], beat: number): void {
 /* ---- the arrangement ----
  * Every section is one clip per lane, cut on bar lines; a stretched section
  * (the Lento) is longer than its bars. */
-const LANES: {label: string; color: string; voices: WinterVoice[]}[] = [
+const LANES: { label: string; color: string; voices: WinterVoice[] }[] = [
     {label: 'Solo Violin', color: COLOR.solo, voices: ['solo']},
     {label: 'Violins I', color: COLOR.vn1, voices: ['vn1', 'pizz1']},
     {label: 'Violins II', color: COLOR.vn2, voices: ['vn2', 'pizz2']},
@@ -449,7 +565,9 @@ export function placeSections(): PlacedSection[] {
     const placed: PlacedSection[] = [];
     let cursor = 0;
     WINTER_MOVEMENTS.forEach((movement, index) => {
-        if (index) {cursor += GAP;}
+        if (index) {
+            cursor += GAP;
+        }
         for (const section of movement.sections) {
             const from = (section.from - 1) * movement.data.stepsPerBar;
             const span = (section.to - section.from + 1) * movement.data.stepsPerBar;
@@ -463,7 +581,7 @@ export function placeSections(): PlacedSection[] {
 
 const pitchName = (midi: number): string => NOTES[midi].name;
 
-function buildPatterns(): {patterns: Pattern[]; arrangement: ArrangementClip[]} {
+function buildPatterns(): { patterns: Pattern[]; arrangement: ArrangementClip[] } {
     const patterns: Pattern[] = [];
     const arrangement: ArrangementClip[] = [];
     const performed = WINTER_MOVEMENTS.map(performMovement);
@@ -481,13 +599,31 @@ function buildPatterns(): {patterns: Pattern[]; arrangement: ArrangementClip[]} 
                     len: Math.min(n.len, section.from + section.span - n.start) * section.stretch,
                     vel: n.vel
                 }));
-                if (voice === 'solo' && movement.sings) {slur(part, movement.beat * section.stretch);}
-                if (part.length) {tracks[WINTER_ID[voice]] = part;}
+                if (voice === 'solo' && movement.sings) {
+                    slur(part, movement.beat * section.stretch);
+                }
+                if (part.length) {
+                    tracks[WINTER_ID[voice]] = part;
+                }
             }
-            if (!Object.keys(tracks).length) {return;}
-            const pattern: Pattern = {id: uuid(2, patterns.length + 1), name: `${name} — ${lane.label}`, steps: section.len, color: lane.color, tracks};
+            if (!Object.keys(tracks).length) {
+                return;
+            }
+            const pattern: Pattern = {
+                id: uuid(2, patterns.length + 1),
+                name: `${name} — ${lane.label}`,
+                steps: section.len,
+                color: lane.color,
+                tracks
+            };
             patterns.push(pattern);
-            arrangement.push({id: uuid(3, arrangement.length + 1), patternId: pattern.id, track, start: section.start, len: section.len});
+            arrangement.push({
+                id: uuid(3, arrangement.length + 1),
+                patternId: pattern.id,
+                track,
+                start: section.start,
+                len: section.len
+            });
         });
     });
     return {patterns, arrangement};
@@ -496,7 +632,10 @@ function buildPatterns(): {patterns: Pattern[]; arrangement: ArrangementClip[]} 
 /* ---- automation ---- */
 type Point = [step: number, value: number, curve?: CurveShape];
 const lane = (id: string, target: string, param: string, points: Point[]): AutomationLane => ({
-    id, target, param, points: points.map(([step, value, curve]): AutomationPoint => curve ? {step, value, curve} : {step, value})
+    id,
+    target,
+    param,
+    points: points.map(([step, value, curve]): AutomationPoint => curve ? {step, value, curve} : {step, value})
 });
 
 function buildAutomation(sections: PlacedSection[]): AutomationLane[] {

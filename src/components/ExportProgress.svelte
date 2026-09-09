@@ -26,9 +26,13 @@
         ? formatStageEta($exportProgress?.etaSeconds) : null);
 
     function cancel() {
-        if (failed) {dismissExportError();}
-        else if (confirmCancel) {confirmCancel = false;}
-        else if (!$exportProgress?.cancelling) {confirmCancel = true;}
+        if (failed) {
+            dismissExportError();
+        } else if (confirmCancel) {
+            confirmCancel = false;
+        } else if (!$exportProgress?.cancelling) {
+            confirmCancel = true;
+        }
     }
 
     function confirmCancellation() {
@@ -40,7 +44,9 @@
         // The app has window-level piano/transport shortcuts. A modal must
         // intercept those as well as keeping tab focus inside its controls.
         event.stopImmediatePropagation();
-        if (event.type !== 'keydown') {return;}
+        if (event.type !== 'keydown') {
+            return;
+        }
         if (event.key === 'Escape') {
             event.preventDefault();
             cancel();
@@ -53,7 +59,9 @@
     }
 
     $effect(() => {
-        if (!visible || !dialog) {return;}
+        if (!visible || !dialog) {
+            return;
+        }
         const element = dialog;
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         element.showModal();
@@ -64,7 +72,11 @@
             window.removeEventListener('keydown', handleKey, true);
             window.removeEventListener('keyup', handleKey, true);
             element.close();
-            void tick().then(() => {if (opener?.isConnected) {opener.focus();}});
+            void tick().then(() => {
+                if (opener?.isConnected) {
+                    opener.focus();
+                }
+            });
         };
     });
 
@@ -93,7 +105,8 @@
                 <button onclick={() => void exportWav()} type="button">Retry export</button>
             </div>
         {:else}
-            <p id="export-description">Exporting a snapshot of your song. Editing and playback resume when this dialog closes.</p>
+            <p id="export-description">Exporting a snapshot of your song. Editing and playback resume when this dialog
+                closes.</p>
             {#if confirmCancel}
                 <p class="status" aria-live="polite" role="status">Cancel export?</p>
                 <p class="detail">The current render will be discarded and must start over.</p>

@@ -119,7 +119,9 @@ export function genPartials(g: HarmonicsGen): PartialSpec[] {
 // Make sure an instrument has an explicit profile (fresh instruments, presets
 // and loaded projects that only carry the generator values).
 export function ensurePartials(p: InstrumentParams): InstrumentParams {
-    if (!p.partials || !p.partials.length) {p.partials = genPartials(genSettings(p));}
+    if (!p.partials || !p.partials.length) {
+        p.partials = genPartials(genSettings(p));
+    }
     return p;
 }
 
@@ -301,7 +303,7 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
      * the vibrato is what stops it from sounding like an organ pipe. The
      * resonance is high on purpose for the glottal source; the fixed formants
      * below are broader, so they colour neighbouring harmonics like a tract. */
-    'Voice — Soprano (ah)': {
+    'Voice - Soprano (ah)': {
         tone: 0.95, q: 42, formant: 0.9, f1: 800, f2: 1150, f3: 2900, formantQ: 3.2,
         vib: 34, vibRate: 5.6, vibDelay: 0.4, noise: 0.03, noiseFreq: 3800,
         voices: 2, detune: 9, att: 0.09, dec: 0.3, sus: 0.85, rel: 0.35, gain: 0.5,
@@ -311,7 +313,7 @@ export const PRESETS: Record<string, Partial<InstrumentParams>> = {
             {ratio: 7, level: 0.12}, {ratio: 8, level: 0.09}
         ]
     },
-    'Voice — Choir (oo)': {
+    'Voice - Choir (oo)': {
         tone: 0.82, q: 36, formant: 0.85, f1: 350, f2: 800, f3: 2600, formantQ: 2.8,
         vib: 12, vibRate: 4.6, vibDelay: 0.6, voices: 4, detune: 18,
         att: 0.45, dec: 0.6, sus: 0.9, rel: 1.1, gain: 0.45,
@@ -342,8 +344,10 @@ export type PresetBank = Record<string, Partial<InstrumentParams>>;
 export function loadUserPresets(): PresetBank {
     try {
         const raw = localStorage.getItem(USER_PRESET_KEY);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const b = raw ? JSON.parse(raw) : null;
         return b && typeof b === 'object' ? b as PresetBank : {};
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
         return {};
     }
@@ -352,14 +356,16 @@ export function loadUserPresets(): PresetBank {
 function storeUserPresets(bank: PresetBank): void {
     try {
         localStorage.setItem(USER_PRESET_KEY, JSON.stringify(bank));
-    } catch (e) { /* private mode / quota — presets are a convenience */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+        /* private mode / quota — presets are a convenience */
     }
 }
 
 // A preset is a full parameter snapshot (partials included) minus the identity
 export function saveUserPreset(name: string, params: InstrumentParams): PresetBank {
     const bank = loadUserPresets();
-    bank[name] = JSON.parse(JSON.stringify(params));
+    bank[name] = JSON.parse(JSON.stringify(params)) as Partial<InstrumentParams>;
     storeUserPresets(bank);
     return bank;
 }

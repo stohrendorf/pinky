@@ -20,11 +20,17 @@ const server = await createServer({root, logLevel: 'error', server: {host: '127.
 let browser;
 try {
     await server.listen();
-    if (browserName === 'firefox') {browser = await firefox.launch();}
-    else if (process.env.PINKY_BROWSER) {browser = await chromium.launch({executablePath: process.env.PINKY_BROWSER});}
-    else {
+    if (browserName === 'firefox') {
+        browser = await firefox.launch();
+    } else if (process.env.PINKY_BROWSER) {
+        browser = await chromium.launch({executablePath: process.env.PINKY_BROWSER});
+    } else {
         for (const channel of ['chrome', 'msedge', 'chromium']) {
-            try {browser = await chromium.launch({channel}); break;} catch { /* next installed browser */ }
+            try {
+                browser = await chromium.launch({channel});
+                break;
+            } catch { /* next installed browser */
+            }
         }
     }
     assert.ok(browser, 'Install a supported browser first');
@@ -36,7 +42,10 @@ try {
     await page.evaluate(async () => (await import('/src/lib/project.ts')).loadDemoProject('monsoon'));
     const data = () => page.evaluate(async () => {
         const {project} = await import('/src/lib/project.ts');
-        let p; project.subscribe(value => {p = value;})();
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
         return p.conductor;
     });
     const marker = step => page.locator(`.conductor button[data-step="${step}"]`);
@@ -65,12 +74,26 @@ try {
         const p = model.newEmptyProject();
         p.zoom.arr.width = 12;
         p.conductor = {
-            sections: [{id: crypto.randomUUID(), step: 0, name: 'Intro'}, {id: crypto.randomUUID(), step: 32, name: 'Verse'}],
-            tempos: [{id: crypto.randomUUID(), step: 0, bpm: 90, curve: 'linear'}, {id: crypto.randomUUID(), step: 16, bpm: 120, curve: 'hold'}],
+            sections: [{id: crypto.randomUUID(), step: 0, name: 'Intro'}, {
+                id: crypto.randomUUID(),
+                step: 32,
+                name: 'Verse'
+            }],
+            tempos: [{id: crypto.randomUUID(), step: 0, bpm: 90, curve: 'linear'}, {
+                id: crypto.randomUUID(),
+                step: 16,
+                bpm: 120,
+                curve: 'hold'
+            }],
             meters: [{id: crypto.randomUUID(), step: 0, numerator: 7, denominator: 8}]
         };
         model.project.set(p);
-        window.markerMusic = JSON.stringify({arrangement: p.arrangement, patterns: p.patterns, loop: p.loop, bpm: p.bpm});
+        window.markerMusic = JSON.stringify({
+            arrangement: p.arrangement,
+            patterns: p.patterns,
+            loop: p.loop,
+            bpm: p.bpm
+        });
     });
     const initial = await data();
     const drag = async (from, to, {cancel = false, hold = false} = {}) => {
@@ -79,7 +102,10 @@ try {
         assert.ok(box);
         await page.mouse.move(box.x + 8, box.y + box.height / 2);
         assert.equal(await page.evaluate(({x, y}) => document.elementFromPoint(x, y)?.getAttribute('data-step'),
-            {x: box.x + 8, y: box.y + box.height / 2}), String(from), `marker ${from} must be reachable: ${JSON.stringify(await page.evaluate(() =>
+            {
+                x: box.x + 8,
+                y: box.y + box.height / 2
+            }), String(from), `marker ${from} must be reachable: ${JSON.stringify(await page.evaluate(() =>
             [...document.querySelectorAll('.conductor-viewport, .conductor-lanes, .grid-viewport')].map(node => ({
                 class: node.className, scroll: node.scrollLeft, x: node.getBoundingClientRect().x,
                 width: node.getBoundingClientRect().width, transform: getComputedStyle(node).transform
@@ -90,7 +116,9 @@ try {
             await page.waitForTimeout(450);
             assert.deepEqual(await data(), initial, 'holding a drag preview does not mutate history or timing');
         }
-        if (cancel) {await page.keyboard.press('Escape');}
+        if (cancel) {
+            await page.keyboard.press('Escape');
+        }
         await page.mouse.up();
         assert.equal(await editor.count(), 0, 'releasing a drag does not open the editor');
     };
@@ -134,10 +162,14 @@ try {
     await editor.getByRole('button', {name: 'Save', exact: true}).focus();
     await page.keyboard.press('Tab');
     assert.ok(await editor.evaluate(node => node.contains(document.activeElement)), 'focus stays inside the dialog');
-    if (process.argv.includes('--screenshot')) {await page.screenshot({path: resolve(root, 'marker-group-editor.png')});}
+    if (process.argv.includes('--screenshot')) {
+        await page.screenshot({path: resolve(root, 'marker-group-editor.png')});
+    }
     await page.keyboard.press('Escape');
     assert.ok(await marker(27).evaluate(node => node === document.activeElement), 'focus returns to the marker');
-    await page.locator('.grid-viewport').evaluate(node => {node.scrollLeft = 100;});
+    await page.locator('.grid-viewport').evaluate(node => {
+        node.scrollLeft = 100;
+    });
     await page.waitForFunction(() => {
         const lane = document.querySelector('.conductor-lanes');
         const grid = document.querySelector('.grid-viewport');
@@ -152,16 +184,26 @@ try {
     assert.equal(persisted.sections.find(item => item.step === 23).name, 'Moved placeholder');
     assert.ok(await page.evaluate(async () => {
         const {project} = await import('/src/lib/project.ts');
-        let p; project.subscribe(value => {p = value;})();
-        return JSON.stringify({arrangement: p.arrangement, patterns: p.patterns, loop: p.loop, bpm: p.bpm}) === window.markerMusic;
+        let p;
+        project.subscribe(value => {
+            p = value;
+        })();
+        return JSON.stringify({
+            arrangement: p.arrangement,
+            patterns: p.patterns,
+            loop: p.loop,
+            bpm: p.bpm
+        }) === window.markerMusic;
     }), 'marker edits leave music, cursor-independent loop and base BPM untouched');
     await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await page.getByRole('button', {name: 'Save', exact: true}).click();
     await page.reload();
     assert.deepEqual(await data(), persisted, 'grouped edits and moves survive save/reload');
     assert.deepEqual(errors, [], 'no browser runtime errors');
-    console.log(JSON.stringify({browser: browserName, version: browser.version(),
-        checks: 'Monsoon grouped fields, IDs, pointer capture, drag preview/drop, undo/redo, Escape, collisions, placeholders, arrow keys, scroll, save/reload'}));
+    console.log(JSON.stringify({
+        browser: browserName, version: browser.version(),
+        checks: 'Monsoon grouped fields, IDs, pointer capture, drag preview/drop, undo/redo, Escape, collisions, placeholders, arrow keys, scroll, save/reload'
+    }));
 } finally {
     await browser?.close();
     await server.close();

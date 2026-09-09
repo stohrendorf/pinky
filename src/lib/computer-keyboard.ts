@@ -43,7 +43,9 @@ export function computerKeySource(key: string, code: string): string {
 
 export function bindingForCode(code: string, octave: number): ComputerKeyBinding | null {
     const binding = bindingByCode.get(code);
-    if (!binding) {return null;}
+    if (!binding) {
+        return null;
+    }
     return {
         code: binding.code,
         character: binding.character,
@@ -53,7 +55,9 @@ export function bindingForCode(code: string, octave: number): ComputerKeyBinding
 
 export function learnKeyboardLabel(labels: Map<string, string>, code: string, key: string): void {
     const character = normalizeComputerKey(key);
-    if (!character || !bindingByCode.has(code) || labels.get(code) === character) {return;}
+    if (!character || !bindingByCode.has(code) || labels.get(code) === character) {
+        return;
+    }
     const previous = labels.get(code) ?? bindingByCode.get(code)?.character ?? '';
     for (const [otherCode, label] of labels) {
         if (otherCode !== code && label === character) {
@@ -69,13 +73,17 @@ interface NavigatorKeyboard {
 }
 
 export async function loadKeyboardLayout(labels: Map<string, string>): Promise<void> {
-    const keyboard = (globalThis.navigator as Navigator & {keyboard?: NavigatorKeyboard}).keyboard;
-    if (!keyboard?.getLayoutMap) {return;}
+    const keyboard = (globalThis.navigator as Navigator & { keyboard?: NavigatorKeyboard }).keyboard;
+    if (!keyboard?.getLayoutMap) {
+        return;
+    }
     try {
         const layout = await keyboard.getLayoutMap();
         for (const binding of COMPUTER_KEY_BINDINGS) {
             const character = normalizeComputerKey(layout.get(binding.code) ?? '');
-            if (character) {labels.set(binding.code, character);}
+            if (character) {
+                labels.set(binding.code, character);
+            }
         }
     } catch {
         // Firefox has no layout-map API; key events teach us the labels as they arrive.
@@ -109,7 +117,9 @@ export class HeldNoteSources {
     }
 
     hold(source: string, voice: HeldVoice): boolean {
-        if (this.bySource.has(source)) {return false;}
+        if (this.bySource.has(source)) {
+            return false;
+        }
         const alreadyHeld = [...this.bySource.values()].some(existing => sameVoice(existing, voice));
         this.bySource.set(source, voice);
         return !alreadyHeld;
@@ -117,7 +127,9 @@ export class HeldNoteSources {
 
     release(source: string): HeldVoice | null {
         const voice = this.bySource.get(source);
-        if (!voice) {return null;}
+        if (!voice) {
+            return null;
+        }
         this.bySource.delete(source);
         return [...this.bySource.values()].some(existing => sameVoice(existing, voice)) ? null : voice;
     }

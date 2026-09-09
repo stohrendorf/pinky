@@ -1,9 +1,8 @@
 <script lang="ts">
     import {
-        run, createBubbler, preventDefault, stopPropagation 
+        createBubbler, preventDefault, run, stopPropagation
     } from 'svelte/legacy';
 
-    const bubble = createBubbler();
     import type {
         ArrangementClip, AutomationLane as Lane, AutomationPoint
     } from '../lib/types';
@@ -19,9 +18,9 @@
         shouldPlacePattern
     } from '../lib/arrangement';
     import {
+        automationCurrentValue,
         autoParamDef,
         autoParams,
-        automationCurrentValue,
         laneColor,
         laneTargetTitle,
         laneTitle,
@@ -32,7 +31,7 @@
         master
     } from '../lib/engine';
     import {
-        curStep, playMode, playing, project, selPatId, songCursor, touch
+        curStep, playing, playMode, project, selPatId, songCursor, touch
     } from '../lib/project';
     import {
         rendering
@@ -59,11 +58,13 @@
     import Dialog from './ui/Dialog.svelte';
     import Prompt from './ui/Prompt.svelte';
 
+    const bubble = createBubbler();
+
     interface Props {
         contextualEditor?: string | null;
     }
 
-    let { contextualEditor = $bindable(null) }: Props = $props();
+    let {contextualEditor = $bindable(null)}: Props = $props();
 
     interface ExtendedClip extends ArrangementClip {
         _initStart?: number;
@@ -83,23 +84,31 @@
 
 
     function setZoom(w: number, h: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.zoom.arr.width = w;
         $project.zoom.arr.height = h;
         touch();
     }
 
     function syncFrozenPanes() {
-        if (!playlistEl) {return;}
+        if (!playlistEl) {
+            return;
+        }
         scrollLeft = playlistEl.scrollLeft;
         scrollTop = playlistEl.scrollTop;
     }
 
     function scrollPlayheadIntoView(container: HTMLElement | undefined, step: number, width: number) {
-        if (!container) {return;}
+        if (!container) {
+            return;
+        }
         const position = step * width - container.scrollLeft;
         const padding = Math.min(48, container.clientWidth / 4);
-        if (position >= padding && position <= container.clientWidth - padding) {return;}
+        if (position >= padding && position <= container.clientWidth - padding) {
+            return;
+        }
         const nextLeft = step * width - container.clientWidth * 0.35;
         container.scrollLeft = Math.max(0, Math.min(nextLeft, container.scrollWidth - container.clientWidth));
     }
@@ -116,7 +125,6 @@
     const previewCache = new Map<string, PreviewNote[]>();
 
 
-
     function selectAutomationPoint(lane: Lane | null, point: AutomationPoint | null) {
         selectedAutomationPoint = point && lane ? {laneId: lane.id, point} : null;
     }
@@ -129,12 +137,16 @@
 
     function timelineStep(e: MouseEvent): number {
         const grid = playlistEl?.querySelector('.grid-container') as HTMLElement;
-        if (!grid) {return 0;}
+        if (!grid) {
+            return 0;
+        }
         return (e.clientX - grid.getBoundingClientRect().left) / cellWidth;
     }
 
     function handleTimelineMouseDown(e: MouseEvent) {
-        if ($rendering) {return;}
+        if ($rendering) {
+            return;
+        }
         if (e.button === 2) { // right-click clears the loop
             if ($project?.loop) {
                 $project.loop = null;
@@ -142,7 +154,9 @@
             }
             return;
         }
-        if (e.button !== 0) {return;}
+        if (e.button !== 0) {
+            return;
+        }
         e.stopPropagation();
         loopDragging = true;
         loopAnchor = timelineStep(e);
@@ -165,7 +179,9 @@
     const TRANSPOSE_MAX = 24;
 
     function transposeClips(delta: number) {
-        if (!$project || !selectedClips.length) {return;}
+        if (!$project || !selectedClips.length) {
+            return;
+        }
         selectedClips.forEach(c => {
             c.transpose = Math.max(-TRANSPOSE_MAX, Math.min(TRANSPOSE_MAX, (c.transpose || 0) + delta));
         });
@@ -173,7 +189,9 @@
     }
 
     function resetClipTranspose() {
-        if (!$project || !selectedClips.length) {return;}
+        if (!$project || !selectedClips.length) {
+            return;
+        }
         selectedClips.forEach(c => c.transpose = 0);
         touch();
     }
@@ -188,7 +206,9 @@
     }
 
     function deleteClipAt(t: number, s_raw: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const found = $project.arrangement.find(c => c.track === t && s_raw >= c.start && s_raw < c.start + c.len);
         if (found) {
             $project.arrangement = $project.arrangement.filter(c => c !== found);
@@ -197,8 +217,12 @@
     }
 
     function handleMouseDown(e: MouseEvent, t: number, s_raw: number) {
-        if (e.button === 1) {return;}
-        if (!$project) {return;}
+        if (e.button === 1) {
+            return;
+        }
+        if (!$project) {
+            return;
+        }
 
         const snap = cellWidth > 160 ? 0.0625 : (cellWidth > 80 ? 0.125 : (cellWidth > 40 ? 0.25 : (cellWidth > 20 ? 0.5 : 1)));
         const s = Math.round(s_raw / snap) * snap;
@@ -209,7 +233,9 @@
             return;
         }
 
-        if (e.button !== 0) {return;}
+        if (e.button !== 0) {
+            return;
+        }
 
         if (selectedAutomationPoint) {
             selectAutomationPoint(null, null);
@@ -222,7 +248,9 @@
             isSelecting = true;
             selectionStart = {s: s_raw, t};
             selectionEnd = {s: s_raw, t};
-            if (!e.shiftKey) {clearSelection();}
+            if (!e.shiftKey) {
+                clearSelection();
+            }
             return;
         }
 
@@ -257,7 +285,9 @@
                 clearSelection();
                 return;
             }
-            if (!e.shiftKey) {clearSelection();}
+            if (!e.shiftKey) {
+                clearSelection();
+            }
             const pat = $project.patterns.find(p => p.id === $selPatId);
             const newClip: ExtendedClip = {
                 id: Math.random().toString(36).slice(2),
@@ -294,7 +324,9 @@
             $project.arrangement.forEach(c => {
                 const inRect = c.start < s_max && (c.start + c.len) > s_min && c.track >= t_min && c.track <= t_max;
                 if (e.shiftKey) {
-                    if (inRect) {c.selected = true;}
+                    if (inRect) {
+                        c.selected = true;
+                    }
                 } else {
                     c.selected = inRect;
                 }
@@ -303,7 +335,9 @@
             return;
         }
 
-        if (!dragClip || isNaN(t) || isNaN(s_raw) || !$project) {return;}
+        if (!dragClip || isNaN(t) || isNaN(s_raw) || !$project) {
+            return;
+        }
 
         const snap = cellWidth > 160 ? 0.0625 : (cellWidth > 80 ? 0.125 : (cellWidth > 40 ? 0.25 : (cellWidth > 20 ? 0.5 : 1)));
 
@@ -368,7 +402,7 @@
             transposeClips((e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 12 : 1));
             return;
         }
-        handleViewportWheel(e, viewport, viewportOptions);
+        handleViewportWheel(e, viewportOptions);
     }
 
     function handlePlaylistMouseDown(e: MouseEvent) {
@@ -376,7 +410,9 @@
     }
 
     function handleMouseMoveGlobal(e: MouseEvent) {
-        if (handleViewportMouseMove(e, viewport, viewportOptions)) {return;}
+        if (handleViewportMouseMove(e, viewport, viewportOptions)) {
+            return;
+        }
 
         if (loopDragging) {
             const s = timelineStep(e);
@@ -387,9 +423,13 @@
             return;
         }
 
-        if (!playlistEl) {return;}
+        if (!playlistEl) {
+            return;
+        }
         const grid = playlistEl.querySelector('.grid-container') as HTMLElement;
-        if (!grid) {return;}
+        if (!grid) {
+            return;
+        }
         const rect = grid.getBoundingClientRect();
         const s_raw = (e.clientX - rect.left) / cellWidth;
         const t = trackIndexAtY(e.clientY - rect.top);
@@ -406,15 +446,21 @@
 
     function getPatternNotes(id: string, clipLen: number): PreviewNote[] {
         const pat = $project?.patterns.find(p => p.id === id);
-        if (!pat) {return [];}
+        if (!pat) {
+            return [];
+        }
         const patSteps = pat.steps || 32;
 
         // Cache management
         const cacheKey = `${id}-${clipLen}-${patSteps}`;
-        if (previewCache.has(cacheKey)) {return previewCache.get(cacheKey)!;}
+        if (previewCache.has(cacheKey)) {
+            return previewCache.get(cacheKey)!;
+        }
 
         const repeatedNotes = getPatternPreview(pat, clipLen);
-        if (repeatedNotes.length === 0) {return [];}
+        if (repeatedNotes.length === 0) {
+            return [];
+        }
 
         previewCache.set(cacheKey, repeatedNotes);
         // Keep cache size reasonable
@@ -426,7 +472,9 @@
     }
 
     function editTrack(trackIdx: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         editingTrackIdx = trackIdx;
         renameTrackValue = $project.tracks[trackIdx].name;
         showRenameTrack = true;
@@ -441,19 +489,25 @@
 
 
     function toggleTrackMute(t: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.tracks[t].mute = !$project.tracks[t].mute;
         touch();
     }
 
     function toggleTrackSolo(t: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.tracks[t].solo = !$project.tracks[t].solo;
         touch();
     }
 
     function changeTrackColor(trackIdx: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         editingTrackIdx = trackIdx;
         showTrackColor = true;
     }
@@ -466,19 +520,25 @@
     }
 
     function addTrack() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         $project.tracks = addArrangementTrack($project.tracks);
         touch();
     }
 
     function insertTrack(index: number) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const updated = insertArrangementTrack($project.tracks, $project.arrangement, index);
         $project.tracks = updated.tracks;
         $project.arrangement = updated.arrangement;
         if ($project.automationPositions) {
             Object.keys($project.automationPositions).forEach(id => {
-                if ($project!.automationPositions![id] >= index) {$project!.automationPositions![id]++;}
+                if ($project!.automationPositions![id] >= index) {
+                    $project!.automationPositions![id]++;
+                }
             });
         }
         touch();
@@ -488,11 +548,15 @@
         draggingTrack = trackIndex;
         dragInsertionRow = null;
         event.dataTransfer?.setData('text/plain', String(trackIndex));
-        if (event.dataTransfer) {event.dataTransfer.effectAllowed = 'move';}
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+        }
     }
 
     function updateDragInsertion(event: DragEvent, rowIndex: number) {
-        if (draggingTrack === null && !draggingAutomationLane) {return;}
+        if (draggingTrack === null && !draggingAutomationLane) {
+            return;
+        }
         const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
         dragInsertionRow = rowIndex + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
     }
@@ -509,7 +573,9 @@
             dragInsertionRow = null;
             return;
         }
-        if (!$project || draggingTrack === null) {return;}
+        if (!$project || draggingTrack === null) {
+            return;
+        }
         const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
         const insertionIndex = trackIndex + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
         const updated = moveArrangementTrack($project.tracks, $project.arrangement, draggingTrack, insertionIndex);
@@ -523,21 +589,30 @@
         draggingAutomationLane = lane.id;
         dragInsertionRow = null;
         event.dataTransfer?.setData('text/plain', lane.id);
-        if (event.dataTransfer) {event.dataTransfer.effectAllowed = 'move';}
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+        }
     }
 
     function moveAutomationLane(laneId: string, slot: number, beforeLaneId?: string) {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const lanes = $project.automation || [];
         const lane = lanes.find(item => item.id === laneId);
-        if (!lane) {return;}
+        if (!lane) {
+            return;
+        }
         $project.automationPositions = {
             ...($project.automationPositions || {}),
             [laneId]: Math.max(0, Math.min($project.tracks.length, slot))
         };
         const order = [...($project.automationOrder || lanes.map(item => item.id))].filter(id => id !== laneId);
-        if (beforeLaneId) {order.splice(Math.max(0, order.indexOf(beforeLaneId)), 0, laneId);}
-        else {order.push(laneId);}
+        if (beforeLaneId) {
+            order.splice(Math.max(0, order.indexOf(beforeLaneId)), 0, laneId);
+        } else {
+            order.push(laneId);
+        }
         $project.automationOrder = order;
         draggingAutomationLane = null;
         dragInsertionRow = null;
@@ -545,7 +620,9 @@
     }
 
     function dropAutomationLane(event: DragEvent, lane: Lane) {
-        if (!draggingAutomationLane || draggingAutomationLane === lane.id) {return;}
+        if (!draggingAutomationLane || draggingAutomationLane === lane.id) {
+            return;
+        }
         const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
         const order = $project?.automationOrder || autoLanes.map(item => item.id);
         const targetIndex = order.indexOf(lane.id);
@@ -559,22 +636,31 @@
     }
 
     function requestRemoveTrack(trackIndex: number) {
-        if (!$project || $project.tracks.length <= 1) {return;}
+        if (!$project || $project.tracks.length <= 1) {
+            return;
+        }
         trackToRemove = trackIndex;
         showRemoveTrack = $project.arrangement.some(clip => clip.track === trackIndex);
-        if (!showRemoveTrack) {removeTrack();}
+        if (!showRemoveTrack) {
+            removeTrack();
+        }
     }
 
     function removeTrack() {
-        if (!$project || trackToRemove === null) {return;}
+        if (!$project || trackToRemove === null) {
+            return;
+        }
         const updated = removeArrangementTrack($project.tracks, $project.arrangement, trackToRemove);
         $project.tracks = updated.tracks;
         $project.arrangement = updated.arrangement;
         if ($project.automationPositions) {
             Object.keys($project.automationPositions).forEach(id => {
                 const position = $project!.automationPositions![id];
-                if (trackToRemove !== null && position > trackToRemove) {$project!.automationPositions![id] = position - 1;}
-                else if (trackToRemove !== null && position === trackToRemove) {$project!.automationPositions![id] = Math.max(0, position - 1);}
+                if (trackToRemove !== null && position > trackToRemove) {
+                    $project!.automationPositions![id] = position - 1;
+                } else if (trackToRemove !== null && position === trackToRemove) {
+                    $project!.automationPositions![id] = Math.max(0, position - 1);
+                }
             });
         }
         trackToRemove = null;
@@ -589,11 +675,11 @@
     const LANE_H = 54;
 
 
-
-
     function laneValueLabel(lane: Lane, step: number): string {
         const d = autoParamDef(lane);
-        if (!d) {return '';}
+        if (!d) {
+            return '';
+        }
         const v = laneValueAt(lane, Math.max(0, step));
         return (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 100) / 100) + (d.unit ? ' ' + d.unit : '');
     }
@@ -616,8 +702,12 @@
         let previousTrack = 0;
         for (const row of arrangerRows) {
             const height = row.kind === 'track' ? cellHeight : LANE_H;
-            if (y >= top && y < top + height) {return row.kind === 'track' ? row.trackIndex : previousTrack;}
-            if (row.kind === 'track') {previousTrack = row.trackIndex;}
+            if (y >= top && y < top + height) {
+                return row.kind === 'track' ? row.trackIndex : previousTrack;
+            }
+            if (row.kind === 'track') {
+                previousTrack = row.trackIndex;
+            }
             top += height;
         }
         return previousTrack;
@@ -630,15 +720,23 @@
 
 
     function openAddAuto() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         showAddAuto = true;
     }
 
     function addAutoLane(target: string, param: string) {
-        if (!$project) {return;}
-        if (autoLanes.some(lane => lane.target === target && lane.param === param)) {return;}
+        if (!$project) {
+            return;
+        }
+        if (autoLanes.some(lane => lane.target === target && lane.param === param)) {
+            return;
+        }
         const def = autoParams(target).find(candidate => candidate.param === param);
-        if (!def) {return;}
+        if (!def) {
+            return;
+        }
         const cur = automationCurrentValue($project, target, param, master);
         const lane = newLane(target, param, cur ?? def.min);
         $project.automation = [...autoLanes, lane];
@@ -654,18 +752,23 @@
     }
 
     function removeAutoLane() {
-        if (!$project || !autoLaneToRemove) {return;}
+        if (!$project || !autoLaneToRemove) {
+            return;
+        }
         const lane = autoLaneToRemove;
         $project.automation = autoLanes.filter(l => l !== lane);
         $project.automationOrder = ($project.automationOrder || []).filter(id => id !== lane.id);
         if ($project.automationPositions) {
             delete $project.automationPositions[lane.id];
         }
-        if (selectedAutomationPoint?.laneId === lane.id) {selectAutomationPoint(null, null);}
+        if (selectedAutomationPoint?.laneId === lane.id) {
+            selectAutomationPoint(null, null);
+        }
         autoLaneToRemove = null;
         showRemoveAutoLane = false;
         touch();
     }
+
     const cellWidth = $derived($project?.zoom.arr.width || 24);
     const cellHeight = $derived($project?.zoom.arr.height || 32);
     run(() => {
@@ -709,7 +812,9 @@
         for (let slot = 0; slot <= ($project?.tracks.length || 0); slot++) {
             ordered.filter(lane => (positions[lane.id] ?? ($project?.tracks.length || 0)) === slot)
                 .forEach(lane => rows.push({kind: 'automation', lane}));
-            if (slot < ($project?.tracks.length || 0)) {rows.push({kind: 'track', trackIndex: slot});}
+            if (slot < ($project?.tracks.length || 0)) {
+                rows.push({kind: 'track', trackIndex: slot});
+            }
         }
         return rows;
     })());
@@ -1306,47 +1411,6 @@
     .auto-label .auto-val.live {
         color: var(--accent);
     }
-
-    .auto-form {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        min-width: 280px;
-        font-size: 12px;
-    }
-
-    .auto-form label {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .auto-form select {
-        flex: 1;
-        background: var(--border);
-        color: var(--primary-text);
-        border: none;
-        border-radius: 4px;
-        padding: 4px;
-        font-family: inherit;
-    }
-
-    .auto-form .actions {
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .auto-form button {
-        background: var(--accent);
-        border: none;
-        color: var(--primary-text);
-        font-family: inherit;
-        font-size: 12px;
-        padding: 5px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
 </style>
 
 <svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp}/>
@@ -1356,8 +1420,8 @@
         <div class="playlist-controls">
             {#if currentPattern}
                 <div
-class="pattern-usage"
-                     title={`Open pattern: ${currentPattern.name}. Used ${currentPatternClips.length} time${currentPatternClips.length === 1 ? '' : 's'}${currentPatternLocations ? ` — ${currentPatternLocations}` : ''}.`}>
+                        class="pattern-usage"
+                        title={`Open pattern: ${currentPattern.name}. Used ${currentPatternClips.length} time${currentPatternClips.length === 1 ? '' : 's'}${currentPatternLocations ? ` — ${currentPatternLocations}` : ''}.`}>
                     {currentPattern.name} · {currentPatternClips.length}
                     use{currentPatternClips.length === 1 ? '' : 's'}{currentPatternLocations ? ` · ${currentPatternLocations}` : ''}
                 </div>
@@ -1391,9 +1455,9 @@ class="pattern-usage"
                     <i class="fa fa-plus"></i>
                 </button>
                 <button
-class="auto-add"
-aria-label="Add automation lane"
-onclick={openAddAuto}
+                        class="auto-add"
+                        aria-label="Add automation lane"
+                        onclick={openAddAuto}
                         title="Add automation lane">
                     <i class="fa fa-wave-square"></i>
                 </button>
@@ -1401,10 +1465,10 @@ onclick={openAddAuto}
         </div>
         <div style="max-width: {viewportWidth}px;" class="timeline-viewport">
             <div
-style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
-class="timeline"
-                 oncontextmenu={preventDefault(bubble('contextmenu'))}
-                 onmousedown={handleTimelineMouseDown}>
+                    style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
+                    class="timeline"
+                    oncontextmenu={preventDefault(bubble('contextmenu'))}
+                    onmousedown={handleTimelineMouseDown}>
                 {#each visibleBars as bar (bar.start)}
                     <div
                             style="left: {bar.start * cellWidth}px; width: {(bar.end - bar.start) * cellWidth}px;"
@@ -1415,8 +1479,8 @@ class="timeline"
                 {/each}
                 {#if loopRect}
                     <div
-style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
-                         class="loop-band"></div>
+                            style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
+                            class="loop-band"></div>
                 {/if}
             </div>
         </div>
@@ -1434,11 +1498,11 @@ style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.st
                 {/if}
                 <div class="track-divider top-track-divider">
                     <button
-class="track-insert"
-aria-label="Insert track"
+                            class="track-insert"
+                            aria-label="Insert track"
                             onclick={stopPropagation(() => insertTrack(0))}
                             ondblclick={stopPropagation(bubble('dblclick'))}
-ondragover={preventDefault(() => dragInsertionRow = 0)}
+                            ondragover={preventDefault(() => dragInsertionRow = 0)}
                             onmousedown={stopPropagation(bubble('mousedown'))}
                             title="Insert track at the top"><i class="fa fa-plus"></i></button>
                 </div>
@@ -1450,53 +1514,53 @@ ondragover={preventDefault(() => dragInsertionRow = 0)}
                             {#if t > 0}
                                 <div class="track-divider">
                                     <button
-class="track-insert"
-aria-label="Insert track"
-onclick={stopPropagation(() => insertTrack(t))}
+                                            class="track-insert"
+                                            aria-label="Insert track"
+                                            onclick={stopPropagation(() => insertTrack(t))}
                                             ondblclick={stopPropagation(bubble('dblclick'))}
-onmousedown={stopPropagation(bubble('mousedown'))}
+                                            onmousedown={stopPropagation(bubble('mousedown'))}
                                             title="Insert track here"><i class="fa fa-plus"></i>
                                     </button>
                                 </div>
                             {/if}
                             <div
-style="height: {cellHeight}px; border-left: 4px solid {track.color}"
-class="track-label"
-class:dragging={draggingTrack === t}
-                                 class:silent={laneSilent[t]}
-draggable="true"
-                                 ondblclick={() => editTrack(t)}
-ondragend={clearDragState}
-                                 ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
-                                 ondragstart={(event) => startTrackDrag(event as DragEvent, t)}
-                                 ondrop={(event) => dropTrack(event as DragEvent, t)}
-                                 title="Double click to rename, Right click for color; drag to reorder">
+                                    style="height: {cellHeight}px; border-left: 4px solid {track.color}"
+                                    class="track-label"
+                                    class:dragging={draggingTrack === t}
+                                    class:silent={laneSilent[t]}
+                                    draggable="true"
+                                    ondblclick={() => editTrack(t)}
+                                    ondragend={clearDragState}
+                                    ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
+                                    ondragstart={(event) => startTrackDrag(event as DragEvent, t)}
+                                    ondrop={(event) => dropTrack(event as DragEvent, t)}
+                                    title="Double click to rename, Right click for color; drag to reorder">
                                 <div
-class="track-name"
-                                     oncontextmenu={stopPropagation(preventDefault(() => changeTrackColor(t)))}>{track.name}</div>
+                                        class="track-name"
+                                        oncontextmenu={stopPropagation(preventDefault(() => changeTrackColor(t)))}>{track.name}</div>
                                 <button
-class="ms"
-class:on={track.mute}
-aria-label="Mute lane"
-onclick={stopPropagation(() => toggleTrackMute(t))}
+                                        class="ms"
+                                        class:on={track.mute}
+                                        aria-label="Mute lane"
+                                        onclick={stopPropagation(() => toggleTrackMute(t))}
                                         ondblclick={stopPropagation(bubble('dblclick'))}
-onmousedown={stopPropagation(bubble('mousedown'))}
+                                        onmousedown={stopPropagation(bubble('mousedown'))}
                                         title="Mute lane"><i class="fa fa-volume-xmark"></i></button>
                                 <button
-class="ms solo"
-class:on={track.solo}
-aria-label="Solo lane"
-onclick={stopPropagation(() => toggleTrackSolo(t))}
+                                        class="ms solo"
+                                        class:on={track.solo}
+                                        aria-label="Solo lane"
+                                        onclick={stopPropagation(() => toggleTrackSolo(t))}
                                         ondblclick={stopPropagation(bubble('dblclick'))}
-onmousedown={stopPropagation(bubble('mousedown'))}
+                                        onmousedown={stopPropagation(bubble('mousedown'))}
                                         title="Solo lane"><i class="fa fa-headphones"></i></button>
                                 <button
-class="ms remove-track"
-aria-label="Remove track"
-disabled={$project!.tracks.length <= 1}
+                                        class="ms remove-track"
+                                        aria-label="Remove track"
+                                        disabled={$project!.tracks.length <= 1}
                                         onclick={stopPropagation(() => requestRemoveTrack(t))}
                                         ondblclick={stopPropagation(bubble('dblclick'))}
-onmousedown={stopPropagation(bubble('mousedown'))}
+                                        onmousedown={stopPropagation(bubble('mousedown'))}
                                         title="Remove track"><i class="fa fa-trash"></i></button>
                             </div>
                         </div>
@@ -1504,27 +1568,27 @@ onmousedown={stopPropagation(bubble('mousedown'))}
                     {#if row.kind === 'automation'}
                         {@const lane = row.lane}
                         <div
-style="height: {LANE_H}px; border-left: 4px solid {laneColor($project!, lane)}"
-class="auto-label track-label"
-                             draggable="true"
-                             ondragend={clearDragState}
-ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
-                             ondragstart={(event) => startAutomationDrag(event as DragEvent, lane)}
-                             ondrop={stopPropagation((event) => dropAutomationLane(event as DragEvent, lane))}
-                             title="{laneTitle($project!, lane)} — click the curve to add a point, drag to move, right-click a point to remove">
+                                style="height: {LANE_H}px; border-left: 4px solid {laneColor($project!, lane)}"
+                                class="auto-label track-label"
+                                draggable="true"
+                                ondragend={clearDragState}
+                                ondragover={preventDefault((event) => updateDragInsertion(event as DragEvent, rowIndex))}
+                                ondragstart={(event) => startAutomationDrag(event as DragEvent, lane)}
+                                ondrop={stopPropagation((event) => dropAutomationLane(event as DragEvent, lane))}
+                                title="{laneTitle($project!, lane)} — click the curve to add a point, drag to move, right-click a point to remove">
                             <div class="auto-name" title={laneTitle($project!, lane)}>
                                 <span class="auto-target">{laneTargetTitle($project!, lane)}</span>
                                 <span class="auto-param">{autoParamDef(lane)?.label || lane.param}</span>
                             </div>
                             <div
-class="auto-val"
-class:live={$playing}
-                                 title="Value at the playhead">{laneValueLabel(lane, autoStep)}</div>
+                                    class="auto-val"
+                                    class:live={$playing}
+                                    title="Value at the playhead">{laneValueLabel(lane, autoStep)}</div>
                             <button
-class="ms remove-track"
-aria-label="Remove automation lane"
+                                    class="ms remove-track"
+                                    aria-label="Remove automation lane"
                                     onclick={stopPropagation(() => requestRemoveAutoLane(lane))}
-onmousedown={stopPropagation(bubble('mousedown'))}
+                                    onmousedown={stopPropagation(bubble('mousedown'))}
                                     title="Remove this automation lane"><i class="fa fa-trash"></i></button>
                         </div>
                     {/if}
@@ -1532,16 +1596,16 @@ onmousedown={stopPropagation(bubble('mousedown'))}
             </div>
         </div>
         <div
-bind:this={playlistEl}
-             class="grid-viewport"
-             oncontextmenu={preventDefault(bubble('contextmenu'))}
-             onmousedown={handlePlaylistMouseDown}
-             onscroll={syncFrozenPanes}
-             onwheel={handleWheel}
-             bind:clientWidth={viewportWidth}>
+                bind:this={playlistEl}
+                class="grid-viewport"
+                oncontextmenu={preventDefault(bubble('contextmenu'))}
+                onmousedown={handlePlaylistMouseDown}
+                onscroll={syncFrozenPanes}
+                onwheel={handleWheel}
+                bind:clientWidth={viewportWidth}>
             <div
-style="width: {totalLength * cellWidth}px; height: {gridHeight}px; --cell-width: {cellWidth}px;"
-                 class="grid-container">
+                    style="width: {totalLength * cellWidth}px; height: {gridHeight}px; --cell-width: {cellWidth}px;"
+                    class="grid-container">
                 {#if dragInsertionRow !== null}
                     <div style="top: {rowBoundaryTop(dragInsertionRow)}px;" class="drop-indicator"></div>
                 {/if}
@@ -1550,32 +1614,32 @@ style="width: {totalLength * cellWidth}px; height: {gridHeight}px; --cell-width:
                         {#if row.kind === 'track'}
                             {@const t = row.trackIndex}
                             <div
-style="height: {cellHeight}px;"
-class="grid-row"
-class:silent={laneSilent[t]}
-                                 onmousedown={(e) => {
-                                     const s_raw = (e.clientX - e.currentTarget.getBoundingClientRect().left) / cellWidth;
-                                     handleMouseDown(e, t, s_raw);
-                                 }}>
+                                    style="height: {cellHeight}px;"
+                                    class="grid-row"
+                                    class:silent={laneSilent[t]}
+                                    onmousedown={(e) => {
+                                        const s_raw = (e.clientX - e.currentTarget.getBoundingClientRect().left) / cellWidth;
+                                        handleMouseDown(e, t, s_raw);
+                                    }}>
                             </div>
                         {:else}
                             {@const lane = row.lane}
                             {@const def = autoParamDef(lane)}
                             {#if def}
                                 <AutomationLane
-canEdit={shouldEditAutomation(selectedClips.length > 0)}
-{cellWidth}
-color={laneColor($project!, lane)}
-{def}
-                                                editorKey={`automation:${lane.id}`}
-hasSelectedPoint={!!selectedAutomationPoint}
-                                                height={LANE_H}
-                                                {lane}
-                                                onblocked={clearSelection}
-                                                onselect={point => selectAutomationPoint(lane, point)}
-                                                selectedPoint={selectedAutomationPoint?.laneId === lane.id ? selectedAutomationPoint.point : null}
-width={totalLength * cellWidth}
-                                                bind:contextualEditor/>
+                                        canEdit={shouldEditAutomation(selectedClips.length > 0)}
+                                        {cellWidth}
+                                        color={laneColor($project!, lane)}
+                                        {def}
+                                        editorKey={`automation:${lane.id}`}
+                                        hasSelectedPoint={!!selectedAutomationPoint}
+                                        height={LANE_H}
+                                        {lane}
+                                        onblocked={clearSelection}
+                                        onselect={point => selectAutomationPoint(lane, point)}
+                                        selectedPoint={selectedAutomationPoint?.laneId === lane.id ? selectedAutomationPoint.point : null}
+                                        width={totalLength * cellWidth}
+                                        bind:contextualEditor/>
                             {/if}
                         {/if}
                     {/each}
@@ -1588,50 +1652,50 @@ width={totalLength * cellWidth}
                 <div class="clips-layer">
                     {#if selectionRect}
                         <div
-style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
-                             class="selection-rect"></div>
+                                style="left: {selectionRect.left}px; top: {selectionRect.top}px; width: {selectionRect.width}px; height: {selectionRect.height}px;"
+                                class="selection-rect"></div>
                     {/if}
                     {#each $project!.arrangement as clip (clip.id)}
                         <div
-style="left: {clip.start * cellWidth}px; width: {clip.len * cellWidth}px; top: {rowTopForTrack(clip.track) + 2}px; height: {cellHeight - 4}px; background: {getPatternColor(clip.patternId)}"
-                             class="clip"
-                             class:open-pattern={clip.patternId === $selPatId}
-                             class:selected={clip.selected}
-                             class:silent={laneSilent[clip.track]}
-                             ondblclick={() => $selPatId = clip.patternId}
-                             onmousedown={stopPropagation((e) => {
-                                 const mouseEvent = e as MouseEvent;
-                                 const rect = (mouseEvent.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
-                                 const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
-                                 handleMouseDown(mouseEvent, clip.track, s_raw);
-                             })}>
+                                style="left: {clip.start * cellWidth}px; width: {clip.len * cellWidth}px; top: {rowTopForTrack(clip.track) + 2}px; height: {cellHeight - 4}px; background: {getPatternColor(clip.patternId)}"
+                                class="clip"
+                                class:open-pattern={clip.patternId === $selPatId}
+                                class:selected={clip.selected}
+                                class:silent={laneSilent[clip.track]}
+                                ondblclick={() => $selPatId = clip.patternId}
+                                onmousedown={stopPropagation((e) => {
+                                    const mouseEvent = e as MouseEvent;
+                                    const rect = (mouseEvent.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
+                                    const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
+                                    handleMouseDown(mouseEvent, clip.track, s_raw);
+                                })}>
                             <div class="clip-name">{getPatternName(clip.patternId)}</div>
                             {#if clip.transpose}
                                 <div
-class="clip-transpose"
-                                     title="Transposed by {clip.transpose} semitones">{semiLabel(clip.transpose)}</div>
+                                        class="clip-transpose"
+                                        title="Transposed by {clip.transpose} semitones">{semiLabel(clip.transpose)}</div>
                             {/if}
                             <div class="clip-preview">
                                 {#each getPatternNotes(clip.patternId, clip.len) as n}
                                     <div
-style="left: {(n.start / (clip.len || 1)) * 100}%;
+                                            style="left: {(n.start / (clip.len || 1)) * 100}%;
                                                 width: {(n.len / (clip.len || 1)) * 100}%;
                                                 top: {n.y * 60 + 25}%;
                                                 height: 2px;"
-                                         class="preview-note"></div>
+                                            class="preview-note"></div>
                                 {/each}
                             </div>
                             <div
-style="width: {Math.min(clip.len * cellWidth, Math.max(8, cellWidth * 0.2))}px"
-                                 class="resize-handle"></div>
+                                    style="width: {Math.min(clip.len * cellWidth, Math.max(8, cellWidth * 0.2))}px"
+                                    class="resize-handle"></div>
                         </div>
                     {/each}
                 </div>
 
                 {#if loopRect}
                     <div
-style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
-                         class="loop-overlay"></div>
+                            style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.start) * cellWidth}px;"
+                            class="loop-overlay"></div>
                 {/if}
 
                 <div style="left: {$songCursor * cellWidth}px" class="song-cursor"></div>
@@ -1655,10 +1719,10 @@ style="left: {loopRect.start * cellWidth}px; width: {(loopRect.end - loopRect.st
     {/if}
 </Dialog>
 <Prompt
-label="New Name"
-title="Rename Track"
-bind:show={showRenameTrack}
-bind:value={renameTrackValue}
+        label="New Name"
+        title="Rename Track"
+        bind:show={showRenameTrack}
+        bind:value={renameTrackValue}
         on:submit={onRenameTrack}/>
 <Dialog title="Track Color" bind:show={showTrackColor}>
     {#if editingTrackIdx !== null}
@@ -1666,16 +1730,16 @@ bind:value={renameTrackValue}
     {/if}
 </Dialog>
 <Confirm
-confirmLabel="Remove track"
-destructive
-         message="This track has clips. Removing it will permanently remove those clips."
-         title="Remove Track"
-bind:show={showRemoveTrack}
-         on:confirm={removeTrack}/>
+        confirmLabel="Remove track"
+        destructive
+        message="This track has clips. Removing it will permanently remove those clips."
+        title="Remove Track"
+        bind:show={showRemoveTrack}
+        on:confirm={removeTrack}/>
 <Confirm
-confirmLabel="Remove lane"
-destructive
-         message="Removing this lane will permanently remove all of its automation points."
-         title="Remove Automation Lane"
-bind:show={showRemoveAutoLane}
-         on:confirm={removeAutoLane}/>
+        confirmLabel="Remove lane"
+        destructive
+        message="Removing this lane will permanently remove all of its automation points."
+        title="Remove Automation Lane"
+        bind:show={showRemoveAutoLane}
+        on:confirm={removeAutoLane}/>

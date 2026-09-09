@@ -50,10 +50,10 @@ interface MixerActions {
     masterNumber: (key: Exclude<keyof MixerMaster, 'limiter'>, value: number) => void;
     addBus: (effect: 'none' | 'delay') => void;
     deleteBus: (id: string) => void;
-    renameBus: (id: string, input: {value: string}) => void;
+    renameBus: (id: string, input: { value: string }) => void;
     route: (id: string, target: string) => void;
     addSend: (id: string, target: string) => void;
-    numeric: (input: {valueAsNumber: number}, min: number, max: number, change: (value: number) => void) => void;
+    numeric: (input: { valueAsNumber: number }, min: number, max: number, change: (value: number) => void) => void;
     db: (value: number) => string;
     toggleStrip: (id: string) => void;
     closeDetails: () => void;
@@ -75,7 +75,9 @@ function fixture() {
     };
     const scope = {
         $project: p as Project | null, $rendering: false,
-        get mixer() {return resolveMixer(p.mixer, p.instruments.map(inst => inst.id));},
+        get mixer() {
+            return resolveMixer(p.mixer, p.instruments.map(inst => inst.id));
+        },
         touch: vi.fn(), ensureMixer, addMixerBus, removeMixerBus, canRoute, tick, selectedId: '', details: undefined,
         root: {querySelectorAll: () => []},
         MASTER_SLIDERS
@@ -150,10 +152,12 @@ describe('Mixer component controls', () => {
 
     it('shows compact labelled balance controls instead of a form on every strip', () => {
         const channel = resolveMixer(undefined, ['bass']).channels.bass;
-        const html = render(MixerStrip, {props: {
-            id: 'bass', name: 'Bass', color: '#abcdef', kind: 'Instrument', selected: false,
-            channel, outputs: [], peak: 0.5, rms: 0.25, onselect: vi.fn(), onedit: vi.fn()
-        }}).body;
+        const html = render(MixerStrip, {
+            props: {
+                id: 'bass', name: 'Bass', color: '#abcdef', kind: 'Instrument', selected: false,
+                channel, outputs: [], peak: 0.5, rms: 0.25, onselect: vi.fn(), onedit: vi.fn()
+            }
+        }).body;
         expect(html).toContain('aria-label="Bass fader"');
         expect(html).toContain('aria-label="Bass pan"');
         expect(html).toContain('aria-label="Mute Bass"');
@@ -170,11 +174,21 @@ describe('Mixer component controls', () => {
 
     it('shares bounded vertical faders and stereo sample meters with Master', () => {
         const values: number[] = [];
-        const actions = handlers<{change: (input: {valueAsNumber: number}) => void}>(fader,
+        const actions = handlers<{ change: (input: { valueAsNumber: number }) => void }>(fader,
             {max: 1, onchange: (value: number) => values.push(value)}, ['change']);
-        for (const valueAsNumber of [NaN, Infinity, -1, 0.75, 2]) {actions.change({valueAsNumber});}
+        for (const valueAsNumber of [NaN, Infinity, -1, 0.75, 2]) {
+            actions.change({valueAsNumber});
+        }
         expect(values).toEqual([0, 0.75, 1]);
-        const html = render(MixerFader, {props: {name: 'Master', value: 0.5, max: 1, peaks: [0, 2], onchange: vi.fn()}}).body;
+        const html = render(MixerFader, {
+            props: {
+                name: 'Master',
+                value: 0.5,
+                max: 1,
+                peaks: [0, 2],
+                onchange: vi.fn()
+            }
+        }).body;
         expect(html).toContain('aria-orientation="vertical"');
         expect(html).toContain('aria-valuetext="-6.0 dB"');
         expect(html).toContain('aria-label="Master L peak"');
@@ -231,9 +245,11 @@ describe('Mixer component controls', () => {
         actions.numeric({valueAsNumber: 7}, -12, 0, change);
         expect(change.mock.calls).toEqual([[-12], [0]]);
         const channel = resolveMixer(undefined, ['test']).channels.test;
-        const stripActions = handlers<{changeNumber: (input: {valueAsNumber: number}, key: string) => void}>(strip, {
-            onedit: (edit: (value: MixerChannel) => void) => edit(channel)
-        }, ['changeNumber']);
+        const stripActions = handlers<{
+            changeNumber: (input: { valueAsNumber: number }, key: string) => void
+                }>(strip, {
+                    onedit: (edit: (value: MixerChannel) => void) => edit(channel)
+                }, ['changeNumber']);
         stripActions.changeNumber({valueAsNumber: 8}, 'volume');
         stripActions.changeNumber({valueAsNumber: -2}, 'pan');
         stripActions.changeNumber({valueAsNumber: NaN}, 'reverb');
@@ -254,7 +270,10 @@ describe('Mixer component controls', () => {
         expect(delay.sends).toEqual([]);
         actions.route(group.id, 'master');
         actions.addSend(group.id, delay.id);
-        actions.editChannel(group.id, channel => {channel.mute = true; channel.sends[0].level = 0;});
+        actions.editChannel(group.id, channel => {
+            channel.mute = true;
+            channel.sends[0].level = 0;
+        });
         actions.route(delay.id, group.id);
         expect(delay.output).toBe('master');
         actions.addSend(id, delay.id);
@@ -267,7 +286,9 @@ describe('Mixer component controls', () => {
 
     it('caps buses, validates names and gracefully removes bus routes and sends', () => {
         const {p, actions, id} = fixture();
-        for (let i = 0; i < MAX_MIXER_BUSES + 1; i++) {actions.addBus('none');}
+        for (let i = 0; i < MAX_MIXER_BUSES + 1; i++) {
+            actions.addBus('none');
+        }
         expect(p.mixer!.buses).toHaveLength(MAX_MIXER_BUSES);
         const bus = p.mixer!.buses[0];
         actions.renameBus(bus.id, {value: '  Drums  '});
@@ -286,7 +307,7 @@ describe('Mixer component controls', () => {
 
     it('makes TopBar master controls project-backed, bounded and rendering-safe', () => {
         const {p, scope} = fixture();
-        const actions = handlers<{setMaster: (key: string, value: number) => void}>(toolbar, scope, ['setMaster']);
+        const actions = handlers<{ setMaster: (key: string, value: number) => void }>(toolbar, scope, ['setMaster']);
         actions.setMaster('vol', 5);
         expect(p.mixer!.master.vol).toBe(1);
         expect(scope.touch).toHaveBeenCalledOnce();

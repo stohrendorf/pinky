@@ -1,6 +1,6 @@
 <script lang="ts">
     import {
-        run, preventDefault 
+        preventDefault, run
     } from 'svelte/legacy';
 
     import type {
@@ -23,8 +23,10 @@
         onchange?: () => void;
     }
 
-    let { params = $bindable(), onchange = () => {
-    } }: Props = $props();
+    let {
+        params = $bindable(), onchange = () => {
+        }
+    }: Props = $props();
 
     let showGen = $state(false);
     let list: PartialSpec[] = $state([]);
@@ -46,31 +48,41 @@
     }
 
     function addPartial() {
-        if (list.length >= MAX_PARTIALS) {return;}
+        if (list.length >= MAX_PARTIALS) {
+            return;
+        }
         const last = list[list.length - 1];
         set([...list, {ratio: Math.round(last.ratio) + 1, level: 0.5}]);
     }
 
     function removePartial() {
-        if (list.length <= 1) {return;}
+        if (list.length <= 1) {
+            return;
+        }
         set(list.slice(0, -1));
     }
 
     function normalize() {
         const top = Math.max(...list.map(p => p.level));
-        if (top <= 0) {return;}
+        if (top <= 0) {
+            return;
+        }
         set(list.map(p => ({...p, level: Math.round(p.level / top * 100) / 100})));
     }
 
     function setLevel(i: number, level: number) {
-        if (!Number.isFinite(level)) {return;}
+        if (!Number.isFinite(level)) {
+            return;
+        }
         const next = [...list];
         next[i] = {...next[i], level: clampPartialLevel(level)};
         set(next);
     }
 
     function setRatio(i: number, ratio: number) {
-        if (!isFinite(ratio)) {return;}
+        if (!isFinite(ratio)) {
+            return;
+        }
         const next = [...list];
         next[i] = {...next[i], ratio: Math.max(0.1, Math.min(24, Math.round(ratio * 1000) / 1000))};
         set(next);
@@ -97,14 +109,18 @@
     }
 
     function move(e: PointerEvent) {
-        if (dragging) {paint(e);}
+        if (dragging) {
+            paint(e);
+        }
     }
 
     const mute = (e: Event) => setLevel(indexAt(e as MouseEvent), 0); // right-click = partial off
     // re-read when another instrument is selected, a preset is applied or the
     // generator dialog replaced the profile
     run(() => {
-        if (params !== bound || params.partials !== source) {read(params);}
+        if (params !== bound || params.partials !== source) {
+            read(params);
+        }
     });
 </script>
 
@@ -116,13 +132,13 @@
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-style="--n: {list.length}"
-class="bars"
-         oncontextmenu={preventDefault(mute)}
-onpointercancel={() => dragging = false}
-         onpointerdown={down}
-onpointermove={move}
-         onpointerup={() => dragging = false}>
+            style="--n: {list.length}"
+            class="bars"
+            oncontextmenu={preventDefault(mute)}
+            onpointercancel={() => dragging = false}
+            onpointerdown={down}
+            onpointermove={move}
+            onpointerup={() => dragging = false}>
         {#each list as p, i (i)}
             <div class="col" title="partial {i + 1}: ×{p.ratio}, level {p.level}">
                 <div class="drawbar-track">
@@ -137,32 +153,32 @@ onpointermove={move}
         {#each list as p, i (i)}
             <div class="cell">
                 <input
-class="level-input"
-aria-label="level of partial {i + 1} (0 to 1)"
-max="1"
-min="0"
-onchange={e => setLevel(i, parseFloat((e.target as HTMLInputElement).value))}
-step="0.01"
-                       title="level of partial {i + 1} (0 to 1)"
-                       type="number"
-                       value={p.level}>
+                        class="level-input"
+                        aria-label="level of partial {i + 1} (0 to 1)"
+                        max="1"
+                        min="0"
+                        onchange={e => setLevel(i, parseFloat((e.target as HTMLInputElement).value))}
+                        step="0.01"
+                        title="level of partial {i + 1} (0 to 1)"
+                        type="number"
+                        value={p.level}>
                 <input
-class="ratio-input"
-aria-label="frequency ratio of partial {i + 1}"
-max="24"
-min="0.1"
-onchange={e => setRatio(i, parseFloat((e.target as HTMLInputElement).value))}
-step="0.001"
-                       title="frequency ratio of partial {i + 1} (× the note)"
-                       type="number"
-                       value={p.ratio}>
+                        class="ratio-input"
+                        aria-label="frequency ratio of partial {i + 1}"
+                        max="24"
+                        min="0.1"
+                        onchange={e => setRatio(i, parseFloat((e.target as HTMLInputElement).value))}
+                        step="0.001"
+                        title="frequency ratio of partial {i + 1} (× the note)"
+                        type="number"
+                        value={p.ratio}>
             </div>
         {/each}
     </div>
 
     <div class="row">
         <Button
-title="Generate a new profile from a timbre shape, partial count, falloff and stretch"
+                title="Generate a new profile from a timbre shape, partial count, falloff and stretch"
                 variant="secondary"
                 on:click={() => showGen = true}>
             <i class="fa fa-wand-magic-sparkles"></i> Generate…

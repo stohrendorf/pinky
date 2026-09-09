@@ -38,12 +38,16 @@ export function createExportEta(now: () => number = () => performance.now()) {
         const elapsed = (time - previous.time) / 1000;
         const advanced = progress - previous.progress;
         // A stalled sample hides the ETA. Keep its elapsed time in the next speed observation.
-        if (elapsed <= 0 || advanced <= 0) {return null;}
+        if (elapsed <= 0 || advanced <= 0) {
+            return null;
+        }
         const observedSpeed = advanced / elapsed;
         const weight = 1 - Math.exp(-elapsed / SMOOTHING_SECONDS);
         speed = speed === null ? observedSpeed : speed + weight * (observedSpeed - speed);
         previous = {time, progress};
-        if (time - first.time < WARMUP_MS || progress - first.progress < MIN_PROGRESS || speed <= 0) {return null;}
+        if (time - first.time < WARMUP_MS || progress - first.progress < MIN_PROGRESS || speed <= 0) {
+            return null;
+        }
         const remaining = (1 - progress) / speed;
         return Number.isFinite(remaining) && remaining >= 0 ? remaining : null;
     }
@@ -52,7 +56,9 @@ export function createExportEta(now: () => number = () => performance.now()) {
 }
 
 export function formatStageEta(seconds: number | null | undefined): string | null {
-    if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) {return null;}
+    if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) {
+        return null;
+    }
     const roundedSeconds = Math.max(1, seconds < 10 ? Math.round(seconds) : Math.round(seconds / 5) * 5);
     const minutes = Math.round(seconds / 60);
     const duration = roundedSeconds < 60 ? `${roundedSeconds} s`

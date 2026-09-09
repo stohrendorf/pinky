@@ -20,7 +20,9 @@ function wavWriter(buf: PcmSource) {
     const out = new DataView(new ArrayBuffer(bytes));
     let o = 0;
     const str = (s: string) => {
-        for (let i = 0; i < s.length; i++) {out.setUint8(o++, s.charCodeAt(i));}
+        for (let i = 0; i < s.length; i++) {
+            out.setUint8(o++, s.charCodeAt(i));
+        }
     };
     const u32 = (v: number) => {
         out.setUint32(o, v, true);
@@ -44,13 +46,17 @@ function wavWriter(buf: PcmSource) {
     str('data');
     u32(frames * chans * 2);
     const data: Float32Array[] = [];
-    for (let c = 0; c < chans; c++) {data.push(buf.getChannelData(c));}
+    for (let c = 0; c < chans; c++) {
+        data.push(buf.getChannelData(c));
+    }
     return {
         write(from: number, to: number) {
             for (let i = from; i < to; i++) {
                 for (let c = 0; c < chans; c++) {
                     const sample = data[c][i];
-                    if (!Number.isFinite(sample)) {throw new Error('Cannot encode non-finite audio sample');}
+                    if (!Number.isFinite(sample)) {
+                        throw new Error('Cannot encode non-finite audio sample');
+                    }
                     const s = Math.max(-1, Math.min(1, sample));
                     out.setInt16(o, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
                     o += 2;

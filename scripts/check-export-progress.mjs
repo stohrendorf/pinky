@@ -26,7 +26,11 @@ try {
         browser = await chromium.launch({executablePath: process.env.PINKY_BROWSER, args: ['--mute-audio']});
     } else {
         for (const channel of ['chrome', 'msedge', 'chromium']) {
-            try {browser = await chromium.launch({channel, args: ['--mute-audio']}); break;} catch { /* next installed browser */ }
+            try {
+                browser = await chromium.launch({channel, args: ['--mute-audio']});
+                break;
+            } catch { /* next installed browser */
+            }
         }
     }
     assert.ok(browser, 'Install a supported browser first');
@@ -53,18 +57,24 @@ try {
         const model = await import('/src/lib/project.ts');
         const p = model.newEmptyProject(), id = p.instruments[0].id;
         p.bpm = 120;
-        p.instruments[0].params = {...p.instruments[0].params, voices: 3, detune: 8, vib: 0,
+        p.instruments[0].params = {
+            ...p.instruments[0].params, voices: 3, detune: 8, vib: 0,
             noise: 0, tone: 1, q: 10, gain: 0.06, rel: 0.08,
-            partials: Array.from({length: 6}, (_, i) => ({ratio: i + 1, level: 1 / (i + 1)}))};
+            partials: Array.from({length: 6}, (_, i) => ({ratio: i + 1, level: 1 / (i + 1)}))
+        };
         p.patterns[0].steps = 32;
         p.patterns[0].tracks[id] = Array.from({length: 8}, (_, i) =>
             ['C5', 'E5', 'G5', 'B5'].map(pitch => ({pitch, start: i * 4, len: 3}))).flat();
         p.arrangement[0].len = steps;
-        model.project.set(p); model.selPatId.set(p.patterns[0].id); model.selInstId.set(id);
+        model.project.set(p);
+        model.selPatId.set(p.patterns[0].id);
+        model.selInstId.set(id);
         window.testSong = JSON.parse(JSON.stringify(p));
         window.testProgress = [];
         (await import('/src/lib/render.ts')).exportProgress.subscribe(state => {
-            if (state) {window.testProgress.push({...state, nativeState: window.testContexts.at(-1)?.state});}
+            if (state) {
+                window.testProgress.push({...state, nativeState: window.testContexts.at(-1)?.state});
+            }
         });
         return Math.ceil((steps * 60 / 120 / 4 + 3 + 1.5 * p.instruments[0].params.rel) * 44100);
     }, 128);
@@ -75,7 +85,8 @@ try {
     const exportButton = page.getByRole('button', {name: 'Render WAV', exact: true});
     const dialog = page.getByRole('dialog', {name: 'Export WAV', exact: true});
     const downloadEvent = page.waitForEvent('download', {timeout: 120000});
-    void downloadEvent.catch(() => {});
+    void downloadEvent.catch(() => {
+    });
     await exportButton.click();
     await page.waitForFunction(() => window.testProgress.some(state => state.stage === 'rendering'
         && state.progress > 0 && state.progress < 1 && state.etaSeconds > 0), undefined, {timeout: 60000});
@@ -85,7 +96,9 @@ try {
     const download = await downloadEvent;
     await dialog.waitFor({state: 'hidden'});
     const chunks = [];
-    for await (const chunk of await download.createReadStream()) {chunks.push(chunk);}
+    for await (const chunk of await download.createReadStream()) {
+        chunks.push(chunk);
+    }
     const wav = Buffer.concat(chunks);
     assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
     assert.equal(wav.readUInt32LE(24), 44100);
@@ -101,7 +114,9 @@ try {
     assert.ok(rendered.every(state => state.canSuspend === false), 'native Firefox requires no masked APIs');
     assert.equal(downloads.length, 1);
 
-    await page.evaluate(() => {window.testProgress = [];});
+    await page.evaluate(() => {
+        window.testProgress = [];
+    });
     await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await exportButton.click();
     await page.waitForFunction(() => window.testProgress.some(state => state.stage === 'rendering' && state.progress > 0.01));
@@ -128,23 +143,28 @@ try {
         (await import('/src/lib/project.ts')).project.set(p);
     });
     const retry = page.waitForEvent('download', {timeout: 60000});
-    void retry.catch(() => {});
+    void retry.catch(() => {
+    });
     await page.getByRole('button', {name: 'Pinky application menu', exact: true}).click();
     await exportButton.click();
     await retry;
     await dialog.waitFor({state: 'hidden'});
     assert.equal(downloads.length, 2);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({browser: browserName, version: browser.version(), updates: values.length,
+    console.log(JSON.stringify({
+        browser: browserName, version: browser.version(), updates: values.length,
         etaSamples: rendered.filter(state => state.etaSeconds > 0).length, wavBytes: wav.length,
-        cancelled, checks: 'in-flight frames, ETA, WAV duration/audio, Escape, no cancelled download, playback, retry'}, null, 2));
+        cancelled, checks: 'in-flight frames, ETA, WAV duration/audio, Escape, no cancelled download, playback, retry'
+    }, null, 2));
 } catch (error) {
     console.error('Export progress browser check failed:', error);
     const page = browser?.contexts()[0]?.pages()[0];
     if (page && !page.isClosed()) {
-        console.error(await page.evaluate(() => ({progress: window.testProgress?.slice(-5),
+        console.error(await page.evaluate(() => ({
+            progress: window.testProgress?.slice(-5),
             rendering: window.testProgress?.filter(state => state.stage === 'rendering').slice(-5),
-            contexts: window.testContexts?.map(context => ({state: context.state, time: context.currentTime}))})).catch(() => null));
+            contexts: window.testContexts?.map(context => ({state: context.state, time: context.currentTime}))
+        })).catch(() => null));
     }
     throw error;
 } finally {

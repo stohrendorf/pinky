@@ -15,7 +15,7 @@
         note?: string;
     }
 
-    let { params, note = 'C4' }: Props = $props();
+    const {params, note = 'C4'}: Props = $props();
 
     const WIDTH = 720;
     const HEIGHT = 120;
@@ -54,28 +54,28 @@
         <strong>{note}</strong>
     </div>
     <svg
-aria-label={`Filter curve for ${note}`}
-preserveAspectRatio="none"
-role="img"
-         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+            aria-label={`Filter curve for ${note}`}
+            preserveAspectRatio="none"
+            role="img"
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
         <line
-class="grid"
-x1={PAD_X}
-x2={WIDTH - PAD_X}
-y1={HEIGHT / 4}
-y2={HEIGHT / 4}/>
+                class="grid"
+                x1={PAD_X}
+                x2={WIDTH - PAD_X}
+                y1={HEIGHT / 4}
+                y2={HEIGHT / 4}/>
         <line
-class="grid"
-x1={PAD_X}
-x2={WIDTH - PAD_X}
-y1={HEIGHT / 2}
-y2={HEIGHT / 2}/>
+                class="grid"
+                x1={PAD_X}
+                x2={WIDTH - PAD_X}
+                y1={HEIGHT / 2}
+                y2={HEIGHT / 2}/>
         <line
-class="grid"
-x1={PAD_X}
-x2={WIDTH - PAD_X}
-y1={HEIGHT * 3 / 4}
-y2={HEIGHT * 3 / 4}/>
+                class="grid"
+                x1={PAD_X}
+                x2={WIDTH - PAD_X}
+                y1={HEIGHT * 3 / 4}
+                y2={HEIGHT * 3 / 4}/>
         <path class="response" d={path}/>
         <text x={PAD_X} y={HEIGHT - 2}>20 Hz</text>
         <text text-anchor="middle" x={frequencyX(1000)} y={HEIGHT - 2}>1 kHz</text>

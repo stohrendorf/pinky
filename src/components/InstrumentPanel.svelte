@@ -115,7 +115,9 @@
 
     function swapAB() {
         const b = slotB[inst.id];
-        if (!b) {return;}
+        if (!b) {
+            return;
+        }
         slotB[inst.id] = clone(inst.params);
         inst.params = ensurePartials(clone(b));
         side[inst.id] = side[inst.id] === 'B' ? 'A' : 'B';
@@ -167,7 +169,9 @@
     }
 
     function remove() {
-        if (!$project || $project.instruments.length <= 1) {return;}
+        if (!$project || $project.instruments.length <= 1) {
+            return;
+        }
         showConfirmDelete = true;
     }
 
@@ -176,7 +180,9 @@
     }
 
     function onConfirmDelete() {
-        if (!$project) {return;}
+        if (!$project) {
+            return;
+        }
         const id = inst.id;
         $project.patterns.forEach(pt => delete pt.tracks[id]);
         $project.instruments = $project.instruments.filter(i => i.id !== id);
@@ -188,43 +194,43 @@
     <div class="instrument-toolbar" aria-label="Selected instrument controls">
         <div class="instrument-picker">
             <HierarchicalSelect
-ariaLabel="Select instrument"
-items={$project?.instruments ?? []}
-minimal
-                                onselect={id => selInstId.set(id)}
-                                selectedId={inst?.id}/>
+                    ariaLabel="Select instrument"
+                    items={$project?.instruments ?? []}
+                    minimal
+                    onselect={id => selInstId.set(id)}
+                    selectedId={inst?.id}/>
         </div>
         <div class="selected-instrument-actions" aria-label="Selected instrument playback controls">
             <Button
-compact
-pressed={inst.mute}
-title="Mute"
-variant={inst.mute ? 'danger' : 'secondary'}
+                    compact
+                    pressed={inst.mute}
+                    title="Mute"
+                    variant={inst.mute ? 'danger' : 'secondary'}
                     on:click={() => toggleMute(inst)}><i class="fa fa-volume-xmark"></i></Button>
             <Button
-compact
-pressed={inst.solo}
-title="Solo"
-variant={inst.solo ? 'primary' : 'secondary'}
+                    compact
+                    pressed={inst.solo}
+                    title="Solo"
+                    variant={inst.solo ? 'primary' : 'secondary'}
                     on:click={() => toggleSolo(inst)}><i class="fa fa-headphones"></i></Button>
         </div>
         <div class="instrument-actions" aria-label="Selected instrument identity controls">
             <IconButton ariaLabel="Rename Instrument" icon="fa-pencil" title="Rename Instrument" on:click={openRename}/>
             <IconButton
-ariaLabel="Delete Instrument"
-disabled={($project?.instruments.length ?? 0) <= 1}
-                        icon="fa-trash"
-                        title="Delete Instrument"
-on:click={remove}/>
+                    ariaLabel="Delete Instrument"
+                    disabled={($project?.instruments.length ?? 0) <= 1}
+                    icon="fa-trash"
+                    title="Delete Instrument"
+                    on:click={remove}/>
         </div>
     </div>
     <div class="audition-actions">
         <Button title="Park the current settings in slot B" variant="secondary" on:click={copyToB}><i class="fa fa-copy"></i> Copy → B
         </Button>
         <Button
-disabled={!slotB[inst.id]}
-title="Swap the current settings with slot B"
-variant="secondary"
+                disabled={!slotB[inst.id]}
+                title="Swap the current settings with slot B"
+                variant="secondary"
                 on:click={swapAB}><i class="fa fa-right-left"></i> A/B
         </Button>
         {#if slotB[inst.id]}
@@ -236,9 +242,9 @@ variant="secondary"
         <div class="editor-tabs" aria-label="Instrument settings" role="tablist">
             {#each EDITOR_TABS as tab (tab.id)}
                 <button
-class:sel={activeTab === tab.id}
-aria-selected={activeTab === tab.id}
-onclick={() => activeTab = tab.id}
+                        class:sel={activeTab === tab.id}
+                        aria-selected={activeTab === tab.id}
+                        onclick={() => activeTab = tab.id}
                         role="tab">{tab.label}</button>
             {/each}
         </div>
@@ -253,10 +259,11 @@ onclick={() => activeTab = tab.id}
                             <div class="group-heading">
                                 <h4>{panel.title}</h4>
                                 <button
-class="control-help"
-aria-label={`Learn about ${panel.title}`}
+                                        class="control-help"
+                                        aria-label={`Learn about ${panel.title}`}
                                         onclick={() => openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
-                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i></button>
+                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i>
+                                </button>
                             </div>
                             {#each panel.sliders as s (s.id)}
                                 <Slider {...s} onchange={v => setParam(s.id, v)} value={inst.params[s.id]}/>
@@ -272,10 +279,11 @@ aria-label={`Learn about ${panel.title}`}
                             <div class="group-heading">
                                 <h4>{panel.title}</h4>
                                 <button
-class="control-help"
-aria-label={`Learn about ${panel.title}`}
+                                        class="control-help"
+                                        aria-label={`Learn about ${panel.title}`}
                                         onclick={() => openControlHelp(panel.title as keyof typeof CONTROL_HELP)}
-                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i></button>
+                                        title={`Learn about ${panel.title}`}><i class="fa fa-circle-question"></i>
+                                </button>
                             </div>
                             {#each panel.sliders as s (s.id)}
                                 <Slider {...s} onchange={v => setParam(s.id, v)} value={inst.params[s.id]}/>
@@ -283,10 +291,10 @@ aria-label={`Learn about ${panel.title}`}
                             {#if panel.title === 'Legato'}
                                 <label class="legato-default">Default curve
                                     <select
-aria-label="Default legato curve"
-onchange={event => setLegatoCurve(event.currentTarget.value)}
+                                            aria-label="Default legato curve"
+                                            onchange={event => setLegatoCurve(event.currentTarget.value)}
                                             value={inst.params.legatoCurve}>
-                                        {#each CURVE_SHAPES as shape}
+                                        {#each CURVE_SHAPES as shape (shape.id)}
                                             <option value={shape.id}>{shape.label}</option>
                                         {/each}
                                     </select>
@@ -298,9 +306,9 @@ onchange={event => setLegatoCurve(event.currentTarget.value)}
             {:else if activeTab === 'harmonics'}
                 <div class="tab-intro">Draw the partials that define this instrument.
                     <button
-class="control-help"
-aria-label="Learn about Harmonics"
-onclick={() => openControlHelp('Harmonics')}
+                            class="control-help"
+                            aria-label="Learn about Harmonics"
+                            onclick={() => openControlHelp('Harmonics')}
                             title="Learn about Harmonics"><i class="fa fa-circle-question"></i></button>
                 </div>
                 <HarmonicsEditor onchange={touch} params={inst.params}/>
@@ -314,25 +322,25 @@ onclick={() => openControlHelp('Harmonics')}
 </div>
 
 <Prompt
-label="New Name"
-title="Rename Instrument"
-bind:show={showRename}
-bind:value={renameValue}
+        label="New Name"
+        title="Rename Instrument"
+        bind:show={showRename}
+        bind:value={renameValue}
         on:submit={onRename}/>
 <Confirm
-confirmLabel="Delete instrument"
-destructive
-         message={`Are you sure you want to delete instrument "${inst.name}"? All its notes in all patterns will be removed.`}
-         title="Delete Instrument"
-         bind:show={showConfirmDelete}
-on:confirm={onConfirmDelete}/>
+        confirmLabel="Delete instrument"
+        destructive
+        message={`Are you sure you want to delete instrument "${inst.name}"? All its notes in all patterns will be removed.`}
+        title="Delete Instrument"
+        bind:show={showConfirmDelete}
+        on:confirm={onConfirmDelete}/>
 {#if contextualHelp}
     <Dialog show={true} title={CONTROL_HELP[contextualHelp].title} width="440px" on:close={() => contextualHelp = null}>
         <p class="contextual-help-text">{CONTROL_HELP[contextualHelp].text}</p>
         <details class="contextual-deep-dive">
             <summary>{CONTROL_HELP[contextualHelp].deepTitle}</summary>
             <div>
-                {#each CONTROL_HELP[contextualHelp].deep as paragraph}
+                {#each CONTROL_HELP[contextualHelp].deep as paragraph, i (i)}
                     <p>{paragraph}</p>
                 {/each}
             </div>
@@ -443,29 +451,6 @@ on:confirm={onConfirmDelete}/>
         margin: 8px 0;
         color: var(--accent2);
         font-size: 11px;
-    }
-
-    .guided-path {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin: 8px 0;
-        padding: 6px 8px;
-        border-left: 3px solid var(--accent);
-        background: var(--color-accent-soft);
-        font-size: 11px;
-    }
-
-    .guided-path strong {
-        display: block;
-        margin-bottom: 2px;
-        color: var(--accent);
-        font-size: 12px;
-    }
-
-    .guided-path span {
-        opacity: .75;
     }
 
     .group-heading {

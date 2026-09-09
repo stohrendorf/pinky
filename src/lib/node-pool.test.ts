@@ -27,8 +27,11 @@ class FakeNode {
     }
 
     disconnect(destination?: unknown): void {
-        if (destination === undefined) {this.connections.length = 0;}
-        else {this.connections.splice(this.connections.indexOf(destination), 1);}
+        if (destination === undefined) {
+            this.connections.length = 0;
+        } else {
+            this.connections.splice(this.connections.indexOf(destination), 1);
+        }
     }
 }
 

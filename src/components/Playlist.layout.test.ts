@@ -23,7 +23,10 @@ describe('Playlist frozen track labels', () => {
         const expression = playlist.match(/const totalLength = \$derived\(([\s\S]*?)\);/)?.[1];
         expect(expression).toBeTruthy();
         for (const kind of ['tempos', 'meters', 'sections']) {
-            const p = {arrangement: [{start: 0, len: 96}], conductor: {tempos: [], meters: [], sections: [], [kind]: [{step: 1000000}]}};
+            const p = {
+                arrangement: [{start: 0, len: 96}],
+                conductor: {tempos: [], meters: [], sections: [], [kind]: [{step: 1000000}]}
+            };
             const before = JSON.stringify(p);
             expect(runInNewContext(expression!, {$project: p})).toBe(1000064);
             expect(JSON.stringify(p)).toBe(before);

@@ -14,7 +14,9 @@ const playlist = readFileSync(fileURLToPath(new URL('./Playlist.svelte', import.
 describe('automation lane chooser', () => {
     it('uses accessible target tabs and the shared slash-name tree visual', () => {
         expect(picker).toContain('role="tablist"');
-        for (const tab of ['Instruments', 'Mixer', 'Global FX']) {expect(picker).toContain(`>${tab}</button>`);}
+        for (const tab of ['Instruments', 'Mixer', 'Global FX']) {
+            expect(picker).toContain(`>${tab}</button>`);
+        }
         expect(picker).toContain("import TreeView from './ui/TreeView.svelte'");
         expect(picker).toContain('<TreeView items={project.instruments}');
         expect(picker).toContain('title="Channels and buses"');

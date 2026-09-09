@@ -7,8 +7,9 @@
         value?: string;
     }
 
-    let { value = $bindable('#53d8fb') }: Props = $props();
-    const dispatch = createEventDispatcher<{change: string}>();
+    let {value = $bindable('#53d8fb')}: Props = $props();
+    const dispatch = createEventDispatcher<{ change: string }>();
+    const uid = $props.id();
 
     const presets = [
         '#53d8fb', '#ff9f43', '#ee5253', '#10ac84', '#5f27cd', '#0abde3', '#ff6b6b', '#48dbfb',
@@ -24,7 +25,7 @@
 <div class="color-picker">
     <div style="background: {value}" class="preview"></div>
     <div class="grid">
-        {#each presets as c}
+        {#each presets as c (c)}
             <button
                     style="background: {c}"
                     class="swatch"
@@ -33,8 +34,8 @@
         {/each}
     </div>
     <div class="hex-input">
-        <label>Hex:</label>
-        <input oninput={() => dispatch('change', value)} type="text" bind:value/>
+        <label for="{uid}">Hex:</label>
+        <input id="{uid}" oninput={() => dispatch('change', value)} type="text" bind:value/>
     </div>
 </div>
 

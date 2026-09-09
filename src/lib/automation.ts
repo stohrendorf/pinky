@@ -16,6 +16,7 @@ export const MASTER_TARGET = 'master';
 const MIXER_TARGET_PREFIX = 'mixer|';
 
 export type MixerTargetKind = 'channel' | 'bus';
+
 export interface ParsedMixerTarget {
     kind: MixerTargetKind;
     id: string;
@@ -27,7 +28,9 @@ export function mixerTarget(kind: MixerTargetKind, id: string): string {
 
 export function parseMixerTarget(target: string): ParsedMixerTarget | null {
     const match = /^mixer\|(channel|bus)\|(.+)$/.exec(target);
-    if (!match) {return null;}
+    if (!match) {
+        return null;
+    }
     try {
         const id = decodeURIComponent(match[2]);
         return id && mixerTarget(match[1] as MixerTargetKind, id) === target
@@ -114,10 +117,16 @@ function isNumericInstrumentParam(param: string): param is NumericInstrumentPara
 }
 
 export function autoParams(target: string): AutoParamDef[] {
-    if (target === MASTER_TARGET) {return MASTER_AUTO_PARAMS;}
+    if (target === MASTER_TARGET) {
+        return MASTER_AUTO_PARAMS;
+    }
     const mixer = parseMixerTarget(target);
-    if (mixer?.kind === 'channel') {return MIXER_CHANNEL_AUTO_PARAMS;}
-    if (mixer?.kind === 'bus') {return MIXER_BUS_AUTO_PARAMS;}
+    if (mixer?.kind === 'channel') {
+        return MIXER_CHANNEL_AUTO_PARAMS;
+    }
+    if (mixer?.kind === 'bus') {
+        return MIXER_BUS_AUTO_PARAMS;
+    }
     return target.startsWith(MIXER_TARGET_PREFIX) ? [] : INSTRUMENT_AUTO_PARAMS;
 }
 
@@ -139,10 +148,16 @@ export function newLane(target: string, param: string, value: number): Automatio
 // Value of the lane at (fractional) `step`
 export function laneValueAt(lane: AutomationLane, step: number): number {
     const pts = lane.points;
-    if (!pts.length) {return 0;}
-    if (step <= pts[0].step) {return pts[0].value;}
+    if (!pts.length) {
+        return 0;
+    }
+    if (step <= pts[0].step) {
+        return pts[0].value;
+    }
     const last = pts[pts.length - 1];
-    if (step >= last.step) {return last.value;}
+    if (step >= last.step) {
+        return last.value;
+    }
     for (let i = 1; i < pts.length; i++) {
         const b = pts[i];
         if (step <= b.step) {
@@ -166,12 +181,16 @@ const clampTo = (d: AutoParamDef, v: number): number => {
 export function clampPoint(lane: AutomationLane, pt: AutomationPoint): void {
     const d = autoParamDef(lane);
     pt.step = Math.max(0, Math.round(pt.step));
-    if (d) {pt.value = clampTo(d, pt.value);}
+    if (d) {
+        pt.value = clampTo(d, pt.value);
+    }
 }
 
 export function setAutomationPointValue(lane: AutomationLane, pt: AutomationPoint, value: string | number): boolean {
     const next = typeof value === 'number' ? value : Number(value);
-    if (!Number.isFinite(next)) {return false;}
+    if (!Number.isFinite(next)) {
+        return false;
+    }
     pt.value = next;
     clampPoint(lane, pt);
     sortPoints(lane);
@@ -181,8 +200,9 @@ export function setAutomationPointValue(lane: AutomationLane, pt: AutomationPoin
 // Human-readable "Bass · Pitch Bend"
 export function laneTargetTitle(p: Project, lane: AutomationLane): string {
     const mixer = parseMixerTarget(lane.target);
-    if (lane.target === MASTER_TARGET) {return 'Master';}
-    else if (mixer?.kind === 'channel') {
+    if (lane.target === MASTER_TARGET) {
+        return 'Master';
+    } else if (mixer?.kind === 'channel') {
         return `${p.instruments.find(i => i.id === mixer.id)?.name || 'Unknown'} channel`;
     } else if (mixer?.kind === 'bus') {
         return `${p.mixer?.buses.find(bus => bus.id === mixer.id)?.name || 'Unknown'} bus`;
@@ -195,10 +215,16 @@ export function laneTitle(p: Project, lane: AutomationLane): string {
 }
 
 export function laneColor(p: Project, lane: AutomationLane): string {
-    if (lane.target === MASTER_TARGET) {return '#ffd166';}
+    if (lane.target === MASTER_TARGET) {
+        return '#ffd166';
+    }
     const mixer = parseMixerTarget(lane.target);
-    if (mixer?.kind === 'channel') {return p.instruments.find(i => i.id === mixer.id)?.color || '#53d8fb';}
-    if (mixer?.kind === 'bus') {return '#a29bfe';}
+    if (mixer?.kind === 'channel') {
+        return p.instruments.find(i => i.id === mixer.id)?.color || '#53d8fb';
+    }
+    if (mixer?.kind === 'bus') {
+        return '#a29bfe';
+    }
     return p.instruments.find(i => i.id === lane.target)?.color || '#53d8fb';
 }
 
@@ -206,10 +232,15 @@ export function automationCurrentValue(p: Project, target: string, param: string
     fallbackMaster?: Record<string, number>): number | null {
     let values: object | undefined;
     const mixer = parseMixerTarget(target);
-    if (target === MASTER_TARGET) {values = p.mixer?.master ?? fallbackMaster;}
-    else if (mixer?.kind === 'channel') {values = p.mixer?.channels[mixer.id];}
-    else if (mixer?.kind === 'bus') {values = p.mixer?.buses.find(bus => bus.id === mixer.id);}
-    else if (!target.startsWith(MIXER_TARGET_PREFIX)) {values = p.instruments.find(i => i.id === target)?.params;}
+    if (target === MASTER_TARGET) {
+        values = p.mixer?.master ?? fallbackMaster;
+    } else if (mixer?.kind === 'channel') {
+        values = p.mixer?.channels[mixer.id];
+    } else if (mixer?.kind === 'bus') {
+        values = p.mixer?.buses.find(bus => bus.id === mixer.id);
+    } else if (!target.startsWith(MIXER_TARGET_PREFIX)) {
+        values = p.instruments.find(i => i.id === target)?.params;
+    }
     const value = values && (values as Record<string, unknown>)[param];
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
@@ -222,14 +253,24 @@ const activeLanes = (p: Project): AutomationLane[] => (p.automation || []).filte
 export function instrumentOverrides(p: Project, step: number): Map<string, InstrumentParams> | null {
     let out: Map<string, InstrumentParams> | null = null;
     for (const lane of activeLanes(p)) {
-        if (lane.target === MASTER_TARGET || parseMixerTarget(lane.target) || lane.target.startsWith(MIXER_TARGET_PREFIX)) {continue;}
+        if (lane.target === MASTER_TARGET || parseMixerTarget(lane.target) || lane.target.startsWith(MIXER_TARGET_PREFIX)) {
+            continue;
+        }
         const d = autoParamDef(lane);
-        if (!d) {continue;}
+        if (!d) {
+            continue;
+        }
         const inst = p.instruments.find(i => i.id === lane.target);
-        if (!inst) {continue;}
-        if (!out) {out = new Map();}
+        if (!inst) {
+            continue;
+        }
+        if (!out) {
+            out = new Map();
+        }
         const cur = out.get(inst.id) || {...inst.params};
-        if (isNumericInstrumentParam(lane.param)) {cur[lane.param] = clampTo(d, laneValueAt(lane, step));}
+        if (isNumericInstrumentParam(lane.param)) {
+            cur[lane.param] = clampTo(d, laneValueAt(lane, step));
+        }
         out.set(inst.id, cur);
     }
     return out;
@@ -238,9 +279,13 @@ export function instrumentOverrides(p: Project, step: number): Map<string, Instr
 export function masterAutomation(p: Project, step: number): { param: string; value: number }[] {
     const out: { param: string; value: number }[] = [];
     for (const lane of activeLanes(p)) {
-        if (lane.target !== MASTER_TARGET) {continue;}
+        if (lane.target !== MASTER_TARGET) {
+            continue;
+        }
         const d = autoParamDef(lane);
-        if (d) {out.push({param: lane.param, value: clampTo(d, laneValueAt(lane, step))});}
+        if (d) {
+            out.push({param: lane.param, value: clampTo(d, laneValueAt(lane, step))});
+        }
     }
     return out;
 }
@@ -255,14 +300,16 @@ export function mixerAutomation(p: Project, step: number): MixerAutomationValue[
     const out: MixerAutomationValue[] = [];
     for (const lane of activeLanes(p)) {
         const target = parseMixerTarget(lane.target);
-        if (!target) {continue;}
+        if (!target) {
+            continue;
+        }
         const exists = target.kind === 'channel'
             ? !!p.mixer?.channels[target.id]
             : !!p.mixer?.buses.find(bus => bus.id === target.id);
         const d = autoParamDef(lane);
-        if (exists && d) {out.push({target, param: lane.param, value: clampTo(d, laneValueAt(lane, step))});}
+        if (exists && d) {
+            out.push({target, param: lane.param, value: clampTo(d, laneValueAt(lane, step))});
+        }
     }
     return out;
 }
-
-export const hasAutomation = (p: Project | null): boolean => !!p && activeLanes(p).length > 0;

@@ -12,22 +12,30 @@ export function mixerController(configure: (mixer: MixerState | undefined, ids: 
     let suspended = false;
     let previous = '';
     const sync = () => {
-        if (suspended || !current) {return;}
+        if (suspended || !current) {
+            return;
+        }
         const ids = current.instruments.map(instrument => instrument.id);
         const key = JSON.stringify([current.mixer, ids]);
-        if (previous === key) {return;}
+        if (previous === key) {
+            return;
+        }
         configure(current.mixer, ids);
         previous = key;
     };
     return {
         project(p: Project | null): void {
-            if (p !== current) {previous = '';}
+            if (p !== current) {
+                previous = '';
+            }
             current = p;
             sync();
         },
         rendering(active: boolean): void {
             suspended = active;
-            if (!active) {sync();}
+            if (!active) {
+                sync();
+            }
         }
     };
 }

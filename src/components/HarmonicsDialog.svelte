@@ -1,6 +1,6 @@
 <script lang="ts">
     import {
-        run 
+        run
     } from 'svelte/legacy';
 
     import type {
@@ -27,8 +27,10 @@
         onapply?: () => void;
     }
 
-    let { show = $bindable(false), params = $bindable(), onapply = () => {
-    } }: Props = $props();
+    let {
+        show = $bindable(false), params = $bindable(), onapply = () => {
+        }
+    }: Props = $props();
 
     let gen: HarmonicsGen = $state(genSettings(params));
     let wasOpen = $state(false);
@@ -37,7 +39,9 @@
     run(() => {
         if (show !== wasOpen) {
             wasOpen = show;
-            if (show) {gen = genSettings(params);}
+            if (show) {
+                gen = genSettings(params);
+            }
         }
     });
 
@@ -71,25 +75,25 @@
             </select>
         </label>
         <Slider
-label="Partials"
-max={maxCount}
-min={1}
-onchange={v => gen = {...gen, count: v}}
-step={1}
+                label="Partials"
+                max={maxCount}
+                min={1}
+                onchange={v => gen = {...gen, count: v}}
+                step={1}
                 value={Math.min(gen.count, maxCount)}/>
         <Slider
-label="Falloff Strength"
-max={1}
-min={0.3}
-onchange={v => gen = {...gen, falloff: v}}
-step={0.01}
+                label="Falloff Strength"
+                max={1}
+                min={0.3}
+                onchange={v => gen = {...gen, falloff: v}}
+                step={0.01}
                 value={gen.falloff}/>
         <Slider
-label="Harmonic Stretch"
-max={0.8}
-min={-0.3}
-onchange={v => gen = {...gen, stretch: v}}
-step={0.01}
+                label="Harmonic Stretch"
+                max={0.8}
+                min={-0.3}
+                onchange={v => gen = {...gen, stretch: v}}
+                step={0.01}
                 value={gen.stretch}/>
 
         <div class="preview">

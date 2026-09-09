@@ -9,7 +9,7 @@
         onchange?: (v: number) => void;
     }
 
-    let {
+    const {
         label,
         min,
         max,
@@ -29,11 +29,11 @@
     <label>
         {label} <span class="value">{value}{unit}</span>
         <input
-{max}
-{min}
-oninput={updateValue}
-{step}
-               type="range"
-               {value}>
+                {max}
+                {min}
+                oninput={updateValue}
+                {step}
+                type="range"
+                {value}>
     </label>
 </div>

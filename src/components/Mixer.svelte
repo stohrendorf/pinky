@@ -199,10 +199,18 @@
                 <span>Signal flows left to right into Master</span>
             </div>
             <div class="bus-actions">
-                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('none')} title="Add a routing bus" type="button">+
+                <button
+disabled={mixer.buses.length >= MAX_MIXER_BUSES}
+onclick={() => addBus('none')}
+                        title="Add a routing bus"
+type="button">+
                     Group bus
                 </button>
-                <button disabled={mixer.buses.length >= MAX_MIXER_BUSES} onclick={() => addBus('delay')} title="Add a wet-only delay return" type="button">+
+                <button
+disabled={mixer.buses.length >= MAX_MIXER_BUSES}
+onclick={() => addBus('delay')}
+                        title="Add a wet-only delay return"
+type="button">+
                     Delay return
                 </button>
             </div>
@@ -275,11 +283,11 @@
                     {Math.max(0, meters.master.reduction).toFixed(1)} dB GR
                 </div>
                 <MixerFader
-                            name="Master"
-                            max={1}
-                            onchange={value => masterNumber('vol', value)}
-                            peaks={meters.master.peak}
-                            value={mixer.master.vol}/>
+                        name="Master"
+                        max={1}
+                        onchange={value => masterNumber('vol', value)}
+                        peaks={meters.master.peak}
+                        value={mixer.master.vol}/>
                 <span class="output-label">→ Stereo out</span>
             </section>
         </div>
@@ -381,8 +389,8 @@
                                 <label class="toggle">
                                     <input
                                             checked={selected.channel.compressor.enabled}
-                                           onchange={e => { const checked = e.currentTarget.checked; editChannel(selected.id, c => c.compressor.enabled = checked); }}
-                                           type="checkbox">
+                                            onchange={e => { const checked = e.currentTarget.checked; editChannel(selected.id, c => c.compressor.enabled = checked); }}
+                                            type="checkbox">
                                     Compressor
                                 </label>
                                 {#if selected.channel.compressor.enabled}

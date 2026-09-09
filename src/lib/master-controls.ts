@@ -42,15 +42,21 @@ export class MasterControls {
     }
 
     apply(id: string, value: number): void {
-        if (!isMasterId(id)) {return;}
+        if (!isMasterId(id)) {
+            return;
+        }
         this.values[id] = value;
         this.applyAt(id, value, this.currentTime(), 0.02);
     }
 
     automate(id: string, value: number, at: number, ramp: number): void {
-        if (!isMasterId(id)) {return;}
+        if (!isMasterId(id)) {
+            return;
+        }
         const previous = this.lastAutomated[id];
-        if (previous !== undefined && Math.abs(value - previous) <= EPSILON[id]) {return;}
+        if (previous !== undefined && Math.abs(value - previous) <= EPSILON[id]) {
+            return;
+        }
         this.lastAutomated[id] = value;
         this.applyAt(id, value, at, Math.max(0.005, ramp), previous ?? this.values[id]);
     }
@@ -63,10 +69,6 @@ export class MasterControls {
         }
     }
 
-    clearAutomation(): void {
-        for (const id of ['vol', 'rev', 'tilt'] as const) {delete this.lastAutomated[id];}
-    }
-
     state(): { vol: number; tilt: number } {
         const targets = this.targets();
         return {
@@ -77,10 +79,14 @@ export class MasterControls {
 
     private applyAt(id: MasterId, value: number, at: number, ramp: number, from?: number): void {
         const targets = this.targets();
-        if (!targets) {return;}
-        if (id === 'vol') {this.rampTo(targets.volume, value, at, ramp, from);}
-        else if (id === 'rev') {this.rampTo(targets.reverb, value, at, ramp, from);}
-        else {
+        if (!targets) {
+            return;
+        }
+        if (id === 'vol') {
+            this.rampTo(targets.volume, value, at, ramp, from);
+        } else if (id === 'rev') {
+            this.rampTo(targets.reverb, value, at, ramp, from);
+        } else {
             this.rampTo(targets.tiltLow, -value, at, ramp, from === undefined ? undefined : -from);
             this.rampTo(targets.tiltHigh, value, at, ramp, from);
         }

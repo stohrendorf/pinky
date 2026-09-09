@@ -3,7 +3,7 @@
         onMount
     } from 'svelte';
     import {
-        run 
+        run
     } from 'svelte/legacy';
 
     import type {
@@ -176,9 +176,13 @@
 
     onMount(() => {
         const scopeCanvas = canvas;
-        if (!scopeCanvas) {return;}
+        if (!scopeCanvas) {
+            return;
+        }
         const g2d = scopeCanvas.getContext('2d');
-        if (!g2d) {return;}
+        if (!g2d) {
+            return;
+        }
         let raf: number;
         let onScreen = true, lastFrame = 0;
         const io = new IntersectionObserver(es => onScreen = es[0].isIntersecting);
@@ -216,15 +220,23 @@
             raf = requestAnimationFrame(draw);
             // idle unless the scope is actually on screen, and never faster
             // than FRAME_MS — every frame here is time the audio thread doesn't get
-            if (paused || !onScreen || document.hidden) {return;}
-            if (now - lastFrame < FRAME_MS) {return;}
+            if (paused || !onScreen || document.hidden) {
+                return;
+            }
+            if (now - lastFrame < FRAME_MS) {
+                return;
+            }
             lastFrame = now;
             const W = scopeCanvas.width, H = scopeCanvas.height;
             g2d.fillStyle = '#0a0a14';
             g2d.fillRect(0, 0, W, H);
             const analyser = getAnalyser();
-            if (!analyser) {return;}
-            if (!fft || fft.length !== analyser.frequencyBinCount) {fft = new Uint8Array(analyser.frequencyBinCount);}
+            if (!analyser) {
+                return;
+            }
+            if (!fft || fft.length !== analyser.frequencyBinCount) {
+                fft = new Uint8Array(analyser.frequencyBinCount);
+            }
             analyser.getByteFrequencyData(fft);
             const bars = 320, bw = W / bars;
             for (let i = 0; i < bars; i++) {
@@ -259,11 +271,17 @@
                     const anchors: FrequencyAnchor[] = [];
                     for (const voice of voices) {
                         for (const band of voice.bands) {
-                            if (band.q < 8 || band.freq > nyq * 0.5) {continue;}
+                            if (band.q < 8 || band.freq > nyq * 0.5) {
+                                continue;
+                            }
                             anchors.push({frequency: band.freq, q: band.q});
-                            if (anchors.length >= MAX_RESONANCE_ANCHORS) {break;}
+                            if (anchors.length >= MAX_RESONANCE_ANCHORS) {
+                                break;
+                            }
                         }
-                        if (anchors.length >= MAX_RESONANCE_ANCHORS) {break;}
+                        if (anchors.length >= MAX_RESONANCE_ANCHORS) {
+                            break;
+                        }
                     }
                     const frequencies = quadraticFrequencySamples(CURVE_PTS, nyq * 0.5, 1, anchors);
                     curvePoints = Math.min(frequencies.length, CURVE_CAPACITY);
@@ -294,12 +312,18 @@
                         let n = 0;
                         for (const post of [false, true]) {
                             for (const b of v.bands) {
-                                if (!!b.post !== post) {continue;}
-                                if (Math.abs(b.gain) < MIN_GAIN_DB || (n + 1) * BAND_C > ch.terms.length) {continue;}
+                                if (!!b.post !== post) {
+                                    continue;
+                                }
+                                if (Math.abs(b.gain) < MIN_GAIN_DB || (n + 1) * BAND_C > ch.terms.length) {
+                                    continue;
+                                }
                                 bandCoefs(ch.terms, n * BAND_C, b.freq, b.q, b.gain, fs);
                                 n++;
                             }
-                            if (!post) {ch.nPre = n;}
+                            if (!post) {
+                                ch.nPre = n;
+                            }
                         }
                         ch.n = n;
                         nv++;
@@ -325,7 +349,9 @@
                         pow *= pinkT[i] * gMaster * termsAt(tilt, 0, cw, c2w) * termsAt(tilt, 6, cw, c2w);
                         const db = 10 * Math.log10(Math.max(1e-12, pow));
                         curveDb[i] = db;
-                        if (db > peakDb) {peakDb = db;}
+                        if (db > peakDb) {
+                            peakDb = db;
+                        }
                     }
                     /* Fit the one unknown — the overall level — against the
                      * measurement, but only near the predicted peaks: that is
@@ -340,8 +366,12 @@
                             fitN++;
                         }
                     }
-                    if (fitN > 8) {cal = Math.max(-80, Math.min(60, fitSum / fitN));}
-                    for (let i = 0; i < curvePoints; i++) {curveY[i] = dbToY(curveDb[i] + cal);}
+                    if (fitN > 8) {
+                        cal = Math.max(-80, Math.min(60, fitSum / fitN));
+                    }
+                    for (let i = 0; i < curvePoints; i++) {
+                        curveY[i] = dbToY(curveDb[i] + cal);
+                    }
                     curveOk = nv > 0;
                     // Dots use the exact curve calculation at their resonance center.
                     for (let j = 0; j < nv; j++) {
@@ -350,7 +380,9 @@
                         const alpha = 0.35 + 0.65 * Math.min(1, ch.env); // fade out with the release tail
                         for (const b of ch.bands) {
                             const x = fToX(b.freq);
-                            if (x < 0 || x > W) {continue;}
+                            if (x < 0 || x > W) {
+                                continue;
+                            }
                             const f = Math.max(1, b.freq);
                             const w = Math.PI * f / nyq;
                             const cw = Math.cos(w), sw = Math.sin(w), c2w = Math.cos(2 * w), s2w = Math.sin(2 * w);
@@ -371,11 +403,17 @@
             g2d.fillStyle = load.nodes > load.budget * 0.85 ? '#ff7a00' : '#ffffff';
             g2d.fillText(`${load.voices} voices · ${load.nodes} / ${load.budget} nodes · ${load.pooled} pooled`, 8, 19);
 
-            if (!curveOk) {return;}
+            if (!curveOk) {
+                return;
+            }
             g2d.beginPath();
             for (let i = 0; i < curvePoints; i++) {
                 const x = fToX(freqT[i]), y = curveY[i];
-                if (i === 0) {g2d.moveTo(x, y);} else {g2d.lineTo(x, y);}
+                if (i === 0) {
+                    g2d.moveTo(x, y);
+                } else {
+                    g2d.lineTo(x, y);
+                }
             }
             g2d.strokeStyle = 'rgba(255, 255, 255, 0.75)';
             g2d.lineWidth = 1.5;
@@ -402,9 +440,9 @@
 
 <div class="scope-wrap">
     <canvas
-bind:this={canvas}
-height="100"
-onclick={() => paused = !paused}
+            bind:this={canvas}
+            height="100"
+            onclick={() => paused = !paused}
             title="Combined live spectrum — dots mark every sounding voice. Click to pause/resume the analyser"
             width="1280"></canvas>
     {#if paused}

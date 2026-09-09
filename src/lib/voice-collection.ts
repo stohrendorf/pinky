@@ -53,10 +53,6 @@ export class VoiceCollection<Params = unknown> {
         return this.currentLoad;
     }
 
-    set load(value: number) {
-        this.currentLoad = value;
-    }
-
     get liveCount(): number {
         return this.live.length;
     }
@@ -68,7 +64,9 @@ export class VoiceCollection<Params = unknown> {
     prune(now: number): void {
         for (let i = this.live.length - 1; i >= 0; i--) {
             const voice = this.live[i];
-            if (voice.voice.stopAt + voice.tail < now) {this.live.splice(i, 1);}
+            if (voice.voice.stopAt + voice.tail < now) {
+                this.live.splice(i, 1);
+            }
         }
     }
 
@@ -82,21 +80,27 @@ export class VoiceCollection<Params = unknown> {
         let cost = 0;
         for (const live of this.live) {
             cost += live.voice.cost;
-            if (live.voice.stopAt > at) {held++;}
+            if (live.voice.stopAt > at) {
+                held++;
+            }
         }
 
         while (held >= this.maxVoices() || cost > this.maxNodes()) {
             let victim: ManagedVoice<Params> | null = null;
             let quietest = Infinity;
             for (const live of this.live) {
-                if (live.voice.stopAt <= at || live.voice.dead) {continue;}
+                if (live.voice.stopAt <= at || live.voice.dead) {
+                    continue;
+                }
                 const loudness = live.voice.loudness(at);
                 if (loudness < quietest) {
                     quietest = loudness;
                     victim = live.voice;
                 }
             }
-            if (!victim) {break;}
+            if (!victim) {
+                break;
+            }
             victim.stop(at);
             held--;
             cost -= victim.cost;
@@ -108,7 +112,9 @@ export class VoiceCollection<Params = unknown> {
 
     glide(track: string, fromKey: string, toKey: string, at: number, frequency: number, time: number, curve: CurveShape = 'linear'): boolean {
         const voice = this.active.get(fromKey);
-        if (!voice || voice.dead || voice.stopAt <= at + 0.005) {return false;}
+        if (!voice || voice.dead || voice.stopAt <= at + 0.005) {
+            return false;
+        }
         voice.glide(frequency, at, time, curve);
         this.active.delete(fromKey);
         this.active.set(toKey, voice);
@@ -116,39 +122,11 @@ export class VoiceCollection<Params = unknown> {
         return true;
     }
 
-    replaceActive(key: string, at: number): void {
-        this.active.get(key)?.stop(at);
-    }
-
     register(track: string, key: string, at: number, voice: ManagedVoice<Params>, tail: number): void {
         this.active.set(key, voice);
         this.lastOnTrack.set(track, {voice, key, start: at});
         this.live.push({inst: track.startsWith('live-') ? track.slice(5) : track, voice, tail});
         this.currentLoad += voice.cost;
-    }
-
-    noteOff(key: string, at: number): void {
-        const voice = this.active.get(key);
-        if (!voice) {return;}
-        voice.stop(at);
-        this.active.delete(key);
-    }
-
-    automate(inst: string, params: Params, at: number, ramp: number): void {
-        this.prune(at);
-        for (const live of this.live) {
-            if (live.inst !== inst || live.voice.stopAt <= at) {continue;}
-            live.voice.setParams(params, at, ramp);
-        }
-    }
-
-    allNotesOff(at: number): void {
-        this.active.forEach(voice => voice.stop(at));
-        this.active.clear();
-        this.live.forEach(live => live.voice.stop(at));
-        this.live.length = 0;
-        this.lastOnTrack.clear();
-        this.currentLoad = 0;
     }
 
     snapshot(): VoiceCollectionSnapshot<Params> {

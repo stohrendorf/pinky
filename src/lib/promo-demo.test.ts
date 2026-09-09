@@ -38,13 +38,15 @@ describe('Pinky Promo demo', () => {
 
     it('reproduces the Python score: every note of every part', () => {
         const counts: Partial<Record<PromoPart, number>> = {};
-        for (const note of score.notes) {counts[note.inst] = (counts[note.inst] || 0) + 1;}
+        for (const note of score.notes) {
+            counts[note.inst] = (counts[note.inst] || 0) + 1;
+        }
         expect(counts).toEqual(PYTHON_NOTE_COUNTS);
         expect(score.notes).toHaveLength(559);
 
         const of = (inst: PromoPart) => score.notes.filter(n => n.inst === inst);
         // the aria: A5 D6 F6 ... (Python names; MIDI 69 74 77) starting at bar 16
-        const row = (n: {t: number; midi: number; dur: number; vel: number}) => [ms(n.t), n.midi, ms(n.dur), n.vel];
+        const row = (n: { t: number; midi: number; dur: number; vel: number }) => [ms(n.t), n.midi, ms(n.dur), n.vel];
         expect(of('voice').slice(0, 3).map(row)).toEqual([[38.4, 69, 0.6, 1], [39, 74, 0.6, 1], [39.6, 77, 1.2, 1]]);
         // the lead motif enters at bar 10 on D6 (MIDI 74)
         expect(row(of('lead')[0])).toEqual([24, 74, 0.45, 0.9]);
@@ -57,7 +59,9 @@ describe('Pinky Promo demo', () => {
 
     it('raises the same picture cues the Python score did', () => {
         const kinds: Record<string, number> = {};
-        for (const e of score.events) {kinds[e.kind] = (kinds[e.kind] || 0) + 1;}
+        for (const e of score.events) {
+            kinds[e.kind] = (kinds[e.kind] || 0) + 1;
+        }
         expect(kinds).toEqual(PYTHON_EVENT_COUNTS);
         expect(score.events.filter(e => e.kind === 'hit').map(e => e.t)).toEqual([9.6, 45.6]);
         // the snare roll in bar 15 has no clap under it and therefore no cue
@@ -71,7 +75,10 @@ describe('Pinky Promo demo', () => {
 
     it('carries the patches into the score for the scope overlays', () => {
         expect(Object.keys(score.instruments).sort()).toEqual(Object.keys(PROMO_ID).sort());
-        expect(score.instruments.voice).toMatchObject({name: 'Vocals/Soprano (ah)', params: {f1: 800, f2: 1150, f3: 2900}});
+        expect(score.instruments.voice).toMatchObject({
+            name: 'Vocals/Soprano (ah)',
+            params: {f1: 800, f2: 1150, f3: 2900}
+        });
         expect(score.instruments.kick!.voiceGain).toBeCloseTo(0.9 * score.instruments.kick!.params.gain, 9);
     });
 
@@ -94,7 +101,9 @@ describe('Pinky Promo demo', () => {
         expect(new Set(promo.arrangement.map(c => c.patternId)).size).toBe(promo.arrangement.length);
         for (const a of promo.arrangement) {
             for (const b of promo.arrangement) {
-                if (a !== b && a.track === b.track) {expect(a.start >= b.start + b.len || b.start >= a.start + a.len).toBe(true);}
+                if (a !== b && a.track === b.track) {
+                    expect(a.start >= b.start + b.len || b.start >= a.start + a.len).toBe(true);
+                }
             }
         }
     });

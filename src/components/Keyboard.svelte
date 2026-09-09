@@ -10,7 +10,14 @@
     } from 'svelte/store';
 
     import {
-        bindingForCode, COMPUTER_KEY_BINDINGS, computerKeySource, HeldNoteSources, learnKeyboardLabel, loadKeyboardLayout, MAX_PREVIEW_OCTAVE, MIN_PREVIEW_OCTAVE
+        bindingForCode,
+        COMPUTER_KEY_BINDINGS,
+        computerKeySource,
+        HeldNoteSources,
+        learnKeyboardLabel,
+        loadKeyboardLayout,
+        MAX_PREVIEW_OCTAVE,
+        MIN_PREVIEW_OCTAVE
     } from '../lib/computer-keyboard';
     import {
         ensureAudio, noteOff, noteOn
@@ -40,7 +47,9 @@
         let whiteIndex = 0;
         return visible.map(note => {
             const key = {...note, left: note.black ? whiteIndex * whiteWidth - blackWidth / 2 : 0, blackWidth};
-            if (!note.black) {whiteIndex++;}
+            if (!note.black) {
+                whiteIndex++;
+            }
             return key;
         });
     });
@@ -49,7 +58,9 @@
         const labels: Record<string, string> = {};
         for (const binding of COMPUTER_KEY_BINDINGS) {
             const mapped = bindingForCode(binding.code, octave);
-            if (mapped) {labels[mapped.note] = computerLabels.get(binding.code) ?? binding.character;}
+            if (mapped) {
+                labels[mapped.note] = computerLabels.get(binding.code) ?? binding.character;
+            }
         }
         return labels;
     });
@@ -59,7 +70,9 @@
     }
 
     async function press(source: string, name: string) {
-        if (pendingSources.has(source) || heldNotes.hasSource(source)) {return;}
+        if (pendingSources.has(source) || heldNotes.hasSource(source)) {
+            return;
+        }
         pendingSources.set(source, name);
         lastPlayedPitch.set(name);
         try {
@@ -68,7 +81,9 @@
             pendingSources.delete(source);
             throw error;
         }
-        if (pendingSources.get(source) !== name) {return;}
+        if (pendingSources.get(source) !== name) {
+            return;
+        }
         pendingSources.delete(source);
         const inst = selectedInstrument();
         if (heldNotes.hold(source, {instrumentId: inst.id, note: name})) {
@@ -80,7 +95,9 @@
     function releaseSource(source: string) {
         pendingSources.delete(source);
         const voice = heldNotes.release(source);
-        if (voice) {noteOff('live-' + voice.instrumentId, voice.note);}
+        if (voice) {
+            noteOff('live-' + voice.instrumentId, voice.note);
+        }
         syncActive();
     }
 
@@ -97,7 +114,9 @@
 
     function changeOctave(delta: number) {
         const next = Math.max(MIN_PREVIEW_OCTAVE, Math.min(MAX_PREVIEW_OCTAVE, octave + delta));
-        if (next === octave) {return;}
+        if (next === octave) {
+            return;
+        }
         releaseAll();
         octave = next;
     }
@@ -173,16 +192,18 @@
         press(POINTER_SOURCE, name);
     }
 
-    onMount(() => {void loadKeyboardLayout(computerLabels);});
+    onMount(() => {
+        void loadKeyboardLayout(computerLabels);
+    });
     onDestroy(releaseAll);
 </script>
 
 <svelte:window
-               onblur={releaseAll}
-               onkeydowncapture={onKeydown}
-               onkeyup={onKeyup}
-               onmousedown={() => mouseDown = true}
-               onmouseup={onMouseUp}/>
+        onblur={releaseAll}
+        onkeydowncapture={onKeydown}
+        onkeyup={onKeyup}
+        onmousedown={() => mouseDown = true}
+        onmouseup={onMouseUp}/>
 
 <div class="keyboard-header">
     <div class="octave-controls" aria-label="Preview octave range">
@@ -191,14 +212,16 @@
                 disabled={octave === MIN_PREVIEW_OCTAVE}
                 onclick={() => changeOctave(-1)}
                 title="Shift preview down one octave"
-                type="button">−</button>
+                type="button">−
+        </button>
         <strong>Range C{octave - 1}–B{octave + 1}</strong>
         <button
                 aria-label="Octave up"
                 disabled={octave === MAX_PREVIEW_OCTAVE}
                 onclick={() => changeOctave(1)}
                 title="Shift preview up one octave"
-                type="button">+</button>
+                type="button">+
+        </button>
     </div>
     <span>Space replays the last note</span>
 </div>
@@ -206,17 +229,17 @@
 <div class="keyboard">
     {#each keys as k (k.name)}
         <div
-             style={k.black ? `left:${k.left}%; width:${k.blackWidth}%` : ''}
-             class="key {k.black ? 'black' : 'white'}"
-             class:active={active[k.name]}
-             aria-label="Play {k.name}"
-             aria-pressed={active[k.name] ?? false}
-             onmousedown={e => onPointerDown(e, k.name)}
-             onmouseenter={() => mouseDown && press(POINTER_SOURCE, k.name)}
-             onmouseleave={() => mouseDown && releaseSource(POINTER_SOURCE)}
-             onmouseup={() => releaseSource(POINTER_SOURCE)}
-             role="button"
-             tabindex="-1">
+                style={k.black ? `left:${k.left}%; width:${k.blackWidth}%` : ''}
+                class="key {k.black ? 'black' : 'white'}"
+                class:active={active[k.name]}
+                aria-label="Play {k.name}"
+                aria-pressed={active[k.name] ?? false}
+                onmousedown={e => onPointerDown(e, k.name)}
+                onmouseenter={() => mouseDown && press(POINTER_SOURCE, k.name)}
+                onmouseleave={() => mouseDown && releaseSource(POINTER_SOURCE)}
+                onmouseup={() => releaseSource(POINTER_SOURCE)}
+                role="button"
+                tabindex="-1">
             {#if labelsByNote[k.name]}<kbd class="computer-key">{labelsByNote[k.name]}</kbd>{/if}
             <span class="note-name">{k.name}</span>
         </div>

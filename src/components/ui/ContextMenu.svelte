@@ -3,7 +3,7 @@
         onMount, tick
     } from 'svelte';
     import {
-        run 
+        run
     } from 'svelte/legacy';
 
     interface Props {
@@ -28,7 +28,9 @@
     let position = $state({top: 0, left: 0});
 
     async function updatePosition() {
-        if (!anchor) {return;}
+        if (!anchor) {
+            return;
+        }
         await tick();
         const bounds = anchor.getBoundingClientRect();
         const menuWidth = menuEl?.offsetWidth || 150;
@@ -40,16 +42,22 @@
     }
 
     function handleWindowClick(event: MouseEvent) {
-        if (!open || menuEl?.contains(event.target as Node) || anchor?.contains(event.target as Node)) {return;}
+        if (!open || menuEl?.contains(event.target as Node) || anchor?.contains(event.target as Node)) {
+            return;
+        }
         onclose();
     }
 
     function handleKeydown(event: KeyboardEvent) {
-        if (open && event.key === 'Escape') {onclose();}
+        if (open && event.key === 'Escape') {
+            onclose();
+        }
     }
 
     run(() => {
-        if (open) {updatePosition();}
+        if (open) {
+            updatePosition();
+        }
     });
 
     onMount(() => {
@@ -67,7 +75,7 @@
 
 {#if open}
     <div bind:this={menuEl} style="top: {position.top}px; left: {position.left}px;" class="context-menu" role="menu">
-        {#each actions as menu}
+        {#each actions as menu (menu.id)}
             <button disabled={menu.disabled} onclick={() => onselect(menu.id)} role="menuitem" type="button">
                 <i class="fa {menu.icon || ''}" aria-hidden="true"></i>{menu.label}
             </button>

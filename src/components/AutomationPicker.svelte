@@ -11,12 +11,12 @@
     } from '../lib/types';
 
     import {
+        type AutoParamGroup,
         autoParams,
         INSTRUMENT_AUTO_GROUPS,
         MASTER_TARGET,
         mixerTarget,
-        parseMixerTarget,
-        type AutoParamGroup
+        parseMixerTarget
     } from '../lib/automation';
     import TreeView from './ui/TreeView.svelte';
 
@@ -25,7 +25,10 @@
         onadd?: (target: string, param: string) => void;
     }
 
-    const {project, onadd = () => {}}: Props = $props();
+    const {
+        project, onadd = () => {
+        }
+    }: Props = $props();
     const initialTarget = untrack(() => project.instruments[0]?.id || MASTER_TARGET);
     let tab: 'instrument' | 'mixer' | 'global' = $state('instrument');
     let target = $state(initialTarget);
@@ -40,7 +43,9 @@
         })) || [])
     ] satisfies NamedTreeItem[]);
     const parameterGroups = $derived.by((): AutoParamGroup[] => {
-        if (tab === 'instrument') {return INSTRUMENT_AUTO_GROUPS;}
+        if (tab === 'instrument') {
+            return INSTRUMENT_AUTO_GROUPS;
+        }
         let params = autoParams(target);
         const parsed = parseMixerTarget(target);
         if (parsed?.kind === 'bus' && project.mixer?.buses.find(bus => bus.id === parsed.id)?.effect !== 'delay') {
@@ -57,36 +62,45 @@
 
     function chooseTab(next: typeof tab) {
         tab = next;
-        if (next === 'instrument') {choose(project.instruments[0]?.id || '');}
-        else if (next === 'mixer') {choose(mixerItems[0]?.id || '');}
-        else {choose(MASTER_TARGET);}
+        if (next === 'instrument') {
+            choose(project.instruments[0]?.id || '');
+        } else if (next === 'mixer') {
+            choose(mixerItems[0]?.id || '');
+        } else {
+            choose(MASTER_TARGET);
+        }
     }
 
     function add() {
-        if (param && !duplicate) {onadd(target, param);}
+        if (param && !duplicate) {
+            onadd(target, param);
+        }
     }
 </script>
 
 <div class="automation-picker">
     <div class="target-tabs" aria-label="Automation target type" role="tablist">
         <button
-class:active={tab === 'instrument'}
-aria-selected={tab === 'instrument'}
-onclick={() => chooseTab('instrument')}
-role="tab"
-type="button">Instruments</button>
+                class:active={tab === 'instrument'}
+                aria-selected={tab === 'instrument'}
+                onclick={() => chooseTab('instrument')}
+                role="tab"
+                type="button">Instruments
+        </button>
         <button
-class:active={tab === 'mixer'}
-aria-selected={tab === 'mixer'}
-onclick={() => chooseTab('mixer')}
-role="tab"
-type="button">Mixer</button>
+                class:active={tab === 'mixer'}
+                aria-selected={tab === 'mixer'}
+                onclick={() => chooseTab('mixer')}
+                role="tab"
+                type="button">Mixer
+        </button>
         <button
-class:active={tab === 'global'}
-aria-selected={tab === 'global'}
-onclick={() => chooseTab('global')}
-role="tab"
-type="button">Global FX</button>
+                class:active={tab === 'global'}
+                aria-selected={tab === 'global'}
+                onclick={() => chooseTab('global')}
+                role="tab"
+                type="button">Global FX
+        </button>
     </div>
 
     <div class="picker-grid">
@@ -95,11 +109,11 @@ type="button">Global FX</button>
                 <TreeView items={project.instruments} onselect={choose} selectedId={target} title="Instruments"/>
             {:else if tab === 'mixer'}
                 <TreeView
-emptyLabel="No mixer channels"
-items={mixerItems}
-onselect={choose}
-selectedId={target}
-title="Channels and buses"/>
+                        emptyLabel="No mixer channels"
+                        items={mixerItems}
+                        onselect={choose}
+                        selectedId={target}
+                        title="Channels and buses"/>
             {:else}
                 <button class="global-target selected" onclick={() => choose(MASTER_TARGET)} type="button">
                     <i class="fa fa-sliders" aria-hidden="true"></i> Master FX
@@ -115,10 +129,10 @@ title="Channels and buses"/>
                         <div class="parameter-list">
                             {#each group.params as def (def.param)}
                                 <button
-class:selected={param === def.param}
-aria-pressed={param === def.param}
-onclick={() => param = def.param}
-type="button">
+                                        class:selected={param === def.param}
+                                        aria-pressed={param === def.param}
+                                        onclick={() => param = def.param}
+                                        type="button">
                                     <span>{def.label}</span>
                                     {#if def.unit}<small>{def.unit}</small>{/if}
                                 </button>

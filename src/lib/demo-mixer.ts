@@ -25,7 +25,9 @@ export function mixDemo(p: Project, profile: 'monsoon' | 'winter' | 'pocket'): P
     // values restored on Stop. No extra loudness drive or flattened crescendos.
     for (const param of ['vol', 'rev', 'tilt'] as const) {
         const first = p.automation?.find(lane => lane.target === 'master' && lane.param === param)?.points[0];
-        if (first) {mixer.master[param] = first.value;}
+        if (first) {
+            mixer.master[param] = first.value;
+        }
     }
 
     if (profile === 'monsoon') {

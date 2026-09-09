@@ -21,7 +21,9 @@ describe('sample-peak stereo-linked lookahead limiter DSP', () => {
         const dsp = new LimiterDSP(rate);
         dsp.configure({driveDb: 18, ceilingDb: -6, release: 0.02});
         const input = new Float32Array(1201).fill(0.1);
-        for (const i of [0, 127, 128, 239, 511, 1200]) {input[i] = i % 2 ? -100 : 100;}
+        for (const i of [0, 127, 128, 239, 511, 1200]) {
+            input[i] = i % 2 ? -100 : 100;
+        }
         const [left, right] = render(dsp, input);
         const ceiling = Math.pow(10, -6 / 20);
         expect(left.slice(0, dsp.latencyFrames).every(x => x === 0)).toBe(true);
@@ -36,7 +38,9 @@ describe('sample-peak stereo-linked lookahead limiter DSP', () => {
         const a = new Float32Array(2048).fill(4);
         const b = new Float32Array(2048).fill(-0.25);
         const [l, r] = render(dsp, a, b);
-        for (let i = dsp.latencyFrames; i < l.length; i++) {expect(r[i] / l[i]).toBeCloseTo(-1 / 16, 6);}
+        for (let i = dsp.latencyFrames; i < l.length; i++) {
+            expect(r[i] / l[i]).toBeCloseTo(-1 / 16, 6);
+        }
         const meters = dsp.readMeters();
         expect(meters.peak[0]).toBeCloseTo(Math.pow(10, -1 / 20), 5);
         expect(meters.peak[1] / meters.peak[0]).toBeCloseTo(1 / 16, 6);
@@ -62,7 +66,9 @@ describe('sample-peak stereo-linked lookahead limiter DSP', () => {
         fast.configure({ceilingDb: 0, release: 0.02});
         slow.configure({ceilingDb: 0, release: 1});
         const [f] = render(fast, input), [s] = render(slow, input);
-        for (let i = fast.latencyFrames + 2; i < f.length; i++) {expect(f[i]).toBeGreaterThanOrEqual(f[i - 1]);}
+        for (let i = fast.latencyFrames + 2; i < f.length; i++) {
+            expect(f[i]).toBeGreaterThanOrEqual(f[i - 1]);
+        }
         expect(f[10000]).toBeCloseTo(0.1, 4);
         expect(s[10000]).toBeLessThan(0.04);
     });

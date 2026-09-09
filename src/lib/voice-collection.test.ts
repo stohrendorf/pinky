@@ -12,7 +12,9 @@ function voice(cost: number, level: number): ManagedVoice {
         stopAt: Infinity,
         dead: false,
         loudness: () => level,
-        stop: vi.fn((at: number) => {result.stopAt = Math.min(result.stopAt, at);}),
+        stop: vi.fn((at: number) => {
+            result.stopAt = Math.min(result.stopAt, at);
+        }),
         glide: vi.fn(),
         setParams: vi.fn()
     };

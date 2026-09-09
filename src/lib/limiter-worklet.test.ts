@@ -3,7 +3,8 @@ import {
 } from 'vitest';
 
 interface Processor {
-    port: {postMessage: ReturnType<typeof vi.fn>; onmessage: (event: {data: unknown}) => void};
+    port: { postMessage: ReturnType<typeof vi.fn>; onmessage: (event: { data: unknown }) => void };
+
     process(input: Float32Array[][], output: Float32Array[][]): boolean;
 }
 
@@ -22,7 +23,9 @@ async function processor(metering: boolean) {
     return new Constructor({processorOptions: {metering, settings: {enabled: true, ceilingDb: -6, driveDb: 18}}});
 }
 
-afterEach(() => {vi.unstubAllGlobals();});
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 
 describe('limiter worklet actual DSP wiring', () => {
     it('reports frames through silence and bypass at bounded intervals without needing audio-thread replies', async () => {
@@ -34,7 +37,10 @@ describe('limiter worklet actual DSP wiring', () => {
             vi.stubGlobal('currentFrame', block * 128);
             node.process([[]], [output]);
         }
-        expect(node.port.postMessage.mock.calls).toEqual([128, 12160, 24192, 36224].map(frames => [{type: 'progress', frames}]));
+        expect(node.port.postMessage.mock.calls).toEqual([128, 12160, 24192, 36224].map(frames => [{
+            type: 'progress',
+            frames
+        }]));
         vi.stubGlobal('currentFrame', 48000);
         node.process([[]], [output]);
         expect(node.port.postMessage).toHaveBeenCalledTimes(4);
@@ -77,7 +83,7 @@ describe('limiter worklet actual DSP wiring', () => {
         }
         expect(node.port.postMessage.mock.calls.length).toBeLessThanOrEqual(20);
         expect(node.port.postMessage.mock.calls.length).toBeGreaterThanOrEqual(19);
-        const meter = node.port.postMessage.mock.lastCall?.[0] as {peak: number[]; rms: number[]; reduction: number};
+        const meter = node.port.postMessage.mock.lastCall?.[0] as { peak: number[]; rms: number[]; reduction: number };
         expect(meter.reduction).toBeGreaterThan(40);
         expect(meter.peak[1] / meter.peak[0]).toBeCloseTo(0.25);
         expect(meter.rms[0]).toBeCloseTo(meter.peak[0]);

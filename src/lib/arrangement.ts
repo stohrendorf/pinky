@@ -58,7 +58,9 @@ export function moveArrangementTrack(tracks: Track[], arrangement: ArrangementCl
     return {
         tracks: reorderedTracks,
         arrangement: arrangement.map(clip => {
-            if (clip.track === from) {return {...clip, track: destination};}
+            if (clip.track === from) {
+                return {...clip, track: destination};
+            }
             if (from < destination && clip.track > from && clip.track <= destination) {
                 return {
                     ...clip,
@@ -80,7 +82,9 @@ export function removeArrangementTrack(tracks: Track[], arrangement: Arrangement
     tracks: Track[];
     arrangement: ArrangementClip[];
 } {
-    if (tracks.length <= 1 || index < 0 || index >= tracks.length) {return {tracks, arrangement};}
+    if (tracks.length <= 1 || index < 0 || index >= tracks.length) {
+        return {tracks, arrangement};
+    }
 
     return {
         tracks: tracks.filter((_, trackIndex) => trackIndex !== index),
@@ -98,11 +102,15 @@ export function removeArrangementTrack(tracks: Track[], arrangement: Arrangement
  * coordinate is normalized to the pitch range used by the preview renderer.
  */
 export function getPatternPreview(pattern: Pattern | undefined, clipLen: number): PreviewNote[] {
-    if (!pattern) {return [];}
+    if (!pattern) {
+        return [];
+    }
 
     const patternSteps = pattern.steps || 32;
     const allNotes: Note[] = Object.values(pattern.tracks).flat();
-    if (allNotes.length === 0) {return [];}
+    if (allNotes.length === 0) {
+        return [];
+    }
 
     const minPitch = Math.min(...allNotes.map(note => rowOfNote[note.pitch]));
     const maxPitch = Math.max(...allNotes.map(note => rowOfNote[note.pitch]));

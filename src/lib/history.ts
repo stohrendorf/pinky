@@ -57,11 +57,17 @@ function commit(): void {
         timer = null;
     }
     const p = get(project);
-    if (!p) {return;}
+    if (!p) {
+        return;
+    }
     const s = snap(p);
-    if (s === base) {return;}
+    if (s === base) {
+        return;
+    }
     past.push(base);
-    if (past.length > LIMIT) {past.shift();}
+    if (past.length > LIMIT) {
+        past.shift();
+    }
     future = [];
     base = s;
     flags();
@@ -69,7 +75,9 @@ function commit(): void {
 
 function apply(s: string): void {
     const cur = get(project);
-    if (!cur) {return;}
+    if (!cur) {
+        return;
+    }
     const next = JSON.parse(s) as Project;
     next.zoom = cur.zoom; // keep the current view
     base = s;
@@ -77,35 +85,51 @@ function apply(s: string): void {
     project.set(next);
     applying = false;
     // the restored document may not contain what is currently selected
-    if (!next.instruments.some(i => i.id === get(selInstId))) {selInstId.set(next.instruments[0]?.id || null);}
-    if (!next.patterns.some(pt => pt.id === get(selPatId))) {selPatId.set(next.patterns[0]?.id || null);}
+    if (!next.instruments.some(i => i.id === get(selInstId))) {
+        selInstId.set(next.instruments[0]?.id || null);
+    }
+    if (!next.patterns.some(pt => pt.id === get(selPatId))) {
+        selPatId.set(next.patterns[0]?.id || null);
+    }
     flags();
 }
 
 export function undo(): void {
     commit();
-    if (!past.length) {return;}
+    if (!past.length) {
+        return;
+    }
     future.push(base);
     apply(past.pop() as string);
 }
 
 export function redo(): void {
     commit();
-    if (!future.length) {return;}
+    if (!future.length) {
+        return;
+    }
     past.push(base);
     apply(future.pop() as string);
 }
 
 export function initHistory(): void {
     project.subscribe(p => {
-        if (!p) {return;}
-        if (p !== known) { // a whole new document (or our own undo/redo)
-            known = p;
-            if (!applying) {reset(p);}
+        if (!p) {
             return;
         }
-        if (applying) {return;}
-        if (timer) {clearTimeout(timer);}
+        if (p !== known) { // a whole new document (or our own undo/redo)
+            known = p;
+            if (!applying) {
+                reset(p);
+            }
+            return;
+        }
+        if (applying) {
+            return;
+        }
+        if (timer) {
+            clearTimeout(timer);
+        }
         timer = setTimeout(commit, DEBOUNCE);
     });
 }

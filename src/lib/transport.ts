@@ -61,9 +61,13 @@ const stepDur = (): number => {
 
 let timingKey = '';
 let songTiming = createTimingMap({bpm: 112});
+
 function timingFor(p: Project): TimingMap {
     const key = JSON.stringify([p.bpm, p.conductor?.tempos]);
-    if (timingKey !== key) {timingKey = key; songTiming = createTimingMap(p);}
+    if (timingKey !== key) {
+        timingKey = key;
+        songTiming = createTimingMap(p);
+    }
     return songTiming;
 }
 
@@ -83,12 +87,16 @@ export function schedulePatternNotes(pat: Pattern, patStep: number, time: number
     elapsed: (steps: number) => number = steps => steps * dur): void {
     instruments.forEach(inst => {
         const notes = pat.tracks[inst.id];
-        if (!notes) {return;}
+        if (!notes) {
+            return;
+        }
         const params = over?.get(inst.id) || inst.params;
         notes.forEach(n => {
             if (n.start === patStep) {
                 const pitch = transpose ? transposePitch(n.pitch, transpose) : n.pitch;
-                if (!pitch) {return;} // shifted out of the note range
+                if (!pitch) {
+                    return;
+                } // shifted out of the note range
                 const incoming = notes.some(source => source.legatoTo?.start === n.start
                     && source.legatoTo.pitch === n.pitch && isLegatoTarget(source, n.start));
                 const target = notes.find(candidate => candidate.start === n.legatoTo?.start
@@ -99,7 +107,9 @@ export function schedulePatternNotes(pat: Pattern, patStep: number, time: number
                 }
                 if (target && isLegatoTarget(n, target.start)) {
                     const targetPitch = transpose ? transposePitch(target.pitch, transpose) : target.pitch;
-                    if (!targetPitch) {return;}
+                    if (!targetPitch) {
+                        return;
+                    }
                     const glide = legatoTransition(n, target.start, dur, params.legatoCurve);
                     const glideTime = Math.max(0.005, elapsed(target.start - n.start) - elapsed(n.len));
                     eng.glideAt(inst.id, pitch, targetPitch, time + elapsed(n.len), glideTime, glide.curve);
@@ -158,11 +168,15 @@ function scheduleSongStep(p: Project, s: number, at: number, dur: number, insts:
     const elapsed = (steps: number) => timing.secondsBetween(position, position + steps);
     p.arrangement.forEach(clip => {
         const lane = p.tracks[clip.track];
-        if (lane && (lane.mute || (anyLaneSolo && !lane.solo))) {return;}
+        if (lane && (lane.mute || (anyLaneSolo && !lane.solo))) {
+            return;
+        }
         const relStep = s - clip.start;
         if (relStep >= 0 && relStep < clip.len) {
             const pat = p.patterns.find(pt => pt.id === clip.patternId);
-            if (!pat) {return;}
+            if (!pat) {
+                return;
+            }
             schedulePatternNotes(pat, relStep % (pat.steps || STEPS), at, dur, insts, clip.transpose || 0, over, elapsed);
         }
     });
@@ -173,7 +187,9 @@ const swingOffset = (p: Project, s: number): number => s % 2 === 1 ? Math.max(0,
 // Called on every clock pulse: queue everything that starts within the window.
 function pump(now: number): void {
     const p = get(project);
-    if (!p) {return;}
+    if (!p) {
+        return;
+    }
     if (endTime !== null && now >= endTime) { // backstop: rAF is frozen in a background tab
         stopTransport();
         songLabel.set('Song finished');
@@ -191,7 +207,9 @@ function pump(now: number): void {
     while (endTime === null && nextStepTime < horizon && guard-- > 0) {
         // fell behind (tab was frozen, tempo raised): re-anchor instead of
         // dumping a burst of steps at once
-        if (nextStepTime < now) {nextStepTime = now;}
+        if (nextStepTime < now) {
+            nextStepTime = now;
+        }
         const dur = songMode ? timing.secondsBetween(step, step + 1) : stepDur();
         const offset = swingOffset(p, step);
         const at = nextStepTime + (songMode ? timing.secondsBetween(step, step + offset) : offset * dur);
@@ -217,7 +235,9 @@ function uiFrame(): void {
     uiRaf = requestAnimationFrame(uiFrame);
     const now = eng.audioTime();
     let s = -1;
-    while (uiQueue.length && uiQueue[0].time <= now) {s = uiQueue.shift()!.step;}
+    while (uiQueue.length && uiQueue[0].time <= now) {
+        s = uiQueue.shift()!.step;
+    }
     if (s >= 0 && s !== uiStep) {
         uiStep = s;
         curStep.set(s);
@@ -243,7 +263,9 @@ function startTransport(startStep = 0): void {
     playing.set(true);
     eng.setTickHandler(pump);
     eng.clockStart();
-    if (!uiRaf) {uiRaf = requestAnimationFrame(uiFrame);}
+    if (!uiRaf) {
+        uiRaf = requestAnimationFrame(uiFrame);
+    }
 }
 
 export function stopTransport(): void {
@@ -266,12 +288,20 @@ export function stopTransport(): void {
 }
 
 export async function playPattern(): Promise<void> {
-    if (eng.isRendering()) {return;}
+    if (eng.isRendering()) {
+        return;
+    }
     await eng.ensureAudio();
-    if (eng.isRendering()) {return;}
+    if (eng.isRendering()) {
+        return;
+    }
     const p = get(project);
-    if (!p) {return;}
-    if (get(playing)) {stopTransport();}
+    if (!p) {
+        return;
+    }
+    if (get(playing)) {
+        stopTransport();
+    }
     eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
     playPatId = get(selPatId);
     playMode.set('pattern');
@@ -280,12 +310,20 @@ export async function playPattern(): Promise<void> {
 
 /* ---- song mode ---- */
 export async function playSong(): Promise<void> {
-    if (eng.isRendering()) {return;}
+    if (eng.isRendering()) {
+        return;
+    }
     const p = get(project);
-    if (!p || !p.arrangement.length) {return;}
+    if (!p || !p.arrangement.length) {
+        return;
+    }
     await eng.ensureAudio();
-    if (eng.isRendering()) {return;}
-    if (get(playing)) {stopTransport();}
+    if (eng.isRendering()) {
+        return;
+    }
+    if (get(playing)) {
+        stopTransport();
+    }
     eng.configureMixer(p.mixer, p.instruments.map(inst => inst.id));
     songMode = true;
     playMode.set('song');
@@ -311,7 +349,9 @@ export async function playSong(): Promise<void> {
  * note-off lead. Returns the length of the scheduled range in seconds. */
 export function scheduleRange(p: Project, from: number, to: number): number {
     const range = rangeScheduler(p, from, to);
-    for (let s = from; s < to; s++) {range.schedule(s);}
+    for (let s = from; s < to; s++) {
+        range.schedule(s);
+    }
     return range.seconds;
 }
 
@@ -330,15 +370,24 @@ function rangeScheduler(p: Project, from: number, to: number) {
 /** Same score as scheduleRange, with event-loop checkpoints so a long export
  * can paint progress and stop before allocating the remaining voice graph. */
 export async function scheduleRangeAsync(p: Project, from: number, to: number,
-    options: {signal?: AbortSignal; onProgress?: (progress: number) => void} = {}): Promise<number> {
-    const check = () => {if (options.signal?.aborted) {throw new DOMException('Export cancelled', 'AbortError');}};
+    options: {
+                                             signal?: AbortSignal;
+                                             onProgress?: (progress: number) => void
+                                         } = {}): Promise<number> {
+    const check = () => {
+        if (options.signal?.aborted) {
+            throw new DOMException('Export cancelled', 'AbortError');
+        }
+    };
     check();
     const range = rangeScheduler(p, from, to);
     options.onProgress?.(0);
     for (let start = from; start < to; start += 32) {
         check();
         const end = Math.min(start + 32, to);
-        for (let s = start; s < end; s++) {range.schedule(s);}
+        for (let s = start; s < end; s++) {
+            range.schedule(s);
+        }
         options.onProgress?.((end - from) / (to - from));
         await new Promise<void>(resolve => setTimeout(resolve, 0));
     }

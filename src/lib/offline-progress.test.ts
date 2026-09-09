@@ -13,25 +13,48 @@ class OfflineContext {
     length = 48000;
     currentTime = 0;
     state = 'suspended';
-    suspend = vi.fn((at: number) => new Promise<void>(resolve => {
-        this.pause = () => {this.currentTime = at; this.state = 'suspended'; resolve();};
-    }));
-    pause = () => {};
     finish!: (buffer: AudioBuffer) => void;
     fail!: (error: Error) => void;
     startRendering = vi.fn(() => {
         this.state = 'running';
         return new Promise<AudioBuffer>((resolve, reject) => {
-            this.finish = buffer => {this.state = 'closed'; resolve(buffer);};
-            this.fail = error => {this.state = 'closed'; reject(error);};
+            this.finish = buffer => {
+                this.state = 'closed';
+                resolve(buffer);
+            };
+            this.fail = error => {
+                this.state = 'closed';
+                reject(error);
+            };
         });
     });
-    resume = vi.fn(() => {this.state = 'running'; return Promise.resolve();});
-    native() {return this as unknown as OfflineAudioContext;}
+    resume = vi.fn(() => {
+        this.state = 'running';
+        return Promise.resolve();
+    });
+
+    pause = () => {
+    };
+
+    suspend = vi.fn((at: number) => new Promise<void>(resolve => {
+        this.pause = () => {
+            this.currentTime = at;
+            this.state = 'suspended';
+            resolve();
+        };
+    }));
+
+    native() {
+        return this as unknown as OfflineAudioContext;
+    }
 }
 
-beforeEach(() => {vi.useFakeTimers();});
-afterEach(() => {vi.useRealTimers();});
+beforeEach(() => {
+    vi.useFakeTimers();
+});
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 describe('offline render checkpoints', () => {
     it('uses worklet frame progress without interrupting a render that supports suspension', async () => {
@@ -41,8 +64,15 @@ describe('offline render checkpoints', () => {
         const unsubscribe = vi.fn();
 
         const pending = renderWithProgress(context.native(), {
-            onProgress: value => {if (value !== null) {progress.push(value);}},
-            subscribeFrames: listener => {frames = listener; return unsubscribe;}
+            onProgress: value => {
+                if (value !== null) {
+                    progress.push(value);
+                }
+            },
+            subscribeFrames: listener => {
+                frames = listener;
+                return unsubscribe;
+            }
         });
 
         expect(context.startRendering).toHaveBeenCalledOnce();
@@ -83,7 +113,10 @@ describe('offline render checkpoints', () => {
         const controller = new AbortController();
         let settled = false;
         const pending = renderWithProgress(context.native(), {signal: controller.signal});
-        const result = pending.catch(error => {settled = true; return error as Error;});
+        const result = pending.catch(error => {
+            settled = true;
+            return error as Error;
+        });
         context.pause();
         await vi.advanceTimersByTimeAsync(1);
         expect(context.state).toBe('running');
@@ -115,7 +148,11 @@ describe('offline render checkpoints', () => {
 
     it('propagates rendering and observer errors without resuming a suspended graph', async () => {
         const context = new OfflineContext();
-        const pending = renderWithProgress(context.native(), {onProgress: () => {throw new Error('observer failed');}});
+        const pending = renderWithProgress(context.native(), {
+            onProgress: () => {
+                throw new Error('observer failed');
+            }
+        });
         const rejected = expect(pending).rejects.toThrow('observer failed');
         context.pause();
         await rejected;
@@ -142,11 +179,18 @@ describe('offline rendering without suspension support', () => {
         const progress: (number | null)[] = [];
         const pending = renderWithProgress(context.native(), {
             onProgress: value => progress.push(value),
-            subscribeFrames: listener => {frames = listener; return unsubscribe;}
+            subscribeFrames: listener => {
+                frames = listener;
+                return unsubscribe;
+            }
         });
         expect(progress).toEqual([null]);
         frames(12000);
-        frames(12000); frames(1000); frames(NaN); frames(Infinity); frames(-1);
+        frames(12000);
+        frames(1000);
+        frames(NaN);
+        frames(Infinity);
+        frames(-1);
         await vi.advanceTimersByTimeAsync(10000);
         expect(progress).toEqual([null, 0.25]);
         frames(36000);
@@ -166,10 +210,20 @@ describe('offline rendering without suspension support', () => {
         const unsubscribe = vi.fn();
         let settled = false;
         const pending = renderWithProgress(context.native(), {
-            onProgress: value => {if (value !== null) {throw new Error('observer failed');}},
-            subscribeFrames: listener => {frames = listener; return unsubscribe;}
+            onProgress: value => {
+                if (value !== null) {
+                    throw new Error('observer failed');
+                }
+            },
+            subscribeFrames: listener => {
+                frames = listener;
+                return unsubscribe;
+            }
         });
-        const result = pending.catch(error => {settled = true; return error as Error;});
+        const result = pending.catch(error => {
+            settled = true;
+            return error as Error;
+        });
         expect(() => frames(24000)).not.toThrow();
         await vi.advanceTimersByTimeAsync(1000);
         expect(settled).toBe(false);
@@ -185,7 +239,10 @@ describe('offline rendering without suspension support', () => {
         const unsubscribe = vi.fn(), progress = vi.fn();
         const pending = renderWithProgress(context.native(), {
             signal: controller.signal, onProgress: progress,
-            subscribeFrames: listener => {frames = listener; return unsubscribe;}
+            subscribeFrames: listener => {
+                frames = listener;
+                return unsubscribe;
+            }
         });
         const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
         frames(12000);
@@ -216,13 +273,17 @@ describe('offline rendering without suspension support', () => {
         const progress = vi.fn();
         let complete!: Promise<void>;
         const pending = renderWithProgress(context.native(), {
-            signal: controller.signal, onProgress: progress, onAbandon: completion => {complete = completion;}
+            signal: controller.signal, onProgress: progress, onAbandon: completion => {
+                complete = completion;
+            }
         });
         controller.abort();
         await expect(pending).rejects.toMatchObject({name: 'AbortError'});
         expect(context.state).toBe('running');
         let settled = false;
-        void complete.then(() => {settled = true;});
+        void complete.then(() => {
+            settled = true;
+        });
         await vi.advanceTimersByTimeAsync(10000);
         expect(settled).toBe(false);
         context.finish({} as AudioBuffer);
@@ -255,7 +316,11 @@ describe('offline rendering without suspension support', () => {
         const context = without('suspend');
         const controller = new AbortController();
         const pending = renderWithProgress(context.native(), {
-            signal: controller.signal, onProgress: progress => {if (progress === 1) {controller.abort();}}
+            signal: controller.signal, onProgress: progress => {
+                if (progress === 1) {
+                    controller.abort();
+                }
+            }
         });
         const rejected = expect(pending).rejects.toMatchObject({name: 'AbortError'});
         context.finish({} as AudioBuffer);

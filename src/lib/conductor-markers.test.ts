@@ -18,7 +18,12 @@ import {
 import * as types from './types';
 
 const empty = (): ConductorData => ({tempos: [], meters: [], sections: []});
-const draft = (fields: Partial<MarkerDraft> = {}): MarkerDraft => ({name: '', bpm: undefined, curve: 'hold', signature: '', ...fields});
+const draft = (fields: Partial<MarkerDraft> = {}): MarkerDraft => ({
+    name: '',
+    bpm: undefined,
+    curve: 'hold',
+    signature: '', ...fields
+});
 const tempo = (step: number, bpm = 120): TempoMarker => ({id: types.createId(), step, bpm, curve: 'hold'});
 const meter = (step: number): MeterMarker => ({id: types.createId(), step, numerator: 7, denominator: 8});
 const section = (step: number): SectionMarker => ({id: types.createId(), step, name: 'Verse'});
@@ -30,7 +35,9 @@ const checked = (data: ConductorData): ConductorData => {
 };
 const frozen = (data: ConductorData): ConductorData => {
     for (const kind of kinds) {
-        for (const marker of data[kind]) {Object.freeze(marker);}
+        for (const marker of data[kind]) {
+            Object.freeze(marker);
+        }
         Object.freeze(data[kind]);
     }
     Object.freeze(data);
@@ -54,7 +61,13 @@ describe('markerPoints', () => {
     it('groups all kinds, preserving every ID and marker reference with title ID priority', () => {
         const data = frozen(group());
         const points = markerPoints(data);
-        expect(points).toEqual([{id: data.sections[0].id, step: 16, tempo: data.tempos[0], meter: data.meters[0], section: data.sections[0]}]);
+        expect(points).toEqual([{
+            id: data.sections[0].id,
+            step: 16,
+            tempo: data.tempos[0],
+            meter: data.meters[0],
+            section: data.sections[0]
+        }]);
         expect(points[0].tempo).toBe(data.tempos[0]);
         expect(points[0].meter).toBe(data.meters[0]);
         expect(points[0].section).toBe(data.sections[0]);
@@ -62,7 +75,11 @@ describe('markerPoints', () => {
     });
 
     it('sorts partial groups across the entire range with tempo then meter ID fallback', () => {
-        const data = frozen({tempos: [tempo(16), tempo(64)], meters: [meter(0), meter(16)], sections: [section(1_000_000)]});
+        const data = frozen({
+            tempos: [tempo(16), tempo(64)],
+            meters: [meter(0), meter(16)],
+            sections: [section(1_000_000)]
+        });
         expect(markerPoints(data)).toEqual([
             {id: data.meters[0].id, step: 0, meter: data.meters[0]},
             {id: data.tempos[0].id, step: 16, tempo: data.tempos[0], meter: data.meters[1]},
@@ -76,9 +93,16 @@ describe('updateMarkerAt', () => {
     it('inserts all fields at new steps, keeping each kind sorted including both bounds', () => {
         let data = frozen(empty());
         for (const step of [1_000_000, 16, 0, 512]) {
-            data = checked(updateMarkerAt(frozen(data), step, draft({name: 'Chorus', bpm: 132, curve: 'linear', signature: '3/4'})));
+            data = checked(updateMarkerAt(frozen(data), step, draft({
+                name: 'Chorus',
+                bpm: 132,
+                curve: 'linear',
+                signature: '3/4'
+            })));
         }
-        for (const kind of kinds) {expect(data[kind].map(marker => marker.step)).toEqual([0, 16, 512, 1_000_000]);}
+        for (const kind of kinds) {
+            expect(data[kind].map(marker => marker.step)).toEqual([0, 16, 512, 1_000_000]);
+        }
         expect(data.tempos[0]).toMatchObject({bpm: 132, curve: 'linear'});
         expect(data.meters[0]).toMatchObject({numerator: 3, denominator: 4});
         expect(data.sections[0].name).toBe('Chorus');
@@ -160,7 +184,11 @@ describe('updateMarkerAt', () => {
     });
 
     it('removes unspecified kinds together without affecting entries at other steps', () => {
-        const data = frozen({tempos: [tempo(0), tempo(16)], meters: [meter(16), meter(32)], sections: [section(16), section(64)]});
+        const data = frozen({
+            tempos: [tempo(0), tempo(16)],
+            meters: [meter(16), meter(32)],
+            sections: [section(16), section(64)]
+        });
         for (const fields of [{name: 'Title'}, {bpm: 150}, {signature: '4/4'}]) {
             const result = checked(updateMarkerAt(data, 16, draft(fields)));
             expect(result.tempos.filter(marker => marker.step !== 16)).toEqual([data.tempos[0]]);
@@ -178,7 +206,9 @@ describe('updateMarkerAt', () => {
             const data = frozen({...empty(), [kind]: original[kind]});
             const result = checked(updateMarkerAt(data, 16, draft({name: 'Full', bpm: 140, signature: '3/8'})));
             expect(result[kind][0].id).toBe(data[kind][0].id);
-            for (const outputKind of kinds) {expect(result[outputKind]).toHaveLength(1);}
+            for (const outputKind of kinds) {
+                expect(result[outputKind]).toHaveLength(1);
+            }
         }
     });
 
@@ -196,7 +226,11 @@ describe('updateMarkerAt', () => {
         const data = frozen(group());
         const before = structuredClone(data);
         for (const signature of ['7', '7/', '/8', '7:8', '7/8/4', '7.5/8', '7/8.0', '+7/8', '-7/8', '1e1/8', '0/4', '33/4', '7/0', '7/3', '7/32', '7/-8', '7/8x', '1 2/4', `${'9'.repeat(400)}/4`]) {
-            expect(() => updateMarkerAt(data, 16, draft({name: 'Changed', bpm: 150, signature}))).toThrow(new Error(signatureError));
+            expect(() => updateMarkerAt(data, 16, draft({
+                name: 'Changed',
+                bpm: 150,
+                signature
+            }))).toThrow(new Error(signatureError));
         }
         expect(data).toEqual(before);
     });
@@ -255,7 +289,10 @@ describe('updateMarkerAt', () => {
     it('validates all draft fields before allocating any UUIDs', () => {
         const data = frozen(empty());
         const createId = vi.spyOn(types, 'createId');
-        for (const fields of [{name: 'x'.repeat(81)}, {bpm: NaN}, {bpm: 120, signature: 'invalid'}, {curve: 'smooth' as MarkerDraft['curve']}]) {
+        for (const fields of [{name: 'x'.repeat(81)}, {bpm: NaN}, {
+            bpm: 120,
+            signature: 'invalid'
+        }, {curve: 'smooth' as MarkerDraft['curve']}]) {
             expect(() => updateMarkerAt(data, 16, draft(fields))).toThrow(Error);
         }
         expect(createId).not.toHaveBeenCalled();
@@ -266,14 +303,20 @@ describe('updateMarkerAt', () => {
         const data = frozen({...empty(), [kind]: all[kind]});
         const before = structuredClone(data);
         const createId = vi.spyOn(types, 'createId');
-        expect(() => updateMarkerAt(data, 1000, draft({name: 'New', bpm: 120, signature: '7/8'}))).toThrow(/at most 512/);
+        expect(() => updateMarkerAt(data, 1000, draft({
+            name: 'New',
+            bpm: 120,
+            signature: '7/8'
+        }))).toThrow(/at most 512/);
         expect(createId).not.toHaveBeenCalled();
         expect(data).toEqual(before);
     });
 
     it('allows exactly 512 entries in each kind and edits or removes fields at capacity', () => {
         const data = checked(updateMarkerAt(frozen(full(511)), 511, draft({name: 'Last', bpm: 120, signature: '7/8'})));
-        for (const kind of kinds) {expect(data[kind]).toHaveLength(512);}
+        for (const kind of kinds) {
+            expect(data[kind]).toHaveLength(512);
+        }
         const createId = vi.spyOn(types, 'createId');
         const edited = checked(updateMarkerAt(frozen(data), 256, draft({name: 'Changed', bpm: 150, signature: '3/4'})));
         for (const kind of kinds) {
@@ -298,7 +341,11 @@ describe('updateMarkerAt', () => {
 
 describe('removeMarkerAt', () => {
     it('removes the whole group atomically and retains other markers and their references', () => {
-        const data = frozen({tempos: [tempo(0), tempo(16)], meters: [meter(16), meter(32)], sections: [section(16), section(1_000_000)]});
+        const data = frozen({
+            tempos: [tempo(0), tempo(16)],
+            meters: [meter(16), meter(32)],
+            sections: [section(16), section(1_000_000)]
+        });
         const before = structuredClone(data);
         const result = checked(removeMarkerAt(data, 16));
         expect(result).toEqual({tempos: [data.tempos[0]], meters: [data.meters[1]], sections: [data.sections[1]]});
@@ -306,7 +353,9 @@ describe('removeMarkerAt', () => {
         expect(result.meters[0]).toBe(data.meters[1]);
         expect(result.sections[0]).toBe(data.sections[1]);
         expect(data).toEqual(before);
-        for (const kind of kinds) {expect(result[kind]).not.toBe(data[kind]);}
+        for (const kind of kinds) {
+            expect(result[kind]).not.toBe(data[kind]);
+        }
     });
 
     it('removes any partial group, including markers at both bounds', () => {
@@ -324,13 +373,17 @@ describe('removeMarkerAt', () => {
             const result = checked(removeMarkerAt(data, 32));
             expect(result).toEqual(data);
             expect(result).not.toBe(data);
-            for (const kind of kinds) {expect(result[kind]).not.toBe(data[kind]);}
+            for (const kind of kinds) {
+                expect(result[kind]).not.toBe(data[kind]);
+            }
         }
     });
 
     it('rejects invalid removal positions', () => {
         const data = frozen(group());
-        for (const step of invalidSteps) {expect(() => removeMarkerAt(data, step)).toThrow(/whole step/);}
+        for (const step of invalidSteps) {
+            expect(() => removeMarkerAt(data, step)).toThrow(/whole step/);
+        }
     });
 });
 
@@ -351,7 +404,11 @@ describe('moveMarkerAt', () => {
                 for (const original of data[kind]) {
                     const moved = result[kind].find(marker => marker.id === original.id);
                     expect(moved).toEqual({...original, step: original.step === 16 ? to : original.step});
-                    if (original.step === 16) {expect(moved).not.toBe(original);} else {expect(moved).toBe(original);}
+                    if (original.step === 16) {
+                        expect(moved).not.toBe(original);
+                    } else {
+                        expect(moved).toBe(original);
+                    }
                 }
             }
             expect(data).toEqual(before);
@@ -376,7 +433,9 @@ describe('moveMarkerAt', () => {
             expect(markerPoints(result)).toHaveLength(1);
             for (const kind of kinds) {
                 expect(result[kind]).toEqual([{...data[kind][0], step: 32}]);
-                if (data[kind][0].step === 32) {expect(result[kind][0]).toBe(data[kind][0]);}
+                if (data[kind][0].step === 32) {
+                    expect(result[kind][0]).toBe(data[kind][0]);
+                }
             }
             expect(data).toEqual(before);
         }

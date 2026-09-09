@@ -1,6 +1,6 @@
 <script lang="ts">
     import {
-        createEventDispatcher, tick, type Snippet
+        createEventDispatcher, type Snippet, tick
     } from 'svelte';
 
     interface Props {
@@ -23,12 +23,14 @@
         width = '300px'
     }: Props = $props();
 
-    const dispatch = createEventDispatcher<{close: void}>();
+    const dispatch = createEventDispatcher<{ close: void }>();
     let dialogEl: HTMLDivElement;
     let opener: HTMLElement | null = null;
 
     $effect(() => {
-        if (!show) {return;}
+        if (!show) {
+            return;
+        }
         opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         void tick().then(() => dialogEl?.focus());
     });
@@ -40,7 +42,9 @@
     }
 
     function handleKey(e: KeyboardEvent) {
-        if (e.key === 'Escape') {close();}
+        if (e.key === 'Escape') {
+            close();
+        }
     }
 </script>
 
@@ -48,14 +52,14 @@
     <div class="modal-overlay">
         <button class="modal-backdrop" aria-label="Close dialog" onclick={close} type="button"></button>
         <div
-bind:this={dialogEl}
-style="width: {width}; height: {height}"
-class="modal-content"
-aria-label={title}
-aria-modal="true"
-onkeydown={handleKey}
-             role="dialog"
-tabindex="-1">
+                bind:this={dialogEl}
+                style="width: {width}; height: {height}"
+                class="modal-content"
+                aria-label={title}
+                aria-modal="true"
+                onkeydown={handleKey}
+                role="dialog"
+                tabindex="-1">
             <div class="modal-header">
                 <h3>{title}</h3>
                 {#if headerActions}

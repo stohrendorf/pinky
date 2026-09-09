@@ -7,7 +7,14 @@ import type {
 } from './types';
 
 import {
-    autoParamDef, autoParams, automationCurrentValue, laneColor, laneTitle, mixerAutomation, mixerTarget, parseMixerTarget
+    automationCurrentValue,
+    autoParamDef,
+    autoParams,
+    laneColor,
+    laneTitle,
+    mixerAutomation,
+    mixerTarget,
+    parseMixerTarget
 } from './automation';
 import {
     DEFAULT_PARAMS
@@ -71,7 +78,12 @@ describe('mixer automation targets', () => {
         const p = project();
         p.automation = [
             {id: 'volume', target: mixerTarget('channel', 'lead/one'), param: 'volume', points: [{step: 0, value: 4}]},
-            {id: 'feedback', target: mixerTarget('bus', 'echo|bus'), param: 'feedback', points: [{step: 0, value: 0.55}]},
+            {
+                id: 'feedback',
+                target: mixerTarget('bus', 'echo|bus'),
+                param: 'feedback',
+                points: [{step: 0, value: 0.55}]
+            },
             {id: 'removed', target: mixerTarget('bus', 'gone'), param: 'volume', points: [{step: 0, value: 1}]},
             {id: 'bad', target: 'mixer|bus|%broken', param: 'volume', points: [{step: 0, value: 1}]}
         ];

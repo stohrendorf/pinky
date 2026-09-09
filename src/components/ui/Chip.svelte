@@ -1,16 +1,17 @@
 <script lang="ts">
     import {
-        createBubbler 
+        createBubbler
     } from 'svelte/legacy';
 
     const bubble = createBubbler();
+
     interface Props {
         selected?: boolean;
         className?: string;
         children?: import('svelte').Snippet;
     }
 
-    const { selected = false, className = '', children }: Props = $props();
+    const {selected = false, className = '', children}: Props = $props();
 </script>
 
 <button

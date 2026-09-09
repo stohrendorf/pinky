@@ -50,7 +50,9 @@ async function render(p: Project, seconds: number, sampleRate: number): Promise<
     const master = resolveMixer(p.mixer, []).master;
     for (const param of ['vol', 'rev', 'tilt'] as const) {
         const first = p.automation?.find(lane => lane.target === 'master' && lane.param === param)?.points[0];
-        if (first) {master[param] = first.value;}
+        if (first) {
+            master[param] = first.value;
+        }
     }
     return eng.renderOffline(seconds, sampleRate, () => scheduleRange(p, 0, songLengthSteps(p)), {
         mixer: p.mixer, instrumentIds: p.instruments.map(inst => inst.id), master
@@ -95,7 +97,9 @@ export async function measurePromoParts(sampleRate = 48000): Promise<SoloLevel[]
     for (const part of Object.keys(PROMO_ID) as PromoPart[]) {
         const p = buildPromoDemo();
         p.automation = [];
-        for (const inst of p.instruments) {inst.mute = inst.id !== PROMO_ID[part];}
+        for (const inst of p.instruments) {
+            inst.mute = inst.id !== PROMO_ID[part];
+        }
         const steps = songLengthSteps(p);
         const buf = await eng.renderOffline(steps * 60 / p.bpm / 4 + 3, sampleRate, () => scheduleRange(p, 0, steps), {
             mixer: undefined, instrumentIds: p.instruments.map(inst => inst.id), master: {vol: 1, rev: 0, tilt: 0}
@@ -112,7 +116,9 @@ export async function measurePromoParts(sampleRate = 48000): Promise<SoloLevel[]
                 peak = Math.max(peak, Math.abs(l[k]), Math.abs(r[k]));
             }
             const v = Math.sqrt(acc / win);
-            if (v > 1e-5) {rms.push(v);}
+            if (v > 1e-5) {
+                rms.push(v);
+            }
         }
         rms.sort((a, b) => a - b);
         const ref = rms.length ? rms[Math.min(rms.length - 1, Math.floor(0.99 * rms.length))] : 1e-9;

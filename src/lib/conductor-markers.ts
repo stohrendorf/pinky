@@ -21,7 +21,7 @@ export interface MarkerPoint {
     meter?: MeterMarker;
 }
 
-const byStep = (a: {step: number}, b: {step: number}) => a.step - b.step;
+const byStep = (a: { step: number }, b: { step: number }) => a.step - b.step;
 
 function validateStep(step: number): void {
     if (!Number.isInteger(step) || step < 0 || step > 1_000_000) {
@@ -31,7 +31,9 @@ function validateStep(step: number): void {
 
 function parseSignature(signature: string): Pick<MeterMarker, 'numerator' | 'denominator'> | undefined {
     const text = signature.trim();
-    if (!text) {return undefined;}
+    if (!text) {
+        return undefined;
+    }
     const match = /^(\d+)\s*\/\s*(\d+)$/.exec(text);
     const numerator = Number(match?.[1]), denominator = Number(match?.[2]);
     if (!match || !Number.isInteger(numerator) || numerator < 1 || numerator > 32
@@ -58,7 +60,9 @@ export function markerPoints(data: ConductorData): MarkerPoint[] {
 export function updateMarkerAt(data: ConductorData, step: number, draft: MarkerDraft): ConductorData {
     validateStep(step);
     const title = draft.name.trim();
-    if (title.length > 80) {throw new Error('Title must be at most 80 characters.');}
+    if (title.length > 80) {
+        throw new Error('Title must be at most 80 characters.');
+    }
     if (draft.bpm !== undefined && (!Number.isFinite(draft.bpm) || draft.bpm < 30 || draft.bpm > 300)) {
         throw new Error('Tempo must be from 30 to 300 BPM.');
     }
@@ -82,12 +86,19 @@ export function updateMarkerAt(data: ConductorData, step: number, draft: MarkerD
     const ids = new Set([...data.tempos, ...data.meters, ...data.sections].map(marker => marker.id));
     const nextId = (): string => {
         let id = createId();
-        while (ids.has(id)) {id = createId();}
+        while (ids.has(id)) {
+            id = createId();
+        }
         ids.add(id);
         return id;
     };
     if (draft.bpm !== undefined) {
-        tempos.push({id: data.tempos.find(marker => marker.step === step)?.id ?? nextId(), step, bpm: draft.bpm, curve: draft.curve});
+        tempos.push({
+            id: data.tempos.find(marker => marker.step === step)?.id ?? nextId(),
+            step,
+            bpm: draft.bpm,
+            curve: draft.curve
+        });
     }
     if (signature) {
         meters.push({id: data.meters.find(marker => marker.step === step)?.id ?? nextId(), step, ...signature});
@@ -115,14 +126,16 @@ export function moveMarkerAt(data: ConductorData, from: number, to: number): Con
     if (!kinds.some(kind => data[kind].some(marker => marker.step === from))) {
         throw new Error('This marker no longer exists.');
     }
-    if (from === to) {return data;}
+    if (from === to) {
+        return data;
+    }
     const labels = {tempos: 'tempo', meters: 'time-signature', sections: 'title'};
     for (const kind of kinds) {
         if (data[kind].some(marker => marker.step === from) && data[kind].some(marker => marker.step === to)) {
             throw new Error(`There is already a ${labels[kind]} change here. Drop beside it instead.`);
         }
     }
-    const move = <T extends {step: number}>(markers: T[]): T[] =>
+    const move = <T extends { step: number }>(markers: T[]): T[] =>
         markers.map(marker => marker.step === from ? {...marker, step: to} : marker).sort(byStep);
     return {...data, tempos: move(data.tempos), meters: move(data.meters), sections: move(data.sections)};
 }
