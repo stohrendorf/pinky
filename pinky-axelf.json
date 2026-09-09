@@ -1037,7 +1037,7 @@
   "patterns": [
     {
       "id": "0f686465-83a4-42dd-8e98-4a96114b2478",
-      "name": "02 Main/beat",
+      "name": "02 Main/Drums/beat",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1270,7 +1270,7 @@
     },
     {
       "id": "2919c113-ffab-4de6-8d49-c927c82bd625",
-      "name": "02 Main/beat turnaround",
+      "name": "02 Main/Drums/beat turnaround",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1524,7 +1524,7 @@
     },
     {
       "id": "058b5d64-72ae-4a9e-9eeb-e24e21c971db",
-      "name": "02 Main/beat four-floor",
+      "name": "02 Main/Drums/beat four-floor",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1734,7 +1734,7 @@
     },
     {
       "id": "b0ac9d14-8c10-489b-8da0-2340916534e5",
-      "name": "02 Main/beat half-time",
+      "name": "02 Main/Drums/beat half-time",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1790,7 +1790,7 @@
     },
     {
       "id": "2b8bacf9-5af3-4f3e-bd3e-1b43ba69009f",
-      "name": "02 Main/drum fill",
+      "name": "02 Main/Drums/drum fill",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -2046,7 +2046,7 @@
     },
     {
       "id": "da9d3f78-c6ff-46f4-bd3c-e440821cab53",
-      "name": "02 Main/shaker",
+      "name": "02 Main/Drums/shaker",
       "steps": 32,
       "color": "#ff9f43",
       "tracks": {
@@ -2128,7 +2128,7 @@
     },
     {
       "id": "1d061049-0b01-4acf-9759-89cc0a8d00bd",
-      "name": "02 Main/bass F",
+      "name": "02 Main/Bass/bass F",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -2273,7 +2273,7 @@
     },
     {
       "id": "d1467f4f-7f87-4bc5-8377-9951db9b93ef",
-      "name": "02 Main/bass Bbm",
+      "name": "02 Main/Bass/bass Bbm",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -2411,7 +2411,7 @@
     },
     {
       "id": "bbcb5772-8530-4728-a47d-7cd8b5243835",
-      "name": "02 Main/bass Db-Eb",
+      "name": "02 Main/Bass/bass Db-Eb",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -2493,7 +2493,7 @@
     },
     {
       "id": "fb90e608-a1f8-4046-8184-10dc9d890574",
-      "name": "02 Main/bass climb",
+      "name": "02 Main/Bass/bass climb",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -3065,7 +3065,7 @@
     },
     {
       "id": "27013e2e-7f3b-409c-8a7c-37811e04d836",
-      "name": "02 Main/stabs A",
+      "name": "02 Main/Synth/stabs A",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -3147,7 +3147,7 @@
     },
     {
       "id": "9d26bdaf-593e-4900-b6cb-7597e215563d",
-      "name": "02 Main/stabs B",
+      "name": "02 Main/Synth/stabs B",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -3229,7 +3229,7 @@
     },
     {
       "id": "2f6bf8da-ef26-40bf-8df3-e3ae1bf4cd14",
-      "name": "02 Main/stabs Bbm",
+      "name": "02 Main/Synth/stabs Bbm",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -3311,7 +3311,7 @@
     },
     {
       "id": "70d2c1f7-1f80-4b74-b684-b8360a03b4a3",
-      "name": "02 Main/pad Fm",
+      "name": "02 Main/Synth/pad Fm",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -3341,7 +3341,7 @@
     },
     {
       "id": "afe42072-5666-4f92-bfbb-7f92b9b9ff64",
-      "name": "02 Main/pad Db-Eb",
+      "name": "02 Main/Synth/pad Db-Eb",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -3611,7 +3611,7 @@
     },
     {
       "id": "1a9f3db3-857e-447b-a516-c57e0fe74633",
-      "name": "02 Main/bells",
+      "name": "02 Main/Percussion/bells",
       "steps": 32,
       "color": "#0abde3",
       "tracks": {
@@ -4008,7 +4008,7 @@
     },
     {
       "id": "ec17552b-b2d7-4b30-8205-0e39fed9a74f",
-      "name": "02 Main/bass F var",
+      "name": "02 Main/Bass/bass F var",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -4754,7 +4754,7 @@
     },
     {
       "id": "3451e483-8ac1-4b22-b254-ed1520fd160f",
-      "name": "02 Main/solo A",
+      "name": "02 Main/Synth/solo A",
       "steps": 32,
       "color": "#e056fd",
       "tracks": {
@@ -4830,7 +4830,7 @@
     },
     {
       "id": "5a892d8f-c927-469e-803a-61cdf12a791f",
-      "name": "02 Main/solo B",
+      "name": "02 Main/Synth/solo B",
       "steps": 32,
       "color": "#e056fd",
       "tracks": {
@@ -4906,7 +4906,7 @@
     },
     {
       "id": "a8769bb0-525c-4ec5-8cd1-43aa3ea7cd05",
-      "name": "02 Main/metal",
+      "name": "02 Main/Percussion/metal",
       "steps": 32,
       "color": "#badc58",
       "tracks": {
@@ -4964,7 +4964,7 @@
     },
     {
       "id": "6f01b346-dc44-4816-a0e4-57b760b85820",
-      "name": "02 Main/sub dive",
+      "name": "02 Main/Bass/sub dive",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {

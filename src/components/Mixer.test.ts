@@ -19,6 +19,7 @@ import {
     removeMixerBus,
     resolveMixer,
 } from '../lib/mixer';
+import { componentMarkup, components, elements, hasAttribute } from '../test/svelte-semantics';
 import MixerFader from './MixerFader.svelte';
 import MixerStrip from './MixerStrip.svelte';
 
@@ -121,10 +122,15 @@ describe('Mixer component controls', () => {
         },
     );
 
-    it('opens independently of Studio and mounts meters only while the dialog is open', () => {
-        expect(toolbar.indexOf('className="mixer-toggle"')).toBeLessThan(
-            toolbar.indexOf('{#if utilityExpanded}'),
-        );
+    it('opens directly from the toolbar and mounts meters only while the dialog is open', () => {
+        const main = elements(componentMarkup(toolbar), 'div').find(node =>
+            hasAttribute(node, 'class', 'topbar-main'),
+        )!;
+        expect(
+            components([main], 'Button').some(node =>
+                hasAttribute(node, 'className', 'mixer-toggle'),
+            ),
+        ).toBe(true);
         expect(toolbar).toMatch(
             /<Dialog[^>]*title="Mixer"[^>]*bind:show=\{showMixer}>\s*\{#if showMixer}[\s\S]*<Mixer\s*\/>/,
         );

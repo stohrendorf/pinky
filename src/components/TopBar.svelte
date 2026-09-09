@@ -1,6 +1,9 @@
 <script lang="ts">
+    import { tick } from 'svelte';
+
     import type { MasterId } from '../lib/master-controls';
     import type { DemoSong } from '../lib/project';
+    import type { Project } from '../lib/types';
 
     import { BUDGET_MAX, BUDGET_MIN, getNodeBudget, setNodeBudget } from '../lib/engine';
     import { MASTER_SLIDERS } from '../lib/instruments';
@@ -10,6 +13,7 @@
         DEMO_LIBRARY,
         exportProject,
         importProject,
+        lastPlayedPitch,
         loadDemoProject,
         newEmptyProject,
         playing,
@@ -24,7 +28,7 @@
     } from '../lib/project';
     import { exportWav, rendering } from '../lib/render';
     import { showShortcuts } from '../lib/shortcuts';
-    import { playPattern, playSong, seekSong, stopTransport } from '../lib/transport';
+    import { playSong, seekSong, stopTransport } from '../lib/transport';
     import ExportProgress from './ExportProgress.svelte';
     import Mixer from './Mixer.svelte';
     import Slider from './Slider.svelte';
@@ -40,63 +44,93 @@
     let showConfirmNew = $state(false);
     let showAlert = $state(false);
     let alertMessage = $state('');
-    let utilityExpanded = $state(false);
-    let utilityButton: HTMLButtonElement | undefined = $state();
-    let utilityMenu: HTMLElement | undefined = $state();
+    let activePanel = $state<'demos' | 'audio' | 'export' | null>(null);
+    let panelButton: HTMLButtonElement | undefined;
+    let panelElement: HTMLDivElement | undefined = $state();
+    let demoRecovery = $state.raw<{
+        project: Project;
+        activeDemo: DemoSong | null;
+        selInstId: string | null;
+        selPatId: string | null;
+        songCursor: number;
+        lastPlayedPitch: string;
+    } | null>(null);
 
-    function toggleUtilities() {
-        if (utilityExpanded) {
-            closeUtilities();
+    function togglePanel(panel: 'demos' | 'audio' | 'export', button: HTMLButtonElement) {
+        if (activePanel === panel) {
+            closePanel(true);
             return;
         }
-        utilityExpanded = true;
+        panelButton = button;
+        activePanel = panel;
+        void tick().then(() =>
+            panelElement
+                ?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)')
+                ?.focus(),
+        );
     }
 
-    function closeUtilities(restoreFocus = false) {
-        if (!utilityExpanded) {
+    function closePanel(restoreFocus = false) {
+        if (!activePanel) {
             return;
         }
-        utilityExpanded = false;
+        const opener = panelButton;
+        activePanel = null;
         if (restoreFocus) {
-            queueMicrotask(() => utilityButton?.focus());
+            void tick().then(() => opener?.focus());
         }
-    }
-
-    function runUtilityAction(action: () => void | Promise<void>, restoreFocus = true) {
-        closeUtilities(restoreFocus);
-        void action();
     }
 
     function handleOutsidePointer(event: Event) {
         const target = event.target;
         if (
             target instanceof Node &&
-            (utilityButton?.contains(target) || utilityMenu?.contains(target))
+            (panelButton?.contains(target) || panelElement?.contains(target))
         ) {
             return;
         }
-        closeUtilities(true);
+        closePanel(false);
     }
 
     function handleMenuKeydown(event: KeyboardEvent) {
-        if (event.key !== 'Escape') {
+        event.stopPropagation();
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closePanel(true);
+            return;
+        }
+        if (
+            (activePanel !== 'demos' && activePanel !== 'export') ||
+            !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
+        ) {
             return;
         }
         event.preventDefault();
-        closeUtilities(true);
+        const buttons = [
+            ...(panelElement?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []),
+        ];
+        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const next =
+            event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                  ? buttons.length - 1
+                  : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) %
+                    buttons.length;
+        buttons[next]?.focus();
     }
 
     $effect(() => {
-        if (!utilityExpanded) {
+        if (!activePanel) {
             return;
         }
         document.addEventListener('pointerdown', handleOutsidePointer);
         document.addEventListener('click', handleOutsidePointer);
-        document.addEventListener('keydown', handleMenuKeydown);
+        document.addEventListener('focusin', handleOutsidePointer);
         return () => {
             document.removeEventListener('pointerdown', handleOutsidePointer);
             document.removeEventListener('click', handleOutsidePointer);
-            document.removeEventListener('keydown', handleMenuKeydown);
+            document.removeEventListener('focusin', handleOutsidePointer);
         };
     });
 
@@ -121,12 +155,19 @@
     }
 
     function newProject() {
+        if ($rendering) {
+            return;
+        }
         showConfirmNew = true;
     }
 
     function onConfirmNew() {
+        if ($rendering) {
+            return;
+        }
         stopTransport();
         const p = newEmptyProject();
+        demoRecovery = null;
         activeDemo.set(null);
         project.set(p);
         selInstId.set(p.instruments[0].id);
@@ -135,26 +176,54 @@
     }
 
     function demo(song: DemoSong) {
+        if ($rendering) {
+            return;
+        }
+        if ($project && !demoRecovery) {
+            demoRecovery = {
+                project: JSON.parse(JSON.stringify($project)) as Project,
+                activeDemo: $activeDemo,
+                selInstId: $selInstId,
+                selPatId: $selPatId,
+                songCursor: $songCursor,
+                lastPlayedPitch: $lastPlayedPitch,
+            };
+        }
         stopTransport();
         loadDemoProject(song);
+        closePanel(true);
+    }
+
+    function restoreDemoProject() {
+        if (!demoRecovery || $rendering) {
+            return;
+        }
+        stopTransport();
+        project.set(demoRecovery.project);
+        activeDemo.set(demoRecovery.activeDemo);
+        selInstId.set(demoRecovery.selInstId);
+        selPatId.set(demoRecovery.selPatId);
+        songCursor.set(demoRecovery.songCursor);
+        lastPlayedPitch.set(demoRecovery.lastPlayedPitch);
+        demoRecovery = null;
+        closePanel(true);
     }
 
     // Save feedback — driven by the store, so Ctrl+S flashes it too
     let saved = $state('');
-    let savedTimer: ReturnType<typeof setTimeout> | undefined = $state();
-    $effect.pre(() => {
+    $effect(() => {
         if ($savedAt) {
-            saved = '✓ saved';
-            clearTimeout(savedTimer);
-            savedTimer = setTimeout(() => (saved = ''), 1600);
+            saved = 'Saved';
+            const timer = setTimeout(() => (saved = ''), 1600);
+            return () => clearTimeout(timer);
         }
     });
 
     function setSwing(v: number) {
-        if (!$project) {
+        if (!$project || $rendering || !Number.isFinite(v)) {
             return;
         }
-        $project.swing = v / 100;
+        $project.swing = Math.max(0, Math.min(100, v)) / 100;
         touch();
     }
 
@@ -173,7 +242,22 @@
 
     // Offline bounce: renders the song (or the marked loop region) to a WAV file
     async function exportAudio() {
+        if (!$project || $rendering) {
+            return;
+        }
+        const opener = panelButton;
+        closePanel(false);
         await exportWav();
+        await tick();
+        opener?.focus();
+    }
+
+    function downloadProject() {
+        if (!$project || $rendering) {
+            return;
+        }
+        exportProject();
+        closePanel(true);
     }
 
     let fileInput: HTMLInputElement | undefined = $state();
@@ -182,90 +266,197 @@
         const target = e.target as HTMLInputElement;
         const file = target.files?.[0];
         target.value = '';
-        if (!file) {
+        if (!file || $rendering) {
+            return;
+        }
+        const json = await file.text();
+        if ($rendering) {
             return;
         }
         stopTransport();
-        const ok = importProject(await file.text());
+        const ok = importProject(json);
         if (!ok) {
             alertMessage = 'Could not import: not a valid song file.';
             showAlert = true;
+        } else {
+            demoRecovery = null;
         }
     }
 </script>
 
 <header class="topbar">
     <div class="topbar-main">
-        <div class="session-group">
-            <button
-                bind:this={utilityButton}
-                class="brand"
-                aria-controls="topbar-utilities"
-                aria-expanded={utilityExpanded}
-                aria-label="Pinky application menu"
-                onclick={toggleUtilities}
-                title={utilityExpanded
-                    ? 'Close Pinky application menu'
-                    : 'Open Pinky application menu'}
-                type="button"
+        <span class="brand">
+            <i class="fa fa-wave-square" aria-hidden="true"></i> Pinky
+        </span>
+        <div class="project-controls" aria-label="Project" role="group">
+            <Button
+                compact
+                disabled={$rendering}
+                onclick={newProject}
+                title="New project"
+                variant="ghost">New</Button
             >
-                <i class="fa fa-wave-square" aria-hidden="true"></i>
-                <span>Pinky</span>
-                <i class="fa fa-caret-down menu-caret" aria-hidden="true"></i>
-            </button>
-            <div class="transport-controls">
-                <Button
-                    className="compact-button"
-                    disabled={$playing || $rendering}
-                    onclick={playPattern}
-                    title="Play Pattern"
-                    ><i class="fa fa-play"></i> Pattern
-                </Button>
-                <Button
-                    className="compact-button"
-                    disabled={$playing || $rendering}
-                    onclick={playSong}
-                    title="Play Song"
-                    ><i class="fa fa-music"></i> Song
-                </Button>
-                <Button
-                    className="compact-button"
-                    disabled={!$playing}
-                    onclick={stopTransport}
-                    title="Stop"
-                    variant="secondary"><i class="fa fa-stop"></i></Button
-                >
-                <Button
-                    className="compact-button"
-                    disabled={$songCursor === 0}
-                    onclick={() => seekSong(0)}
-                    title="Playback cursor back to the start (Home)"
-                    variant="secondary"><i class="fa fa-backward-step"></i></Button
-                >
-            </div>
-            <span class="song-label">{$songLabel}</span>
+            <Button
+                compact
+                disabled={$rendering}
+                onclick={() => fileInput?.click()}
+                title="Open a project file (JSON)"
+                variant="ghost">Open</Button
+            >
+            <Button
+                compact
+                disabled={!$project || $rendering}
+                onclick={saveProject}
+                title="Save in this browser (Ctrl+S)"
+                variant="ghost"
+            >
+                {#if saved}
+                    <span class="save-icon"><i class="fa fa-check" aria-hidden="true"></i></span>
+                {:else}
+                    <span class="save-icon"><i class="fa fa-save" aria-hidden="true"></i></span>
+                {/if}
+                Save
+            </Button>
             <span class="saved-flash" aria-live="polite">{saved}</span>
         </div>
+        <div class="export-controls" aria-label="Download" role="group">
+            <button
+                class="panel-toggle"
+                aria-controls="export-panel"
+                aria-expanded={activePanel === 'export'}
+                aria-haspopup="dialog"
+                disabled={!$project || $rendering}
+                onclick={e => togglePanel('export', e.currentTarget)}
+                title="Export project or audio"
+                type="button"
+            >
+                Export <i class="fa fa-angle-down" aria-hidden="true"></i>
+            </button>
+            {#if activePanel === 'export'}
+                <div
+                    bind:this={panelElement}
+                    id="export-panel"
+                    class="toolbar-panel export-panel"
+                    aria-label="Export"
+                    onkeydown={handleMenuKeydown}
+                    role="dialog"
+                    tabindex="-1"
+                >
+                    <button
+                        class="export-item"
+                        disabled={!$project || $rendering}
+                        onclick={downloadProject}
+                        title="Download an editable project"
+                        type="button"
+                    >
+                        <i class="fa fa-download" aria-hidden="true"></i> Project file (.json)
+                    </button>
+                    <button
+                        class="export-item"
+                        disabled={!$project || $rendering}
+                        onclick={exportAudio}
+                        title="Render the marked loop or whole song (Ctrl+E)"
+                        type="button"
+                    >
+                        <i class="fa fa-file-audio" aria-hidden="true"></i> Audio (.wav)
+                    </button>
+                </div>
+            {/if}
+        </div>
+        <div class="session-group" aria-label="Transport and timing" role="group">
+            <div class="transport-controls">
+                <IconButton
+                    ariaLabel="Back to start"
+                    disabled={$songCursor === 0 || $rendering}
+                    icon="fa-backward-step"
+                    onclick={() => seekSong(0)}
+                    title="Back to start (Home)"
+                    variant="ghost"
+                />
+                <IconButton
+                    ariaLabel="Play song"
+                    disabled={$playing || $rendering}
+                    icon="fa-play"
+                    onclick={playSong}
+                    title="Play song from cursor (Space)"
+                    variant="primary"
+                />
+                <IconButton
+                    ariaLabel="Stop"
+                    disabled={!$playing}
+                    icon="fa-stop"
+                    onclick={stopTransport}
+                    title="Stop (Space)"
+                    variant="ghost"
+                />
+            </div>
+            {#if $project}
+                <label
+                    class="bpm-label"
+                    title="Base tempo; conductor markers can override it. Stop to edit."
+                >
+                    BPM
+                    <input
+                        aria-label="Tempo (BPM)"
+                        disabled={$playing || $rendering}
+                        max="300"
+                        min="30"
+                        onchange={e => setBpm(e.currentTarget)}
+                        type="number"
+                        value={$project.bpm}
+                    />
+                </label>
+                <label class="swing-label" title="Delay alternate 16ths; 100% = triplet shuffle">
+                    Swing
+                    <input
+                        aria-label="Swing (%)"
+                        disabled={$rendering}
+                        max="100"
+                        min="0"
+                        onchange={e => setSwing(e.currentTarget.valueAsNumber)}
+                        type="number"
+                        value={swingPct}
+                    />
+                    <span>%</span>
+                </label>
+            {/if}
+        </div>
+        <span class="song-label" title={$songLabel}>{$songLabel}</span>
         <div class="utility-group">
+            <button
+                class="panel-toggle"
+                aria-controls="topbar-panel"
+                aria-expanded={activePanel === 'demos'}
+                aria-haspopup="dialog"
+                disabled={$rendering}
+                onclick={e => togglePanel('demos', e.currentTarget)}
+                title="Load a demo song"
+                type="button"
+            >
+                Demos <i class="fa fa-angle-down" aria-hidden="true"></i>
+            </button>
             <Button
                 className="mixer-toggle"
+                compact
                 onclick={() => (showMixer = true)}
                 pressed={showMixer}
                 title="Open mixer: channels, routing and master protection"
-                variant="secondary"
+                variant="ghost"
             >
                 <i class="fa fa-chart-simple" aria-hidden="true"></i> Mixer
             </Button>
-            <a
-                class="repo-link"
-                aria-label="View Pinky on GitHub"
-                href="https://github.com/stohrendorf/pinky"
-                rel="noopener noreferrer"
-                target="_blank"
-                title="View source on GitHub"
+            <button
+                class="panel-toggle"
+                aria-controls="topbar-panel"
+                aria-expanded={activePanel === 'audio'}
+                aria-haspopup="dialog"
+                onclick={e => togglePanel('audio', e.currentTarget)}
+                title="Master sound and audio performance"
+                type="button"
             >
-                <i class="fa-brands fa-github"></i>
-            </a>
+                Audio <i class="fa fa-angle-down" aria-hidden="true"></i>
+            </button>
             <IconButton
                 icon="fa-question-circle"
                 onclick={() => showShortcuts.set(true)}
@@ -275,125 +466,85 @@
         </div>
     </div>
 
-    {#if utilityExpanded}
-        <aside
-            bind:this={utilityMenu}
-            id="topbar-utilities"
-            class="utility-sidebar"
-            aria-label="Application utilities"
+    {#if activePanel === 'demos' || activePanel === 'audio'}
+        <div
+            bind:this={panelElement}
+            id="topbar-panel"
+            class="toolbar-panel"
+            aria-label={activePanel === 'demos' ? 'Demo songs' : 'Audio'}
+            onkeydown={handleMenuKeydown}
+            role="dialog"
+            tabindex="-1"
         >
-            <div class="sidebar-column">
-                <div class="sidebar-section">
-                    <span class="menu-heading">Project</span>
-                    <Button onclick={() => runUtilityAction(saveProject)} variant="secondary"
-                        ><i class="fa fa-save"></i> Save
-                    </Button>
-                    <Button onclick={() => runUtilityAction(exportProject)} variant="secondary"
-                        ><i class="fa fa-download"></i> Export
-                    </Button>
-                    <Button
-                        onclick={() => runUtilityAction(() => fileInput?.click())}
-                        variant="secondary"
-                        ><i class="fa fa-upload"></i> Import
-                    </Button>
-                    <Button onclick={() => runUtilityAction(newProject, false)} variant="secondary"
-                        ><i class="fa fa-add"></i> New
-                    </Button>
-                </div>
-                <div class="sidebar-section">
-                    <span class="menu-heading">Render</span>
-                    <Button
-                        disabled={$rendering}
-                        onclick={() => runUtilityAction(exportAudio)}
-                        title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
-                        variant="secondary"
-                    >
-                        <i class="fa fa-file-audio"></i>
-                        {$rendering ? 'Rendering…' : 'Render WAV'}</Button
-                    >
-                </div>
-            </div>
-            <div class="sidebar-column">
-                <div class="sidebar-section">
-                    <span class="menu-heading">Mix</span>
-                    <div class="master-controls" aria-label="Master controls">
-                        <fieldset class="master-editing" disabled={$rendering || !$project}>
-                            {#each MASTER_SLIDERS as s (s.id)}
-                                <Slider
-                                    {...s}
-                                    onchange={v => setMaster(s.id as MasterId, v)}
-                                    value={masterParams[s.id as MasterId]}
-                                />
-                            {/each}
-                        </fieldset>
-                    </div>
-                </div>
-                <div class="sidebar-section timing-section" aria-label="Timing controls">
-                    <span class="menu-heading">Timing</span>
-                    <label
-                        class="swing-label"
-                        title="Groove: pushes every 2nd 16th late (100% = triplet shuffle)"
-                    >
-                        Swing
-                        <input
-                            max="100"
-                            min="0"
-                            oninput={e =>
-                                setSwing(parseInt((e.target as HTMLInputElement).value, 10))}
-                            step="1"
-                            type="range"
-                            value={swingPct}
-                        />
-                        <span class="swing-val">{swingPct}%</span>
-                    </label>
-                    {#if $project}<label
-                            class="bpm-label"
-                            title="Base tempo for pattern preview and before the first conductor marker. Stop to edit."
-                            >BPM
-                            <input
-                                disabled={$playing || $rendering}
-                                max="300"
-                                min="30"
-                                onchange={e => setBpm(e.currentTarget)}
-                                type="number"
-                                value={$project.bpm}
-                            /></label
-                        >{/if}
-                </div>
-            </div>
-            <div class="sidebar-section library-section">
-                <span class="menu-heading"><i class="fa fa-compact-disc"></i> Demo songs</span>
-                <div class="demo-grid">
+            {#if activePanel === 'demos'}
+                <div class="demo-list">
                     {#each DEMO_LIBRARY as d (d.id)}
-                        <Button
-                            onclick={() => runUtilityAction(() => demo(d.id))}
-                            pressed={$activeDemo === d.id}
+                        <button
+                            class="demo-item"
+                            aria-pressed={$activeDemo === d.id}
+                            disabled={$rendering}
+                            onclick={() => demo(d.id)}
                             title={d.title}
-                            variant={$activeDemo === d.id ? 'primary' : 'secondary'}
-                            ><i class="fa {d.icon}"></i> {d.label}
-                        </Button>
+                            type="button"
+                        >
+                            <i class="fa {d.icon}" aria-hidden="true"></i>
+                            <span>{d.label}</span>
+                            {#if $activeDemo === d.id}<i
+                                    class="fa fa-check demo-check"
+                                    aria-hidden="true"
+                                ></i>{/if}
+                        </button>
                     {/each}
+                    {#if demoRecovery}
+                        <button
+                            class="restore-project"
+                            disabled={$rendering}
+                            onclick={restoreDemoProject}
+                            title="Restore the project from before you started exploring demos (this session only)"
+                            type="button"
+                        >
+                            <i class="fa fa-rotate-left" aria-hidden="true"></i> Restore previous project
+                        </button>
+                    {/if}
                 </div>
-            </div>
-            <div class="sidebar-section">
-                <span class="menu-heading">Performance</span>
-                <label
-                    class="node-budget-control"
-                    title="Audio node budget: above it the engine thins new voices so playback can keep up."
-                >
-                    Nodes
-                    <input
-                        max={BUDGET_MAX}
-                        min={BUDGET_MIN}
-                        oninput={e => setBudget(parseInt((e.target as HTMLInputElement).value, 10))}
-                        step="20"
-                        type="range"
-                        value={nodeBudget}
-                    />
-                    <span>{nodeBudget}</span>
-                </label>
-            </div>
-        </aside>
+            {:else}
+                <div class="audio-controls">
+                    <section>
+                        <h3>Master</h3>
+                        <div class="master-controls" aria-label="Master controls">
+                            <fieldset class="master-editing" disabled={$rendering || !$project}>
+                                {#each MASTER_SLIDERS as s (s.id)}
+                                    <Slider
+                                        {...s}
+                                        onchange={v => setMaster(s.id as MasterId, v)}
+                                        value={masterParams[s.id as MasterId]}
+                                    />
+                                {/each}
+                            </fieldset>
+                        </div>
+                    </section>
+                    <section>
+                        <h3>Performance</h3>
+                        <label
+                            class="node-budget-control"
+                            title="Audio node budget: lower if playback stutters; higher allows more simultaneous voices."
+                        >
+                            Nodes
+                            <input
+                                max={BUDGET_MAX}
+                                min={BUDGET_MIN}
+                                oninput={e =>
+                                    setBudget(parseInt((e.target as HTMLInputElement).value, 10))}
+                                step="20"
+                                type="range"
+                                value={nodeBudget}
+                            />
+                            <span>{nodeBudget}</span>
+                        </label>
+                    </section>
+                </div>
+            {/if}
+        </div>
     {/if}
 </header>
 
@@ -432,53 +583,51 @@
     .topbar {
         position: relative;
         z-index: 50;
-        background: linear-gradient(90deg, var(--color-surface-deep), var(--color-surface));
+        background: var(--color-surface);
         border-bottom: 1px solid var(--border);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
     }
 
     .topbar-main {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
         min-width: 0;
-        min-height: 52px;
-        padding: 8px 16px;
-        overflow: hidden;
+        height: 48px;
+        padding: 0 12px;
     }
 
+    .project-controls,
+    .export-controls,
     .session-group,
     .utility-group {
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-width: 0;
+        gap: 2px;
+        flex: 0 0 auto;
+    }
+
+    .export-controls,
+    .session-group {
+        border-left: 1px solid var(--border);
+        padding-left: 12px;
     }
 
     .session-group {
-        flex: 1 1 auto;
+        gap: 12px;
     }
 
-    .utility-group {
-        flex: 0 0 auto;
-        margin-left: auto;
+    .export-controls {
+        position: relative;
     }
 
-    .repo-link {
-        display: inline-grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 5px;
-        color: var(--color-text-muted);
-        font-size: 15px;
-        text-decoration: none;
-    }
-
-    .repo-link:hover,
-    .repo-link:focus-visible {
-        color: var(--primary-text);
-        background: var(--color-surface-raised);
+    .toolbar-panel.export-panel {
+        left: 12px;
+        right: auto;
+        top: calc(100% + 9px);
+        width: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
     }
 
     .brand {
@@ -486,108 +635,115 @@
         align-items: center;
         gap: 7px;
         flex: 0 0 auto;
-        padding: 5px 7px;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        background: var(--color-surface-raised);
         color: var(--accent);
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
-        letter-spacing: 0.12em;
-    }
-
-    .brand:hover,
-    .brand:focus-visible,
-    .brand[aria-expanded='true'] {
-        border-color: var(--accent);
-        background: var(--color-surface-input);
-        color: var(--primary-text);
-    }
-
-    .menu-caret {
-        color: var(--color-text-muted);
-        font-size: 10px;
-        transition: transform 0.12s ease;
-    }
-
-    .brand[aria-expanded='true'] .menu-caret {
-        transform: rotate(180deg);
+        letter-spacing: 0.04em;
     }
 
     .transport-controls {
         display: flex;
         align-items: center;
-        gap: 4px;
-        flex: 0 0 auto;
+        gap: 2px;
     }
 
-    .utility-sidebar {
-        min-width: 0;
-    }
-
-    .utility-sidebar {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 16px;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: start;
-        gap: 16px 20px;
-        box-sizing: border-box;
-        width: min(600px, calc(100vw - 32px));
-        max-height: calc(100dvh - 56px);
-        overflow: auto;
-        padding: 18px;
-        border: 1px solid var(--border);
+    .panel-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 10px;
+        border: 1px solid transparent;
         border-radius: 2px;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        background: transparent;
+        color: var(--primary-text);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .panel-toggle:hover:not(:disabled),
+    .panel-toggle[aria-expanded='true'] {
+        border-color: var(--border);
+        background: var(--color-surface-hover);
+    }
+
+    .panel-toggle:disabled,
+    .export-item:disabled,
+    .demo-item:disabled,
+    .restore-project:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .panel-toggle i {
+        color: var(--color-text-muted);
+        font-size: 10px;
+    }
+
+    .toolbar-panel {
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        z-index: 1;
+        box-sizing: border-box;
+        width: 320px;
+        max-height: calc(100dvh - 100% - 16px);
+        overflow: auto;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
         background: var(--color-surface);
     }
 
-    :global(.compact-button.btn) {
-        min-width: 32px;
-        padding: 7px 10px;
-        font-size: 11px;
-    }
-
     .song-label {
-        font-size: 12px;
-        opacity: 0.75;
+        font-size: 11px;
         color: var(--color-text-muted);
-        flex: 0 0 110px;
+        flex: 1 1 0;
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
+    .save-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 14px;
+    }
+
     .saved-flash {
-        display: inline-block;
-        width: 52px;
-        text-align: left;
-        margin-left: 2px;
-        font-weight: 400;
-        opacity: 0.8;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
         white-space: nowrap;
     }
 
-    .bpm-label {
-        font-size: 12px;
-        display: inline;
-    }
-
+    .bpm-label,
     .swing-label {
-        font-size: 12px;
+        font-size: 11px;
+        color: var(--color-text-muted);
         display: inline-flex;
         align-items: center;
         gap: 4px;
     }
 
+    .bpm-label input,
     .swing-label input {
-        width: 70px;
-        vertical-align: middle;
+        box-sizing: border-box;
+        width: 52px;
+        height: 28px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: var(--color-surface-input);
+        color: var(--primary-text);
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+        padding: 3px 4px;
     }
 
     .node-budget-control {
@@ -598,18 +754,13 @@
     }
 
     .node-budget-control input {
-        width: 120px;
+        flex: 1;
+        min-width: 0;
     }
 
     .node-budget-control span {
         min-width: 32px;
         opacity: 0.7;
-    }
-
-    .swing-val {
-        opacity: 0.7;
-        width: 34px;
-        display: inline-block;
     }
 
     .master-controls {
@@ -640,48 +791,76 @@
         opacity: 0.5;
     }
 
-    .bpm-label input {
-        width: 56px;
-        background: var(--border);
-        color: var(--primary-text);
-        border: none;
-        border-radius: 4px;
-        padding: 4px;
-    }
-
     .file-input {
         display: none;
     }
 
-    .sidebar-section {
-        display: flex;
-        flex-wrap: wrap;
-        align-content: flex-start;
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .sidebar-column {
+    .audio-controls {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        min-width: 0;
+        gap: 18px;
+        padding: 10px;
     }
 
-    .menu-heading {
-        display: block;
-        width: 100%;
-        margin-bottom: 2px;
-        color: var(--color-text-subtle);
+    .audio-controls h3 {
+        margin: 0 0 10px;
+        color: var(--color-text-muted);
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.1em;
+        text-transform: uppercase;
     }
 
-    .demo-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 6px;
-        margin-top: 8px;
+    .demo-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .export-item,
+    .demo-item,
+    .restore-project {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border: 0;
+        border-radius: 3px;
+        background: transparent;
+        color: var(--primary-text);
+        font: inherit;
+        font-size: 12px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .export-item:hover:not(:disabled),
+    .export-item:focus-visible,
+    .demo-item:hover:not(:disabled),
+    .demo-item:focus-visible,
+    .restore-project:hover:not(:disabled),
+    .restore-project:focus-visible {
+        background: var(--color-surface-hover);
+    }
+
+    .demo-item[aria-pressed='true'] {
+        color: var(--accent);
+        background: var(--color-accent-soft);
+    }
+
+    .demo-item > i:first-child {
+        width: 18px;
+        text-align: center;
+    }
+
+    .demo-check {
+        margin-left: auto;
+    }
+
+    .restore-project {
+        margin-top: 6px;
+        border-top: 1px solid var(--border);
+        border-radius: 0;
+        color: var(--color-text-muted);
     }
 </style>

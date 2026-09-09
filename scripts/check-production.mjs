@@ -246,9 +246,9 @@ try {
         'dragged loops snap to real 7/8 beat boundaries',
     );
     await page.mouse.click(firstBar.x + 1, firstBar.y + 8, { button: 'right' });
-    await page.getByTitle('Play Song', { exact: true }).click();
+    await page.getByRole('button', { name: 'Play song', exact: true }).click();
     await page.waitForFunction(
-        () => document.querySelector('button[title="Stop"]')?.disabled === false,
+        () => document.querySelector('button[aria-label="Stop"]')?.disabled === false,
     );
     await page.getByRole('button', { name: /^Edit First rain/ }).click();
     assert.equal(await conductor.getByLabel('Title', { exact: true }).isDisabled(), true);
@@ -257,7 +257,7 @@ try {
         true,
     );
     await page.keyboard.press('Escape');
-    await page.getByTitle('Stop', { exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
 
     // History operates on the complete conductor data, including removals.
     await page.evaluate(async () => {
@@ -291,8 +291,7 @@ try {
         long.arrangement[0].len = 512;
         project.set(long);
     });
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
-    const exportButton = page.getByRole('button', { name: 'Render WAV', exact: true });
+    const exportButton = page.getByRole('button', { name: 'WAV', exact: true });
     await exportButton.click();
     const exporting = page.getByRole('dialog', { name: 'Export WAV', exact: true });
     await exporting.waitFor();
@@ -336,7 +335,7 @@ try {
         rendering: false,
     });
     assert.equal(downloads.length, 0, 'cancel must never download a partial file');
-    await page.getByTitle('Play Pattern', { exact: true }).click();
+    await page.getByRole('button', { name: 'Play pattern', exact: true }).click();
     await page.getByRole('button', { name: 'Mixer', exact: true }).click();
     await page.waitForFunction(
         () =>
@@ -347,7 +346,7 @@ try {
             ) > -60,
     );
     await page.keyboard.press('Escape');
-    await page.getByTitle('Stop', { exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
 
     // Retry through the UI and inspect the actual downloaded RIFF header.
     const expectedFrames = await page.evaluate(async () => {
@@ -361,7 +360,6 @@ try {
                 44100,
         );
     });
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
     const downloadEvent = page.waitForEvent('download', { timeout: 30000 });
     await exportButton.click();
     const download = await downloadEvent;
@@ -415,7 +413,6 @@ try {
         p.arrangement[0].len = 128;
         (await import('/src/lib/project.ts')).project.set(p);
     });
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
     await exportButton.click();
     await page.waitForFunction(() =>
         window.testProgress.some(
@@ -443,7 +440,7 @@ try {
         encoded: false,
     });
     assert.equal(downloads.length, 1, 'fallback cancellation discards the completed render');
-    await page.getByTitle('Play Pattern', { exact: true }).click();
+    await page.getByRole('button', { name: 'Play pattern', exact: true }).click();
     await page.getByRole('button', { name: 'Mixer', exact: true }).click();
     await page.waitForFunction(
         () =>
@@ -454,14 +451,13 @@ try {
             ) > -60,
     );
     await page.keyboard.press('Escape');
-    await page.getByTitle('Stop', { exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await page.evaluate(async () => {
         window.testProgress = [];
         (await import('/src/lib/project.ts')).project.set(
             JSON.parse(JSON.stringify(window.testSong)),
         );
     });
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
     const fallbackDownloadEvent = page.waitForEvent('download', { timeout: 30000 });
     await exportButton.click();
     const fallbackDownload = await fallbackDownloadEvent;

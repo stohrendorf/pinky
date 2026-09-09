@@ -1193,7 +1193,7 @@
     },
     {
       "id": "cb5ffb5f-bae9-4b8d-af96-2022462900b7",
-      "name": "02 Main/Aria I — Diva",
+      "name": "02 Main/Lead Vocal/Aria I — Diva",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -1323,7 +1323,7 @@
     },
     {
       "id": "e9b806b5-1b6c-4f9e-ad1e-3ce9a75dff8f",
-      "name": "02 Main/Aria I — Cellos",
+      "name": "02 Main/Strings/Aria I — Cellos",
       "steps": 128,
       "color": "#a29bfe",
       "tracks": {
@@ -1381,7 +1381,7 @@
     },
     {
       "id": "8dbf54d0-84fc-4daa-875f-b11fa6160544",
-      "name": "02 Main/Aria I — Choir",
+      "name": "02 Main/Choir/Aria I — Choir",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -1487,7 +1487,7 @@
     },
     {
       "id": "3ebf4ecd-1a3c-4dfd-bc60-ec2b53a8d31c",
-      "name": "02 Main/Aria I — Harp",
+      "name": "02 Main/Harp/Aria I — Harp",
       "steps": 128,
       "color": "#0abde3",
       "tracks": {
@@ -1785,7 +1785,7 @@
     },
     {
       "id": "14fe69d5-5e83-4d63-8df5-873affba62d2",
-      "name": "02 Main/Aria II — Diva ornamented",
+      "name": "02 Main/Lead Vocal/Aria II — Diva ornamented",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -2063,7 +2063,7 @@
     },
     {
       "id": "9886166f-ddfb-4d52-96c6-6003c1c854fa",
-      "name": "02 Main/Aria II — High Strings",
+      "name": "02 Main/Strings/Aria II — High Strings",
       "steps": 128,
       "color": "#10ac84",
       "tracks": {
@@ -2169,7 +2169,7 @@
     },
     {
       "id": "8a3e0800-69bf-4118-9e9a-010968d79ca8",
-      "name": "02 Main/Aria II — Choir",
+      "name": "02 Main/Choir/Aria II — Choir",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -2227,7 +2227,7 @@
     },
     {
       "id": "735fe80e-092c-483f-b7e3-c65f428e9a7a",
-      "name": "02 Main/Aria II — Cellos",
+      "name": "02 Main/Strings/Aria II — Cellos",
       "steps": 128,
       "color": "#a29bfe",
       "tracks": {
@@ -2285,7 +2285,7 @@
     },
     {
       "id": "c061b16c-7cf8-4008-862b-2eed5fe425c1",
-      "name": "02 Main/Aria II — Harp",
+      "name": "02 Main/Harp/Aria II — Harp",
       "steps": 128,
       "color": "#0abde3",
       "tracks": {
@@ -2679,7 +2679,7 @@
     },
     {
       "id": "c5d5b99a-11cc-44f6-95ca-0f00837a08b4",
-      "name": "02 Main/Middle — Diva climbs",
+      "name": "02 Main/Lead Vocal/Middle — Diva climbs",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -2861,7 +2861,7 @@
     },
     {
       "id": "bb5e7883-6a77-41ae-b994-3d9615a81df4",
-      "name": "02 Main/Middle — High Strings",
+      "name": "02 Main/Strings/Middle — High Strings",
       "steps": 128,
       "color": "#10ac84",
       "tracks": {
@@ -2967,7 +2967,7 @@
     },
     {
       "id": "1b605679-b479-43b9-942f-c8cbbf94fd30",
-      "name": "02 Main/Middle — Choir",
+      "name": "02 Main/Choir/Middle — Choir",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -3025,7 +3025,7 @@
     },
     {
       "id": "57280923-45c8-4422-b3e3-ddf91393f755",
-      "name": "02 Main/Middle — Cellos",
+      "name": "02 Main/Strings/Middle — Cellos",
       "steps": 128,
       "color": "#a29bfe",
       "tracks": {
@@ -3083,7 +3083,7 @@
     },
     {
       "id": "371749b4-05b7-490a-a5ec-5bac1d136ae9",
-      "name": "02 Main/Middle — Harp urges",
+      "name": "02 Main/Harp/Middle — Harp urges",
       "steps": 128,
       "color": "#0abde3",
       "tracks": {
@@ -4783,7 +4783,7 @@
     },
     {
       "id": "46c41da2-f974-4639-a3eb-2b5b1fd85e30",
-      "name": "02 Main/Hinge — the held note",
+      "name": "02 Main/Lead Vocal/Hinge — the held note",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -4907,7 +4907,7 @@
     },
     {
       "id": "738e08b1-0e3b-43b1-b9c8-971099f95752",
-      "name": "02 Main/Hinge — the hall empties",
+      "name": "02 Main/Choir/Hinge — the hall empties",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -4935,7 +4935,7 @@
     },
     {
       "id": "c89980f4-4545-48a0-b329-694ac56c1a4c",
-      "name": "02 Main/Hinge — Cellos let go",
+      "name": "02 Main/Strings/Hinge — Cellos let go",
       "steps": 128,
       "color": "#a29bfe",
       "tracks": {
@@ -4951,7 +4951,7 @@
     },
     {
       "id": "04f6c41e-b467-45ea-9095-e5437fd986b2",
-      "name": "02 Main/Hinge — the pulse creeps in",
+      "name": "02 Main/Drums/Hinge — the pulse creeps in",
       "steps": 128,
       "color": "#f9ca24",
       "tracks": {
@@ -5139,7 +5139,7 @@
     },
     {
       "id": "4501edb9-55ce-438b-a1c7-eb436b12375c",
-      "name": "02 Main/Hinge — Hats tick in",
+      "name": "02 Main/Drums/Hinge — Hats tick in",
       "steps": 128,
       "color": "#e056fd",
       "tracks": {
@@ -5245,7 +5245,7 @@
     },
     {
       "id": "a1a2d971-8bbf-48b9-b498-59d150f8a049",
-      "name": "02 Main/Hinge — Clap pickup",
+      "name": "02 Main/Drums/Hinge — Clap pickup",
       "steps": 128,
       "color": "#48dbfb",
       "tracks": {
@@ -5273,7 +5273,7 @@
     },
     {
       "id": "0ded4676-0fc3-47ef-b88d-b15937e80f9f",
-      "name": "02 Main/Hinge — Whoosh",
+      "name": "02 Main/FX/Hinge — Whoosh",
       "steps": 128,
       "color": "#7ed6df",
       "tracks": {
@@ -6727,7 +6727,7 @@
     },
     {
       "id": "048cb924-8ee4-4872-8979-3eb67b6d52cf",
-      "name": "02 Main/Machine I — Head motif in 16ths",
+      "name": "02 Main/Lead Vocal/Machine I — Head motif in 16ths",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -6905,7 +6905,7 @@
     },
     {
       "id": "86f39e31-7c74-4811-9f59-fdecb24883ef",
-      "name": "02 Main/Machine I — Glass answers",
+      "name": "02 Main/Keys/Machine I — Glass answers",
       "steps": 128,
       "color": "#ff6b6b",
       "tracks": {
@@ -8365,7 +8365,7 @@
     },
     {
       "id": "4a8c1e32-14c9-4fdb-8a5b-0f4b1becc2cb",
-      "name": "02 Main/Machine II — Antecedent shredded",
+      "name": "02 Main/Lead Vocal/Machine II — Antecedent shredded",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -8933,7 +8933,7 @@
     },
     {
       "id": "a052a8d0-0b86-4e89-a825-dd926e27f2a2",
-      "name": "02 Main/Machine II — Strings stabs",
+      "name": "02 Main/Strings/Machine II — Strings stabs",
       "steps": 128,
       "color": "#10ac84",
       "tracks": {
@@ -10447,7 +10447,7 @@
     },
     {
       "id": "87009305-cc5f-43ed-9f73-ac7b321c1035",
-      "name": "02 Main/Machine III — Diva (Bb minor)",
+      "name": "02 Main/Lead Vocal/Machine III — Diva (Bb minor)",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -11871,7 +11871,7 @@
     },
     {
       "id": "0b806305-f0b2-4f91-8c62-ef7c18f95cc1",
-      "name": "02 Main/Machine III — Glass doubles the peaks",
+      "name": "02 Main/Keys/Machine III — Glass doubles the peaks",
       "steps": 128,
       "color": "#ff6b6b",
       "tracks": {
@@ -13361,7 +13361,7 @@
     },
     {
       "id": "7fc62f5f-63e5-4693-b7aa-c78f85411fc0",
-      "name": "02 Main/Machine IV — Diva challenges",
+      "name": "02 Main/Lead Vocal/Machine IV — Diva challenges",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -14149,7 +14149,7 @@
     },
     {
       "id": "cb3b9408-626e-42cf-a29c-08bbbd565410",
-      "name": "02 Main/Machine IV — Air",
+      "name": "02 Main/FX/Machine IV — Air",
       "steps": 128,
       "color": "#7ed6df",
       "tracks": {
@@ -15597,7 +15597,7 @@
     },
     {
       "id": "4a5aa4c3-1ca0-46e8-8698-026be07cfe38",
-      "name": "02 Main/Machine V — Diva at full tilt",
+      "name": "02 Main/Lead Vocal/Machine V — Diva at full tilt",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -16351,7 +16351,7 @@
     },
     {
       "id": "fc628092-ee38-4ca6-9252-07fb6a0fa826",
-      "name": "02 Main/Machine V — Choir shouts",
+      "name": "02 Main/Choir/Machine V — Choir shouts",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -16433,7 +16433,7 @@
     },
     {
       "id": "d0552297-28e6-4712-87fc-8efc0fd9998f",
-      "name": "02 Main/Machine V — Strings",
+      "name": "02 Main/Strings/Machine V — Strings",
       "steps": 128,
       "color": "#10ac84",
       "tracks": {
@@ -17899,7 +17899,7 @@
     },
     {
       "id": "ebaf6fb6-84db-4abc-91b9-747c3fe627ea",
-      "name": "02 Main/Machine VI — Diva, last statement",
+      "name": "02 Main/Lead Vocal/Machine VI — Diva, last statement",
       "steps": 128,
       "color": "#53d8fb",
       "tracks": {
@@ -18909,7 +18909,7 @@
     },
     {
       "id": "80dc1e9a-1387-4cb6-8316-27dc318a8723",
-      "name": "02 Main/Machine VI — Choir",
+      "name": "02 Main/Choir/Machine VI — Choir",
       "steps": 128,
       "color": "#ee5253",
       "tracks": {
@@ -18967,7 +18967,7 @@
     },
     {
       "id": "35b8db5d-883c-48b3-8c27-c40ebc455b17",
-      "name": "02 Main/Machine VI — Glass",
+      "name": "02 Main/Keys/Machine VI — Glass",
       "steps": 128,
       "color": "#ff6b6b",
       "tracks": {

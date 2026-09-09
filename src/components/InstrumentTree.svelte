@@ -173,7 +173,7 @@
     </TreeView>
 </div>
 <Prompt
-    label="New Name"
+    label="Name (use / to create folders)"
     onsubmit={submitRename}
     title={folderToRename ? 'Rename Folder' : 'Rename Instrument'}
     bind:show={showRename}

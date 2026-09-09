@@ -349,7 +349,7 @@ try {
         selPatId.set(p.patterns[0].id);
         selInstId.set(p.instruments[0].id);
     });
-    await page.getByTitle('Play Pattern', { exact: true }).click();
+    await page.getByRole('button', { name: 'Play pattern', exact: true }).click();
     await page.getByRole('button', { name: 'Mixer', exact: true }).click();
     await page.waitForFunction(
         () =>
@@ -371,7 +371,7 @@ try {
         'live channel meter responds',
     );
     await page.keyboard.press('Escape');
-    await page.getByTitle('Stop', { exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await page.evaluate(async () =>
         (await import('/src/lib/project.ts')).loadDemoProject('monsoon'),
     );

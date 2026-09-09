@@ -3,6 +3,29 @@ import { describe, expect, it } from 'vitest';
 import { flattenNameTree } from './name-tree';
 
 describe('flattenNameTree', () => {
+    it('optionally sorts section folders naturally while retaining leaf and source order', () => {
+        const items = [
+            { id: 'late', name: '10 Outro/End' },
+            { id: 'b', name: '02 Main/Drums/B' },
+            { id: 'a', name: '02 Main/Drums/A' },
+            { id: 'intro', name: '01 Intro/Start' },
+        ];
+        const entries = flattenNameTree(items, { sortFolders: true });
+        expect(entries.filter(entry => entry.kind === 'folder').map(entry => entry.path)).toEqual([
+            '01 Intro',
+            '02 Main',
+            '02 Main/Drums',
+            '10 Outro',
+        ]);
+        expect(entries.filter(entry => entry.kind === 'item').map(entry => entry.item.id)).toEqual([
+            'intro',
+            'b',
+            'a',
+            'late',
+        ]);
+        expect(items.map(item => item.id)).toEqual(['late', 'b', 'a', 'intro']);
+        expect(flattenNameTree(items)[0].label).toBe('10 Outro');
+    });
     it('presents slash-separated names as nested folders with selectable leaves', () => {
         const entries = flattenNameTree([
             { id: 'kick', name: 'Drums/Kick' },

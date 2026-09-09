@@ -25,6 +25,8 @@
         selPatId,
         touch,
     } from '../lib/project';
+    import { rendering } from '../lib/render';
+    import { playPattern, stopTransport } from '../lib/transport';
     import {
         createViewportState,
         handleViewportMouseDown,
@@ -43,6 +45,19 @@
 
     const NOTE_EDITOR_KEY = 'note';
     const DRAG_PREVIEW_TRACK = 'drag-preview';
+
+    const patternPlaying = $derived($playing && $playMode === 'pattern');
+
+    function togglePatternPlayback() {
+        if (!$project || $rendering) {
+            return;
+        }
+        if ($playing && $playMode === 'pattern') {
+            stopTransport();
+        } else {
+            void playPattern();
+        }
+    }
 
     function patternPlayheadStep(): number | null {
         if (!$playing || !$project || $curStep < 0) {
@@ -767,7 +782,26 @@
     <!-- PatternBar is intentionally hosted beside the arranger; keeping its own component boundary prevents the piano-roll header from widening. -->
     <div class="editor-toolbar">
         <div class="toolbar-row">
-            <span class="toolbar-hint">Alt+drag = velocity</span>
+            <div class="pattern-controls">
+                <button
+                    class="pattern-preview"
+                    aria-label="Play pattern"
+                    aria-pressed={patternPlaying}
+                    disabled={!$project || $rendering}
+                    onclick={togglePatternPlayback}
+                    title={patternPlaying
+                        ? 'Stop pattern playback (Shift+Space)'
+                        : 'Play selected pattern on repeat (Shift+Space)'}
+                    type="button"
+                >
+                    {#if patternPlaying}
+                        <span><i class="fa fa-stop" aria-hidden="true"></i></span>
+                    {:else}
+                        <span><i class="fa fa-play" aria-hidden="true"></i></span>
+                    {/if}
+                </button>
+                <span class="toolbar-hint">Alt+drag = velocity</span>
+            </div>
             <div class="legato-slot">
                 {#if selectedLegato}
                     <div class="legato-controls" aria-label="Selected legato transition">
@@ -1023,6 +1057,7 @@
     }
 
     .toolbar-hint {
+        flex: 1;
         align-self: center;
         min-width: 0;
         overflow: hidden;
@@ -1031,6 +1066,38 @@
         text-align: center;
         color: var(--color-text-muted);
         font-size: 11px;
+    }
+
+    .pattern-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .pattern-preview {
+        flex: 0 0 30px;
+        height: 30px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: transparent;
+        color: var(--primary-text);
+        cursor: pointer;
+    }
+
+    .pattern-preview:hover:not(:disabled) {
+        background: var(--color-surface-hover);
+    }
+
+    .pattern-preview[aria-pressed='true'] {
+        border-color: var(--accent);
+        background: var(--color-accent-soft);
+        color: var(--accent);
+    }
+
+    .pattern-preview:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
     }
 
     .piano-roll {

@@ -43,7 +43,10 @@ function createFolder<T extends NamedTreeItem>(label: string, path: string): Nam
     return { label, path, folders: [], items: [] };
 }
 
-export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEntry<T>[] {
+export function flattenNameTree<T extends NamedTreeItem>(
+    items: T[],
+    { sortFolders = false }: { sortFolders?: boolean } = {},
+): NameTreeEntry<T>[] {
     const root = createFolder<T>('', '');
 
     for (const item of items) {
@@ -68,6 +71,9 @@ export function flattenNameTree<T extends NamedTreeItem>(items: T[]): NameTreeEn
     const countItems = (folder: NameTreeFolder<T>): number =>
         folder.items.length + folder.folders.reduce((total, child) => total + countItems(child), 0);
     const visit = (folder: NameTreeFolder<T>, depth: number, ancestors: string[]) => {
+        if (sortFolders) {
+            folder.folders.sort((a, b) => a.label.localeCompare(b.label, 'en', { numeric: true }));
+        }
         for (const child of folder.folders) {
             entries.push({
                 kind: 'folder',

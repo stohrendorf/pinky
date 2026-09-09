@@ -40,8 +40,41 @@
     }
 
     function handleKey(e: KeyboardEvent) {
+        e.stopPropagation();
+        if (e.defaultPrevented) {
+            return;
+        }
         if (e.key === 'Escape') {
             close();
+            return;
+        }
+        if (e.key !== 'Tab' || !dialogEl) {
+            return;
+        }
+        const controls = [
+            ...dialogEl.querySelectorAll<HTMLElement>(
+                'button, input, select, textarea, a[href], summary, [tabindex="0"]',
+            ),
+        ].filter(
+            element => !element.matches(':disabled, [tabindex="-1"]') && element.checkVisibility(),
+        );
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (!first) {
+            e.preventDefault();
+            dialogEl.focus();
+        } else if (
+            e.shiftKey &&
+            (document.activeElement === first || document.activeElement === dialogEl)
+        ) {
+            e.preventDefault();
+            last?.focus();
+        } else if (
+            !e.shiftKey &&
+            (document.activeElement === last || document.activeElement === dialogEl)
+        ) {
+            e.preventDefault();
+            first.focus();
         }
     }
 </script>

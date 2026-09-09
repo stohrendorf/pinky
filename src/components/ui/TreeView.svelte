@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
 
+    import { untrack } from 'svelte';
     import { SvelteSet } from 'svelte/reactivity';
 
     import { flattenNameTree, type NamedTreeItem } from '../../lib/name-tree';
@@ -19,6 +20,7 @@
         onsolo?: (item: NamedTreeItem) => void;
         selectedId?: string | null;
         showMuteSolo?: boolean;
+        sortFolders?: boolean;
         title?: string;
     }
 
@@ -35,6 +37,7 @@
         onsolo = () => {},
         selectedId = null,
         showMuteSolo = false,
+        sortFolders = false,
         title = 'Items',
     }: Props = $props();
 
@@ -42,10 +45,34 @@
     let openMenu: string | null = $state(null);
     let menuAnchor: HTMLElement | null = $state(null);
 
-    const entries = $derived(flattenNameTree(items));
+    const entries = $derived(flattenNameTree(items, { sortFolders }));
     const visibleEntries = $derived(
         entries.filter(entry => entry.ancestors.every(path => !collapsedFolders.has(path))),
     );
+
+    $effect(() => {
+        const id = selectedId;
+        untrack(() => revealSelected(id));
+    });
+
+    function revealSelected(id: string | null) {
+        const entry = entries.find(entry => entry.kind === 'item' && entry.item.id === id);
+        entry?.ancestors.forEach(path => collapsedFolders.delete(path));
+    }
+
+    function collapseAll() {
+        entries.forEach(entry => {
+            if (entry.kind === 'folder') {
+                collapsedFolders.add(entry.path);
+            }
+        });
+        closeMenu();
+    }
+
+    function expandAll() {
+        collapsedFolders.clear();
+        closeMenu();
+    }
 
     function toggleFolder(path: string) {
         if (collapsedFolders.has(path)) {
@@ -89,11 +116,28 @@
     <div class="tree-heading">
         <span>{title} <span class="tree-count">{items.length}</span></span>
         <div class="header-actions">
+            {#if entries.some(entry => entry.kind === 'folder')}
+                <button
+                    class="folder-tool"
+                    aria-label="Collapse all folders"
+                    onclick={collapseAll}
+                    title="Collapse all folders"
+                    type="button"><i class="fa fa-compress" aria-hidden="true"></i></button
+                >
+                <button
+                    class="folder-tool"
+                    aria-label="Expand all folders"
+                    disabled={collapsedFolders.size === 0}
+                    onclick={expandAll}
+                    title="Expand all folders"
+                    type="button"><i class="fa fa-expand" aria-hidden="true"></i></button
+                >
+            {/if}
             {@render headerActions?.()}
         </div>
     </div>
     {#if visibleEntries.length}
-        <div class="tree-list" role="tree">
+        <div class="tree-list" aria-label={title} role="tree">
             {#each visibleEntries as entry (entry.kind === 'folder' ? `folder-${entry.path}` : entry.item.id)}
                 {#if entry.kind === 'folder'}
                     <div
@@ -107,6 +151,7 @@
                         <button
                             class="row-main"
                             onclick={() => toggleFolder(entry.path)}
+                            title={entry.path}
                             type="button"
                         >
                             <span
@@ -121,7 +166,7 @@
                         {#if folderActions.length}
                             <button
                                 class="dots"
-                                aria-label="Folder actions"
+                                aria-label="{entry.label} folder actions"
                                 onclick={event => toggleMenu(`folder:${entry.path}`, event)}
                                 type="button"><i class="fa fa-ellipsis-vertical"></i></button
                             >
@@ -136,7 +181,12 @@
                         aria-selected={entry.item.id === selectedId}
                         role="treeitem"
                     >
-                        <button class="row-main" onclick={() => select(entry.item)} type="button">
+                        <button
+                            class="row-main"
+                            onclick={() => select(entry.item)}
+                            title={entry.item.name}
+                            type="button"
+                        >
                             {#if entry.item.color}<span
                                     style="background: {entry.item.color}"
                                     class="color-tag"
@@ -231,6 +281,27 @@
         display: flex;
         align-items: center;
         gap: 4px;
+    }
+
+    .folder-tool {
+        width: 24px;
+        height: 22px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--color-surface);
+        color: var(--primary-text);
+        cursor: pointer;
+        font-size: 11px;
+    }
+
+    .folder-tool:hover,
+    .folder-tool:focus-visible {
+        background: var(--color-surface-hover);
+    }
+
+    .folder-tool:disabled {
+        opacity: 0.4;
+        cursor: default;
     }
 
     .tree-list {

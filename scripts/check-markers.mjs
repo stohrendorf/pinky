@@ -251,7 +251,6 @@ try {
         }),
         'marker edits leave music, cursor-independent loop and base BPM untouched',
     );
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.reload();
     assert.deepEqual(await data(), persisted, 'grouped edits and moves survive save/reload');

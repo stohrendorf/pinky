@@ -54,10 +54,10 @@ try {
         };
     });
 
-    const appMenu = page.getByRole('button', { name: 'Pinky application menu', exact: true });
+    const appMenu = page.getByRole('button', { name: 'Audio', exact: true });
     await appMenu.click();
-    const utilities = page.getByRole('complementary', {
-        name: 'Application utilities',
+    const utilities = page.getByRole('dialog', {
+        name: 'Audio',
         exact: true,
     });
     await utilities.waitFor();

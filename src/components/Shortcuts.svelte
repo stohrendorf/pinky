@@ -20,9 +20,26 @@
             </div>
         {/each}
     </div>
+    <footer>
+        <a href="https://github.com/stohrendorf/pinky" rel="noopener noreferrer" target="_blank"
+            >Pinky on GitHub</a
+        >
+    </footer>
 </Dialog>
 
 <style>
+    footer {
+        margin-top: 18px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        text-align: right;
+    }
+
+    footer a {
+        color: var(--color-text-muted);
+    }
+
     .groups {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

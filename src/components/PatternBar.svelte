@@ -154,6 +154,7 @@
         onfolderaction={onFolderAction}
         onselect={id => selPatId.set(id)}
         selectedId={pat?.id}
+        sortFolders={true}
         title="Patterns"
     >
         {#snippet headerActions()}
@@ -169,7 +170,7 @@
 </div>
 
 <Prompt
-    label="New Name"
+    label="Name (use / to create folders)"
     onsubmit={onRenameSubmit}
     title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
     bind:show={showRename}

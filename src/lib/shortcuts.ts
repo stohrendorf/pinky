@@ -129,6 +129,9 @@ export function handleShortcut(e: KeyboardEvent): void {
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t?.isContentEditable) {
         return;
     }
+    if (tag === 'BUTTON' && e.key === ' ') {
+        return;
+    }
 
     const ctrl = e.ctrlKey || e.metaKey;
     const k = e.key.toLowerCase();

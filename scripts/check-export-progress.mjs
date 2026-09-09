@@ -92,13 +92,13 @@ try {
         return Math.ceil(((steps * 60) / 120 / 4 + 3 + 1.5 * p.instruments[0].params.rel) * 44100);
     }, 128);
     // Initialize and later verify the same live engine survives an export.
-    await page.getByTitle('Play Pattern', { exact: true }).click();
-    await page.getByTitle('Stop', { exact: true }).click();
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
-    const exportButton = page.getByRole('button', { name: 'Render WAV', exact: true });
+    await page.getByRole('button', { name: 'Play pattern', exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    const exportButton = page.getByRole('button', { name: 'Audio (.wav)', exact: true });
     const dialog = page.getByRole('dialog', { name: 'Export WAV', exact: true });
     const downloadEvent = page.waitForEvent('download', { timeout: 120000 });
     void downloadEvent.catch(() => {});
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await exportButton.click();
     await page.waitForFunction(
         () =>
@@ -163,7 +163,7 @@ try {
     await page.evaluate(() => {
         window.testProgress = [];
     });
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await exportButton.click();
     await page.waitForFunction(() =>
         window.testProgress.some(state => state.stage === 'rendering' && state.progress > 0.01),
@@ -179,7 +179,7 @@ try {
     }));
     assert.deepEqual(cancelled, { state: 'closed', busy: false, encoded: false, cancelled: true });
     assert.equal(downloads.length, 1, 'cancellation never downloads');
-    await page.getByTitle('Play Pattern', { exact: true }).click();
+    await page.getByRole('button', { name: 'Play pattern', exact: true }).click();
     await page.getByRole('button', { name: 'Mixer', exact: true }).click();
     await page.waitForFunction(
         () =>
@@ -190,7 +190,7 @@ try {
             ) > -60,
     );
     await page.keyboard.press('Escape');
-    await page.getByTitle('Stop', { exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await page.evaluate(async () => {
         const p = JSON.parse(JSON.stringify(window.testSong));
         p.arrangement[0].len = 8;
@@ -199,7 +199,7 @@ try {
     });
     const retry = page.waitForEvent('download', { timeout: 60000 });
     void retry.catch(() => {});
-    await page.getByRole('button', { name: 'Pinky application menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await exportButton.click();
     await retry;
     await dialog.waitFor({ state: 'hidden' });

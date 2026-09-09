@@ -35,6 +35,7 @@ describe('TreeView contextual menus and folders', () => {
         expect(treeView.match(/aria-selected=/g)).toHaveLength(2);
         expect(treeView).toContain('aria-selected="false"');
         expect(treeView).not.toContain('on:click');
-        expect(treeView.match(/onclick=/g)).toHaveLength(6);
+        expect(treeView).toContain('onclick={() => select(entry.item)}');
+        expect(treeView).toContain('onclick={() => toggleFolder(entry.path)}');
     });
 });

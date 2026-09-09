@@ -1144,7 +1144,7 @@
     },
     {
       "id": "a7072fdb-aa85-4a38-9d21-5c14ab1a0beb",
-      "name": "02 Main/rock beat",
+      "name": "02 Main/Drums/rock beat",
       "steps": 32,
       "color": "#53d8fb",
       "tracks": {
@@ -1248,7 +1248,7 @@
     },
     {
       "id": "570830b3-7fed-48db-9339-121337403437",
-      "name": "02 Main/driving beat",
+      "name": "02 Main/Drums/driving beat",
       "steps": 32,
       "color": "#48dbfb",
       "tracks": {
@@ -1402,7 +1402,7 @@
     },
     {
       "id": "7f38666c-b199-4b27-abc9-9913d0126f6a",
-      "name": "02 Main/half-time beat",
+      "name": "02 Main/Drums/half-time beat",
       "steps": 32,
       "color": "#576574",
       "tracks": {
@@ -1544,7 +1544,7 @@
     },
     {
       "id": "4bdd5679-c3cb-4609-aaa5-2adf63cd6634",
-      "name": "02 Main/timpani gallop",
+      "name": "02 Main/Percussion/timpani gallop",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1700,7 +1700,7 @@
     },
     {
       "id": "973d1359-3bcc-4607-9bf4-f834faa37439",
-      "name": "02 Main/timpani roll",
+      "name": "02 Main/Percussion/timpani roll",
       "steps": 32,
       "color": "#c0392b",
       "tracks": {
@@ -1806,7 +1806,7 @@
     },
     {
       "id": "25f6581b-1a1d-489c-a2e6-06bac70a6f14",
-      "name": "02 Main/pedal D 8ths",
+      "name": "02 Main/Bass/pedal D 8ths",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -1903,7 +1903,7 @@
     },
     {
       "id": "2be7a478-0ec3-4902-9aa0-4b1328ccbe5d",
-      "name": "02 Main/pedal walkdown",
+      "name": "02 Main/Bass/pedal walkdown",
       "steps": 32,
       "color": "#1dd1a1",
       "tracks": {
@@ -2015,7 +2015,7 @@
     },
     {
       "id": "a04c89a9-8779-4683-bd60-a2229b43bc51",
-      "name": "02 Main/toccata spin A",
+      "name": "02 Main/Keys/toccata spin A",
       "steps": 32,
       "color": "#f9ca24",
       "tracks": {
@@ -2185,7 +2185,7 @@
     },
     {
       "id": "85ced61c-9d48-4162-88ba-c97501455d64",
-      "name": "02 Main/toccata spin B",
+      "name": "02 Main/Keys/toccata spin B",
       "steps": 32,
       "color": "#e1b12c",
       "tracks": {
@@ -2377,7 +2377,7 @@
     },
     {
       "id": "f208f620-7bc6-4616-8b09-fd8d2b053f75",
-      "name": "02 Main/fugue subject",
+      "name": "02 Main/Keys/fugue subject",
       "steps": 32,
       "color": "#badc58",
       "tracks": {
@@ -2507,7 +2507,7 @@
     },
     {
       "id": "893e3002-d0bf-4597-9157-32987cfb1021",
-      "name": "02 Main/fugue answer",
+      "name": "02 Main/Keys/fugue answer",
       "steps": 32,
       "color": "#6ab04c",
       "tracks": {
@@ -2719,7 +2719,7 @@
     },
     {
       "id": "ec7350c0-4a61-439d-a12a-63a70ae1742e",
-      "name": "02 Main/fugue in pedal",
+      "name": "02 Main/Keys/fugue in pedal",
       "steps": 32,
       "color": "#218c74",
       "tracks": {
@@ -2993,7 +2993,7 @@
     },
     {
       "id": "bee70663-5b6a-4167-bbe6-6613cb915f9b",
-      "name": "02 Main/valkyrie A",
+      "name": "02 Main/Strings/valkyrie A",
       "steps": 32,
       "color": "#e056fd",
       "tracks": {
@@ -3167,7 +3167,7 @@
     },
     {
       "id": "96479b34-7c05-475e-b072-a583d7ea5df8",
-      "name": "02 Main/valkyrie B",
+      "name": "02 Main/Strings/valkyrie B",
       "steps": 32,
       "color": "#be2edd",
       "tracks": {
@@ -3483,7 +3483,7 @@
     },
     {
       "id": "4f89eb90-ea4a-413c-955d-2cb8713e2602",
-      "name": "02 Main/strings hymn",
+      "name": "02 Main/Strings/strings hymn",
       "steps": 32,
       "color": "#a29bfe",
       "tracks": {
@@ -3529,7 +3529,7 @@
     },
     {
       "id": "db92ca46-a71d-4e67-88c1-43f0aea67d98",
-      "name": "02 Main/strings hymn 2",
+      "name": "02 Main/Strings/strings hymn 2",
       "steps": 32,
       "color": "#8c7ae6",
       "tracks": {
@@ -3575,7 +3575,7 @@
     },
     {
       "id": "ded6e168-b0f6-4025-8872-73fe2c1a6e5f",
-      "name": "02 Main/cello solo",
+      "name": "02 Main/Strings/cello solo",
       "steps": 32,
       "color": "#e056fd",
       "tracks": {

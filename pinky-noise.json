@@ -902,7 +902,7 @@
     },
     {
       "id": "b3286e36-0fb5-4e30-ae2b-87c056207c9f",
-      "name": "02 Main/wind",
+      "name": "02 Main/FX/wind",
       "steps": 32,
       "color": "#7ed6df",
       "tracks": {
@@ -918,7 +918,7 @@
     },
     {
       "id": "e2859cb6-84f0-42a7-828c-485db4ee4fed",
-      "name": "02 Main/wind soft",
+      "name": "02 Main/FX/wind soft",
       "steps": 32,
       "color": "#5db8c2",
       "tracks": {
@@ -950,7 +950,7 @@
     },
     {
       "id": "f3812ef2-c298-4508-9f09-f31b3338a982",
-      "name": "02 Main/shimmer",
+      "name": "02 Main/FX/shimmer",
       "steps": 32,
       "color": "#a29bfe",
       "tracks": {
@@ -972,7 +972,7 @@
     },
     {
       "id": "6cd998f7-3624-40a6-b4d5-75fc47087ee0",
-      "name": "02 Main/shimmer lift",
+      "name": "02 Main/FX/shimmer lift",
       "steps": 32,
       "color": "#8f86f5",
       "tracks": {
@@ -994,7 +994,7 @@
     },
     {
       "id": "3b603132-9220-41ba-865b-12045e57b92d",
-      "name": "02 Main/drone D",
+      "name": "02 Main/Synth/drone D",
       "steps": 32,
       "color": "#0abde3",
       "tracks": {
@@ -1015,7 +1015,7 @@
     },
     {
       "id": "10252ec1-775b-417c-b9a9-c692b5d93692",
-      "name": "02 Main/drone D add9",
+      "name": "02 Main/Synth/drone D add9",
       "steps": 32,
       "color": "#0a9fc4",
       "tracks": {
@@ -1042,7 +1042,7 @@
     },
     {
       "id": "aece1ffa-4061-4333-8648-10a58f7fad76",
-      "name": "02 Main/beat main",
+      "name": "02 Main/Drums/beat main",
       "steps": 32,
       "color": "#ee5253",
       "tracks": {
@@ -1218,7 +1218,7 @@
     },
     {
       "id": "65548de5-7653-4731-8cbe-4c53d882d65b",
-      "name": "02 Main/beat sparse",
+      "name": "02 Main/Drums/beat sparse",
       "steps": 32,
       "color": "#c0392b",
       "tracks": {
@@ -1260,7 +1260,7 @@
     },
     {
       "id": "9efe04ef-b14e-4704-90b7-884795028bd8",
-      "name": "02 Main/beat half-time",
+      "name": "02 Main/Drums/beat half-time",
       "steps": 32,
       "color": "#e17055",
       "tracks": {
@@ -1322,7 +1322,7 @@
     },
     {
       "id": "4dfd3fd6-b447-42e5-a8d6-1c910561d96c",
-      "name": "02 Main/beat fill",
+      "name": "02 Main/Drums/beat fill",
       "steps": 32,
       "color": "#d63031",
       "tracks": {
@@ -1498,7 +1498,7 @@
     },
     {
       "id": "1890d637-2e07-4861-b85a-d87e815d8fd4",
-      "name": "02 Main/rim texture",
+      "name": "02 Main/Drums/rim texture",
       "steps": 32,
       "color": "#badc58",
       "tracks": {
@@ -1544,7 +1544,7 @@
     },
     {
       "id": "016993e8-17bb-4fbb-8c7e-5a65dbfae2d2",
-      "name": "02 Main/heartbeat",
+      "name": "02 Main/Drums/heartbeat",
       "steps": 32,
       "color": "#8d5524",
       "tracks": {
@@ -1578,7 +1578,7 @@
     },
     {
       "id": "3515cfd2-a5c0-4670-8979-66209fa9aa72",
-      "name": "02 Main/heartbeat + rim",
+      "name": "02 Main/Drums/heartbeat + rim",
       "steps": 32,
       "color": "#a4682f",
       "tracks": {
@@ -1632,7 +1632,7 @@
     },
     {
       "id": "514aa560-c7c6-4e69-936e-6b0794b950ba",
-      "name": "02 Main/bass D pedal",
+      "name": "02 Main/Bass/bass D pedal",
       "steps": 32,
       "color": "#10ac84",
       "tracks": {
@@ -1708,7 +1708,7 @@
     },
     {
       "id": "671c6cb4-c481-4042-82b5-aa637aaae8e7",
-      "name": "02 Main/bass D pedal var",
+      "name": "02 Main/Bass/bass D pedal var",
       "steps": 32,
       "color": "#0d8f6f",
       "tracks": {
@@ -1778,7 +1778,7 @@
     },
     {
       "id": "eb1bf5fc-5350-4ab0-bed0-874888cf4a58",
-      "name": "02 Main/bass Bb-Am",
+      "name": "02 Main/Bass/bass Bb-Am",
       "steps": 32,
       "color": "#0b7a5c",
       "tracks": {
@@ -1848,7 +1848,7 @@
     },
     {
       "id": "abf53b1e-367e-49a7-accc-c2133ee68169",
-      "name": "02 Main/bass Eb neapolitan",
+      "name": "02 Main/Bass/bass Eb neapolitan",
       "steps": 32,
       "color": "#0a6e52",
       "tracks": {
@@ -1946,7 +1946,7 @@
     },
     {
       "id": "b50d2e34-2e65-4e85-ad90-7ce1b11210a1",
-      "name": "02 Main/pad quartal",
+      "name": "02 Main/Synth/pad quartal",
       "steps": 32,
       "color": "#5f27cd",
       "tracks": {
@@ -1980,7 +1980,7 @@
     },
     {
       "id": "3b3ad960-1dac-440c-a9df-d02faf926f5f",
-      "name": "02 Main/pad Dm9-G6",
+      "name": "02 Main/Synth/pad Dm9-G6",
       "steps": 32,
       "color": "#4a1e9e",
       "tracks": {
@@ -2039,7 +2039,7 @@
     },
     {
       "id": "065860e8-d07f-43f4-8da5-8c370245ad12",
-      "name": "02 Main/pad Bb-Am",
+      "name": "02 Main/Synth/pad Bb-Am",
       "steps": 32,
       "color": "#3b3b98",
       "tracks": {
@@ -2097,7 +2097,7 @@
     },
     {
       "id": "82d13fcd-103f-4ca7-9c96-a82d2d2958c3",
-      "name": "02 Main/pad Eb lydian",
+      "name": "02 Main/Synth/pad Eb lydian",
       "steps": 32,
       "color": "#31279e",
       "tracks": {
@@ -2135,7 +2135,7 @@
     },
     {
       "id": "f2e3751e-42d0-47d4-9b6b-05841693f00e",
-      "name": "02 Main/pad Eb over D",
+      "name": "02 Main/Synth/pad Eb over D",
       "steps": 32,
       "color": "#2c2c54",
       "tracks": {
@@ -2187,7 +2187,7 @@
     },
     {
       "id": "a1619e4a-7020-4b8e-8da4-18618ea78a16",
-      "name": "02 Main/theme call",
+      "name": "02 Main/Vocals/theme call",
       "steps": 32,
       "color": "#53d8fb",
       "tracks": {
@@ -2299,7 +2299,7 @@
     },
     {
       "id": "19920970-6730-4bbf-854b-734e94f64a11",
-      "name": "02 Main/theme answer",
+      "name": "02 Main/Vocals/theme answer",
       "steps": 32,
       "color": "#2eb8e6",
       "tracks": {
@@ -2387,7 +2387,7 @@
     },
     {
       "id": "bf36750c-39d6-4db8-9d3c-38d6f0ae1900",
-      "name": "02 Main/theme neapolitan",
+      "name": "02 Main/Vocals/theme neapolitan",
       "steps": 32,
       "color": "#7fd4f0",
       "tracks": {
@@ -2487,7 +2487,7 @@
     },
     {
       "id": "513563ce-b91b-490d-a0de-e354f21be9da",
-      "name": "02 Main/theme drop",
+      "name": "02 Main/Vocals/theme drop",
       "steps": 32,
       "color": "#1fa3d6",
       "tracks": {
@@ -2575,7 +2575,7 @@
     },
     {
       "id": "eb97939e-a11e-4451-ad46-e6de7ae8aead",
-      "name": "02 Main/arp quartal",
+      "name": "02 Main/Synth/arp quartal",
       "steps": 32,
       "color": "#48dbfb",
       "tracks": {
@@ -2681,7 +2681,7 @@
     },
     {
       "id": "6828f219-4630-4fe3-ba71-35d5341d615f",
-      "name": "02 Main/arp Bb-Am",
+      "name": "02 Main/Synth/arp Bb-Am",
       "steps": 32,
       "color": "#2bc5ec",
       "tracks": {

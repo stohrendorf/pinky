@@ -12,6 +12,29 @@ The _Winter_ demo is Vivaldi's concerto RV 297, all three movements, note for no
 
 Human contributors are very welcome to improve this mess.
 
+### Projects, demos and navigation
+
+- The desktop toolbar keeps project commands, transport and timing in one row. The play icon
+  plays the arrangement (**Space**). The play button beside the piano roll auditions the selected
+  pattern on repeat (**Shift+Space**); click it again to stop.
+  Hover controls for shortcuts. **BPM** sets the base tempo while stopped; **Swing** sets the groove.
+- **New**, **Open** and **Save** are direct actions. Save keeps the project in this browser;
+  **Export → Project file (.json)** downloads a portable, editable copy, while **Export → Audio (.wav)**
+  exports audio (the marked loop or whole song).
+- **Demos** lists all bundled songs; click a name to load it immediately, or hover for its description.
+  **Restore previous project** in that list brings back the project from before you started exploring,
+  including its selection and cursor. This recovery copy lasts only for the current session and is
+  cleared by creating or opening another project; it does not preserve the earlier undo history.
+- Instrument trees use sound families; pattern folders use numbered song sections, with musical
+  role subfolders in crowded sections. Pattern folders sort naturally; instrument order is preserved.
+  Use the tree header’s collapse/expand controls to browse, or hover a name to see its full path.
+  Rename an item using `/` to create folders, for example `02 Main/Drums/Beat`.
+- **Audio** opens master and performance controls directly, without nested sections.
+  **Mixer** opens channel balance, routing and processing.
+
+Run `node scripts/check-topbar.mjs` for the desktop browser smoke test. It uses an isolated Chromium
+profile; set `PINKY_BROWSER` to a browser executable if auto-detection is unavailable.
+
 ### Mixer
 
 Open **Mixer** in the toolbar. Instrument strips are independent of the arranger
