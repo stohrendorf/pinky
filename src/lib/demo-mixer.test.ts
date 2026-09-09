@@ -48,9 +48,18 @@ describe('demo production mixes', () => {
         expect(mixer.channels[violone.id].reverb).toBe(0.15);
     });
 
-    it('leaves the faithful promo and remaining demos on their legacy mixes', () => {
+    it('keeps the promo master protected without adding production routing', () => {
+        const promo = buildDemoProject('promo');
+        expect(isMixerState(promo.mixer)).toBe(true);
+        expect(promo.mixer!.buses).toEqual([]);
+        expect(Object.values(promo.mixer!.channels).every(channel =>
+            channel.output === 'master' && channel.sends.length === 0
+        )).toBe(true);
+    });
+
+    it('leaves the remaining demos on their legacy mixes', () => {
         for (const {id} of DEMO_LIBRARY) {
-            if (id === 'monsoon' || id === 'winter' || id === 'pocket') {continue;}
+            if (id === 'monsoon' || id === 'winter' || id === 'pocket' || id === 'promo') {continue;}
             expect(buildDemoProject(id).mixer, id).toBeUndefined();
         }
     });
