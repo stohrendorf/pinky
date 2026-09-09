@@ -1,8 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
-    const dispatch = createEventDispatcher<{ click: MouseEvent }>();
-
     interface Props {
         variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
         disabled?: boolean;
@@ -13,6 +9,7 @@
         expanded?: boolean | undefined;
         ariaControls?: string | undefined;
         compact?: boolean;
+        onclick?: (event: MouseEvent) => void;
         children?: import('svelte').Snippet;
     }
 
@@ -26,6 +23,7 @@
         expanded = undefined,
         ariaControls = undefined,
         compact = false,
+        onclick = () => {},
         children,
     }: Props = $props();
 </script>
@@ -36,7 +34,7 @@
     aria-expanded={expanded}
     aria-pressed={pressed}
     {disabled}
-    onclick={event => dispatch('click', event)}
+    {onclick}
     {title}
     {type}
 >

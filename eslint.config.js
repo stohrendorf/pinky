@@ -35,6 +35,22 @@ export default tseslint.config(
             curly: ['error'],
             eqeqeq: ['error', 'always'],
             'no-console': 'warn',
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: 'svelte',
+                            importNames: ['createEventDispatcher'],
+                            message: 'Use callback props instead of component event dispatchers.',
+                        },
+                        {
+                            name: 'svelte/legacy',
+                            message: 'Use native Svelte 5 APIs instead of compatibility helpers.',
+                        },
+                    ],
+                },
+            ],
             '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
             'no-var': 'error',
             'object-shorthand': ['error', 'always'],

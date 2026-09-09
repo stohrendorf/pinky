@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { run } from 'svelte/legacy';
 
     import type { VoiceBand } from '../lib/engine';
 
@@ -21,10 +20,7 @@
     let canvas: HTMLCanvasElement | undefined = $state();
 
     // instrument id -> color, kept fresh by Svelte reactivity
-    let instColors = $state(new Map<string, string>());
-    run(() => {
-        instColors = new Map(($project?.instruments || []).map(i => [i.id, i.color]));
-    });
+    const instColors = $derived(new Map(($project?.instruments || []).map(i => [i.id, i.color])));
 
     /* ---- what the curve actually models ----
      * A voice is dry pink noise *minus* the same noise sent through a serial

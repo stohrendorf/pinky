@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
     import Button from './Button.svelte';
     import Dialog from './Dialog.svelte';
 
@@ -20,6 +18,8 @@
             | 'numeric'
             | 'decimal'
             | undefined;
+        oncancel?: () => void;
+        onsubmit?: (value: string) => void;
     }
 
     let {
@@ -29,18 +29,18 @@
         label = '',
         inputType = 'text',
         inputMode = undefined,
+        oncancel = () => {},
+        onsubmit = () => {},
     }: Props = $props();
 
-    const dispatch = createEventDispatcher<{ cancel: void; submit: string }>();
-
     function submit() {
-        dispatch('submit', value);
+        onsubmit(value);
         show = false;
     }
 
     function cancel() {
         show = false;
-        dispatch('cancel');
+        oncancel();
     }
 
     function selectOnMount(node: HTMLInputElement) {
@@ -51,7 +51,7 @@
     }
 </script>
 
-<Dialog {show} {title} on:close={cancel}>
+<Dialog onclose={cancel} {show} {title}>
     <div class="prompt-body">
         {#if label}<label for="prompt-input">{label}</label>{/if}
         <input
@@ -64,8 +64,8 @@
             use:selectOnMount
         />
         <div class="actions">
-            <Button variant="secondary" on:click={cancel}>Cancel</Button>
-            <Button on:click={submit}>OK</Button>
+            <Button onclick={cancel} variant="secondary">Cancel</Button>
+            <Button onclick={submit}>OK</Button>
         </div>
     </div>
 </Dialog>

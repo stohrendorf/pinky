@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { createBubbler, preventDefault, run, stopPropagation } from 'svelte/legacy';
-
     import type { ArrangementClip, AutomationLane as Lane, AutomationPoint } from '../lib/types';
 
     import {
@@ -46,13 +44,12 @@
     import AutomationLane from './AutomationLane.svelte';
     import AutomationPicker from './AutomationPicker.svelte';
     import Conductor from './Conductor.svelte';
+    import { preventDefault, stopPropagation } from './event-modifiers';
     import Button from './ui/Button.svelte';
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
     import Dialog from './ui/Dialog.svelte';
     import Prompt from './ui/Prompt.svelte';
-
-    const bubble = createBubbler();
 
     interface Props {
         contextualEditor?: string | null;
@@ -438,6 +435,13 @@
 
     function handlePlaylistMouseDown(e: MouseEvent) {
         handleViewportMouseDown(e, viewport);
+        const row = (e.target as Element).closest<HTMLElement>('.grid-row[data-track]');
+        if (!row) {
+            return;
+        }
+        const track = Number(row.dataset.track);
+        const s_raw = (e.clientX - row.getBoundingClientRect().left) / cellWidth;
+        handleMouseDown(e, track, s_raw);
     }
 
     function handleMouseMoveGlobal(e: MouseEvent) {
@@ -511,10 +515,17 @@
         showRenameTrack = true;
     }
 
-    function onRenameTrack(e: CustomEvent<string>) {
-        if (editingTrackIdx !== null && $project && e.detail) {
-            $project.tracks[editingTrackIdx].name = e.detail;
+    function onRenameTrack(value: string) {
+        if (editingTrackIdx !== null && $project && value) {
+            $project.tracks[editingTrackIdx].name = value;
             touch();
+        }
+    }
+
+    function activateOnKeyboard(event: KeyboardEvent, action: () => void) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            action();
         }
     }
 
@@ -542,9 +553,9 @@
         showTrackColor = true;
     }
 
-    function onTrackColorChange(e: CustomEvent<string>) {
+    function onTrackColorChange(value: string) {
         if (editingTrackIdx !== null && $project) {
-            $project.tracks[editingTrackIdx].color = e.detail;
+            $project.tracks[editingTrackIdx].color = value;
             touch();
         }
     }
@@ -832,7 +843,7 @@
 
     const cellWidth = $derived($project?.zoom.arr.width || 24);
     const cellHeight = $derived($project?.zoom.arr.height || 32);
-    run(() => {
+    $effect.pre(() => {
         if ($playing && $curStep >= 0) {
             scrollPlayheadIntoView(playlistEl, $curStep, cellWidth);
         }
@@ -949,39 +960,39 @@
                     <span class="lbl">Transpose</span>
                     <Button
                         compact
+                        onclick={() => transposeClips(-12)}
                         title="An octave down"
                         variant="secondary"
-                        on:click={() => transposeClips(-12)}
                     >
                         −12
                     </Button>
                     <Button
                         compact
+                        onclick={() => transposeClips(-1)}
                         title="A semitone down"
                         variant="secondary"
-                        on:click={() => transposeClips(-1)}
                         >−1
                     </Button>
                     <span class="semis">{semiLabel(selectedClips[0].transpose || 0)}</span>
                     <Button
                         compact
+                        onclick={() => transposeClips(1)}
                         title="A semitone up"
                         variant="secondary"
-                        on:click={() => transposeClips(1)}
                         >+1
                     </Button>
                     <Button
                         compact
+                        onclick={() => transposeClips(12)}
                         title="An octave up"
                         variant="secondary"
-                        on:click={() => transposeClips(12)}
                         >+12
                     </Button>
                     <Button
                         compact
+                        onclick={resetClipTranspose}
                         title="Back to the written pitch"
                         variant="secondary"
-                        on:click={resetClipTranspose}
                     >
                         0
                     </Button>
@@ -1010,8 +1021,11 @@
             <div
                 style="width: {totalLength * cellWidth}px; transform: translateX(-{scrollLeft}px);"
                 class="timeline"
-                oncontextmenu={preventDefault(bubble('contextmenu'))}
+                aria-label="Arrangement timeline"
+                oncontextmenu={preventDefault(() => {})}
                 onmousedown={handleTimelineMouseDown}
+                role="grid"
+                tabindex="0"
             >
                 {#each visibleBars as bar (bar.start)}
                     <div
@@ -1049,9 +1063,9 @@
                         class="track-insert"
                         aria-label="Insert track"
                         onclick={stopPropagation(() => insertTrack(0))}
-                        ondblclick={stopPropagation(bubble('dblclick'))}
+                        ondblclick={stopPropagation()}
                         ondragover={preventDefault(() => (dragInsertionRow = 0))}
-                        onmousedown={stopPropagation(bubble('mousedown'))}
+                        onmousedown={stopPropagation()}
                         title="Insert track at the top"><i class="fa fa-plus"></i></button
                     >
                 </div>
@@ -1066,8 +1080,8 @@
                                         class="track-insert"
                                         aria-label="Insert track"
                                         onclick={stopPropagation(() => insertTrack(t))}
-                                        ondblclick={stopPropagation(bubble('dblclick'))}
-                                        onmousedown={stopPropagation(bubble('mousedown'))}
+                                        ondblclick={stopPropagation()}
+                                        onmousedown={stopPropagation()}
                                         title="Insert track here"
                                         ><i class="fa fa-plus"></i>
                                     </button>
@@ -1079,6 +1093,7 @@
                                 class:dragging={draggingTrack === t}
                                 class:silent={laneSilent[t]}
                                 draggable="true"
+                                oncontextmenu={preventDefault(() => changeTrackColor(t))}
                                 ondblclick={() => editTrack(t)}
                                 ondragend={clearDragState}
                                 ondragover={preventDefault(event =>
@@ -1086,14 +1101,12 @@
                                 )}
                                 ondragstart={event => startTrackDrag(event as DragEvent, t)}
                                 ondrop={event => dropTrack(event as DragEvent, t)}
+                                onkeydown={event => activateOnKeyboard(event, () => editTrack(t))}
+                                role="button"
+                                tabindex="0"
                                 title="Double click to rename, Right click for color; drag to reorder"
                             >
-                                <div
-                                    class="track-name"
-                                    oncontextmenu={stopPropagation(
-                                        preventDefault(() => changeTrackColor(t)),
-                                    )}
-                                >
+                                <div class="track-name">
                                     {track.name}
                                 </div>
                                 <button
@@ -1101,8 +1114,8 @@
                                     class:on={track.mute}
                                     aria-label="Mute lane"
                                     onclick={stopPropagation(() => toggleTrackMute(t))}
-                                    ondblclick={stopPropagation(bubble('dblclick'))}
-                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    ondblclick={stopPropagation()}
+                                    onmousedown={stopPropagation()}
                                     title="Mute lane"><i class="fa fa-volume-xmark"></i></button
                                 >
                                 <button
@@ -1110,8 +1123,8 @@
                                     class:on={track.solo}
                                     aria-label="Solo lane"
                                     onclick={stopPropagation(() => toggleTrackSolo(t))}
-                                    ondblclick={stopPropagation(bubble('dblclick'))}
-                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    ondblclick={stopPropagation()}
+                                    onmousedown={stopPropagation()}
                                     title="Solo lane"><i class="fa fa-headphones"></i></button
                                 >
                                 <button
@@ -1119,8 +1132,8 @@
                                     aria-label="Remove track"
                                     disabled={$project!.tracks.length <= 1}
                                     onclick={stopPropagation(() => requestRemoveTrack(t))}
-                                    ondblclick={stopPropagation(bubble('dblclick'))}
-                                    onmousedown={stopPropagation(bubble('mousedown'))}
+                                    ondblclick={stopPropagation()}
+                                    onmousedown={stopPropagation()}
                                     title="Remove track"><i class="fa fa-trash"></i></button
                                 >
                             </div>
@@ -1143,6 +1156,8 @@
                             ondrop={stopPropagation(event =>
                                 dropAutomationLane(event as DragEvent, lane),
                             )}
+                            role="rowheader"
+                            tabindex="0"
                             title="{laneTitle(
                                 $project!,
                                 lane,
@@ -1165,7 +1180,7 @@
                                 class="ms remove-track"
                                 aria-label="Remove automation lane"
                                 onclick={stopPropagation(() => requestRemoveAutoLane(lane))}
-                                onmousedown={stopPropagation(bubble('mousedown'))}
+                                onmousedown={stopPropagation()}
                                 title="Remove this automation lane"
                                 ><i class="fa fa-trash"></i></button
                             >
@@ -1177,10 +1192,13 @@
         <div
             bind:this={playlistEl}
             class="grid-viewport"
-            oncontextmenu={preventDefault(bubble('contextmenu'))}
+            aria-label="Arrangement editor"
+            oncontextmenu={preventDefault(() => {})}
             onmousedown={handlePlaylistMouseDown}
             onscroll={syncFrozenPanes}
             onwheel={handleWheel}
+            role="grid"
+            tabindex="0"
             bind:clientWidth={viewportWidth}
         >
             <div
@@ -1202,12 +1220,7 @@
                                 style="height: {cellHeight}px;"
                                 class="grid-row"
                                 class:silent={laneSilent[t]}
-                                onmousedown={e => {
-                                    const s_raw =
-                                        (e.clientX - e.currentTarget.getBoundingClientRect().left) /
-                                        cellWidth;
-                                    handleMouseDown(e, t, s_raw);
-                                }}
+                                data-track={t}
                             ></div>
                         {:else}
                             {@const lane = row.lane}
@@ -1257,7 +1270,10 @@
                             class:open-pattern={clip.patternId === $selPatId}
                             class:selected={clip.selected}
                             class:silent={laneSilent[clip.track]}
+                            aria-label={`Open ${getPatternName(clip.patternId)} pattern`}
                             ondblclick={() => ($selPatId = clip.patternId)}
+                            onkeydown={event =>
+                                activateOnKeyboard(event, () => ($selPatId = clip.patternId))}
                             onmousedown={stopPropagation(e => {
                                 const mouseEvent = e as MouseEvent;
                                 const rect = (
@@ -1266,6 +1282,8 @@
                                 const s_raw = (mouseEvent.clientX - rect.left) / cellWidth;
                                 handleMouseDown(mouseEvent, clip.track, s_raw);
                             })}
+                            role="button"
+                            tabindex="0"
                         >
                             <div class="clip-name">{getPatternName(clip.patternId)}</div>
                             {#if clip.transpose}
@@ -1330,16 +1348,16 @@
 </Dialog>
 <Prompt
     label="New Name"
+    onsubmit={onRenameTrack}
     title="Rename Track"
     bind:show={showRenameTrack}
     bind:value={renameTrackValue}
-    on:submit={onRenameTrack}
 />
 <Dialog title="Track Color" bind:show={showTrackColor}>
     {#if editingTrackIdx !== null}
         <ColorPicker
+            onchange={onTrackColorChange}
             value={$project!.tracks[editingTrackIdx].color}
-            on:change={onTrackColorChange}
         />
     {/if}
 </Dialog>
@@ -1347,17 +1365,17 @@
     confirmLabel="Remove track"
     destructive
     message="This track has clips. Removing it will permanently remove those clips."
+    onconfirm={removeTrack}
     title="Remove Track"
     bind:show={showRemoveTrack}
-    on:confirm={removeTrack}
 />
 <Confirm
     confirmLabel="Remove lane"
     destructive
     message="Removing this lane will permanently remove all of its automation points."
+    onconfirm={removeAutoLane}
     title="Remove Automation Lane"
     bind:show={showRemoveAutoLane}
-    on:confirm={removeAutoLane}
 />
 
 <style>

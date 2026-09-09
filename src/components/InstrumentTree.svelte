@@ -75,9 +75,9 @@
         }
     }
 
-    function rename(e: CustomEvent<string>) {
-        if (e.detail && target) {
-            target.name = e.detail;
+    function rename(value: string) {
+        if (value && target) {
+            target.name = value;
             touch();
         }
     }
@@ -126,23 +126,23 @@
         touch();
     }
 
-    function submitRename(e: CustomEvent<string>) {
-        if (!e.detail) {
+    function submitRename(value: string) {
+        if (!value) {
             return;
         }
         if (folderToRename) {
             const prefix = folderToRename + '/';
             $project?.instruments.forEach(instrument => {
                 if (instrument.name === folderToRename) {
-                    instrument.name = e.detail;
+                    instrument.name = value;
                 } else if (instrument.name.startsWith(prefix)) {
-                    instrument.name = e.detail + instrument.name.slice(folderToRename!.length);
+                    instrument.name = value + instrument.name.slice(folderToRename!.length);
                 }
             });
             folderToRename = null;
             touch();
         } else {
-            rename(e);
+            rename(value);
         }
     }
 </script>
@@ -174,18 +174,18 @@
 </div>
 <Prompt
     label="New Name"
+    onsubmit={submitRename}
     title={folderToRename ? 'Rename Folder' : 'Rename Instrument'}
     bind:show={showRename}
     bind:value={renameValue}
-    on:submit={submitRename}
 />
 <Confirm
     confirmLabel="Delete instrument"
     destructive
     message={`Delete "${target?.name}"? Notes using it will be removed.`}
+    onconfirm={remove}
     title="Delete Instrument"
     bind:show={showDelete}
-    on:confirm={remove}
 />
 
 <style>

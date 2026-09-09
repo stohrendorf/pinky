@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onDestroy, onMount, tick } from 'svelte';
-    import { createBubbler, preventDefault, run, stopPropagation } from 'svelte/legacy';
 
     import type { Note, Pattern } from '../lib/types';
 
@@ -33,8 +32,7 @@
         handleViewportMouseUp,
         handleViewportWheel,
     } from '../lib/viewport';
-
-    const bubble = createBubbler();
+    import { preventDefault, stopPropagation } from './event-modifiers';
 
     interface Props {
         contextualEditor?: string | null;
@@ -381,7 +379,7 @@
                   : 1;
     }
 
-    function openNoteEditor(e: MouseEvent, note: ExtendedNote) {
+    function openNoteEditor(e: Event, note: ExtendedNote) {
         e.preventDefault();
         const selectedNote = note.selected ? note : selectOnlyNote(note);
         const row = rowOfNote[selectedNote.pitch] ?? 0;
@@ -401,6 +399,12 @@
             noteEditorInput?.focus();
             noteEditorInput?.select();
         });
+    }
+
+    function openNoteEditorFromKeyboard(event: KeyboardEvent, note: ExtendedNote) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            openNoteEditor(event, note);
+        }
     }
 
     function closeNoteEditor() {
@@ -654,6 +658,11 @@
 
     function handleRollMouseDown(e: MouseEvent) {
         handleViewportMouseDown(e, viewport);
+        if (!(e.target as Element).closest('.grid-row')) {
+            return;
+        }
+        const gridPosition = gridPositionAt(e);
+        handleMouseDown(e, gridPosition.r, gridPosition.s);
     }
 
     function gridPositionAt(e: MouseEvent): { r: number; s: number } {
@@ -691,7 +700,7 @@
     const notes = $derived($project && $selInstId ? (pat.tracks[$selInstId] ?? []) : []);
     const currentPatternPlayheadStep = $derived(patternPlayheadStep());
     const cellWidth = $derived($project?.zoom.seq.width || 24);
-    run(() => {
+    $effect.pre(() => {
         if (currentPatternPlayheadStep !== null) {
             scrollPlayheadIntoView(rollEl, currentPatternPlayheadStep, cellWidth, 88);
         }
@@ -739,7 +748,7 @@
     const selectedLegato = $derived(
         legatoLines.find(({ source, target }) => source.selected && target.selected) || null,
     );
-    run(() => {
+    $effect.pre(() => {
         if (contextualEditor !== NOTE_EDITOR_KEY && noteEditor) {
             noteEditor = null;
             noteEditorError = '';
@@ -796,9 +805,12 @@
     <div
         bind:this={rollEl}
         class="piano-roll"
-        oncontextmenu={preventDefault(bubble('contextmenu'))}
+        aria-label="Piano roll editor"
+        oncontextmenu={preventDefault(() => {})}
         onmousedown={handleRollMouseDown}
         onwheel={handleWheel}
+        role="grid"
+        tabindex="0"
     >
         <div class="piano-roll-header">
             <div class="corner">
@@ -854,10 +866,6 @@
                             class="grid-row"
                             class:black={note.black}
                             class:octave={note.name.startsWith('C') && !note.black}
-                            onmousedown={e => {
-                                const gridPosition = gridPositionAt(e);
-                                handleMouseDown(e, gridPosition.r, gridPosition.s);
-                            }}
                         ></div>
                     {/each}
                 </div>
@@ -898,12 +906,16 @@
                                 0.6 * v}"
                             class="note"
                             class:selected={n.selected}
+                            aria-label={`${n.pitch}, velocity ${Math.round(v * 100)} percent`}
                             ondblclick={stopPropagation(e => openNoteEditor(e as MouseEvent, n))}
+                            onkeydown={event => openNoteEditorFromKeyboard(event, n)}
                             onmousedown={stopPropagation(e => {
                                 const mouseEvent = e as MouseEvent;
                                 const gridPosition = gridPositionAt(mouseEvent);
                                 handleMouseDown(mouseEvent, gridPosition.r, gridPosition.s);
                             })}
+                            role="button"
+                            tabindex="0"
                             title="{n.pitch} • velocity {Math.round(v * 100)}% (Alt+drag)"
                         >
                             {n.pitch}
@@ -920,12 +932,13 @@
                 </div>
 
                 {#if noteEditor}
+                    <!-- svelte-ignore a11y_no_noninteractive_element_interactions (the form stops pointer and Escape events from reaching the spatial editor) -->
                     <form
                         style="left: {noteEditorPosition.left}px; top: {noteEditorPosition.top}px;"
                         class="note-editor"
                         aria-label="Edit note values"
                         onkeydown={onNoteEditorKeydown}
-                        onmousedown={stopPropagation(bubble('mousedown'))}
+                        onmousedown={stopPropagation()}
                         onsubmit={preventDefault(saveNoteEditor)}
                     >
                         <label
@@ -1262,6 +1275,7 @@
         background: var(--surface-input);
         color: var(--primary-text);
         font: inherit;
+        appearance: textfield;
         -moz-appearance: textfield;
     }
 

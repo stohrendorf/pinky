@@ -1,8 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
-    const dispatch = createEventDispatcher<{ click: MouseEvent }>();
-
     interface Props {
         icon: string;
         variant?: 'primary' | 'secondary' | 'ghost';
@@ -10,6 +6,7 @@
         title?: string;
         ariaLabel?: string;
         className?: string;
+        onclick?: (event: MouseEvent) => void;
     }
 
     const {
@@ -19,6 +16,7 @@
         title = '',
         ariaLabel = '',
         className = '',
+        onclick = () => {},
     }: Props = $props();
 </script>
 
@@ -26,7 +24,7 @@
     class="icon-btn {variant} {className}"
     aria-label={ariaLabel || title}
     {disabled}
-    onclick={event => dispatch('click', event)}
+    {onclick}
     {title}
 >
     <i class="fa {icon}"></i>

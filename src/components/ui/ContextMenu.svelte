@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onMount, tick } from 'svelte';
-    import { run } from 'svelte/legacy';
 
     interface Props {
         open?: boolean;
@@ -55,7 +54,7 @@
         }
     }
 
-    run(() => {
+    $effect.pre(() => {
         if (open) {
             updatePosition();
         }

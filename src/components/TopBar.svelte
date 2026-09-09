@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import type { MasterId } from '../lib/master-controls';
     import type { DemoSong } from '../lib/project';
 
@@ -144,7 +142,7 @@
     // Save feedback — driven by the store, so Ctrl+S flashes it too
     let saved = $state('');
     let savedTimer: ReturnType<typeof setTimeout> | undefined = $state();
-    run(() => {
+    $effect.pre(() => {
         if ($savedAt) {
             saved = '✓ saved';
             clearTimeout(savedTimer);
@@ -219,30 +217,30 @@
                 <Button
                     className="compact-button"
                     disabled={$playing || $rendering}
+                    onclick={playPattern}
                     title="Play Pattern"
-                    on:click={playPattern}
                     ><i class="fa fa-play"></i> Pattern
                 </Button>
                 <Button
                     className="compact-button"
                     disabled={$playing || $rendering}
+                    onclick={playSong}
                     title="Play Song"
-                    on:click={playSong}
                     ><i class="fa fa-music"></i> Song
                 </Button>
                 <Button
                     className="compact-button"
                     disabled={!$playing}
+                    onclick={stopTransport}
                     title="Stop"
-                    variant="secondary"
-                    on:click={stopTransport}><i class="fa fa-stop"></i></Button
+                    variant="secondary"><i class="fa fa-stop"></i></Button
                 >
                 <Button
                     className="compact-button"
                     disabled={$songCursor === 0}
+                    onclick={() => seekSong(0)}
                     title="Playback cursor back to the start (Home)"
-                    variant="secondary"
-                    on:click={() => seekSong(0)}><i class="fa fa-backward-step"></i></Button
+                    variant="secondary"><i class="fa fa-backward-step"></i></Button
                 >
             </div>
             <span class="song-label">{$songLabel}</span>
@@ -251,10 +249,10 @@
         <div class="utility-group">
             <Button
                 className="mixer-toggle"
+                onclick={() => (showMixer = true)}
                 pressed={showMixer}
                 title="Open mixer: channels, routing and master protection"
                 variant="secondary"
-                on:click={() => (showMixer = true)}
             >
                 <i class="fa fa-chart-simple" aria-hidden="true"></i> Mixer
             </Button>
@@ -270,9 +268,9 @@
             </a>
             <IconButton
                 icon="fa-question-circle"
+                onclick={() => showShortcuts.set(true)}
                 title="Keyboard shortcuts (?)"
                 variant="ghost"
-                on:click={() => showShortcuts.set(true)}
             ></IconButton>
         </div>
     </div>
@@ -287,18 +285,18 @@
             <div class="sidebar-column">
                 <div class="sidebar-section">
                     <span class="menu-heading">Project</span>
-                    <Button variant="secondary" on:click={() => runUtilityAction(saveProject)}
+                    <Button onclick={() => runUtilityAction(saveProject)} variant="secondary"
                         ><i class="fa fa-save"></i> Save
                     </Button>
-                    <Button variant="secondary" on:click={() => runUtilityAction(exportProject)}
+                    <Button onclick={() => runUtilityAction(exportProject)} variant="secondary"
                         ><i class="fa fa-download"></i> Export
                     </Button>
                     <Button
+                        onclick={() => runUtilityAction(() => fileInput?.click())}
                         variant="secondary"
-                        on:click={() => runUtilityAction(() => fileInput?.click())}
                         ><i class="fa fa-upload"></i> Import
                     </Button>
-                    <Button variant="secondary" on:click={() => runUtilityAction(newProject, false)}
+                    <Button onclick={() => runUtilityAction(newProject, false)} variant="secondary"
                         ><i class="fa fa-add"></i> New
                     </Button>
                 </div>
@@ -306,9 +304,9 @@
                     <span class="menu-heading">Render</span>
                     <Button
                         disabled={$rendering}
+                        onclick={() => runUtilityAction(exportAudio)}
                         title="Render to a WAV file (the loop region if one is marked, otherwise the whole song)"
                         variant="secondary"
-                        on:click={() => runUtilityAction(exportAudio)}
                     >
                         <i class="fa fa-file-audio"></i>
                         {$rendering ? 'Rendering…' : 'Render WAV'}</Button
@@ -368,10 +366,10 @@
                 <div class="demo-grid">
                     {#each DEMO_LIBRARY as d (d.id)}
                         <Button
+                            onclick={() => runUtilityAction(() => demo(d.id))}
                             pressed={$activeDemo === d.id}
                             title={d.title}
                             variant={$activeDemo === d.id ? 'primary' : 'secondary'}
-                            on:click={() => runUtilityAction(() => demo(d.id))}
                             ><i class="fa {d.icon}"></i> {d.label}
                         </Button>
                     {/each}
@@ -419,14 +417,14 @@
     confirmLabel="Create new project"
     destructive
     message="Start a new empty project? Unsaved changes are lost."
+    onconfirm={onConfirmNew}
     title="New Project"
     bind:show={showConfirmNew}
-    on:confirm={onConfirmNew}
 />
 <Dialog title="Alert" bind:show={showAlert}>
     <p>{alertMessage}</p>
     <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-        <Button on:click={() => (showAlert = false)}>OK</Button>
+        <Button onclick={() => (showAlert = false)}>OK</Button>
     </div>
 </Dialog>
 

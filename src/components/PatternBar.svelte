@@ -54,9 +54,9 @@
         showRename = true;
     }
 
-    function onRename(e: CustomEvent<string>) {
-        if (e.detail) {
-            pat.name = e.detail;
+    function onRename(value: string) {
+        if (value) {
+            pat.name = value;
             touch();
         }
     }
@@ -124,23 +124,23 @@
         }
     }
 
-    function onRenameSubmit(e: CustomEvent<string>) {
-        if (!e.detail) {
+    function onRenameSubmit(value: string) {
+        if (!value) {
             return;
         }
         if (folderToRename) {
             const prefix = folderToRename + '/';
             $project?.patterns.forEach(pattern => {
                 if (pattern.name === folderToRename) {
-                    pattern.name = e.detail;
+                    pattern.name = value;
                 } else if (pattern.name.startsWith(prefix)) {
-                    pattern.name = e.detail + pattern.name.slice(folderToRename!.length);
+                    pattern.name = value + pattern.name.slice(folderToRename!.length);
                 }
             });
             folderToRename = null;
             touch();
         } else {
-            onRename(e);
+            onRename(value);
         }
     }
 </script>
@@ -170,26 +170,26 @@
 
 <Prompt
     label="New Name"
+    onsubmit={onRenameSubmit}
     title={folderToRename ? 'Rename Folder' : 'Rename Pattern'}
     bind:show={showRename}
     bind:value={renameValue}
-    on:submit={onRenameSubmit}
 />
 <Confirm
     confirmLabel="Delete pattern"
     destructive
     message={`Are you sure you want to delete "${pat.name}"? It will be removed from the song arrangement.`}
+    onconfirm={onConfirmDelete}
     title="Delete Pattern"
     bind:show={showConfirmDelete}
-    on:confirm={onConfirmDelete}
 />
 <Dialog title="Pattern Color" bind:show={showColor}>
     <ColorPicker
-        value={pat.color}
-        on:change={e => {
-            pat.color = e.detail;
+        onchange={value => {
+            pat.color = value;
             touch();
         }}
+        value={pat.color}
     />
 </Dialog>
 

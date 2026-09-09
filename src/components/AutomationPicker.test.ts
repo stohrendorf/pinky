@@ -42,8 +42,8 @@ describe('automation lane chooser', () => {
         const automationPicker = components(componentMarkup(playlist), 'AutomationPicker')[0];
 
         expect(automationPicker).toBeDefined();
-        expect(hasAttribute(automationPicker!, 'onadd')).toBe(true);
-        expect(hasAttribute(automationPicker!, 'project')).toBe(true);
+        expect(hasAttribute(automationPicker, 'onadd')).toBe(true);
+        expect(hasAttribute(automationPicker, 'project')).toBe(true);
         expect(playlist).not.toContain('<select bind:value={addTarget}>');
         expect(playlist).not.toContain("The lane starts at the parameter's current value");
     });

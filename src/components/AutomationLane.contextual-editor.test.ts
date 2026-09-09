@@ -27,7 +27,8 @@ describe('AutomationLane contextual node editing', () => {
         expect(lane).toMatch(
             /oninput=\{\(?event\)?\s*=>\s*updatePointValue\(selectedPoint, event\.currentTarget\.value\)}/,
         );
-        expect(lane).toContain("onkeydown={stopPropagation(bubble('keydown'))}");
+        expect(lane).toContain('onkeydown={stopPropagation()}');
+        expect(lane).not.toContain('svelte/legacy');
         expect(lane).not.toContain('ondblclick={stopPropagation(() => openPointEditor(p))}');
         expect(lane).toContain('onkeydown={e => onPointKeydown(e, p)}');
         expect(lane).toContain('role="button"');

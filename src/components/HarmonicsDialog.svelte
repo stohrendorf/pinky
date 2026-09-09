@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
-
     import type { HarmonicsGen } from '../lib/instruments';
     import type { InstrumentParams } from '../lib/types';
 
@@ -31,7 +29,7 @@
     let wasOpen = $state(false);
 
     // (re-)read the remembered settings whenever the dialog opens
-    run(() => {
+    $effect.pre(() => {
         if (show !== wasOpen) {
             wasOpen = show;
             if (show) {
@@ -115,8 +113,8 @@
         </div>
 
         <div class="actions">
-            <Button variant="secondary" on:click={() => (show = false)}>Cancel</Button>
-            <Button on:click={apply}><i class="fa fa-wand-magic-sparkles"></i> Generate</Button>
+            <Button onclick={() => (show = false)} variant="secondary">Cancel</Button>
+            <Button onclick={apply}><i class="fa fa-wand-magic-sparkles"></i> Generate</Button>
         </div>
     </div>
 </Dialog>

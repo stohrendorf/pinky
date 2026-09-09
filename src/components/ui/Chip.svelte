@@ -1,18 +1,15 @@
 <script lang="ts">
-    import { createBubbler } from 'svelte/legacy';
-
-    const bubble = createBubbler();
-
     interface Props {
         selected?: boolean;
         className?: string;
+        onclick?: (event: MouseEvent) => void;
         children?: import('svelte').Snippet;
     }
 
-    const { selected = false, className = '', children }: Props = $props();
+    const { selected = false, className = '', onclick = () => {}, children }: Props = $props();
 </script>
 
-<button class="chip {selected ? 'sel' : ''} {className}" onclick={bubble('click')}>
+<button class="chip {selected ? 'sel' : ''} {className}" {onclick}>
     {@render children?.()}
 </button>
 

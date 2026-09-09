@@ -111,22 +111,20 @@
                     <Playlist bind:contextualEditor />
                 </div>
             </section>
-            <div
+            <input
                 class="split-divider"
                 aria-label="Resize arranger and pattern editor"
-                aria-orientation="horizontal"
-                aria-valuemax="100"
-                aria-valuemin="0"
-                aria-valuenow={Math.round(splitRatio * 100)}
+                max="100"
+                min="0"
                 onkeydown={handleDividerKeydown}
                 onpointercancel={stopDividerDrag}
                 onpointerdown={startDividerDrag}
                 onpointermove={handleDividerPointerMove}
                 onpointerup={stopDividerDrag}
-                role="separator"
-                tabindex="0"
                 title="Click or drag to resize editors"
-            ></div>
+                type="range"
+                value={Math.round(splitRatio * 100)}
+            />
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
                     <InstrumentTree onEdit={() => (showInstrumentEditor = true)} />

@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
 
+    import { SvelteSet } from 'svelte/reactivity';
+
     import { flattenNameTree, type NamedTreeItem } from '../../lib/name-tree';
     import ContextMenu from './ContextMenu.svelte';
 
@@ -36,7 +38,7 @@
         title = 'Items',
     }: Props = $props();
 
-    let collapsedFolders = $state(new Set<string>());
+    const collapsedFolders = new SvelteSet<string>();
     let openMenu: string | null = $state(null);
     let menuAnchor: HTMLElement | null = $state(null);
 
@@ -46,9 +48,11 @@
     );
 
     function toggleFolder(path: string) {
-        const next = new Set(collapsedFolders);
-        next.has(path) ? next.delete(path) : next.add(path);
-        collapsedFolders = next;
+        if (collapsedFolders.has(path)) {
+            collapsedFolders.delete(path);
+        } else {
+            collapsedFolders.add(path);
+        }
     }
 
     function select(item: NamedTreeItem) {
@@ -97,12 +101,13 @@
                         class="tree-row folder-row"
                         aria-expanded={!collapsedFolders.has(entry.path)}
                         aria-level={entry.depth + 1}
+                        aria-selected="false"
                         role="treeitem"
                     >
                         <button
                             class="row-main"
+                            onclick={() => toggleFolder(entry.path)}
                             type="button"
-                            on:click={() => toggleFolder(entry.path)}
                         >
                             <span
                                 class="folder-chevron"
@@ -117,9 +122,8 @@
                             <button
                                 class="dots"
                                 aria-label="Folder actions"
-                                type="button"
-                                on:click={event => toggleMenu(`folder:${entry.path}`, event)}
-                                ><i class="fa fa-ellipsis-vertical"></i></button
+                                onclick={event => toggleMenu(`folder:${entry.path}`, event)}
+                                type="button"><i class="fa fa-ellipsis-vertical"></i></button
                             >
                         {/if}
                     </div>
@@ -132,7 +136,7 @@
                         aria-selected={entry.item.id === selectedId}
                         role="treeitem"
                     >
-                        <button class="row-main" type="button" on:click={() => select(entry.item)}>
+                        <button class="row-main" onclick={() => select(entry.item)} type="button">
                             {#if entry.item.color}<span
                                     style="background: {entry.item.color}"
                                     class="color-tag"
@@ -147,27 +151,24 @@
                                 class:active={entry.item.mute}
                                 aria-label="{entry.label} mute"
                                 aria-pressed={entry.item.mute}
-                                type="button"
-                                on:click={() => onmute(entry.item)}
-                                ><i class="fa fa-volume-xmark"></i></button
+                                onclick={() => onmute(entry.item)}
+                                type="button"><i class="fa fa-volume-xmark"></i></button
                             >
                             <button
                                 class="toggle"
                                 class:active={entry.item.solo}
                                 aria-label="{entry.label} solo"
                                 aria-pressed={entry.item.solo}
-                                type="button"
-                                on:click={() => onsolo(entry.item)}
-                                ><i class="fa fa-headphones"></i></button
+                                onclick={() => onsolo(entry.item)}
+                                type="button"><i class="fa fa-headphones"></i></button
                             >
                         {/if}
                         {#if itemActions.length}
                             <button
                                 class="dots"
                                 aria-label="{entry.label} actions"
-                                type="button"
-                                on:click={event => toggleMenu(entry.item.id, event)}
-                                ><i class="fa fa-ellipsis-vertical"></i></button
+                                onclick={event => toggleMenu(entry.item.id, event)}
+                                type="button"><i class="fa fa-ellipsis-vertical"></i></button
                             >
                         {/if}
                     </div>

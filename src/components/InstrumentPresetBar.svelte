@@ -49,8 +49,8 @@
         showSavePreset = true;
     }
 
-    function onSavePreset(e: CustomEvent<string>) {
-        const name = (e.detail || '').trim();
+    function onSavePreset(value: string) {
+        const name = value.trim();
         if (!name) {
             return;
         }
@@ -88,37 +88,37 @@
     <IconButton
         ariaLabel="Apply selected preset"
         icon="fa-check"
+        onclick={applyPreset}
         title="Apply selected preset"
-        on:click={applyPreset}
     />
     <IconButton
         ariaLabel="Save selected instrument as a preset"
         icon="fa-floppy-disk"
+        onclick={openSavePreset}
         title="Save selected instrument as a preset"
-        on:click={openSavePreset}
     />
     {#if isUserPreset}
         <IconButton
             ariaLabel="Delete selected preset"
             icon="fa-xmark"
+            onclick={removePreset}
             title="Delete selected preset"
-            on:click={removePreset}
         />
     {/if}
     <IconButton
         ariaLabel="Create an instrument from this preset"
         icon="fa-add"
+        onclick={createFromPreset}
         title="Create an instrument from this preset"
-        on:click={createFromPreset}
     />
 </div>
 
 <Prompt
     label="Preset Name"
+    onsubmit={onSavePreset}
     title="Save Preset"
     bind:show={showSavePreset}
     bind:value={savePresetValue}
-    on:submit={onSavePreset}
 />
 
 <style>

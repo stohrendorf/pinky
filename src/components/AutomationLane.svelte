@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { createBubbler, preventDefault, run, stopPropagation } from 'svelte/legacy';
-
     import type { AutoParamDef } from '../lib/automation';
     import type { AutomationLane, AutomationPoint } from '../lib/types';
 
@@ -15,8 +13,7 @@
      * Click = add a point (and drag it), drag a point = move it, right-click a
      * point = delete it. Values are linear between the points, held outside. */
     import { touch } from '../lib/project';
-
-    const bubble = createBubbler();
+    import { preventDefault, stopPropagation } from './event-modifiers';
 
     interface Props {
         lane: AutomationLane;
@@ -283,7 +280,7 @@
     const pts = $derived(lane.points);
     const path = $derived(curvePath(pts));
     const fillPath = $derived(path ? `${path} L ${width} ${height} L 0 ${height} Z` : '');
-    run(() => {
+    $effect.pre(() => {
         if (contextualEditor !== editorKey && editingPoint) {
             editingPoint = null;
             editingError = '';
@@ -297,9 +294,12 @@
     <svg
         bind:this={svgEl}
         class="auto-lane"
+        aria-label={`${def.label} automation editor`}
         {height}
-        oncontextmenu={preventDefault(bubble('contextmenu'))}
+        oncontextmenu={preventDefault(() => {})}
         onmousedown={onDown}
+        role="grid"
+        tabindex="0"
         {width}
     >
         <line
@@ -350,7 +350,7 @@
                     max={def.max}
                     min={def.min}
                     oninput={event => updatePointValue(selectedPoint, event.currentTarget.value)}
-                    onkeydown={stopPropagation(bubble('keydown'))}
+                    onkeydown={stopPropagation()}
                     step={def.step}
                     type="number"
                     value={selectedPoint.value}
@@ -372,6 +372,7 @@
     {/if}
 
     {#if editingPoint}
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions (the form stops pointer and Escape events from reaching the spatial editor) -->
         <form
             style="left: {pointControlPosition(editingPoint)}px;"
             class="point-editor"
@@ -487,6 +488,7 @@
         background: var(--surface-input);
         color: var(--primary-text);
         font: inherit;
+        appearance: textfield;
         -moz-appearance: textfield;
     }
 

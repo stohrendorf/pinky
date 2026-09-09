@@ -18,15 +18,23 @@ describe('TreeView contextual menus and folders', () => {
     });
 
     it('renders folder state and recursive item counts', () => {
-        expect(treeView).toContain('let collapsedFolders = $state(new Set<string>());');
-        expect(treeView).toContain('const next = new Set(collapsedFolders);');
+        expect(treeView).toContain("import { SvelteSet } from 'svelte/reactivity';");
+        expect(treeView).toContain('const collapsedFolders = new SvelteSet<string>();');
         expect(treeView).toMatch(
-            /class="folder-chevron"[\s\S]*class:collapsed=\{collapsedFolders\.has\(entry\.path\)\}/,
+            /class="folder-chevron"[\s\S]*class:collapsed=\{collapsedFolders\.has\(entry\.path\)}/,
         );
         expect(treeView).toContain('.folder-chevron.collapsed');
         expect(treeView).toContain('aria-expanded={!collapsedFolders.has(entry.path)}');
         expect(treeView).not.toContain('collapsedPaths');
         expect(treeView).toContain('entry.itemCount');
         expect(treeView).toContain('class="folder-count"');
+    });
+
+    it('provides complete tree selection semantics without legacy event directives', () => {
+        expect(treeView.match(/role="treeitem"/g)).toHaveLength(2);
+        expect(treeView.match(/aria-selected=/g)).toHaveLength(2);
+        expect(treeView).toContain('aria-selected="false"');
+        expect(treeView).not.toContain('on:click');
+        expect(treeView.match(/onclick=/g)).toHaveLength(6);
     });
 });

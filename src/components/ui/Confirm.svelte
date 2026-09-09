@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
     import Button from './Button.svelte';
     import Dialog from './Dialog.svelte';
 
@@ -10,6 +8,8 @@
         message?: string;
         confirmLabel?: string;
         destructive?: boolean;
+        oncancel?: () => void;
+        onconfirm?: () => void;
     }
 
     let {
@@ -18,22 +18,22 @@
         message = '',
         confirmLabel = 'Confirm',
         destructive = false,
+        oncancel = () => {},
+        onconfirm = () => {},
     }: Props = $props();
 
-    const dispatch = createEventDispatcher<{ cancel: void; confirm: void }>();
-
     function confirm() {
-        dispatch('confirm');
+        onconfirm();
         show = false;
     }
 
     function cancel() {
         show = false;
-        dispatch('cancel');
+        oncancel();
     }
 </script>
 
-<Dialog {show} {title} on:close={cancel}>
+<Dialog onclose={cancel} {show} {title}>
     <div class="confirm-body">
         <div class="confirm-message" class:destructive>
             {#if destructive}
@@ -42,8 +42,8 @@
             <p>{message}</p>
         </div>
         <div class="actions">
-            <Button variant="secondary" on:click={cancel}>Cancel</Button>
-            <Button variant={destructive ? 'danger' : 'primary'} on:click={confirm}
+            <Button onclick={cancel} variant="secondary">Cancel</Button>
+            <Button onclick={confirm} variant={destructive ? 'danger' : 'primary'}
                 >{confirmLabel}</Button
             >
         </div>

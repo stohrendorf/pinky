@@ -14,4 +14,9 @@ describe('Dialog accessibility', () => {
         expect(dialog).toContain('opener?.focus()');
         expect(dialog).not.toContain('svelte-ignore a11y');
     });
+
+    it('tracks the conditionally rendered dialog element reactively', () => {
+        expect(dialog).toContain('let dialogEl: HTMLDivElement | undefined = $state()');
+        expect(dialog).toContain('bind:this={dialogEl}');
+    });
 });

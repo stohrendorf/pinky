@@ -169,10 +169,10 @@ describe('Playlist frozen track labels', () => {
         expect(playlist).toContain('title="Remove Automation Lane"');
         expect(playlist).toContain('bind:show={showRemoveAutoLane}');
         expect(playlist).toContain('confirmLabel="Remove lane"');
-        expect(playlist).toContain('on:confirm={removeAutoLane}');
+        expect(playlist).toContain('onconfirm={removeAutoLane}');
         expect(playlist).toContain('showRemoveTrack');
         expect(playlist).toContain('confirmLabel="Remove track"');
-        expect(playlist).toContain('on:confirm={removeTrack}');
+        expect(playlist).toContain('onconfirm={removeTrack}');
         expect(playlist).toMatch(
             /removeArrangementTrack\(\s*\$project\.tracks,\s*\$project\.arrangement,\s*trackToRemove,?\s*\)/,
         );

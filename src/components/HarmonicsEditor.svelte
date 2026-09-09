@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { preventDefault, run } from 'svelte/legacy';
-
     import type { InstrumentParams, PartialSpec } from '../lib/types';
 
     /* Harmonics editor — the harmonic profile of an instrument, always visible.
@@ -9,6 +7,7 @@
      * odd-only (clarinet), inharmonic (bell). The initial set of values comes
      * from the "Generate" dialog; everything here is free hand-editing. */
     import { clampPartialLevel, ensurePartials, MAX_PARTIALS } from '../lib/instruments';
+    import { preventDefault } from './event-modifiers';
     import HarmonicsDialog from './HarmonicsDialog.svelte';
     import Button from './ui/Button.svelte';
 
@@ -110,7 +109,7 @@
     const mute = (e: Event) => setLevel(indexAt(e as MouseEvent), 0); // right-click = partial off
     // re-read when another instrument is selected, a preset is applied or the
     // generator dialog replaced the profile
-    run(() => {
+    $effect.pre(() => {
         if (params !== bound || params.partials !== source) {
             read(params);
         }
@@ -174,26 +173,26 @@
 
     <div class="row">
         <Button
+            onclick={() => (showGen = true)}
             title="Generate a new profile from a timbre shape, partial count, falloff and stretch"
             variant="secondary"
-            on:click={() => (showGen = true)}
         >
             <i class="fa fa-wand-magic-sparkles"></i> Generate…
         </Button>
-        <Button title="Scale the loudest partial to 1" variant="secondary" on:click={normalize}
+        <Button onclick={normalize} title="Scale the loudest partial to 1" variant="secondary"
             ><i class="fa fa-maximize"></i> Normalize
         </Button>
         <Button
             disabled={list.length <= 1}
+            onclick={removePartial}
             title="Remove last partial"
-            variant="secondary"
-            on:click={removePartial}><i class="fa fa-minus"></i></Button
+            variant="secondary"><i class="fa fa-minus"></i></Button
         >
         <Button
             disabled={list.length >= MAX_PARTIALS}
+            onclick={addPartial}
             title="Add partial"
-            variant="secondary"
-            on:click={addPartial}><i class="fa fa-plus"></i></Button
+            variant="secondary"><i class="fa fa-plus"></i></Button
         >
     </div>
     <div class="note">
@@ -319,6 +318,7 @@
         font: inherit;
         font-size: 10px;
         text-align: center;
+        appearance: textfield;
         -moz-appearance: textfield;
     }
 

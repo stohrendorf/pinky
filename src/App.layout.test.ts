@@ -60,8 +60,9 @@ describe('workspace controls', () => {
 
     it('provides a movable divider between the arranger and pattern editor', () => {
         expect(app).toContain('class="split-divider"');
-        expect(app).not.toContain('class="split-divider" type="range"');
-        expect(app).toContain('role="separator"');
+        expect(app).toMatch(/<input[\s\S]*class="split-divider"/);
+        expect(app).toMatch(/class="split-divider"[\s\S]*type="range"/);
+        expect(app).not.toMatch(/class="split-divider"[\s\S]*tabindex=/);
         expect(app).toContain('onpointerdown={startDividerDrag}');
         expect(app).toContain('onpointermove={handleDividerPointerMove}');
         expect(app).toContain('setPointerCapture(event.pointerId)');
@@ -91,7 +92,7 @@ describe('workspace controls', () => {
 
     it('lets the full available grid range bound divider movement', () => {
         expect(app).toContain('splitRatio = Math.max(0, Math.min(1, value / 100));');
-        expect(app).toMatch(/aria-valuemax="100"[\s\S]*aria-valuemin="0"/);
+        expect(app).toMatch(/max="100"[\s\S]*min="0"/);
         expect(app).toContain('setSplit(0);');
         expect(app).toContain('setSplit(100);');
     });

@@ -8,7 +8,7 @@ describe('Confirm', () => {
     it('makes destructive confirmations visually distinct and keeps cancellation secondary', () => {
         expect(confirm).toContain('destructive = false');
         expect(confirm).toContain('fa-triangle-exclamation');
-        expect(confirm).toContain('<Button variant="secondary" on:click={cancel}>Cancel</Button>');
+        expect(confirm).toMatch(/<Button[^>]*onclick=\{cancel}[^>]*>Cancel<\/Button>/);
         expect(confirm).toContain("variant={destructive ? 'danger' : 'primary'}");
     });
 

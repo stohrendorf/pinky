@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher, type Snippet, tick } from 'svelte';
+    import { type Snippet, tick } from 'svelte';
 
     interface Props {
         bodyClass?: string;
@@ -9,6 +9,7 @@
         show?: boolean;
         title?: string;
         width?: string;
+        onclose?: () => void;
     }
 
     let {
@@ -19,10 +20,9 @@
         show = $bindable(false),
         title = '',
         width = '300px',
+        onclose = () => {},
     }: Props = $props();
-
-    const dispatch = createEventDispatcher<{ close: void }>();
-    let dialogEl: HTMLDivElement;
+    let dialogEl: HTMLDivElement | undefined = $state();
     let opener: HTMLElement | null = null;
 
     $effect(() => {
@@ -35,7 +35,7 @@
 
     function close() {
         show = false;
-        dispatch('close');
+        onclose();
         tick().then(() => opener?.focus());
     }
 

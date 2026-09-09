@@ -195,9 +195,9 @@
         showRename = true;
     }
 
-    function onRename(e: CustomEvent<string>) {
-        if (e.detail) {
-            inst.name = e.detail;
+    function onRename(value: string) {
+        if (value) {
+            inst.name = value;
             touch();
         }
     }
@@ -238,44 +238,46 @@
         <div class="selected-instrument-actions" aria-label="Selected instrument playback controls">
             <Button
                 compact
+                onclick={() => toggleMute(inst)}
                 pressed={inst.mute}
                 title="Mute"
                 variant={inst.mute ? 'danger' : 'secondary'}
-                on:click={() => toggleMute(inst)}><i class="fa fa-volume-xmark"></i></Button
+                ><i class="fa fa-volume-xmark"></i></Button
             >
             <Button
                 compact
+                onclick={() => toggleSolo(inst)}
                 pressed={inst.solo}
                 title="Solo"
                 variant={inst.solo ? 'primary' : 'secondary'}
-                on:click={() => toggleSolo(inst)}><i class="fa fa-headphones"></i></Button
+                ><i class="fa fa-headphones"></i></Button
             >
         </div>
         <div class="instrument-actions" aria-label="Selected instrument identity controls">
             <IconButton
                 ariaLabel="Rename Instrument"
                 icon="fa-pencil"
+                onclick={openRename}
                 title="Rename Instrument"
-                on:click={openRename}
             />
             <IconButton
                 ariaLabel="Delete Instrument"
                 disabled={($project?.instruments.length ?? 0) <= 1}
                 icon="fa-trash"
+                onclick={remove}
                 title="Delete Instrument"
-                on:click={remove}
             />
         </div>
     </div>
     <div class="audition-actions">
-        <Button title="Park the current settings in slot B" variant="secondary" on:click={copyToB}
+        <Button onclick={copyToB} title="Park the current settings in slot B" variant="secondary"
             ><i class="fa fa-copy"></i> Copy → B
         </Button>
         <Button
             disabled={!slotB[inst.id]}
+            onclick={swapAB}
             title="Swap the current settings with slot B"
             variant="secondary"
-            on:click={swapAB}
             ><i class="fa fa-right-left"></i> A/B
         </Button>
         {#if slotB[inst.id]}
@@ -385,25 +387,25 @@
 
 <Prompt
     label="New Name"
+    onsubmit={onRename}
     title="Rename Instrument"
     bind:show={showRename}
     bind:value={renameValue}
-    on:submit={onRename}
 />
 <Confirm
     confirmLabel="Delete instrument"
     destructive
     message={`Are you sure you want to delete instrument "${inst.name}"? All its notes in all patterns will be removed.`}
+    onconfirm={onConfirmDelete}
     title="Delete Instrument"
     bind:show={showConfirmDelete}
-    on:confirm={onConfirmDelete}
 />
 {#if contextualHelp}
     <Dialog
+        onclose={() => (contextualHelp = null)}
         show={true}
         title={CONTROL_HELP[contextualHelp].title}
         width="440px"
-        on:close={() => (contextualHelp = null)}
     >
         <p class="contextual-help-text">{CONTROL_HELP[contextualHelp].text}</p>
         <details class="contextual-deep-dive">

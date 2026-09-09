@@ -1,12 +1,10 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
     interface Props {
         value?: string;
+        onchange?: (value: string) => void;
     }
 
-    let { value = $bindable('#53d8fb') }: Props = $props();
-    const dispatch = createEventDispatcher<{ change: string }>();
+    let { value = $bindable('#53d8fb'), onchange = () => {} }: Props = $props();
     const uid = $props.id();
 
     const presets = [
@@ -30,7 +28,7 @@
 
     function select(c: string) {
         value = c;
-        dispatch('change', value);
+        onchange(value);
     }
 </script>
 
@@ -42,13 +40,16 @@
                 style="background: {c}"
                 class="swatch"
                 class:active={value === c}
+                aria-label={`Select ${c} color`}
+                aria-pressed={value === c}
                 onclick={() => select(c)}
+                type="button"
             ></button>
         {/each}
     </div>
     <div class="hex-input">
         <label for={uid}>Hex:</label>
-        <input id={uid} oninput={() => dispatch('change', value)} type="text" bind:value />
+        <input id={uid} oninput={() => onchange(value)} type="text" bind:value />
     </div>
 </div>
 
