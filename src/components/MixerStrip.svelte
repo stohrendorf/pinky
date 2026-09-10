@@ -57,8 +57,7 @@
         type="button"
     >
         <span class="kind">{kind}</span>
-        <strong title={name}>{name.split('/').at(-1) || name}</strong>
-        <span class="edit-hint" aria-hidden="true">···</span>
+        <strong title={name}>{name}</strong>
     </button>
     <label class="pan">
         <span
@@ -120,12 +119,13 @@
     >
         Out → {outputs.find(bus => bus.id === channel.output)?.name ?? 'Master'}
     </button>
+    <span class="strip-summary">Reverb {Math.round(channel.reverb * 100)}%</span>
 </section>
 
 <style>
     .strip {
         display: flex;
-        flex: 0 0 96px;
+        flex: 0 0 128px;
         flex-direction: column;
         gap: 8px;
         min-width: 0;
@@ -164,25 +164,18 @@
         border: 0;
         background: transparent;
         text-align: left;
-        height: 56px;
+        min-height: 52px;
         color: var(--primary-text);
     }
 
     strong {
         width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        line-clamp: 2;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
         overflow-wrap: anywhere;
         font-size: 12px;
         line-height: 1.3;
     }
 
-    .kind,
-    .edit-hint {
+    .kind {
         font-size: 10px;
         color: var(--color-text-muted);
     }
@@ -241,14 +234,18 @@
 
     .route {
         text-align: left;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: anywhere;
         background: transparent;
         border: 0;
         padding: 5px 0;
         font-size: 10px;
         color: var(--color-text-muted);
+    }
+
+    .strip-summary {
+        color: var(--color-text-subtle);
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
     }
 
     .muted .channel-level {

@@ -213,6 +213,7 @@ describe('Mixer component controls', () => {
         expect(html).toContain('fa fa-headphones');
         expect(html).toContain('aria-expanded="false"');
         expect(html).toContain('Out → Master');
+        expect(html).not.toContain('···');
         expect(html).not.toMatch(/>M<|>S</);
         expect(html).not.toContain('<select');
         expect(html).not.toContain('Reverb send');
@@ -402,5 +403,23 @@ describe('Mixer component controls', () => {
         expect(mixer).toContain('Post-fader only');
         expect(mixer).toContain('Wet-only delay return');
         expect(strip).toContain('Solo — includes contributing sources and sends');
+    });
+
+    it('keeps the default console compact and its channel identity, output and send visible', () => {
+        expect(mixer).toContain('{#if mixer.buses.length}');
+        expect(mixer).toContain('No buses yet — add one for a submix or delay.');
+        expect(mixer).not.toContain(
+            '<section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">\n                    {#if',
+        );
+        expect(strip).toContain('Reverb {Math.round(channel.reverb * 100)}%');
+        expect(strip).toContain('flex: 0 0 128px;');
+        expect(strip).toContain('<strong title={name}>{name}</strong>');
+        expect(strip).not.toContain("name.split('/').at(-1)");
+        expect(strip).not.toContain('text-overflow: ellipsis;');
+        expect(strip).toContain('min-height: 52px;');
+        expect(mixer).toContain('align-items: flex-start;');
+        expect(mixer).not.toContain('<details class="processing">');
+        expect(mixer).toContain('<section class="processing" aria-label="Tone and dynamics">');
+        expect(mixer).toContain('<section class="processing" aria-label="Limiter settings">');
     });
 });

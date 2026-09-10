@@ -47,6 +47,13 @@
     box-sizing: border-box;
 }
 
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-color: var(--color-border) var(--color-canvas-deep);
+        scrollbar-width: thin;
+    }
+}
+
 html,
 body,
 #app {
@@ -67,7 +74,6 @@ body {
     font-family: Inter, 'Segoe UI', system-ui, sans-serif;
     margin: 0;
     padding: 0;
-    scrollbar-color: var(--color-surface-hover) var(--color-bg);
 }
 
 h1 {
@@ -162,17 +168,21 @@ input[type='range'] {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--color-canvas-deep);
+    background: var(--color-surface-deep);
 }
 
 ::-webkit-scrollbar-thumb {
-    border: 3px solid var(--color-canvas-deep);
+    border: 2px solid var(--color-surface-deep);
     border-radius: 999px;
-    background: var(--color-border);
+    background: var(--color-border-subtle);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-accent-muted);
+    background: var(--color-accent);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--color-surface-deep);
 }
 
 .value {

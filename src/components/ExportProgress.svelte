@@ -129,7 +129,9 @@
                         }}
                         type="button">Keep rendering</button
                     >
-                    <button onclick={confirmCancellation} type="button">Abort export</button>
+                    <button class="danger" onclick={confirmCancellation} type="button"
+                        >Abort export</button
+                    >
                 </div>
             {:else}
                 <ol aria-label="Export stages">
@@ -157,6 +159,7 @@
                 {#if eta}<p class="detail">{eta}</p>{/if}
                 <div class="actions">
                     <button
+                        class="danger"
                         aria-disabled={$exportProgress.cancelling}
                         onclick={cancel}
                         type="button"
@@ -239,6 +242,17 @@
         justify-content: flex-end;
         gap: 8px;
         margin-top: 20px;
+    }
+
+    .actions .danger {
+        border-color: var(--color-danger);
+        background: var(--color-danger);
+        color: var(--action-text);
+    }
+
+    .actions .danger:hover:not(:disabled) {
+        border-color: var(--color-error);
+        background: var(--color-error);
     }
 
     button {

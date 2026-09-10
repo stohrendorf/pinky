@@ -25,4 +25,10 @@ describe('shared UI palette', () => {
         expect(sequencer).toContain('var(--color-surface-input)');
         expect(sequencer).toContain('var(--color-accent-selection)');
     });
+
+    it('uses rounded WebKit scrollbars without overriding them through standard properties', () => {
+        expect(palette).toContain('::-webkit-scrollbar-thumb');
+        expect(palette).toContain('border-radius: 999px;');
+        expect(palette).toContain('@supports not selector(::-webkit-scrollbar)');
+    });
 });

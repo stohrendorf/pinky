@@ -58,42 +58,13 @@ describe('workspace controls', () => {
         expect(app).toMatch(/\.arranger-panel,\s*\.piano-roll-panel\s*\{[\s\S]*min-width:\s*0;/);
     });
 
-    it('provides a movable divider between the arranger and pattern editor', () => {
+    it('uses a simple visual divider between the arranger and pattern editor', () => {
         expect(app).toContain('class="split-divider"');
-        expect(app).toMatch(/<input[\s\S]*class="split-divider"/);
-        expect(app).toMatch(/class="split-divider"[\s\S]*type="range"/);
-        expect(app).not.toMatch(/class="split-divider"[\s\S]*tabindex=/);
-        expect(app).toContain('onpointerdown={startDividerDrag}');
-        expect(app).toContain('onpointermove={handleDividerPointerMove}');
-        expect(app).toContain('setPointerCapture(event.pointerId)');
-        expect(app).toContain('touch-action: none;');
-        expect(app).toContain('onkeydown={handleDividerKeydown}');
-        expect(app).toContain(
-            'style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"',
-        );
-        expect(app).toContain(
-            'grid-template-rows: minmax(0, var(--arranger-fr)) 8px minmax(0, var(--editor-fr));',
-        );
-    });
-
-    it('maps divider pointer positions to all available grid space', () => {
-        expect(app).toContain(
-            'return Math.max(0, rect.height - verticalPadding * 2 - panelGap * 2 - dividerHeight);',
-        );
-        expect(app).toContain(
-            'const arrangerHeight = dividerCenter - verticalPadding - panelGap - dividerHeight / 2;',
-        );
-        expect(app).toContain(
-            'const clampedArrangerHeight = Math.max(0, Math.min(flexibleHeight, arrangerHeight));',
-        );
-        expect(app).toContain('splitRatio = clampedArrangerHeight / flexibleHeight;');
-        expect(app).toContain('--arranger-fr');
-    });
-
-    it('lets the full available grid range bound divider movement', () => {
-        expect(app).toContain('splitRatio = Math.max(0, Math.min(1, value / 100));');
-        expect(app).toMatch(/max="100"[\s\S]*min="0"/);
-        expect(app).toContain('setSplit(0);');
-        expect(app).toContain('setSplit(100);');
+        expect(app).toMatch(/<div class="split-divider" aria-hidden="true"><\/div>/);
+        expect(app).not.toContain('type="range"');
+        expect(app).not.toContain('startDividerDrag');
+        expect(app).toContain('grid-template-rows: minmax(0, 1fr) 3px minmax(0, 1fr);');
+        expect(app).toMatch(/\.split-divider\s*\{[\s\S]*height: 3px;/);
+        expect(app).toMatch(/\.split-divider\s*\{[\s\S]*border-top: 1px solid var\(--border\);/);
     });
 });

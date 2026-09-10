@@ -77,7 +77,7 @@
         const opener = panelButton;
         activePanel = null;
         if (restoreFocus) {
-            void tick().then(() => opener?.focus());
+            void tick().then(() => opener?.blur());
         }
     }
 
@@ -249,7 +249,7 @@
         closePanel(false);
         await exportWav();
         await tick();
-        opener?.focus();
+        opener?.blur();
     }
 
     function downloadProject() {
@@ -289,21 +289,33 @@
         <span class="brand">
             <i class="fa fa-wave-square" aria-hidden="true"></i> Pinky
         </span>
+        <a
+            class="github-link"
+            aria-label="Pinky on GitHub"
+            href="https://github.com/stohrendorf/pinky"
+            rel="noopener noreferrer"
+            target="_blank"
+            title="Pinky on GitHub"
+        >
+            <i class="fa-brands fa-github"></i>
+        </a>
         <div class="project-controls" aria-label="Project" role="group">
             <Button
                 compact
                 disabled={$rendering}
                 onclick={newProject}
                 title="New project"
-                variant="ghost">New</Button
-            >
+                variant="ghost"
+                >New
+            </Button>
             <Button
                 compact
                 disabled={$rendering}
                 onclick={() => fileInput?.click()}
                 title="Open a project file (JSON)"
-                variant="ghost">Open</Button
-            >
+                variant="ghost"
+                >Open
+            </Button>
             <Button
                 compact
                 disabled={!$project || $rendering}
@@ -359,7 +371,7 @@
                         title="Render the marked loop or whole song (Ctrl+E)"
                         type="button"
                     >
-                        <i class="fa fa-file-audio" aria-hidden="true"></i> Audio (.wav)
+                        <i class="fa fa-wave-square" aria-hidden="true"></i> Audio (.wav)
                     </button>
                 </div>
             {/if}
@@ -639,6 +651,22 @@
         font-size: 14px;
         font-weight: 700;
         letter-spacing: 0.04em;
+    }
+
+    .github-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 3px;
+        color: var(--color-text-muted);
+    }
+
+    .github-link:hover,
+    .github-link:focus-visible {
+        background: var(--color-surface-hover);
+        color: var(--primary-text);
     }
 
     .transport-controls {

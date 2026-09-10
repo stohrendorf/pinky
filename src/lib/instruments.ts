@@ -185,7 +185,7 @@ export const INSTRUMENT_PANELS: PanelDef[] = [
             { id: 'noise', label: 'Noise Band Level', min: 0, max: 1, step: 0.01 },
             {
                 id: 'noiseFreq',
-                label: 'Noise Band Freq',
+                label: 'Noise Band',
                 min: 200,
                 max: 12000,
                 step: 50,
@@ -199,7 +199,7 @@ export const INSTRUMENT_PANELS: PanelDef[] = [
     {
         // Fixed-frequency resonances: the harmonics slide through them instead of
         // dragging them along — a throat rather than a pipe. See makeRank().
-        title: 'Formants (vowel)',
+        title: 'Formants',
         sliders: [
             { id: 'formant', label: 'Formant Level', min: 0, max: 1, step: 0.01 },
             { id: 'f1', label: 'F1 (openness)', min: 200, max: 1400, step: 10, unit: 'Hz' },

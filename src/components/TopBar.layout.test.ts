@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
     componentMarkup,
-    componentSource,
     components,
+    componentSource,
     eachBlocks,
     elements,
     hasAttribute,
@@ -43,14 +43,24 @@ describe('TopBar desktop layout', () => {
         expect(components(markup, 'InstrumentPanel')).toHaveLength(0);
     });
 
-    it('keeps the brand noninteractive and the source link in shortcut help', () => {
+    it('keeps the brand noninteractive and exposes the source through a separate GitHub icon', () => {
         const brand = elements(markup, 'span').find(node => hasAttribute(node, 'class', 'brand'))!;
         expect(brand).toBeDefined();
         expect(textContent(brand)).toBe('Pinky');
         for (const attribute of ['href', 'onclick', 'tabindex', 'aria-expanded']) {
             expect(hasAttribute(brand, attribute)).toBe(false);
         }
-        expect(elements(markup, 'a')).toHaveLength(0);
+        const github = elements(markup, 'a').find(node =>
+            hasAttribute(node, 'href', 'https://github.com/stohrendorf/pinky'),
+        )!;
+        expect(github).toBeDefined();
+        expect(hasAttribute(github, 'aria-label', 'Pinky on GitHub')).toBe(true);
+        expect(hasAttribute(github, 'title', 'Pinky on GitHub')).toBe(true);
+        expect(
+            elements([github], 'i').some(node =>
+                hasAttribute(node, 'class', 'fa-brands fa-github'),
+            ),
+        ).toBe(true);
         const help = componentMarkup(
             componentSource(new URL('./Shortcuts.svelte', import.meta.url)),
         );
@@ -60,6 +70,7 @@ describe('TopBar desktop layout', () => {
         expect(link).toBeDefined();
         expect(hasAttribute(link, 'rel', 'noopener noreferrer')).toBe(true);
         expect(hasAttribute(link, 'target', '_blank')).toBe(true);
+        expect(textContent(link)).toBe('Source and issues on GitHub');
     });
 
     it('keeps a single compact desktop row rather than wrapping into a mobile header', () => {

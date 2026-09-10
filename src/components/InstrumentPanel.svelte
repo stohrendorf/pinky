@@ -16,7 +16,7 @@
     import Prompt from './ui/Prompt.svelte';
 
     const STARTER_PANEL_TITLES = ['EQ Voice', 'Envelope', 'Mix'];
-    const ADVANCED_PANEL_TITLES = ['Percussion', 'Formants (vowel)', 'Vibrato', 'Unison', 'Legato'];
+    const ADVANCED_PANEL_TITLES = ['Percussion', 'Formants', 'Vibrato', 'Unison', 'Legato'];
     const EDITOR_TABS = [
         { id: 'voice', label: 'Sound' },
         { id: 'advanced', label: 'Motion' },
@@ -62,7 +62,7 @@
                 'Pitch Drop is a fast fall in pitch after the note begins. On a kick it imitates a stretched drumhead settling after impact; on a tom it makes the hit feel larger; reversing the musical idea with a rising pitch can make a riser. Keep the time short for drums and longer for obvious effects.',
             ],
         },
-        'Formants (vowel)': {
+        Formants: {
             title: 'Formants',
             text: 'Formants are the fixed resonances made by a voice’s throat and mouth. They stay at fixed frequencies while the note changes, which creates vowel-like color. Formant Level blends them in; F1, F2, and F3 set the resonances; Formant Q makes them broad and gentle or narrow and obvious.',
             deepTitle: 'Go deeper: how a filter can suggest a voice',
@@ -573,7 +573,8 @@
     }
 
     .advanced-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
         margin-bottom: 0;
     }
 
@@ -601,6 +602,10 @@
         align-items: start;
         min-height: 0;
         overflow: visible;
+    }
+
+    .tab-controls {
+        min-width: 0;
     }
 
     .starter-controls {

@@ -19,112 +19,20 @@
     let showInstrumentEditor = $state(false);
     let scopeExpanded = $state(true);
     let contextualEditor: string | null = $state(null);
-    let splitRatio = $state(0.58);
-    let dividerDragging = $state(false);
-    let workspaceMain: HTMLElement | undefined = $state();
-
-    const dividerHeight = 8;
-    const panelGap = 8;
-    const verticalPadding = 8;
-
-    function availableFlexibleHeight(rect: DOMRect) {
-        return Math.max(0, rect.height - verticalPadding * 2 - panelGap * 2 - dividerHeight);
-    }
-
-    function setSplit(value: number) {
-        splitRatio = Math.max(0, Math.min(1, value / 100));
-    }
-
-    function setSplitFromPointer(event: PointerEvent) {
-        if (!workspaceMain) {
-            return;
-        }
-        const rect = workspaceMain.getBoundingClientRect();
-        const flexibleHeight = availableFlexibleHeight(rect);
-        if (!flexibleHeight) {
-            return;
-        }
-
-        const dividerCenter = event.clientY - rect.top;
-        const arrangerHeight = dividerCenter - verticalPadding - panelGap - dividerHeight / 2;
-        const clampedArrangerHeight = Math.max(0, Math.min(flexibleHeight, arrangerHeight));
-        splitRatio = clampedArrangerHeight / flexibleHeight;
-    }
-
-    function startDividerDrag(event: PointerEvent) {
-        event.preventDefault();
-        dividerDragging = true;
-        (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-        setSplitFromPointer(event);
-    }
-
-    function handleDividerPointerMove(event: PointerEvent) {
-        if (dividerDragging) {
-            setSplitFromPointer(event);
-        }
-    }
-
-    function stopDividerDrag(event?: PointerEvent) {
-        dividerDragging = false;
-        if (
-            event?.currentTarget instanceof HTMLElement &&
-            event.currentTarget.hasPointerCapture(event.pointerId)
-        ) {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-    }
-
-    function handleDividerKeydown(event: KeyboardEvent) {
-        const delta = event.shiftKey ? 0.05 : 0.01;
-        if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-            event.preventDefault();
-            setSplit(splitRatio * 100 - delta * 100);
-        } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-            event.preventDefault();
-            setSplit(splitRatio * 100 + delta * 100);
-        } else if (event.key === 'Home') {
-            event.preventDefault();
-            setSplit(0);
-        } else if (event.key === 'End') {
-            event.preventDefault();
-            setSplit(100);
-        }
-    }
 </script>
 
 {#if $project}
     <div class="workspace">
         <Shortcuts />
         <TopBar />
-        <main
-            bind:this={workspaceMain}
-            style="--arranger-fr: {splitRatio}fr; --editor-fr: {1 - splitRatio}fr;"
-            class="workspace-main"
-            class:divider-dragging={dividerDragging}
-            onpointercancel={stopDividerDrag}
-            onpointermove={handleDividerPointerMove}
-            onpointerup={stopDividerDrag}
-        >
+        <main class="workspace-main">
             <section class="arranger-panel" aria-label="Song arranger">
                 <div class="editor-with-tree">
                     <PatternBar />
                     <Playlist bind:contextualEditor />
                 </div>
             </section>
-            <input
-                class="split-divider"
-                aria-label="Resize arranger and pattern editor"
-                max="100"
-                min="0"
-                onkeydown={handleDividerKeydown}
-                onpointercancel={stopDividerDrag}
-                onpointerdown={startDividerDrag}
-                onpointermove={handleDividerPointerMove}
-                onpointerup={stopDividerDrag}
-                title="Click or drag to resize editors"
-                type="range"
-                value={Math.round(splitRatio * 100)}
-            />
+            <div class="split-divider" aria-hidden="true"></div>
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
                     <InstrumentTree onEdit={() => (showInstrumentEditor = true)} />
@@ -181,7 +89,7 @@
 
     .workspace-main {
         display: grid;
-        grid-template-rows: minmax(0, var(--arranger-fr)) 8px minmax(0, var(--editor-fr));
+        grid-template-rows: minmax(0, 1fr) 3px minmax(0, 1fr);
         flex: 1;
         min-width: 0;
         min-height: 0;
@@ -192,35 +100,10 @@
 
     .split-divider {
         width: 100%;
-        min-height: 8px;
-        height: 8px;
-        margin: 0;
-        border: 0;
-        border-radius: 3px;
-        background: var(--color-surface);
-        cursor: row-resize;
-        touch-action: none;
-    }
-
-    .split-divider::before {
-        content: '';
-        display: block;
-        width: 42px;
-        height: 2px;
-        margin: 3px auto;
-        border-radius: 2px;
-        background: var(--color-text-muted);
-    }
-
-    .split-divider:hover::before,
-    .split-divider:focus-visible::before,
-    .divider-dragging .split-divider::before {
-        background: var(--accent);
-    }
-
-    .split-divider:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: 2px;
+        height: 3px;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--color-surface-deep);
+        background: var(--color-surface-raised);
     }
 
     .arranger-panel,

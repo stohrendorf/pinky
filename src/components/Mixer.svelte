@@ -265,9 +265,9 @@
                         {/each}
                     </div>
                 </section>
-                <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
-                    <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
-                    {#if mixer.buses.length}
+                {#if mixer.buses.length}
+                    <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
+                        <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
                         <div class="strip-row">
                             {#each strips.filter(strip => strip.kind !== 'Instrument') as strip (strip.id)}
                                 <MixerStrip
@@ -285,10 +285,10 @@
                                 />
                             {/each}
                         </div>
-                    {:else}
-                        <p class="empty-bank">Add a bus for submixes or delay.</p>
-                    {/if}
-                </section>
+                    </section>
+                {:else}
+                    <p class="empty-bank">No buses yet — add one for a submix or delay.</p>
+                {/if}
             </div>
             <section
                 class="master-strip"
@@ -304,9 +304,7 @@
                     onclick={() => toggleStrip('master')}
                     type="button"
                 >
-                    <span class="master-kind">Final output</span><strong>Master</strong><span
-                        aria-hidden="true">···</span
-                    >
+                    <span class="master-kind">Final output</span><strong>Master</strong>
                 </button>
                 <button
                     class="limiter-toggle"
@@ -488,17 +486,8 @@
                                 Wet-only delay return — send a copy here to add echoes.
                             </p>
                         {/if}
-                        <details class="processing">
-                            <summary
-                                >Tone &amp; dynamics
-                                <span
-                                    >{selected.channel.highpass > 20 || selected.channel.tilt !== 0
-                                        ? 'EQ'
-                                        : ''}{selected.channel.compressor.enabled
-                                        ? ' · Compressor'
-                                        : ''}</span
-                                >
-                            </summary>
+                        <section class="processing" aria-label="Tone and dynamics">
+                            <h5>Tone &amp; dynamics</h5>
                             <div class="channel-controls">
                                 {@render numberControl(
                                     'High-pass',
@@ -561,7 +550,7 @@
                                     )}
                                 {/if}
                             </div>
-                        </details>
+                        </section>
                         {#if selectedBus}
                             <button
                                 class="delete-bus"
@@ -601,11 +590,8 @@
                                 {/each}
                             </div>
                         </div>
-                        <details class="processing">
-                            <summary
-                                >Limiter settings <span>{mixer.master.limiter ? 'On' : 'Off'}</span
-                                ></summary
-                            >
+                        <section class="processing" aria-label="Limiter settings">
+                            <h5>Limiter settings</h5>
                             <div class="channel-controls">
                                 {@render numberControl(
                                     'Drive',
@@ -636,7 +622,7 @@
                                 )}
                             </div>
                             <p class="mixer-note">Sample-peak protection · 5ms lookahead.</p>
-                        </details>
+                        </section>
                     {/if}
                 {/key}
             </section>
@@ -708,18 +694,18 @@
 
     .console {
         display: flex;
-        align-items: stretch;
+        align-items: flex-start;
         gap: 10px;
     }
 
     .strips {
         display: flex;
-        align-items: stretch;
-        gap: 12px;
+        align-items: flex-start;
+        gap: 8px;
         flex: 1;
         min-width: 0;
         overflow-x: auto;
-        padding-bottom: 10px;
+        padding-bottom: 6px;
         scrollbar-gutter: stable;
     }
 
@@ -741,7 +727,6 @@
     .strip-row {
         display: flex;
         gap: 4px;
-        flex: 1;
     }
 
     .bank-heading {
@@ -753,8 +738,13 @@
     }
 
     .empty-bank {
-        width: 100px;
-        margin: auto 0;
+        align-self: center;
+        width: max-content;
+        max-width: 180px;
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px dashed var(--border-subtle);
+        border-radius: 3px;
         color: var(--color-text-muted);
         font-size: 10px;
         line-height: 1.4;
@@ -962,14 +952,11 @@
         padding-top: 12px;
     }
 
-    summary {
-        cursor: pointer;
-        font-size: 11px;
-    }
-
-    summary span {
+    .processing h5 {
+        margin: 0;
         color: var(--color-text-muted);
-        margin-left: 8px;
+        font-size: 11px;
+        font-weight: 600;
     }
 
     .delete-bus {
@@ -993,8 +980,7 @@
     .strips:focus-visible,
     button:focus-visible,
     input:focus-visible,
-    select:focus-visible,
-    summary:focus-visible {
+    select:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
     }

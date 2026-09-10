@@ -46,7 +46,7 @@ describe('InstrumentPanel guided editing', () => {
 
     it('places focused help beside control headers instead of hiding it in the general help dialog', () => {
         expect(panel).toContain('const CONTROL_HELP');
-        expect(panel).toContain("'Formants (vowel)'");
+        expect(panel).toContain("'Formants'");
         expect(panel).toContain("'Percussion'");
         expect(panel).toContain('class="group-heading"');
         expect(panel).toContain('class="control-help"');
@@ -130,13 +130,16 @@ describe('InstrumentPanel guided editing', () => {
         expect(panel).toContain("panel.title === 'Legato'");
     });
 
-    it('reserves a fixed tab-header row so tab content cannot move it', () => {
+    it('reserves a fixed tab-header row while keeping fitting controls directly visible', () => {
         expect(panel).toContain('class="tab-content"');
         expect(panel).toMatch(
             /\.inst-panel\s*\{[\s\S]*grid-template-rows: auto auto 42px minmax\(0, 1fr\);/,
         );
         expect(panel).toMatch(/\.inst-panel\s*\{[\s\S]*height: 100%;/);
         expect(panel).toMatch(/\.tab-content\s*\{[\s\S]*overflow: visible;/);
+        expect(panel).toMatch(
+            /\.advanced-grid\s*\{[\s\S]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\);/,
+        );
         expect(panel).toMatch(/\.editor-tabbar\s*\{[\s\S]*height: 42px;/);
         expect(panel).toMatch(
             /\.starter-controls\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,

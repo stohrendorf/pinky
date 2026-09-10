@@ -26,8 +26,8 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
     {
         title: 'Transport',
         items: [
-            ['Space', 'Play / stop the song'],
-            ['Shift + Space', 'Play / stop the selected pattern'],
+            ['Space', 'Start / stop the song'],
+            ['Shift + Space', 'Start / stop the selected pattern'],
             ['Home', 'Playback cursor back to the start'],
             ['Media buttons', 'Play song, play pattern, reset cursor, or stop'],
         ],
@@ -37,9 +37,9 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
         items: [
             ['Ctrl + Z', 'Undo'],
             ['Ctrl + Shift + Z', 'Redo (also Ctrl + Y)'],
-            ['Ctrl + S', 'Save to the browser'],
-            ['Ctrl + E', 'Render the song to a WAV file'],
-            ['?', 'This cheat sheet'],
+            ['Ctrl + S', 'Save the current project'],
+            ['Ctrl + E', 'Render the song or loop to a WAV file'],
+            ['?', 'Open this help'],
         ],
     },
     {

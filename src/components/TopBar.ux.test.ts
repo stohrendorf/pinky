@@ -76,7 +76,7 @@ describe('TopBar direct desktop controls', () => {
         expect(scope.closePanel).toHaveBeenCalledWith(true);
     });
 
-    it('closes Export before rendering audio and restores focus only after completion', async () => {
+    it('closes Export before rendering audio and clears its trigger focus only after completion', async () => {
         let finish!: () => void;
         const scope = {
             $project: {},
@@ -88,7 +88,7 @@ describe('TopBar direct desktop controls', () => {
                     }),
             ),
             closePanel: vi.fn(),
-            panelButton: { focus: vi.fn() },
+            panelButton: { blur: vi.fn() },
             tick: () => Promise.resolve(),
         };
         const download = componentFunction<() => Promise<void>>(source, 'exportAudio', scope);
@@ -98,10 +98,10 @@ describe('TopBar direct desktop controls', () => {
         const pending = download();
         expect(scope.closePanel).toHaveBeenCalledWith(false);
         expect(scope.exportWav).toHaveBeenCalledOnce();
-        expect(scope.panelButton.focus).not.toHaveBeenCalled();
+        expect(scope.panelButton.blur).not.toHaveBeenCalled();
         finish();
         await pending;
-        expect(scope.panelButton.focus).toHaveBeenCalledOnce();
+        expect(scope.panelButton.blur).toHaveBeenCalledOnce();
     });
 
     it('opens either panel without changing the project and focuses an available control', async () => {
@@ -265,8 +265,8 @@ describe('TopBar direct desktop controls', () => {
         },
     );
 
-    it('restores focus only when dismissal requests it', async () => {
-        const opener = { focus: vi.fn() };
+    it('clears toolbar-trigger focus when dismissal requests it so Space returns to transport', async () => {
+        const opener = { blur: vi.fn() };
         const scope = {
             activePanel: 'demos' as string | null,
             panelButton: opener,
@@ -276,12 +276,12 @@ describe('TopBar direct desktop controls', () => {
         close(false);
         await Promise.resolve();
         expect(scope.activePanel).toBeNull();
-        expect(opener.focus).not.toHaveBeenCalled();
+        expect(opener.blur).not.toHaveBeenCalled();
         scope.activePanel = 'audio';
         close(true);
         await Promise.resolve();
         expect(scope.activePanel).toBeNull();
-        expect(opener.focus).toHaveBeenCalledOnce();
+        expect(opener.blur).toHaveBeenCalledOnce();
     });
 
     it('does not replace a project if rendering begins while an import file is read', async () => {

@@ -43,6 +43,8 @@ describe('export progress modal', () => {
         expect(source).toContain('Cancel export?');
         expect(source).toContain('Keep rendering');
         expect(source).toContain('Abort export');
+        expect(source).toMatch(/class="danger"[\s\S]*Abort export/);
+        expect(source).toMatch(/class="danger"[\s\S]*Cancel export/);
     });
 
     it.each([null, 0, 0.45, 1])(

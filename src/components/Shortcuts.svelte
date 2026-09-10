@@ -22,7 +22,7 @@
     </div>
     <footer>
         <a href="https://github.com/stohrendorf/pinky" rel="noopener noreferrer" target="_blank"
-            >Pinky on GitHub</a
+            >Source and issues on GitHub</a
         >
     </footer>
 </Dialog>
