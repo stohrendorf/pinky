@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { untrack } from 'svelte';
+
     import type { InstrumentParams, PartialSpec } from '../lib/types';
 
     /* Harmonics editor — the harmonic profile of an instrument, always visible.
@@ -20,8 +22,8 @@
 
     let showGen = $state(false);
     let list: PartialSpec[] = $state([]);
-    let bound: InstrumentParams | null = $state(null);
-    let source: PartialSpec[] | undefined = $state(); // the array currently mirrored in `list`
+    let bound: InstrumentParams | null = null;
+    let source: PartialSpec[] | undefined; // the array currently mirrored in `list`
 
     function read(p: InstrumentParams) {
         bound = p;
@@ -110,9 +112,13 @@
     // re-read when another instrument is selected, a preset is applied or the
     // generator dialog replaced the profile
     $effect.pre(() => {
-        if (params !== bound || params.partials !== source) {
-            read(params);
-        }
+        const currentParams = params;
+        const currentPartials = params.partials;
+        untrack(() => {
+            if (currentParams !== bound || currentPartials !== source) {
+                read(currentParams);
+            }
+        });
     });
 </script>
 

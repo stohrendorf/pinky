@@ -20,4 +20,14 @@ describe('HarmonicsEditor', () => {
         expect(editor).toContain('class="drawbar-fill"');
         expect(editor).toContain('class="drawbar-cap"');
     });
+
+    it('keeps parameter synchronization markers outside reactive state', () => {
+        expect(editor).toMatch(/let bound: InstrumentParams \| null = null;/);
+        expect(editor).toMatch(/let source: PartialSpec\[\] \| undefined;/);
+        expect(editor).not.toMatch(/let (?:bound|source).*?= \$state/);
+        expect(editor).toMatch(/import \{ untrack \} from 'svelte';/);
+        expect(editor).toMatch(
+            /\$effect\.pre\(\(\) => \{[\s\S]*?const currentParams = params;[\s\S]*?const currentPartials = params\.partials;[\s\S]*?untrack\(\(\) => \{[\s\S]*?read\(currentParams\);/,
+        );
+    });
 });
