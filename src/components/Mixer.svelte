@@ -39,6 +39,9 @@
             channel: bus,
         })),
     ]);
+    const instrumentStrips = $derived(strips.filter(strip => strip.kind === 'Instrument'));
+    const busStrips = $derived(strips.filter(strip => strip.kind !== 'Instrument'));
+    const stripBankWidth = (count: number) => `${count * 132 + 8}px`;
     let selectedId = $state('');
     const selected = $derived(strips.find(strip => strip.id === selectedId));
     const selectedBus = $derived(mixer.buses.find(bus => bus.id === selected?.id));
@@ -245,10 +248,14 @@
         </div>
         <div class="console">
             <div class="strips" aria-label="Mixer channels, horizontally scrollable" role="region">
-                <section class="strip-bank" aria-labelledby="instrument-bank-heading">
+                <section
+                    style:--strip-bank-width={stripBankWidth(instrumentStrips.length)}
+                    class="strip-bank"
+                    aria-labelledby="instrument-bank-heading"
+                >
                     <div id="instrument-bank-heading" class="bank-heading">Instruments</div>
                     <div class="strip-row">
-                        {#each strips.filter(strip => strip.kind === 'Instrument') as strip (strip.id)}
+                        {#each instrumentStrips as strip (strip.id)}
                             <MixerStrip
                                 id={strip.id}
                                 name={strip.name}
@@ -265,11 +272,15 @@
                         {/each}
                     </div>
                 </section>
-                {#if mixer.buses.length}
-                    <section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">
+                {#if busStrips.length}
+                    <section
+                        style:--strip-bank-width={stripBankWidth(busStrips.length)}
+                        class="strip-bank bus-bank"
+                        aria-labelledby="bus-bank-heading"
+                    >
                         <div id="bus-bank-heading" class="bank-heading">Buses / FX</div>
                         <div class="strip-row">
-                            {#each strips.filter(strip => strip.kind !== 'Instrument') as strip (strip.id)}
+                            {#each busStrips as strip (strip.id)}
                                 <MixerStrip
                                     id={strip.id}
                                     name={strip.name}
@@ -700,13 +711,33 @@
         flex: 1;
         min-width: 0;
         overflow-x: auto;
-        padding-bottom: 6px;
+        padding-bottom: 8px;
+        scrollbar-color: var(--color-accent-muted) var(--color-surface-input);
         scrollbar-gutter: stable;
+        scrollbar-width: thin;
+    }
+
+    .strips::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .strips::-webkit-scrollbar-track {
+        border-radius: 999px;
+        background: var(--color-surface-input);
+    }
+
+    .strips::-webkit-scrollbar-thumb {
+        border: 1px solid var(--color-surface-input);
+        background: var(--color-accent-muted);
+    }
+
+    .strips::-webkit-scrollbar-thumb:hover {
+        background: var(--color-accent);
     }
 
     .strip-bank {
         display: flex;
-        flex: 0 0 auto;
+        flex: 0 0 var(--strip-bank-width);
         flex-direction: column;
         gap: 6px;
         padding: 6px;

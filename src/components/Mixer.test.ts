@@ -407,7 +407,7 @@ describe('Mixer component controls', () => {
     });
 
     it('keeps the default console compact and its channel identity, output and send visible', () => {
-        expect(mixer).toContain('{#if mixer.buses.length}');
+        expect(mixer).toContain('{#if busStrips.length}');
         expect(mixer).toContain('No buses yet — add one for a submix or delay.');
         expect(mixer).not.toContain(
             '<section class="strip-bank bus-bank" aria-labelledby="bus-bank-heading">\n                    {#if',
@@ -428,5 +428,16 @@ describe('Mixer component controls', () => {
         expect(mixer).not.toContain('<details class="processing">');
         expect(mixer).toContain('<section class="processing" aria-label="Tone and dynamics">');
         expect(mixer).toContain('<section class="processing" aria-label="Limiter settings">');
+    });
+
+    it('keeps compact channels and provides a themed scroller', () => {
+        expect(mixer).toContain('const stripBankWidth');
+        expect(mixer).toContain('stripBankWidth(instrumentStrips.length)');
+        expect(mixer).toContain('stripBankWidth(busStrips.length)');
+        expect(mixer).toContain('flex: 0 0 var(--strip-bank-width);');
+        expect(mixer).toContain(
+            'scrollbar-color: var(--color-accent-muted) var(--color-surface-input);',
+        );
+        expect(mixer).toContain('.strips::-webkit-scrollbar-thumb');
     });
 });
