@@ -337,22 +337,17 @@
                 tabindex="-1"
             >
                 <div class="details-heading">
-                    <div class="inspector-title">
-                        <span>Channel inspector</span>
-                        {#if selectedBus}
-                            <label class="bus-identity"
-                                ><span class="sr-only">Bus name</span>
-                                <input
-                                    maxlength="80"
-                                    onchange={e => renameBus(selectedBus.id, e.currentTarget)}
-                                    type="text"
-                                    value={selectedBus.name}
-                                />
-                            </label>
-                        {:else}
-                            <h4>{selected?.name ?? 'Master'}</h4>
-                        {/if}
-                    </div>
+                    {#if selectedBus}
+                        <label class="bus-identity"
+                            ><span class="sr-only">Bus name</span>
+                            <input
+                                maxlength="80"
+                                onchange={e => renameBus(selectedBus.id, e.currentTarget)}
+                                type="text"
+                                value={selectedBus.name}
+                            />
+                        </label>
+                    {/if}
                     <button aria-label="Close channel settings" onclick={closeDetails} type="button"
                         >×</button
                     >
@@ -554,11 +549,12 @@
                         {#if selectedBus}
                             <button
                                 class="delete-bus"
+                                aria-label={`Remove ${selectedBus.name}`}
                                 onclick={() => deleteBus(selectedBus.id)}
-                                title="Dependents route to Master; sends to this bus are removed"
+                                title="Remove bus — dependents route to Master and sends are removed"
                                 type="button"
                             >
-                                Delete bus
+                                <i class="fa fa-trash-can" aria-hidden="true"></i>
                             </button>
                         {/if}
                     {:else}
@@ -627,8 +623,7 @@
                 {/key}
             </section>
         {:else}
-            <section id="mixer-details" class="inspector-empty" aria-label="Channel inspector">
-                <strong>Channel inspector</strong>
+            <section id="mixer-details" class="inspector-empty" aria-label="Channel settings">
                 <span>Select a strip to edit routing, sends and processing.</span>
             </section>
         {/if}
@@ -842,20 +837,6 @@
         background: var(--color-surface-deep);
     }
 
-    .inspector-title {
-        display: grid;
-        gap: 4px;
-        min-width: 0;
-    }
-
-    .inspector-title > span,
-    .inspector-empty > strong {
-        color: var(--accent);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
     .inspector-empty {
         display: flex;
         align-items: center;
@@ -865,12 +846,6 @@
         border-top: 1px solid var(--border-subtle);
         color: var(--color-text-muted);
         font-size: 11px;
-    }
-
-    .details-heading h4 {
-        margin: 0;
-        overflow-wrap: anywhere;
-        font-size: 12px;
     }
 
     .details-heading button {
@@ -960,6 +935,11 @@
     }
 
     .delete-bus {
+        display: inline-grid;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        place-items: center;
         color: var(--color-error);
         background: transparent;
         border: 0;

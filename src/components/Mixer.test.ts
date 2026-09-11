@@ -134,7 +134,8 @@ describe('Mixer component controls', () => {
         expect(toolbar).toMatch(
             /<Dialog[^>]*title="Mixer"[^>]*bind:show=\{showMixer}>\s*\{#if showMixer}[\s\S]*<Mixer\s*\/>/,
         );
-        expect(toolbar).toContain('width="1180px"');
+        expect(toolbar).toContain('width={mixerDialogWidth}');
+        expect(toolbar).toMatch(/Math\.min\(\s*1180,\s*296 \+/);
         expect(toolbar).not.toMatch(/<Dialog[^>]*height=[^>]*title="Mixer"/);
         expect(mixer).toMatch(/onMount\(\(\) => \{[\s\S]*setInterval[\s\S]*1000 \/ 15/);
         expect(mixer).toContain('clearInterval(timer)');
@@ -163,7 +164,7 @@ describe('Mixer component controls', () => {
         expect(mixer).toContain('Signal flows left to right into Master');
         expect(mixer).toContain('Group bus');
         expect(mixer).toContain('Delay return');
-        expect(mixer).toContain('Channel inspector');
+        expect(mixer).not.toContain('Channel inspector');
         expect(mixer).toContain('Select a strip to edit routing, sends and processing.');
         expect(mixer).toContain('position: sticky');
         expect(mixer).toContain('right: 0');
@@ -418,6 +419,12 @@ describe('Mixer component controls', () => {
         expect(strip).not.toContain('text-overflow: ellipsis;');
         expect(strip).toContain('min-height: 52px;');
         expect(mixer).toContain('align-items: flex-start;');
+        expect(toolbar).toContain('width={mixerDialogWidth}');
+        expect(toolbar).toContain('const mixerDialogWidth = $derived');
+        expect(mixer).not.toContain('<h4>{selected?.name');
+        expect(mixer).toContain('aria-label={`Remove ${selectedBus.name}`}');
+        expect(mixer).toContain('fa fa-trash-can');
+        expect(mixer).not.toContain('>\n                                Delete bus\n');
         expect(mixer).not.toContain('<details class="processing">');
         expect(mixer).toContain('<section class="processing" aria-label="Tone and dynamics">');
         expect(mixer).toContain('<section class="processing" aria-label="Limiter settings">');

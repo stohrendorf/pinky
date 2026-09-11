@@ -26,9 +26,13 @@ describe('shared UI palette', () => {
         expect(sequencer).toContain('var(--color-accent-selection)');
     });
 
-    it('uses rounded WebKit scrollbars without overriding them through standard properties', () => {
-        expect(palette).toContain('::-webkit-scrollbar-thumb');
+    it('applies the shared scrollbar theme in both standard and WebKit browsers', () => {
+        expect(palette).toContain(
+            'scrollbar-color: var(--color-border) var(--color-surface-deep);',
+        );
+        expect(palette).toContain('scrollbar-width: thin;');
+        expect(palette).toContain('*::-webkit-scrollbar-thumb');
         expect(palette).toContain('border-radius: 999px;');
-        expect(palette).toContain('@supports not selector(::-webkit-scrollbar)');
+        expect(palette).toContain('background: var(--color-border);');
     });
 });

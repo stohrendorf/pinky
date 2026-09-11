@@ -31,7 +31,7 @@ describe('InstrumentPanel guided editing', () => {
     it('keeps starter controls together and organizes specialist controls into named editor tabs', () => {
         expect(panel).toMatch(/const STARTER_PANEL_TITLES = \['EQ Voice', 'Envelope', 'Mix'\]/);
         expect(panel).toMatch(
-            /const ADVANCED_PANEL_TITLES = \['Percussion', 'Formants \(vowel\)', 'Vibrato', 'Unison', 'Legato'\]/,
+            /const ADVANCED_PANEL_TITLES = \['Percussion', 'Formants', 'Vibrato', 'Unison', 'Legato'\]/,
         );
         expect(panel).toMatch(/const EDITOR_TABS = \[/);
         expect(panel).toContain('class="editor-tabs"');

@@ -39,6 +39,17 @@
 
     const legacyMaster = createMixer([], false).master;
     const masterParams = $derived({ ...($project?.mixer?.master ?? legacyMaster) });
+    const mixerDialogWidth = $derived(
+        `min(${Math.max(
+            520,
+            Math.min(
+                1180,
+                296 +
+                    (($project?.instruments.length ?? 0) + ($project?.mixer?.buses.length ?? 0)) *
+                        132,
+            ),
+        )}px, calc(100vw - 32px))`,
+    );
     let showMixer = $state(false);
 
     let showConfirmNew = $state(false);
@@ -562,7 +573,7 @@
 
 <ExportProgress />
 
-<Dialog title="Mixer" width="1180px" bind:show={showMixer}>
+<Dialog title="Mixer" width={mixerDialogWidth} bind:show={showMixer}>
     {#if showMixer}
         <Mixer />
     {/if}

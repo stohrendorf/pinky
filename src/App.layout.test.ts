@@ -58,13 +58,19 @@ describe('workspace controls', () => {
         expect(app).toMatch(/\.arranger-panel,\s*\.piano-roll-panel\s*\{[\s\S]*min-width:\s*0;/);
     });
 
-    it('uses a simple visual divider between the arranger and pattern editor', () => {
+    it('uses a compact draggable splitter between the arranger and pattern editor', () => {
         expect(app).toContain('class="split-divider"');
-        expect(app).toMatch(/<div class="split-divider" aria-hidden="true"><\/div>/);
+        expect(app).toMatch(/<button[\s\S]*class="split-divider"/);
         expect(app).not.toContain('type="range"');
-        expect(app).not.toContain('startDividerDrag');
-        expect(app).toContain('grid-template-rows: minmax(0, 1fr) 3px minmax(0, 1fr);');
-        expect(app).toMatch(/\.split-divider\s*\{[\s\S]*height: 3px;/);
+        expect(app).toContain('function startDividerDrag(event: PointerEvent)');
+        expect(app).toContain('function resizeDivider(event: KeyboardEvent)');
+        expect(app).toContain('onpointerdown={startDividerDrag}');
+        expect(app).toContain('onkeydown={resizeDivider}');
+        expect(app).toContain('onpointermove={dragDivider}');
+        expect(app).toContain(
+            'grid-template-rows: minmax(160px, calc((100% - 24px) * var(--arranger-ratio)))',
+        );
+        expect(app).toMatch(/\.split-divider\s*\{[\s\S]*cursor: row-resize;/);
         expect(app).toMatch(/\.split-divider\s*\{[\s\S]*border-top: 1px solid var\(--border\);/);
     });
 });
