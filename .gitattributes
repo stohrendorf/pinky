@@ -1,2 +1,7 @@
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.mid binary
+*.js text eol=lf
+*.ts text eol=lf
+*.mjs text eol=lf
+*.svelte text eol=lf
+*.json text eol=lf

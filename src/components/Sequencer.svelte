@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onDestroy, onMount, tick } from 'svelte';
+    import {onDestroy, onMount, tick} from 'svelte';
 
-    import type { Note, Pattern } from '../lib/types';
+    import type {Note, Pattern} from '../lib/types';
 
-    import { CURVE_SHAPES, segmentProgress } from '../lib/automation';
-    import { ensureAudio, glideAt, noteOff, noteOnAt } from '../lib/engine';
-    import { legatoTransition } from '../lib/legato';
+    import {CURVE_SHAPES, segmentProgress} from '../lib/automation';
+    import {ensureAudio, glideAt, noteOff, noteOnAt} from '../lib/engine';
+    import {legatoTransition} from '../lib/legato';
     import {
         clampVel,
         createLegatoBetweenSelected,
@@ -13,7 +13,7 @@
         removeInvalidLegatoLinks,
         updateLegatoTargets,
     } from '../lib/noteops';
-    import { ROW_NOTES, rowOfNote, STEPS } from '../lib/notes';
+    import {ROW_NOTES, rowOfNote, STEPS} from '../lib/notes';
     import {
         curStep,
         lastPlayedPitch,
@@ -25,8 +25,8 @@
         selPatId,
         touch,
     } from '../lib/project';
-    import { rendering } from '../lib/render';
-    import { playPattern, stopTransport } from '../lib/transport';
+    import {rendering} from '../lib/render';
+    import {playPattern, stopTransport} from '../lib/transport';
     import {
         createViewportState,
         handleViewportMouseDown,
@@ -34,7 +34,7 @@
         handleViewportMouseUp,
         handleViewportWheel,
     } from '../lib/viewport';
-    import { preventDefault, stopPropagation } from './event-modifiers';
+    import {preventDefault, stopPropagation} from './event-modifiers';
 
     interface Props {
         contextualEditor?: string | null;
