@@ -74,17 +74,12 @@ describe("Sequencer note interactions", () => {
       ),
     ).toBe(true);
     expect(
-      elements(markup, "div").some((element) =>
-        hasAttribute(element, "class", "legato-slot"),
-      ),
-    ).toBe(true);
-    expect(
       elements(markup, "button").some((element) =>
         hasAttribute(element, "class", "instrument-edit"),
       ),
     ).toBe(true);
     expect(styles.get(".toolbar-row")?.get("grid-template-columns")).toBe(
-      "minmax(0, 1fr) minmax(260px, auto) auto",
+      "minmax(0, 1fr) auto",
     );
     expect(styles.get(".toolbar-hint")?.get("text-align")).toBe("center");
     expect(styles.get(".piano-roll-container")?.get("min-width")).toBe("0");
@@ -127,10 +122,12 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).not.toContain("target.start + glide.time / stepDuration");
   });
 
-  it("reserves a stable toolbar slot for portamento controls", () => {
-    expect(sequencer).toContain('class="legato-slot"');
-    expect(sequencer).toMatch(
-      /\.legato-slot\s*\{[^}]*min-width:\s*260px;[^}]*min-height:\s*28px;/s,
+  it("shows a contextual pitch-slide overlay for a valid pair of selected notes", () => {
+    expect(sequencer).toContain("const selectedSlidePair = $derived.by");
+    expect(sequencer).toMatch(/target\.start < source\.start \+ source\.len/);
+    expect(sequencer).toContain('class="slide-overlay"');
+    expect(sequencer).toContain(
+      "selectedSlidePair.source.start + selectedSlidePair.source.len",
     );
     expect(sequencer).toContain("dragLegatoTargets = new Map");
     expect(sequencer).toMatch(
@@ -188,14 +185,22 @@ describe("Sequencer note interactions", () => {
     );
   });
 
-  it("lets the selected slide be removed from the legato controls", () => {
+  it("uses accessible icon-only pitch-slide actions", () => {
     expect(sequencer).toContain("function removeLegato");
     expect(
       functionHasCall(sequencer, "removeLegato", "commitCurrentTrack"),
     ).toBe(true);
     expect(sequencer).toMatch(
-      /class="legato-controls"[\s\S]*aria-label="Remove pitch slide"[\s\S]*onclick=\{removeLegato\}/,
+      /aria-label="Create pitch slide"[\s\S]*<i class="fa fa-link" aria-hidden="true"><\/i>/,
     );
+    expect(sequencer).toMatch(
+      /aria-label="Edit pitch slide"[\s\S]*<i class="fa fa-sliders" aria-hidden="true"><\/i>/,
+    );
+    expect(sequencer).toMatch(
+      /aria-label="Remove pitch slide"[\s\S]*onclick=\{removeLegato\}[\s\S]*<i class="fa fa-trash" aria-hidden="true"><\/i>/,
+    );
+    expect(sequencer).not.toContain("Move pitch to second note");
+    expect(sequencer).not.toContain("Remove slide");
   });
 
   it("initializes each movable note drag from the current track and auditions it immediately", () => {

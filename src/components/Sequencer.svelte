@@ -195,6 +195,7 @@
     let noteEditorPosition = $state({ left: 4, top: 4 });
     let noteEditorError = $state('');
     let noteEditorInput: HTMLInputElement | undefined = $state();
+    let legatoMenuOpen = $state(false);
 
     onMount(async () => {
         await tick();
@@ -355,19 +356,28 @@
     }
 
     function updateLegatoCurve(curve: string) {
-        if (!selectedLegato?.source.legatoTo || !CURVE_SHAPES.some(shape => shape.id === curve)) {
+        if (
+            !selectedSlidePair?.connected ||
+            !selectedSlidePair.source.legatoTo ||
+            !CURVE_SHAPES.some(shape => shape.id === curve)
+        ) {
             return;
         }
-        selectedLegato.source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
+        selectedSlidePair.source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
         commitCurrentTrack();
     }
 
     function removeLegato() {
-        if (!selectedLegato?.source.legatoTo) {
+        if (!selectedSlidePair?.connected || !selectedSlidePair.source.legatoTo) {
             return;
         }
-        delete selectedLegato.source.legatoTo;
+        delete selectedSlidePair.source.legatoTo;
         commitCurrentTrack();
+        legatoMenuOpen = false;
+    }
+
+    function toggleLegatoMenu() {
+        legatoMenuOpen = !legatoMenuOpen;
     }
 
     function legatoPath(source: Note, target: Note): string {
@@ -772,9 +782,26 @@
             return [{ source, target }];
         }),
     );
-    const selectedLegato = $derived(
-        legatoLines.find(({ source, target }) => source.selected && target.selected) || null,
-    );
+    const selectedSlidePair = $derived.by(() => {
+        if (selectedNotes.length !== 2) {
+            return null;
+        }
+        const [source, target] = [...selectedNotes].sort((a, b) => a.start - b.start);
+        if (!source || !target || target.start < source.start + source.len) {
+            return null;
+        }
+        return {
+            source,
+            target,
+            connected:
+                source.legatoTo?.pitch === target.pitch && source.legatoTo.start === target.start,
+        };
+    });
+    $effect(() => {
+        if (!selectedSlidePair?.connected) {
+            legatoMenuOpen = false;
+        }
+    });
     $effect.pre(() => {
         if (contextualEditor !== NOTE_EDITOR_KEY && noteEditor) {
             noteEditor = null;
@@ -813,39 +840,6 @@
                     {/if}
                 </button>
                 <span class="toolbar-hint">Alt+drag = velocity</span>
-            </div>
-            <div class="legato-slot">
-                {#if selectedLegato}
-                    <div class="legato-controls" aria-label="Selected legato transition">
-                        <select
-                            aria-label="Legato curve"
-                            onchange={event => updateLegatoCurve(event.currentTarget.value)}
-                            value={selectedLegato.source.legatoTo?.curve || 'linear'}
-                        >
-                            {#each CURVE_SHAPES as shape (shape.id)}
-                                <option value={shape.id}>{shape.label}</option>
-                            {/each}
-                        </select>
-                        <button
-                            class="legato-action"
-                            aria-label="Remove pitch slide"
-                            onclick={removeLegato}
-                            title="Remove pitch slide"
-                            type="button"
-                        >
-                            Remove slide
-                        </button>
-                    </div>
-                {:else if selectedNotes.length === 2}
-                    <button
-                        class="legato-action"
-                        onclick={addLegato}
-                        title="Move pitch from the earlier note to the later note"
-                        type="button"
-                    >
-                        <i class="fa fa-arrow-right"></i> Move pitch to second note
-                    </button>
-                {/if}
             </div>
             <button
                 class="instrument-edit"
@@ -942,6 +936,73 @@
                             <path class="legato-line" d={legatoPath(line.source, line.target)} />
                         {/each}
                     </svg>
+                    {#if selectedSlidePair}
+                        {@const slideStart =
+                            selectedSlidePair.source.start + selectedSlidePair.source.len}
+                        {@const slideMidpoint = {
+                            left: ((slideStart + selectedSlidePair.target.start) / 2) * cellWidth,
+                            top:
+                                ((rowOfNote[selectedSlidePair.source.pitch] +
+                                    rowOfNote[selectedSlidePair.target.pitch] +
+                                    1) /
+                                    2) *
+                                cellHeight,
+                        }}
+                        <div
+                            style="left: {slideMidpoint.left}px; top: {slideMidpoint.top}px;"
+                            class="slide-overlay"
+                        >
+                            {#if selectedSlidePair.connected}
+                                <button
+                                    class="slide-action"
+                                    aria-expanded={legatoMenuOpen}
+                                    aria-label="Edit pitch slide"
+                                    onclick={toggleLegatoMenu}
+                                    onmousedown={stopPropagation()}
+                                    title="Edit pitch slide"
+                                    type="button"
+                                >
+                                    <i class="fa fa-sliders" aria-hidden="true"></i>
+                                </button>
+                                {#if legatoMenuOpen}
+                                    <div
+                                        class="slide-menu"
+                                        aria-label="Pitch slide options"
+                                    >
+                                        <select
+                                            aria-label="Pitch slide type"
+                                            onchange={event => updateLegatoCurve(event.currentTarget.value)}
+                                            value={selectedSlidePair.source.legatoTo?.curve || 'linear'}
+                                        >
+                                            {#each CURVE_SHAPES as shape (shape.id)}
+                                                <option value={shape.id}>{shape.label}</option>
+                                            {/each}
+                                        </select>
+                                        <button
+                                            class="slide-action"
+                                            aria-label="Remove pitch slide"
+                                            onclick={removeLegato}
+                                            title="Remove pitch slide"
+                                            type="button"
+                                        >
+                                            <i class="fa fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                {/if}
+                            {:else}
+                                <button
+                                    class="slide-action"
+                                    aria-label="Create pitch slide"
+                                    onclick={addLegato}
+                                    onmousedown={stopPropagation()}
+                                    title="Create pitch slide"
+                                    type="button"
+                                >
+                                    <i class="fa fa-link" aria-hidden="true"></i>
+                                </button>
+                            {/if}
+                        </div>
+                    {/if}
                     {#each ghosts as n}
                         {@const r = rowOfNote[n.pitch]}
                         <div
@@ -1072,7 +1133,7 @@
 
     .toolbar-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(260px, auto) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 12px;
         min-height: 42px;
@@ -1446,47 +1507,58 @@
         opacity: 0.9;
     }
 
-    .legato-action {
-        padding: 3px 7px;
+    .slide-overlay {
+        position: absolute;
+        z-index: 6;
+        pointer-events: auto;
+        transform: translate(-50%, -50%);
+    }
+
+    .slide-action {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        padding: 0;
         border: 1px solid var(--accent);
         border-radius: 4px;
         background: var(--color-accent-selection);
         color: var(--primary-text);
-        font: inherit;
-        font-size: 10px;
         cursor: pointer;
-        white-space: nowrap;
+        place-items: center;
     }
 
-    .legato-controls {
+    .slide-action:hover {
+        background: var(--color-accent-soft);
+    }
+
+    .slide-action:focus-visible {
+        outline: 2px solid var(--accent2);
+        outline-offset: 2px;
+    }
+
+    .slide-menu {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 50%;
         display: flex;
         align-items: center;
         gap: 5px;
-        color: var(--secondary-text);
-        font-size: 10px;
-        white-space: nowrap;
+        padding: 4px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--color-surface);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+        transform: translateX(-50%);
     }
 
-    .legato-slot {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 260px;
-        min-height: 28px;
-    }
-
-    .legato-controls select {
-        width: 54px;
+    .slide-menu select {
+        width: 76px;
         padding: 3px 4px;
         border: 1px solid var(--border);
         border-radius: 3px;
         background: var(--surface-input);
         color: var(--primary-text);
         font: inherit;
-    }
-
-    .legato-controls select {
-        width: 76px;
     }
 
     .playhead {
