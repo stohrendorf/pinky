@@ -2,7 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import type { Note } from "./types";
 
-import { removeInvalidLegatoLinks, updateLegatoTargets } from "./noteops";
+import {
+  removeInvalidLegatoLinks,
+  shouldPlaceNote,
+  updateLegatoTargets,
+} from "./noteops";
+
+describe("shouldPlaceNote", () => {
+  it("uses the first plain click to clear an existing note selection", () => {
+    expect(shouldPlaceNote(true, false)).toBe(false);
+  });
+
+  it("places a note without a selection or with shift held", () => {
+    expect(shouldPlaceNote(false, false)).toBe(true);
+    expect(shouldPlaceNote(true, true)).toBe(true);
+  });
+});
 
 describe("legato note edits", () => {
   it("keeps a portamento link attached when its selected notes move together", () => {

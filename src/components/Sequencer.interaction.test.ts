@@ -138,15 +138,6 @@ describe("Sequencer note interactions", () => {
     );
   });
 
-  it("uses an empty left click to clear a note selection and start creating a note", () => {
-    expect(
-      functionHasCall(sequencer, "handleMouseDown", "clearSelection"),
-    ).toBe(true);
-    expect(sequencer).not.toMatch(
-      /if \(selectedNotes\.length > 0 && !e\.shiftKey\) \{\s*clearSelection\(\);\s*return;\s*\}/,
-    );
-  });
-
   it("selects a newly added note before using it as the active drag target", () => {
     expect(sequencer).toMatch(
       /const newNote: ExtendedNote = \{\s*pitch:\s*ROW_NOTES\[r\]\.name,\s*start:\s*s,\s*len:\s*1,\s*selected:\s*true,?\s*\};/,
@@ -186,6 +177,25 @@ describe("Sequencer note interactions", () => {
       /const newNote: ExtendedNote = \{\s*pitch:\s*ROW_NOTES\[r\]\.name,\s*start:\s*s,\s*len:\s*1,\s*selected:\s*true,?\s*\};[\s\S]*dragNote = pat\.tracks\[\$selInstId\]\[track\.length - 1\] as ExtendedNote;[\s\S]*beginNoteDrag\(dragNote, r, s, s_raw\);/,
     );
     expect(sequencer).toMatch(/dragNote = null;\s*dragTargets = \[\];/);
+  });
+
+  it("clears a note selection before a plain empty-cell click can add a note", () => {
+    expect(sequencer).toContain(
+      "shouldPlaceNote(selectedNotes.length > 0, e.shiftKey)",
+    );
+    expect(sequencer).toMatch(
+      /if \(!shouldPlaceNote\(selectedNotes\.length > 0, e\.shiftKey\)\) \{\s*clearSelection\(\);\s*return;\s*\}[\s\S]*const newNote: ExtendedNote/,
+    );
+  });
+
+  it("lets the selected slide be removed from the legato controls", () => {
+    expect(sequencer).toContain("function removeLegato");
+    expect(
+      functionHasCall(sequencer, "removeLegato", "commitCurrentTrack"),
+    ).toBe(true);
+    expect(sequencer).toMatch(
+      /class="legato-controls"[\s\S]*aria-label="Remove pitch slide"[\s\S]*onclick=\{removeLegato\}/,
+    );
   });
 
   it("initializes each movable note drag from the current track and auditions it immediately", () => {

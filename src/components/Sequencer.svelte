@@ -11,6 +11,7 @@
         createLegatoBetweenSelected,
         editStep,
         removeInvalidLegatoLinks,
+        shouldPlaceNote,
         updateLegatoTargets,
     } from '../lib/noteops';
     import {ROW_NOTES, rowOfNote, STEPS} from '../lib/notes';
@@ -361,6 +362,14 @@
         commitCurrentTrack();
     }
 
+    function removeLegato() {
+        if (!selectedLegato?.source.legatoTo) {
+            return;
+        }
+        delete selectedLegato.source.legatoTo;
+        commitCurrentTrack();
+    }
+
     function legatoPath(source: Note, target: Note): string {
         const sourceX = (source.start + source.len) * cellWidth;
         const sourceY = ((rowOfNote[source.pitch] ?? 0) + 0.5) * cellHeight;
@@ -537,6 +546,10 @@
             }
             commitCurrentTrack();
         } else {
+            if (!shouldPlaceNote(selectedNotes.length > 0, e.shiftKey)) {
+                clearSelection();
+                return;
+            }
             if (!e.shiftKey) {
                 clearSelection();
             }
@@ -813,6 +826,15 @@
                                 <option value={shape.id}>{shape.label}</option>
                             {/each}
                         </select>
+                        <button
+                            class="legato-action"
+                            aria-label="Remove pitch slide"
+                            onclick={removeLegato}
+                            title="Remove pitch slide"
+                            type="button"
+                        >
+                            Remove slide
+                        </button>
                     </div>
                 {:else if selectedNotes.length === 2}
                     <button

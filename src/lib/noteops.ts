@@ -21,6 +21,13 @@ export const VEL_MIN = 0.01;
 export const clampVel = (v: number): number =>
   Math.max(VEL_MIN, Math.min(1, v));
 
+export function shouldPlaceNote(
+  hasSelectedNotes: boolean,
+  shiftKey: boolean,
+): boolean {
+  return shiftKey || !hasSelectedNotes;
+}
+
 function curPattern(): Pattern | null {
   const p = get(project);
   if (!p) {
