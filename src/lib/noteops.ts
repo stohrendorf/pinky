@@ -17,7 +17,7 @@ export const hasClipboard: Writable<boolean> = writable(false);
 
 let clipboard: Note[] = []; // starts normalized to 0
 
-export const VEL_MIN = 0.05;
+export const VEL_MIN = 0.01;
 export const clampVel = (v: number): number => Math.max(VEL_MIN, Math.min(1, v));
 
 function curPattern(): Pattern | null {

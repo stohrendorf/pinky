@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     componentFunction,
     componentMarkup,
-    componentSource,
     components,
+    componentSource,
     elements,
     functionHasCall,
     hasAttribute,
@@ -14,20 +14,32 @@ import {
 const sequencer = componentSource(new URL('./Sequencer.svelte', import.meta.url));
 
 describe('Sequencer note interactions', () => {
-    it('opens a focused contextual editor for the note pitch and velocity on double-click', () => {
+    it('opens a focused contextual editor for note velocity on double-click', () => {
         expect(sequencer).toContain('function openNoteEditor');
         expect(sequencer).toMatch(
             /ondblclick=\{stopPropagation\(\(?e\)? => openNoteEditor\(e as MouseEvent, n\)\)\}/,
         );
         expect(sequencer).toContain('class="note-editor"');
         expect(sequencer).toContain('aria-label="Edit note values"');
-        expect(sequencer).toMatch(
-            /bind:value=\{noteDraft\.pitch\}[\s\S]*bind:value=\{noteDraft\.vel\}/,
-        );
+        expect(sequencer).toContain('type="range"');
+        expect(sequencer).toContain('aria-label="Velocity percentage"');
+        expect(sequencer).toMatch(/max="100"[\s\S]*min="1"[\s\S]*bind:value=\{noteDraft\.vel\}/);
+        expect(sequencer).not.toContain('bind:value={noteDraft.pitch}');
+        expect(sequencer).toContain("noteEditorError = 'Enter a velocity from 1 to 100%';");
+        expect(sequencer).toContain('noteEditor.vel = clampVel(velocityPercent / 100);');
         expect(sequencer).not.toContain('noteDraft.start');
         expect(sequencer).not.toContain('noteDraft.len');
         expect(sequencer).toMatch(
             /noteEditorInput\?\.focus\(\)[\s\S]*noteEditorInput\?\.select\(\)/,
+        );
+    });
+
+    it('records the selected notes before starting an Alt-drag velocity edit', () => {
+        expect(sequencer).toMatch(
+            /if \(e\.altKey && found\) \{[\s\S]*dragTargets = notes\.filter\(n => n\.selected\) as ExtendedNote\[\];[\s\S]*velMode = true;/,
+        );
+        expect(sequencer).toMatch(
+            /if \(velMode && dragNote\) \{[\s\S]*const targetNotes = draggedNotes\(\);[\s\S]*replaceEditedNotes\(targetNotes\);/,
         );
     });
 

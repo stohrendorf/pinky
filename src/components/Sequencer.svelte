@@ -190,7 +190,7 @@
     let selectionStart = $state({ s: 0, r: 0 });
     let selectionEnd = $state({ s: 0, r: 0 });
     let noteEditor: ExtendedNote | null = $state(null);
-    let noteDraft = $state({ pitch: 'C4', vel: 1 });
+    let noteDraft = $state({ vel: 100 });
     let noteEditorPosition = $state({ left: 4, top: 4 });
     let noteEditorError = $state('');
     let noteEditorInput: HTMLInputElement | undefined = $state();
@@ -399,12 +399,12 @@
         const selectedNote = note.selected ? note : selectOnlyNote(note);
         const row = rowOfNote[selectedNote.pitch] ?? 0;
         noteEditor = selectedNote;
-        noteDraft = { pitch: selectedNote.pitch, vel: selectedNote.vel ?? 1 };
+        noteDraft = { vel: Math.round((selectedNote.vel ?? 1) * 100) };
         noteEditorPosition = {
-            left: Math.max(4, Math.min(steps * cellWidth - 158, selectedNote.start * cellWidth)),
+            left: Math.max(4, Math.min(steps * cellWidth - 228, selectedNote.start * cellWidth)),
             top: Math.max(
                 4,
-                Math.min(ROW_NOTES.length * cellHeight - 104, (row + 1) * cellHeight + 4),
+                Math.min(ROW_NOTES.length * cellHeight - 84, (row + 1) * cellHeight + 4),
             ),
         };
         noteEditorError = '';
@@ -434,16 +434,14 @@
         if (!noteEditor) {
             return;
         }
-        const vel = Number(noteDraft.vel);
-        if (!ROW_NOTES.some(note => note.name === noteDraft.pitch) || !Number.isFinite(vel)) {
-            noteEditorError = 'Enter valid note values';
+        const velocityPercent = Number(noteDraft.vel);
+        if (!Number.isFinite(velocityPercent) || velocityPercent < 1 || velocityPercent > 100) {
+            noteEditorError = 'Enter a velocity from 1 to 100%';
             return;
         }
-        noteEditor.pitch = noteDraft.pitch;
-        noteEditor.vel = clampVel(vel);
+        noteEditor.vel = clampVel(velocityPercent / 100);
         const replacements = replaceEditedNotes([noteEditor]);
         noteEditor = replacements.get(noteEditor) ?? noteEditor;
-        lastPlayedPitch.set(noteEditor.pitch);
         touch();
         closeNoteEditor();
     }
@@ -501,6 +499,7 @@
                 found = selectOnlyNote(found);
             }
             dragNote = found;
+            dragTargets = notes.filter(n => n.selected) as ExtendedNote[];
             velMode = true;
             resizeMode = false;
             dragStartY = e.clientY;
@@ -975,24 +974,28 @@
                         onmousedown={stopPropagation()}
                         onsubmit={preventDefault(saveNoteEditor)}
                     >
-                        <label
-                            >Pitch
-                            <select bind:value={noteDraft.pitch}>
-                                {#each ROW_NOTES as note (note.name)}
-                                    <option value={note.name}>{note.name}</option>
-                                {/each}
-                            </select>
-                        </label>
-                        <label
-                            >Velocity
-                            <input
-                                bind:this={noteEditorInput}
-                                max="1"
-                                min="0.05"
-                                step="0.01"
-                                type="number"
-                                bind:value={noteDraft.vel}
-                            />
+                        <label>
+                            Velocity
+                            <div class="velocity-inputs">
+                                <input
+                                    aria-label="Velocity percentage"
+                                    max="100"
+                                    min="1"
+                                    step="1"
+                                    type="range"
+                                    bind:value={noteDraft.vel}
+                                />
+                                <input
+                                    bind:this={noteEditorInput}
+                                    aria-label="Velocity percentage"
+                                    max="100"
+                                    min="1"
+                                    step="1"
+                                    type="number"
+                                    bind:value={noteDraft.vel}
+                                />
+                                <span>%</span>
+                            </div>
                         </label>
                         {#if noteEditorError}<small>{noteEditorError}</small>{/if}
                         <div class="note-editor-actions">
@@ -1314,9 +1317,9 @@
         position: absolute;
         z-index: 50;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 5px 6px;
-        width: 150px;
+        width: 220px;
         padding: 7px;
         border: 1px solid var(--accent);
         border-radius: 5px;
@@ -1331,8 +1334,14 @@
         gap: 2px;
     }
 
-    .note-editor input,
-    .note-editor select {
+    .velocity-inputs {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 48px auto;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .note-editor input[type='number'] {
         width: 100%;
         min-width: 0;
         box-sizing: border-box;
@@ -1346,14 +1355,18 @@
         -moz-appearance: textfield;
     }
 
+    .note-editor input[type='range'] {
+        width: 100%;
+        accent-color: var(--accent);
+    }
+
     .note-editor input::-webkit-outer-spin-button,
     .note-editor input::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
 
-    .note-editor input:focus,
-    .note-editor select:focus {
+    .note-editor input:focus {
         border-color: var(--accent);
         outline: none;
     }
