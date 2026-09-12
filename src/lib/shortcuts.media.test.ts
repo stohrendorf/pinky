@@ -10,27 +10,22 @@ const shortcuts = readFileSync(
 describe("multimedia shortcuts", () => {
   it("maps the standard media keys to transport actions", () => {
     expect(shortcuts).toMatch(
-      /e\.key === 'MediaPlayPause' \|\| e\.key === 'MediaPlay'/,
+      /e\.key === "MediaPlayPause" \|\| e\.key === "MediaPlay"/,
     );
     expect(shortcuts).toContain("togglePlay(e.shiftKey);");
     expect(shortcuts).toMatch(
-      /e\.key === 'MediaTrackNext'[\s\S]*playPattern\(\);/,
+      /e\.key === "MediaTrackNext"[\s\S]*playPattern\(\);/,
     );
     expect(shortcuts).toMatch(
-      /e\.key === 'MediaTrackPrevious'[\s\S]*seekSong\(0\);/,
+      /e\.key === "MediaTrackPrevious"[\s\S]*seekSong\(0\);/,
     );
     expect(shortcuts).toMatch(
-      /e\.key === 'MediaStop'[\s\S]*stopTransport\(\);/,
+      /e\.key === "MediaStop"[\s\S]*stopTransport\(\);/,
     );
   });
 
   it("handles media keys before the focused-input guard", () => {
-    const mediaHandler = shortcuts.indexOf(
-      "if (e.key === " +
-        String.fromCharCode(39) +
-        "MediaPlayPause" +
-        String.fromCharCode(39),
-    );
+    const mediaHandler = shortcuts.indexOf('if (e.key === "MediaPlayPause"');
     const focusedInputGuard = shortcuts.indexOf(
       "const t = e.target as HTMLElement | null;",
     );
