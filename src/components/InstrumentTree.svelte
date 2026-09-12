@@ -3,7 +3,7 @@
     import type {Instrument} from '../lib/types';
 
     import {createInstrument} from '../lib/instruments';
-    import {project, renameInstrument, selInstId, touch} from '../lib/project';
+    import {cloneInstrument, project, renameInstrument, selInstId, touch} from '../lib/project';
     import Confirm from './ui/Confirm.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
@@ -20,6 +20,7 @@
 
     const itemActions = [
         { id: 'edit', label: 'Edit instrument', icon: 'fa-sliders' },
+        { id: 'clone', label: 'Clone instrument', icon: 'fa-copy' },
         { id: 'rename', label: 'Rename', icon: 'fa-pencil' },
         { id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark' },
         { id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones' },
@@ -57,6 +58,9 @@
         }
         if (actionId === 'edit') {
             onEdit();
+        }
+        if (actionId === 'clone') {
+            cloneInstrument(instrument.id);
         }
         if (actionId === 'rename') {
             renameValue = instrument.name;

@@ -79,6 +79,30 @@ export function renameInstrument(id: string, name: string): void {
   });
 }
 
+export function cloneInstrument(id: string): void {
+  let clonedId: string | null = null;
+  project.update((current) => {
+    const source = current?.instruments.find(
+      (instrument) => instrument.id === id,
+    );
+    if (!current || !source) {
+      return current;
+    }
+    const clone = createInstrument(
+      `${source.name} copy`,
+      structuredClone(source.params),
+    );
+    clonedId = clone.id;
+    return {
+      ...current,
+      instruments: [...current.instruments, clone],
+    };
+  });
+  if (clonedId) {
+    selInstId.set(clonedId);
+  }
+}
+
 export function renamePattern(id: string, name: string): void {
   if (!name) {
     return;

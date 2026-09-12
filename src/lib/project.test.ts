@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PARAMS } from "./instruments";
 import {
   activeDemo,
+  cloneInstrument,
   importProject,
   initProject,
   loadDemoProject,
@@ -169,6 +170,30 @@ describe("project import", () => {
 });
 
 describe("project identity updates", () => {
+  it("clones an instrument with a new identity and independent harmonic settings", () => {
+    initProject();
+    const before = get(project)!;
+    const source = before.instruments[0];
+
+    cloneInstrument(source.id);
+
+    const after = get(project)!;
+    const clone = after.instruments.find(
+      (instrument) => instrument.id === get(selInstId),
+    )!;
+    expect(after).not.toBe(before);
+    expect(clone).toMatchObject({
+      name: `${source.name} copy`,
+      params: source.params,
+    });
+    expect(clone.id).not.toBe(source.id);
+    expect(clone.color).not.toBe(source.color);
+    expect(clone.params).not.toBe(source.params);
+    expect(clone.params.partials).not.toBe(source.params.partials);
+    expect(clone.params.partials![0]).not.toBe(source.params.partials![0]);
+    expect(get(selInstId)).toBe(clone.id);
+  });
+
   it("renames instruments and patterns with new reactive references", () => {
     initProject();
     const before = get(project)!;
