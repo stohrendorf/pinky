@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DEFAULT_PARAMS } from "./instruments";
 import { createMixer, defaultChannel, type MixerBus } from "./mixer";
 import { loadLimiter, MasterLimiter, MixerAudio } from "./mixer-audio";
 
@@ -11,6 +12,9 @@ class Param {
     this.value = value;
   });
   linearRampToValueAtTime = vi.fn((value: number) => {
+    this.value = value;
+  });
+  setTargetAtTime = vi.fn((value: number) => {
     this.value = value;
   });
 
@@ -491,6 +495,28 @@ async function freshEngine() {
 }
 
 describe("engine graph isolation and latency trimming", () => {
+  it("does not discard a high partial near Nyquist", async () => {
+    const engine = await freshEngine();
+    await engine.ensureAudio();
+
+    engine.noteOn("lead", "G8", {
+      ...DEFAULT_PARAMS,
+      partials: [{ ratio: 7, level: 1 }],
+    });
+
+    const partialFrequency = 440 * Math.pow(2, (8 * 12 + 7 - 69) / 12) * 7;
+    expect(partialFrequency).toBeGreaterThan(
+      (Context.instances[0].sampleRate / 2) * 0.9,
+    );
+    expect(
+      Context.instances[0].nodes.some(
+        (node) =>
+          node.kind === "BiquadFilterNode" &&
+          node.frequency.value === partialFrequency,
+      ),
+    ).toBe(true);
+  });
+
   it("retains pre-init configuration, places protection last and does not double-feed reverb", async () => {
     const engine = await freshEngine();
     const mixer = createMixer(["a"]);

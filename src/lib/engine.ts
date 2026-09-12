@@ -1028,7 +1028,6 @@ function makeRank(
   // The first band actually fed by the noise bus (the formants are not) — that
   // edge is the one the teardown has to cut by hand, see `noiseTap`.
   let chainHead: BiquadFilterNode | null = null;
-  const nyq = ctx.sampleRate / 2;
   // A partial only exists as a boost over the dry noise, so one whose boost
   // is a fraction of a dB contributes nothing audible — but it still costs a
   // biquad on the audio thread. The tail of a steep falloff series is exactly
@@ -1055,9 +1054,6 @@ function makeRank(
   if (p.tone > 0) {
     for (const part of used) {
       const f = freq * part.r;
-      if (f > nyq * 0.9) {
-        continue;
-      }
       const bq = takeBiquad(f, part.q, 40 * p.tone * part.level);
       sweep(bq.frequency, f, when, p);
       node.connect(bq);
@@ -1111,7 +1107,7 @@ function makeRank(
     ];
     spec.forEach((f, i) => {
       const g = FORMANT_DB * p.formant * f.w;
-      if (!(f.hz > 0) || f.hz > nyq * 0.9 || g < MIN_BAND_DB) {
+      if (!(f.hz > 0) || g < MIN_BAND_DB) {
         return;
       }
       const bq = takeBiquad(f.hz, fq, g);
@@ -1152,10 +1148,7 @@ function makeRank(
     const nb = takeBiquad(p.noiseFreq, 0.8, 40 * p.noise);
     const nbFrom =
       p.pitchDrop !== 0 && p.noiseBend > 0
-        ? Math.min(
-            nyq * 0.95,
-            p.noiseFreq * Math.pow(2, (p.pitchDrop * p.noiseBend) / 12),
-          )
+        ? p.noiseFreq * Math.pow(2, (p.pitchDrop * p.noiseBend) / 12)
         : p.noiseFreq;
     if (nbFrom !== p.noiseFreq) {
       // only bent bands need a scheduled ramp (see `sweep`)
