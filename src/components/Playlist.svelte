@@ -527,6 +527,12 @@
         handleViewportWheel(e, viewportOptions);
     }
 
+    function preventBrowserZoom(e: WheelEvent) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+        }
+    }
+
     function handlePlaylistMouseDown(e: MouseEvent) {
         handleViewportMouseDown(e, viewport);
         const row = (e.target as Element).closest<HTMLElement>('.grid-row[data-track]');
@@ -1097,7 +1103,11 @@
 
 <svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp} />
 
-<div class="playlist-container" class:resizing={resizeMode && !!dragClip}>
+<div
+    class="playlist-container"
+    class:resizing={resizeMode && !!dragClip}
+    onwheelcapture={preventBrowserZoom}
+>
     <div class="playlist-header">
         <div class="playlist-controls">
             {#if currentPattern}
@@ -1539,6 +1549,9 @@
                                 activateOnKeyboard(event, () => ($selPatId = clip.patternId))}
                             onmousedown={stopPropagation(e => {
                                 const mouseEvent = e as MouseEvent;
+                                if (handleViewportMouseDown(mouseEvent, viewport)) {
+                                    return;
+                                }
                                 const rect = (
                                     mouseEvent.currentTarget as HTMLElement
                                 ).parentElement!.getBoundingClientRect();

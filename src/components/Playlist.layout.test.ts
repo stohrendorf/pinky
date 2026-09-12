@@ -294,6 +294,14 @@ describe("Playlist frozen track labels", () => {
     );
   });
 
+  it("keeps browser zoom and autoscroll out of arranger clip gestures", () => {
+    expect(playlist).toContain("function preventBrowserZoom(e: WheelEvent)");
+    expect(playlist).toContain("onwheelcapture={preventBrowserZoom}");
+    expect(playlist).toMatch(
+      /onmousedown=\{stopPropagation\(e => \{[\s\S]*?if \(handleViewportMouseDown\(mouseEvent, viewport\)\) \{[\s\S]*?return;[\s\S]*?\}[\s\S]*?handleMouseDown\(mouseEvent, clip\.track, s_raw\);/,
+    );
+  });
+
   it("shows square left-edge insertion controls at every track divider and supports lane drag reordering", () => {
     expect(playlist).toContain('class="track-divider top-track-divider"');
     expect(playlist).toContain(
