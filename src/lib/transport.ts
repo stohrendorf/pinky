@@ -89,6 +89,7 @@ export function schedulePatternNotes(
   elapsed: (steps: number) => number = (steps) => steps * dur,
   voiceScope: string | null = null,
   gain = 1,
+  clipStepsRemaining = Infinity,
 ): void {
   instruments.forEach((inst) => {
     const notes = pat.tracks[inst.id];
@@ -115,7 +116,9 @@ export function schedulePatternNotes(
             candidate.pitch === n.legatoTo?.pitch,
         );
         const targetPitch =
-          target && isLegatoTarget(n, target.start)
+          target &&
+          isLegatoTarget(n, target.start) &&
+          target.start - n.start < clipStepsRemaining
             ? transpose
               ? transposePitch(target.pitch, transpose)
               : target.pitch
@@ -165,7 +168,11 @@ export function schedulePatternNotes(
         // A terminal linked note owns the release for the complete
         // chain. Ordinary notes retain the slightly early release that
         // prevents stacked same-pitch notes from clicking together.
-        const offAt = time + elapsed(n.len * (incoming ? 1 : 0.9));
+        const releaseSteps =
+          n.len > clipStepsRemaining
+            ? clipStepsRemaining
+            : n.len * (incoming ? 1 : 0.9);
+        const offAt = time + elapsed(releaseSteps);
         if (voiceScope) {
           eng.noteOffAt(inst.id, pitch, offAt, voiceScope);
         } else {
@@ -275,6 +282,7 @@ function scheduleSongStep(
         elapsed,
         `${clip.id}:${Math.floor(relStep / patSteps)}`,
         clip.gain ?? 1,
+        clip.len - relStep,
       );
     }
   });

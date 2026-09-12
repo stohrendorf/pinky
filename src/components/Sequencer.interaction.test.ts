@@ -299,23 +299,50 @@ describe("Sequencer note interactions", () => {
 
   it("follows the active pattern playhead and hides song playback outside the open pattern", () => {
     const playheadStep = (playing: boolean, mode: string, curStep: number) =>
-      componentFunction<() => number | null>(sequencer, "patternPlayheadStep", {
+      componentFunction<() => number[]>(sequencer, "patternPlayheadSteps", {
         $playing: playing,
         $playMode: mode,
         $curStep: curStep,
-        $project: { arrangement: [] },
+        $project: { arrangement: [], tracks: [] },
         pat: { id: "pattern" },
         steps: 16,
       })();
 
     expect(sequencer).toContain("playMode");
-    expect(sequencer).toContain("function patternPlayheadStep");
+    expect(sequencer).toContain("function patternPlayheadSteps");
     expect(sequencer).toContain("if ($playMode === 'pattern')");
-    expect(playheadStep(true, "pattern", 19)).toBe(3);
-    expect(playheadStep(true, "preview", 19)).toBeNull();
+    expect(playheadStep(true, "pattern", 19)).toEqual([3]);
+    expect(playheadStep(true, "preview", 19)).toEqual([]);
     expect(sequencer).toMatch(
       /scrollPlayheadIntoView\(rollEl,\s*currentPatternPlayheadStep,\s*cellWidth,\s*88\)/,
     );
     expect(sequencer).toContain("{#if currentPatternPlayheadStep !== null}");
+  });
+
+  it("shows every active position of the open pattern during overlapping song clips", () => {
+    const playheadSteps = componentFunction<() => number[]>(
+      sequencer,
+      "patternPlayheadSteps",
+      {
+        $playing: true,
+        $playMode: "song",
+        $curStep: 12,
+        $project: {
+          tracks: [{}, {}],
+          arrangement: [
+            { patternId: "pattern", start: 0, len: 16, track: 0 },
+            { patternId: "pattern", start: 8, len: 16, track: 1 },
+          ],
+        },
+        pat: { id: "pattern" },
+        steps: 16,
+      },
+    );
+
+    expect(playheadSteps()).toEqual([12, 4]);
+    expect(sequencer).toContain("function patternPlayheadSteps");
+    expect(sequencer).toContain(
+      "{#each currentPatternPlayheadSteps as playheadStep, index",
+    );
   });
 });

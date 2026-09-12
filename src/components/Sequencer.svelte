@@ -67,23 +67,28 @@
         }
     }
 
-    function patternPlayheadStep(): number | null {
+    function patternPlayheadSteps(): number[] {
         if (!$playing || !$project || $curStep < 0) {
-            return null;
+            return [];
         }
         if ($playMode === 'pattern') {
-            return $curStep % steps;
+            return [$curStep % steps];
         }
         if ($playMode !== 'song') {
-            return null;
+            return [];
         }
-        const activeClip = $project.arrangement.find(
-            clip =>
-                clip.patternId === pat.id &&
-                $curStep >= clip.start &&
-                $curStep < clip.start + clip.len,
-        );
-        return activeClip ? ($curStep - activeClip.start) % steps : null;
+        const anyLaneSolo = $project.tracks.some(track => track.solo);
+        return $project.arrangement
+            .filter(clip => {
+                const lane = $project!.tracks[clip.track];
+                return (
+                    clip.patternId === pat.id &&
+                    $curStep >= clip.start &&
+                    $curStep < clip.start + clip.len &&
+                    (!lane || (!lane.mute && (!anyLaneSolo || lane.solo)))
+                );
+            })
+            .map(clip => ($curStep - clip.start) % steps);
     }
 
     function scrollPlayheadIntoView(
@@ -742,7 +747,8 @@
     );
     const steps = $derived(pat.steps || STEPS);
     const notes = $derived($project && $selInstId ? (pat.tracks[$selInstId] ?? []) : []);
-    const currentPatternPlayheadStep = $derived(patternPlayheadStep());
+    const currentPatternPlayheadSteps = $derived(patternPlayheadSteps());
+    const currentPatternPlayheadStep = $derived(currentPatternPlayheadSteps[0] ?? null);
     const cellWidth = $derived($project?.zoom.seq.width || 24);
     $effect.pre(() => {
         if (currentPatternPlayheadStep !== null) {
@@ -1110,10 +1116,12 @@
                 {/if}
 
                 {#if currentPatternPlayheadStep !== null}
-                    <div
-                        style="left: {currentPatternPlayheadStep * cellWidth}px"
-                        class="playhead"
-                    ></div>
+                    {#each currentPatternPlayheadSteps as playheadStep, index (`${playheadStep}-${index}`)}
+                        <div
+                            style="left: {playheadStep * cellWidth}px"
+                            class="playhead"
+                        ></div>
+                    {/each}
                 {/if}
             </div>
         </div>

@@ -210,6 +210,49 @@ describe("conductor-aware scheduling", () => {
     );
   });
 
+  it("releases notes at a cropped clip boundary instead of their full pattern length", () => {
+    const p = score(),
+      id = p.instruments[0].id,
+      timing = createTimingMap(p);
+    p.arrangement[0].len = 8;
+    p.patterns[0].tracks[id] = [{ pitch: "C5", start: 0, len: 12 }];
+
+    scheduleRange(p, 0, 8);
+
+    expect(engine.noteOffAt).toHaveBeenCalledExactlyOnceWith(
+      id,
+      "C5",
+      timing.secondsAt(8),
+      `${p.arrangement[0].id}:0`,
+    );
+  });
+
+  it("does not glide beyond a cropped clip boundary", () => {
+    const p = score(),
+      id = p.instruments[0].id,
+      timing = createTimingMap(p);
+    p.arrangement[0].len = 8;
+    p.patterns[0].tracks[id] = [
+      {
+        pitch: "C5",
+        start: 4,
+        len: 2,
+        legatoTo: { pitch: "D5", start: 12 },
+      },
+      { pitch: "D5", start: 12, len: 4 },
+    ];
+
+    scheduleRange(p, 0, 8);
+
+    expect(engine.glideAt).not.toHaveBeenCalled();
+    expect(engine.noteOffAt).toHaveBeenCalledExactlyOnceWith(
+      id,
+      "C5",
+      timing.secondsAt(5.8),
+      `${p.arrangement[0].id}:0`,
+    );
+  });
+
   it("uses absolute musical positions for a selected export and fractional swing within ramps", () => {
     const p = score(),
       id = p.instruments[0].id,
