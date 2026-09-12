@@ -1178,7 +1178,7 @@
                             title="Show exact harmonic multiplier controls"
                             variant="secondary"
                         >
-                            <i class="fa fa-wave-square"></i>
+                            <i class="fa fa-signal"></i>
                         </Button>
                         {#if showPartialControls || hasPartialMultiplier(selectedClips[0])}
                             <span class="lbl">Partial</span>
@@ -1274,7 +1274,7 @@
                     onclick={openAddAuto}
                     title="Add automation lane"
                 >
-                    <i class="fa fa-wave-square"></i>
+                    <i class="fa-brands fa-think-peaks"></i>
                 </button>
             </div>
         </div>
