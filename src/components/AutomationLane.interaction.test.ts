@@ -16,4 +16,14 @@ describe("AutomationLane selection workflow", () => {
       automationLane.indexOf("const pt: AutomationPoint"),
     );
   });
+
+  it("samples dense automation point handles while preserving the full curve", () => {
+    expect(automationLane).toContain("const MAX_VISIBLE_POINT_HANDLES = 160;");
+    expect(automationLane).toContain("const visiblePoints = $derived.by");
+    expect(automationLane).toContain("const path = $derived(curvePath(pts));");
+    expect(automationLane).toContain("{#each visiblePoints as p}");
+    expect(automationLane).toContain(
+      "const activePoint = editingPoint ?? selectedPoint;",
+    );
+  });
 });

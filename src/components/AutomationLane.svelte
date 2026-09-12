@@ -48,6 +48,7 @@
     }: Props = $props();
 
     const PAD = 5; // px of headroom so the extreme values stay grabbable
+    const MAX_VISIBLE_POINT_HANDLES = 160;
 
     let svgEl: SVGSVGElement | undefined = $state();
     let drag: AutomationPoint | null = null;
@@ -278,6 +279,22 @@
     );
     // the drawn path: held before the first point, held after the last one
     const pts = $derived(lane.points);
+    const visiblePoints = $derived.by(() => {
+        if (pts.length <= MAX_VISIBLE_POINT_HANDLES) {
+            return pts;
+        }
+        const visibleIndexes = new Set<number>();
+        for (let index = 0; index < MAX_VISIBLE_POINT_HANDLES; index++) {
+            visibleIndexes.add(
+                Math.round((index * (pts.length - 1)) / (MAX_VISIBLE_POINT_HANDLES - 1)),
+            );
+        }
+        const activePoint = editingPoint ?? selectedPoint;
+        if (activePoint) {
+            visibleIndexes.add(pts.indexOf(activePoint));
+        }
+        return pts.filter((_, index) => visibleIndexes.has(index));
+    });
     const path = $derived(curvePath(pts));
     const fillPath = $derived(path ? `${path} L ${width} ${height} L 0 ${height} Z` : '');
     $effect.pre(() => {
@@ -312,7 +329,7 @@
         {#if path}
             <path style="fill: {color}" class="curve-fill" d={fillPath} />
             <path style="stroke: {color}" class="curve" d={path} />
-            {#each pts as p}
+            {#each visiblePoints as p}
                 <g
                     class="pt"
                     class:active={selectedPoint === p || editingPoint === p}

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import {onDestroy} from 'svelte';
+
     import type { ArrangementClip, AutomationLane as Lane, AutomationPoint } from '../lib/types';
 
     import {
@@ -72,14 +74,25 @@
     let scrollLeft = $state(0);
     let scrollTop = $state(0);
     let viewportWidth = $state(0);
+    let arrangerZoom = $state({
+        width: $project?.zoom.arr.width ?? 24,
+        height: $project?.zoom.arr.height ?? 32,
+    });
+    const unsubscribeProjectZoom = project.subscribe(currentProject => {
+        if (currentProject) {
+            arrangerZoom = {...currentProject.zoom.arr};
+        }
+    });
+    onDestroy(unsubscribeProjectZoom);
 
     function setZoom(w: number, h: number) {
         if (!$project) {
             return;
         }
+        arrangerZoom.width = w;
+        arrangerZoom.height = h;
         $project.zoom.arr.width = w;
         $project.zoom.arr.height = h;
-        touch();
     }
 
     function syncFrozenPanes() {
@@ -917,8 +930,8 @@
         touch();
     }
 
-    const cellWidth = $derived($project?.zoom.arr.width || 24);
-    const cellHeight = $derived($project?.zoom.arr.height || 32);
+    const cellWidth = $derived(arrangerZoom.width);
+    const cellHeight = $derived(arrangerZoom.height);
     $effect.pre(() => {
         if ($playing && $curStep >= 0) {
             scrollPlayheadIntoView(playlistEl, $curStep, cellWidth);

@@ -93,12 +93,17 @@ describe("workspace controls", () => {
     expect(app).toContain(
       "onToggleFocus={() => (patternFocused = !patternFocused)}",
     );
-    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*<TopBar\s*\/>/);
-    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*class="arranger-panel"/);
-    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*class="scope-tray"/);
+    expect(app).toContain("class:focus-hidden={patternFocused}");
+    expect(app).toContain(
+      'class="arranger-panel" class:focus-hidden={patternFocused}',
+    );
+    expect(app).toContain(
+      'class="scope-tray" class:collapsed={!scopeExpanded} class:focus-hidden={patternFocused}',
+    );
     expect(app).toContain("class:pattern-focused={patternFocused}");
     expect(app).toMatch(
       /\.workspace-main\.pattern-focused\s*\{[\s\S]*grid-template-rows: minmax\(0, 1fr\);/,
     );
+    expect(app).toMatch(/\.focus-hidden\s*\{[\s\S]*display: none !important;/);
   });
 });

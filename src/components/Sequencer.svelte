@@ -187,14 +187,26 @@
     let previewPitch: string | null = null;
     let activePreviewPitch: string | null = null;
     let rollEl: HTMLElement | undefined = $state();
+    let selectionRevision = $state(0);
+    let sequencerZoom = $state({
+        width: $project?.zoom.seq.width ?? 24,
+        height: $project?.zoom.seq.height ?? 14,
+    });
+    const unsubscribeProjectZoom = project.subscribe(currentProject => {
+        if (currentProject) {
+            sequencerZoom = {...currentProject.zoom.seq};
+        }
+    });
+    onDestroy(unsubscribeProjectZoom);
 
     function setZoom(w: number, h: number) {
         if (!$project) {
             return;
         }
+        sequencerZoom.width = w;
+        sequencerZoom.height = h;
         $project.zoom.seq.width = w;
         $project.zoom.seq.height = h;
-        touch();
     }
 
     const viewport = createViewportState();
@@ -256,7 +268,6 @@
 
     function clearSelection() {
         updateNoteSelection(note => (note.selected ? false : note.selected));
-        commitCurrentTrack();
     }
 
     function updateNoteSelection(
@@ -267,16 +278,17 @@
             return replacements;
         }
         const track = pat.tracks[$selInstId] ?? [];
-        pat.tracks[$selInstId] = track.map(note => {
+        track.forEach(note => {
             const selected = selectionForNote(note as ExtendedNote);
             if (note.selected === selected) {
-                return note;
+                return;
             }
-            const replacement = { ...note, selected } as ExtendedNote;
-            replacements.set(note as ExtendedNote, replacement);
-            return replacement;
+            note.selected = selected;
+            replacements.set(note as ExtendedNote, note as ExtendedNote);
         });
-        touch();
+        if (replacements.size) {
+            selectionRevision++;
+        }
         return replacements;
     }
 
@@ -537,7 +549,6 @@
             (notes.filter(n => n.selected) as ExtendedNote[]).forEach(
                 n => (n._initVel = n.vel ?? 1),
             );
-            commitCurrentTrack();
             return;
         }
 
@@ -566,7 +577,6 @@
             } else {
                 resizeMode = false;
             }
-            commitCurrentTrack();
         } else {
             if (!shouldPlaceNote(selectedNotes.length > 0, e.shiftKey)) {
                 clearSelection();
@@ -747,9 +757,13 @@
     );
     const steps = $derived(pat.steps || STEPS);
     const notes = $derived($project && $selInstId ? (pat.tracks[$selInstId] ?? []) : []);
+    const displayedNotes = $derived.by(() => {
+        selectionRevision;
+        return [...notes] as ExtendedNote[];
+    });
     const currentPatternPlayheadSteps = $derived(patternPlayheadSteps());
     const currentPatternPlayheadStep = $derived(currentPatternPlayheadSteps[0] ?? null);
-    const cellWidth = $derived($project?.zoom.seq.width || 24);
+    const cellWidth = $derived(sequencerZoom.width);
     $effect.pre(() => {
         if (currentPatternPlayheadStep !== null) {
             scrollPlayheadIntoView(rollEl, currentPatternPlayheadStep, cellWidth, 88);
@@ -762,7 +776,7 @@
                   .flatMap(([_, n]) => n)
             : [],
     );
-    const cellHeight = $derived($project?.zoom.seq.height || 14);
+    const cellHeight = $derived(sequencerZoom.height);
     const viewportOptions = $derived({
         getContainer: () => rollEl!,
         getZoom: () => ({ width: cellWidth, height: cellHeight }),
@@ -779,7 +793,10 @@
               }
             : null,
     );
-    const selectedNotes = $derived(notes.filter(n => n.selected) as ExtendedNote[]);
+    const selectedNotes = $derived.by(() => {
+        selectionRevision;
+        return notes.filter(n => n.selected) as ExtendedNote[];
+    });
     const legatoLines = $derived(
         notes.flatMap(source => {
             if (!source.legatoTo) {
@@ -1039,7 +1056,7 @@
                             class="note ghost"
                         ></div>
                     {/each}
-                    {#each notes as n (n)}
+                    {#each displayedNotes as n (n)}
                         {@const r = rowOfNote[n.pitch]}
                         {@const v = n.vel ?? 1}
                         <div

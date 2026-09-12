@@ -52,6 +52,16 @@ describe("getPatternPreview", () => {
     expect(preview.find((note) => note.pitch === "C5")?.y).toBe(0.25);
     expect(preview.find((note) => note.pitch === "E5")?.y).toBe(0);
   });
+
+  it("bounds a long repeated clip preview while retaining its first and last cycles", () => {
+    const preview = getPatternPreview(pattern, 400, 6);
+
+    expect(preview).toHaveLength(6);
+    expect(preview.some((note) => note.start < pattern.steps)).toBe(true);
+    expect(preview.some((note) => note.start >= 400 - pattern.steps)).toBe(
+      true,
+    );
+  });
 });
 
 describe("shouldEditAutomation", () => {

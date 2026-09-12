@@ -24,6 +24,10 @@ export interface PreviewNote extends Note {
   y: number;
 }
 
+// Clip previews are an overview, not a second piano roll. Keeping their detail
+// bounded prevents long repeating clips from creating tens of thousands of DOM nodes.
+export const MAX_CLIP_PREVIEW_NOTES = 96;
+
 export function shouldPlacePattern(
   hasSelectedClips: boolean,
   shiftKey: boolean,
@@ -148,6 +152,7 @@ export function removeArrangementTrack(
 export function getPatternPreview(
   pattern: Pattern | undefined,
   clipLen: number,
+  maxNotes = MAX_CLIP_PREVIEW_NOTES,
 ): PreviewNote[] {
   if (!pattern) {
     return [];
@@ -163,9 +168,20 @@ export function getPatternPreview(
   const maxPitch = Math.max(...allNotes.map((note) => rowOfNote[note.pitch]));
   const range = Math.max(1, maxPitch - minPitch);
   const preview: PreviewNote[] = [];
+  const notesPerCycle = Math.min(allNotes.length, maxNotes);
+  const repeatCount = Math.ceil(clipLen / patternSteps);
+  const visibleCycles = Math.min(
+    repeatCount,
+    Math.max(1, Math.floor(maxNotes / notesPerCycle)),
+  );
 
-  for (let offset = 0; offset < clipLen; offset += patternSteps) {
-    allNotes.forEach((note) => {
+  for (let cycleIndex = 0; cycleIndex < visibleCycles; cycleIndex++) {
+    const cycle =
+      visibleCycles === 1
+        ? 0
+        : Math.round((cycleIndex * (repeatCount - 1)) / (visibleCycles - 1));
+    const offset = cycle * patternSteps;
+    allNotes.slice(0, notesPerCycle).forEach((note) => {
       const start = note.start + offset;
       if (start < clipLen) {
         preview.push({

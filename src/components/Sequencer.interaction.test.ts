@@ -247,13 +247,13 @@ describe("Sequencer note interactions", () => {
     );
   });
 
-  it("commits selection and legato edits as new track arrays so the roll redraws", () => {
+  it("keeps selection as local view state while committing note content edits", () => {
     expect(sequencer).toMatch(
       /function commitCurrentTrack\(\)[\s\S]*pat\.tracks\[\$selInstId\] = \[\.\.\.\(pat\.tracks\[\$selInstId\] \?\? \[\]\)\];/,
     );
-    expect(sequencer).toMatch(
-      /function clearSelection\(\)[\s\S]*commitCurrentTrack\(\);/,
-    );
+    expect(sequencer).toContain("let selectionRevision = $state(0);");
+    expect(sequencer).toContain("selectionRevision++;");
+    expect(sequencer).toContain("const displayedNotes = $derived.by");
     expect(functionHasCall(sequencer, "addLegato", "commitCurrentTrack")).toBe(
       true,
     );

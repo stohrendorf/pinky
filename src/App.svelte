@@ -102,34 +102,33 @@
 {#if $project}
     <div class="workspace">
         <Shortcuts />
-        {#if !patternFocused}
+        <div class:focus-hidden={patternFocused}>
             <TopBar />
-        {/if}
+        </div>
         <main
             bind:this={workspaceMain}
             style:--arranger-ratio={arrangerRatio}
             class="workspace-main"
             class:pattern-focused={patternFocused}
         >
-            {#if !patternFocused}
-                <section class="arranger-panel" aria-label="Song arranger">
-                    <div class="editor-with-tree">
-                        <PatternBar />
-                        <Playlist bind:contextualEditor />
-                    </div>
-                </section>
-                <button
-                    class="split-divider"
-                    aria-label="Resize arranger and pattern editor"
-                    onkeydown={resizeDivider}
-                    onpointercancel={stopDividerDrag}
-                    onpointerdown={startDividerDrag}
-                    onpointermove={dragDivider}
-                    onpointerup={stopDividerDrag}
-                    title="Drag to resize the arranger and pattern editor"
-                    type="button"
-                ></button>
-            {/if}
+            <section class="arranger-panel" class:focus-hidden={patternFocused} aria-label="Song arranger">
+                <div class="editor-with-tree">
+                    <PatternBar />
+                    <Playlist bind:contextualEditor />
+                </div>
+            </section>
+            <button
+                class="split-divider"
+                class:focus-hidden={patternFocused}
+                aria-label="Resize arranger and pattern editor"
+                onkeydown={resizeDivider}
+                onpointercancel={stopDividerDrag}
+                onpointerdown={startDividerDrag}
+                onpointermove={dragDivider}
+                onpointerup={stopDividerDrag}
+                title="Drag to resize the arranger and pattern editor"
+                type="button"
+            ></button>
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
                     <InstrumentTree onEdit={() => (showInstrumentEditor = true)} />
@@ -142,8 +141,7 @@
                 </div>
             </section>
         </main>
-        {#if !patternFocused}
-            <section class="scope-tray" class:collapsed={!scopeExpanded}>
+        <section class="scope-tray" class:collapsed={!scopeExpanded} class:focus-hidden={patternFocused}>
                 <button
                     class="scope-toggle"
                     aria-expanded={scopeExpanded}
@@ -158,8 +156,7 @@
                 {#if scopeExpanded}
                     <Scope />
                 {/if}
-            </section>
-        {/if}
+        </section>
     </div>
 
     <Dialog
@@ -204,6 +201,10 @@
 
     .workspace-main.pattern-focused {
         grid-template-rows: minmax(0, 1fr);
+    }
+
+    .focus-hidden {
+        display: none !important;
     }
 
     .split-divider {
