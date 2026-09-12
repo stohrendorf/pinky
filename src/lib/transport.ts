@@ -212,12 +212,18 @@ export function schedulePatternNotes(
           return;
         }
         // A terminal linked note owns the release for the complete
-        // chain. Ordinary notes retain the slightly early release that
+        // chain. An adjacent jump to a different pitch must also hold to
+        // the boundary, otherwise its early release creates an audible gap.
+        // Other ordinary notes retain the slightly early release that
         // prevents stacked same-pitch notes from clicking together.
+        const jumpsToNextPitch = notes.some(
+          (candidate) =>
+            candidate.start === n.start + n.len && candidate.pitch !== n.pitch,
+        );
         const releaseSteps =
           n.len > clipStepsRemaining
             ? clipStepsRemaining
-            : n.len * (incoming ? 1 : 0.9);
+            : n.len * (incoming || jumpsToNextPitch ? 1 : 0.9);
         const offAt = time + elapsed(releaseSteps);
         if (voiceScope) {
           eng.noteOffAt(inst.id, pitch, offAt, voiceScope);

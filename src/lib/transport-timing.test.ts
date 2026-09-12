@@ -229,6 +229,27 @@ describe("conductor-aware scheduling", () => {
     );
   });
 
+  it("holds adjacent unlinked pitch jumps until the next note starts", () => {
+    const p = score(),
+      id = p.instruments[0].id,
+      timing = createTimingMap(p);
+    p.patterns[0].tracks[id] = [
+      { pitch: "C5", start: 0, len: 16 },
+      { pitch: "G4", start: 16, len: 16 },
+    ];
+
+    scheduleRange(p, 0, 32);
+
+    expect(engine.glideAt).not.toHaveBeenCalled();
+    expect(engine.noteOffAt).toHaveBeenNthCalledWith(
+      1,
+      id,
+      "C5",
+      timing.secondsAt(16),
+      `${p.arrangement[0].id}:0`,
+    );
+  });
+
   it("releases notes at a cropped clip boundary instead of their full pattern length", () => {
     const p = score(),
       id = p.instruments[0].id,
