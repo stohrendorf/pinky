@@ -57,6 +57,40 @@ export const savedAt: Writable<number> = writable(0); // timestamp of the last s
 
 export const touch = () => project.update((p) => p);
 
+export function renameInstrument(id: string, name: string): void {
+  if (!name) {
+    return;
+  }
+  project.update((current) => {
+    if (!current?.instruments.some((instrument) => instrument.id === id)) {
+      return current;
+    }
+    return {
+      ...current,
+      instruments: current.instruments.map((instrument) =>
+        instrument.id === id ? { ...instrument, name } : instrument,
+      ),
+    };
+  });
+}
+
+export function renamePattern(id: string, name: string): void {
+  if (!name) {
+    return;
+  }
+  project.update((current) => {
+    if (!current?.patterns.some((pattern) => pattern.id === id)) {
+      return current;
+    }
+    return {
+      ...current,
+      patterns: current.patterns.map((pattern) =>
+        pattern.id === id ? { ...pattern, name } : pattern,
+      ),
+    };
+  });
+}
+
 export function defaultZoom(): NonNullable<Project["zoom"]> {
   return {
     seq: { width: 24, height: 14 },

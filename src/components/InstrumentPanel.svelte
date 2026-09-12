@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { NumericParam } from '../lib/instruments';
-    import type { Instrument, InstrumentParams } from '../lib/types';
+    import type {NumericParam} from '../lib/instruments';
+    import type {Instrument, InstrumentParams} from '../lib/types';
 
-    import { CURVE_SHAPES } from '../lib/automation';
-    import { ensurePartials, INSTRUMENT_PANELS } from '../lib/instruments';
-    import { lastPlayedPitch, project, selInstId, touch } from '../lib/project';
+    import {CURVE_SHAPES} from '../lib/automation';
+    import {ensurePartials, INSTRUMENT_PANELS} from '../lib/instruments';
+    import {lastPlayedPitch, project, renameInstrument, selInstId, touch,} from '../lib/project';
     import FilterPreview from './FilterPreview.svelte';
     import HarmonicsEditor from './HarmonicsEditor.svelte';
     import Slider from './Slider.svelte';
@@ -197,8 +197,7 @@
 
     function onRename(value: string) {
         if (value) {
-            inst.name = value;
-            touch();
+            renameInstrument(inst.id, value);
         }
     }
 

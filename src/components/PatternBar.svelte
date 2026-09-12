@@ -1,9 +1,9 @@
 <script lang="ts">
-    import type { NamedTreeItem } from '../lib/name-tree';
-    import type { Pattern } from '../lib/types';
+    import type {NamedTreeItem} from '../lib/name-tree';
+    import type {Pattern} from '../lib/types';
 
-    import { STEPS } from '../lib/notes';
-    import { createPattern, project, selPatId, touch } from '../lib/project';
+    import {STEPS} from '../lib/notes';
+    import {createPattern, project, renamePattern, selPatId, touch} from '../lib/project';
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
     import Dialog from './ui/Dialog.svelte';
@@ -16,6 +16,7 @@
 
     let showRename = $state(false);
     let renameValue = $state('');
+    let renameTargetId: string | null = $state(null);
 
     let showConfirmDelete = $state(false);
     let showColor = $state(false);
@@ -49,16 +50,17 @@
         selPatId.set(np.id);
     }
 
-    function openRename() {
-        renameValue = pat.name;
+    function openRename(pattern: Pattern = pat) {
+        renameTargetId = pattern.id;
+        renameValue = pattern.name;
         showRename = true;
     }
 
     function onRename(value: string) {
-        if (value) {
-            pat.name = value;
-            touch();
+        if (value && renameTargetId) {
+            renamePattern(renameTargetId, value);
         }
+        renameTargetId = null;
     }
 
     function clearPat() {
@@ -102,7 +104,7 @@
         }
         selPatId.set(pattern.id);
         if (action === 'rename') {
-            openRename();
+            openRename(pattern);
         }
         if (action === 'color') {
             openColor();
@@ -130,15 +132,22 @@
         }
         if (folderToRename) {
             const prefix = folderToRename + '/';
-            $project?.patterns.forEach(pattern => {
-                if (pattern.name === folderToRename) {
-                    pattern.name = value;
-                } else if (pattern.name.startsWith(prefix)) {
-                    pattern.name = value + pattern.name.slice(folderToRename!.length);
-                }
-            });
+            project.update(current =>
+                current
+                    ? {
+                          ...current,
+                          patterns: current.patterns.map(pattern => ({
+                              ...pattern,
+                              name:
+                                  pattern.name === folderToRename ||
+                                  pattern.name.startsWith(prefix)
+                                      ? value + pattern.name.slice(folderToRename!.length)
+                                      : pattern.name,
+                          })),
+                      }
+                    : current,
+            );
             folderToRename = null;
-            touch();
         } else {
             onRename(value);
         }

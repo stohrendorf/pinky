@@ -1,9 +1,9 @@
 <script lang="ts">
-    import type { NamedTreeItem } from '../lib/name-tree';
-    import type { Instrument } from '../lib/types';
+    import type {NamedTreeItem} from '../lib/name-tree';
+    import type {Instrument} from '../lib/types';
 
-    import { createInstrument } from '../lib/instruments';
-    import { project, selInstId, touch } from '../lib/project';
+    import {createInstrument} from '../lib/instruments';
+    import {project, renameInstrument, selInstId, touch} from '../lib/project';
     import Confirm from './ui/Confirm.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
@@ -77,8 +77,7 @@
 
     function rename(value: string) {
         if (value && target) {
-            target.name = value;
-            touch();
+            renameInstrument(target.id, value);
         }
     }
 
@@ -132,15 +131,22 @@
         }
         if (folderToRename) {
             const prefix = folderToRename + '/';
-            $project?.instruments.forEach(instrument => {
-                if (instrument.name === folderToRename) {
-                    instrument.name = value;
-                } else if (instrument.name.startsWith(prefix)) {
-                    instrument.name = value + instrument.name.slice(folderToRename!.length);
-                }
-            });
+            project.update(current =>
+                current
+                    ? {
+                          ...current,
+                          instruments: current.instruments.map(instrument => ({
+                              ...instrument,
+                              name:
+                                  instrument.name === folderToRename ||
+                                  instrument.name.startsWith(prefix)
+                                      ? value + instrument.name.slice(folderToRename!.length)
+                                      : instrument.name,
+                          })),
+                      }
+                    : current,
+            );
             folderToRename = null;
-            touch();
         } else {
             rename(value);
         }

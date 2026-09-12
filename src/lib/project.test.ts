@@ -6,6 +6,8 @@ import {
   importProject,
   initProject,
   project,
+  renameInstrument,
+  renamePattern,
   selInstId,
   selPatId,
 } from "./project";
@@ -61,5 +63,38 @@ describe("project import", () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("project identity updates", () => {
+  it("renames instruments and patterns with new reactive references", () => {
+    initProject();
+    const before = get(project)!;
+    const instrument = before.instruments[0];
+    const pattern = before.patterns[0];
+
+    renameInstrument(instrument.id, "Renamed instrument");
+    const afterInstrument = get(project)!;
+    expect(afterInstrument).not.toBe(before);
+    expect(afterInstrument.instruments).not.toBe(before.instruments);
+    expect(afterInstrument.instruments[0]).not.toBe(instrument);
+    expect(afterInstrument.instruments[0].name).toBe("Renamed instrument");
+
+    renamePattern(pattern.id, "Renamed pattern");
+    const afterPattern = get(project)!;
+    expect(afterPattern).not.toBe(afterInstrument);
+    expect(afterPattern.patterns).not.toBe(afterInstrument.patterns);
+    expect(afterPattern.patterns[0]).not.toBe(pattern);
+    expect(afterPattern.patterns[0].name).toBe("Renamed pattern");
+  });
+
+  it("ignores rename requests for missing project items", () => {
+    initProject();
+    const before = get(project)!;
+
+    renameInstrument("missing", "No instrument");
+    renamePattern("missing", "No pattern");
+
+    expect(get(project)).toBe(before);
   });
 });
