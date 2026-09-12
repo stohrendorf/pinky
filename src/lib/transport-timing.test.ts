@@ -106,6 +106,25 @@ afterEach(() => {
 });
 
 describe("conductor-aware scheduling", () => {
+  it("combines clip transposition with an exact partial ratio", () => {
+    const p = score();
+    const id = p.instruments[0].id;
+    p.arrangement[0].transpose = 19;
+    p.arrangement[0].partial = 3;
+
+    scheduleRange(p, 0, 1);
+
+    expect(engine.noteOnAt).toHaveBeenCalledExactlyOnceWith(
+      id,
+      "G6",
+      0,
+      p.instruments[0].params,
+      1,
+      `${p.arrangement[0].id}:0`,
+      3,
+    );
+  });
+
   it("keeps converging legato chains from separate clips independently addressable", () => {
     const p = score();
     const instrumentId = p.instruments[0].id;

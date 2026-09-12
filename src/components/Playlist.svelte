@@ -168,10 +168,16 @@
     let draggingAutomationLane: string | null = null;
     let dragInsertionRow: number | null = $state(null);
 
-    // Clip transpose: one number instead of a duplicated pattern for "the same
-    // hook, a fourth up" — the scheduler shifts the notes while playing.
+    // Clip pitch: semitone transpose is the usual musical interval; an optional
+    // exact harmonic multiplier layers partials from the same written pattern.
     const TRANSPOSE_MAX = 24;
+    const PARTIAL_MAX = 24;
     const CLIP_GAIN_STEP = 0.1;
+    let showPartialControls = $state(false);
+
+    function hasPartialMultiplier(clip: ArrangementClip): boolean {
+        return (clip.partial ?? 1) !== 1;
+    }
 
     function transposeClips(delta: number) {
         if (!$project || !selectedClips.length) {
@@ -194,12 +200,60 @@
         touch();
     }
 
+    function setClipTranspose(value: number) {
+        if (!$project || !selectedClips.length || !Number.isFinite(value)) {
+            return;
+        }
+        selectedClips.forEach(c => {
+            c.transpose = Math.max(-TRANSPOSE_MAX, Math.min(TRANSPOSE_MAX, value));
+        });
+        touch();
+    }
+
+    function adjustClipPartial(delta: number) {
+        if (!$project || !selectedClips.length) {
+            return;
+        }
+        selectedClips.forEach(c => {
+            c.partial = Math.max(1, Math.min(PARTIAL_MAX, (c.partial ?? 1) + delta));
+        });
+        touch();
+    }
+
+    function setClipPartial(value: number) {
+        if (!$project || !selectedClips.length || !Number.isFinite(value)) {
+            return;
+        }
+        selectedClips.forEach(c => {
+            c.partial = Math.max(1, Math.min(PARTIAL_MAX, Math.round(value)));
+        });
+        touch();
+    }
+
+    function resetClipPartial() {
+        if (!$project || !selectedClips.length) {
+            return;
+        }
+        selectedClips.forEach(c => delete c.partial);
+        touch();
+    }
+
     function adjustClipGain(delta: number) {
         if (!$project || !selectedClips.length) {
             return;
         }
         selectedClips.forEach(c => {
             c.gain = Math.max(0, Math.min(1, (c.gain ?? 1) + delta));
+        });
+        touch();
+    }
+
+    function setClipGainPercent(value: number) {
+        if (!$project || !selectedClips.length || !Number.isFinite(value)) {
+            return;
+        }
+        selectedClips.forEach(c => {
+            c.gain = Math.max(0, Math.min(1, value / 100));
         });
         touch();
     }
@@ -213,6 +267,7 @@
     }
 
     const semiLabel = (n: number): string => (n > 0 ? '+' : '') + n;
+    const partialLabel = (partial: number | undefined): string => `${partial ?? 1}×`;
     const gainLabel = (gain: number | undefined): string => `${Math.round((gain ?? 1) * 100)}%`;
 
     function clearSelection() {
@@ -447,7 +502,8 @@
         // Alt + wheel over the arranger transposes the selected clips
         if (e.altKey && selectedClips.length) {
             e.preventDefault();
-            transposeClips((e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 12 : 1));
+            const delta = (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 12 : 1);
+            transposeClips(delta);
             return;
         }
         handleViewportWheel(e, viewportOptions);
@@ -977,72 +1033,148 @@
                     <span class="sel-count"
                         >{selectedClips.length} clip{selectedClips.length > 1 ? 's' : ''}</span
                     >
-                    <span class="lbl">Transpose</span>
-                    <Button
-                        compact
-                        onclick={() => transposeClips(-12)}
-                        title="An octave down"
-                        variant="secondary"
-                    >
-                        −12
-                    </Button>
-                    <Button
-                        compact
-                        onclick={() => transposeClips(-1)}
-                        title="A semitone down"
-                        variant="secondary"
-                        >−1
-                    </Button>
-                    <span class="semis">{semiLabel(selectedClips[0].transpose || 0)}</span>
-                    <Button
-                        compact
-                        onclick={() => transposeClips(1)}
-                        title="A semitone up"
-                        variant="secondary"
-                        >+1
-                    </Button>
-                    <Button
-                        compact
-                        onclick={() => transposeClips(12)}
-                        title="An octave up"
-                        variant="secondary"
-                        >+12
-                    </Button>
-                    <Button
-                        compact
-                        onclick={resetClipTranspose}
-                        title="Back to the written pitch"
-                        variant="secondary"
-                    >
-                        0
-                    </Button>
+                    <div class="clip-tool-group">
+                        <span class="lbl">Transpose</span>
+                        <Button
+                            compact
+                            onclick={() => transposeClips(-12)}
+                            title="An octave down"
+                            variant="secondary"
+                        >
+                            −12
+                        </Button>
+                        <Button
+                            compact
+                            onclick={() => transposeClips(-1)}
+                            title="A semitone down"
+                            variant="secondary"
+                        >
+                            −1
+                        </Button>
+                        <input
+                            class="clip-value-input"
+                            aria-label="Transpose selected clips in semitones"
+                            max={TRANSPOSE_MAX}
+                            min={-TRANSPOSE_MAX}
+                            onchange={e => setClipTranspose(parseFloat(e.currentTarget.value))}
+                            step="1"
+                            title="Transpose selected clips in semitones"
+                            type="number"
+                            value={selectedClips[0].transpose ?? 0}
+                        />
+                        <Button
+                            compact
+                            onclick={() => transposeClips(1)}
+                            title="A semitone up"
+                            variant="secondary"
+                        >
+                            +1
+                        </Button>
+                        <Button
+                            compact
+                            onclick={() => transposeClips(12)}
+                            title="An octave up"
+                            variant="secondary"
+                        >
+                            +12
+                        </Button>
+                        <Button
+                            compact
+                            onclick={resetClipTranspose}
+                            title="Back to the written pitch"
+                            variant="secondary"
+                        >
+                            0
+                        </Button>
+                    </div>
+                    <div class="clip-tool-group">
+                        <Button
+                            compact
+                            onclick={() => (showPartialControls = !showPartialControls)}
+                            pressed={showPartialControls || hasPartialMultiplier(selectedClips[0])}
+                            title="Show exact harmonic multiplier controls"
+                            variant="secondary"
+                        >
+                            <i class="fa fa-wave-square"></i>
+                        </Button>
+                        {#if showPartialControls || hasPartialMultiplier(selectedClips[0])}
+                            <span class="lbl">Partial</span>
+                            <Button
+                                compact
+                                onclick={() => adjustClipPartial(-1)}
+                                title="Previous harmonic partial"
+                                variant="secondary"
+                            >
+                                −1
+                            </Button>
+                            <input
+                                class="clip-value-input"
+                                aria-label="Harmonic multiplier for selected clips"
+                                max={PARTIAL_MAX}
+                                min="1"
+                                onchange={e => setClipPartial(parseFloat(e.currentTarget.value))}
+                                step="1"
+                                title="Exact harmonic multiplier for selected clips"
+                                type="number"
+                                value={selectedClips[0].partial ?? 1}
+                            />
+                            <Button
+                                compact
+                                onclick={() => adjustClipPartial(1)}
+                                title="Next harmonic partial"
+                                variant="secondary"
+                            >
+                                +1
+                            </Button>
+                            <Button
+                                compact
+                                onclick={resetClipPartial}
+                                title="Remove harmonic multiplier"
+                                variant="secondary"
+                            >
+                                1×
+                            </Button>
+                        {/if}
+                    </div>
+                    <div class="clip-tool-group">
+                        <span class="lbl">Level</span>
+                        <Button
+                            compact
+                            onclick={() => adjustClipGain(-CLIP_GAIN_STEP)}
+                            title="Lower the selected clips by 10%"
+                            variant="secondary"
+                        >
+                            −10%
+                        </Button>
+                        <input
+                            class="clip-value-input"
+                            aria-label="Level for selected clips as a percent"
+                            max="100"
+                            min="0"
+                            onchange={e => setClipGainPercent(parseFloat(e.currentTarget.value))}
+                            step="1"
+                            title="Level for selected clips as a percent"
+                            type="number"
+                            value={Math.round((selectedClips[0].gain ?? 1) * 100)}
+                        />
+                        <Button
+                            compact
+                            onclick={() => adjustClipGain(CLIP_GAIN_STEP)}
+                            title="Raise the selected clips by 10%"
+                            variant="secondary"
+                        >
+                            +10%
+                        </Button>
+                        <Button
+                            compact
+                            onclick={resetClipGain}
+                            title="Restore full clip level"
+                            variant="secondary"
+                        >
+                            100%
+                        </Button>
+                    </div>
                     <span class="tip">(or Alt + wheel)</span>
-                    <span class="lbl">Level</span>
-                    <Button
-                        compact
-                        onclick={() => adjustClipGain(-CLIP_GAIN_STEP)}
-                        title="Lower the selected clips by 10%"
-                        variant="secondary"
-                    >
-                        −10%
-                    </Button>
-                    <span class="semis">{gainLabel(selectedClips[0].gain)}</span>
-                    <Button
-                        compact
-                        onclick={() => adjustClipGain(CLIP_GAIN_STEP)}
-                        title="Raise the selected clips by 10%"
-                        variant="secondary"
-                    >
-                        +10%
-                    </Button>
-                    <Button
-                        compact
-                        onclick={resetClipGain}
-                        title="Restore full clip level"
-                        variant="secondary"
-                    >
-                        100%
-                    </Button>
                 </div>
             {/if}
         </div>
@@ -1338,6 +1470,14 @@
                                     title="Transposed by {clip.transpose} semitones"
                                 >
                                     {semiLabel(clip.transpose)}
+                                </div>
+                            {/if}
+                            {#if hasPartialMultiplier(clip)}
+                                <div
+                                    class="clip-transpose"
+                                    title="Harmonic partial {clip.partial} ({partialLabel(clip.partial)} frequency)"
+                                >
+                                    {partialLabel(clip.partial)}
                                 </div>
                             {/if}
                             {#if clip.gain !== undefined && clip.gain !== 1}
@@ -1897,6 +2037,17 @@
         white-space: nowrap;
     }
 
+    .clip-tool-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .clip-tool-group + .clip-tool-group {
+        border-left: 1px solid var(--border);
+        padding-left: 10px;
+    }
+
     .clip-tools .sel-count {
         color: var(--accent2);
     }
@@ -1905,10 +2056,22 @@
         opacity: 0.6;
     }
 
-    .clip-tools .semis {
-        min-width: 26px;
-        text-align: center;
+    .clip-value-input {
+        width: 46px;
+        box-sizing: border-box;
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        background: var(--color-surface-input);
+        color: var(--primary-text);
+        font: inherit;
         font-weight: bold;
+        padding: 4px 3px;
+        text-align: center;
+    }
+
+    .clip-value-input:focus {
+        border-color: var(--accent2);
+        outline: none;
     }
 
     .clip-transpose {

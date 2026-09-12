@@ -99,6 +99,24 @@ describe("NoteScheduler", () => {
     );
   });
 
+  it("uses an exact frequency multiplier while retaining named note identity", () => {
+    const { instance, voices, createVoice } = scheduler(2);
+
+    instance.noteOnAt("lead", "C4", 2, params, 1, undefined, 3);
+    instance.glideAt("lead", "C4", "D4", 3, 0.2, "linear", undefined, 3);
+
+    expect(createVoice).toHaveBeenCalledWith("lead", 261.63 * 3, 2, params, 1);
+    expect(voices.glide).toHaveBeenCalledWith(
+      "lead",
+      "lead:C4",
+      "lead:D4",
+      3,
+      293.66 * 3,
+      0.2,
+      "linear",
+    );
+  });
+
   it("isolates simultaneous clip voices on the same instrument and pitch", () => {
     const { instance, voices } = scheduler(2);
 

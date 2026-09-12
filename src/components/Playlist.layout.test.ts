@@ -71,6 +71,7 @@ describe("Playlist frozen track labels", () => {
 
   it("offers per-instance clip level controls and marks attenuated clips", () => {
     expect(playlist).toContain("function adjustClipGain(delta: number)");
+    expect(playlist).toContain("function setClipGainPercent(value: number)");
     expect(playlist).toContain(
       "onclick={() => adjustClipGain(-CLIP_GAIN_STEP)}",
     );
@@ -79,6 +80,35 @@ describe("Playlist frozen track labels", () => {
     );
     expect(playlist).toContain("onclick={resetClipGain}");
     expect(playlist).toContain('class="clip-gain"');
+  });
+
+  it("lets selected clip pitch modifiers and level be entered directly", () => {
+    expect(playlist).toContain("function setClipTranspose(value: number)");
+    expect(playlist).toContain("function setClipPartial(value: number)");
+    expect(playlist).toContain(
+      'aria-label="Transpose selected clips in semitones"',
+    );
+    expect(playlist).toContain(
+      'aria-label="Harmonic multiplier for selected clips"',
+    );
+    expect(playlist).toContain(
+      'aria-label="Level for selected clips as a percent"',
+    );
+    expect(playlist).toContain('class="clip-tool-group"');
+    expect(playlist).toContain(".clip-tool-group + .clip-tool-group");
+  });
+
+  it("keeps semitone transposition primary and reveals optional harmonic partials", () => {
+    expect(playlist).toContain("function adjustClipPartial(delta: number)");
+    expect(playlist).toContain("let showPartialControls = $state(false)");
+    expect(playlist).toContain(
+      "showPartialControls || hasPartialMultiplier(selectedClips[0])",
+    );
+    expect(playlist).toContain(
+      'title="Show exact harmonic multiplier controls"',
+    );
+    expect(playlist).toContain("transposeClips(delta);");
+    expect(playlist).toContain('class="clip-transpose"');
   });
 
   it("keeps song orientation visible by identifying all uses of the open pattern", () => {

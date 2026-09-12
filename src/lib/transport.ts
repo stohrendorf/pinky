@@ -75,9 +75,64 @@ function audibleInstruments(instruments: Instrument[]): Instrument[] {
   return instruments.filter((i) => !i.mute && (!anySolo || i.solo));
 }
 
+function noteOnForClip(
+  inst: Instrument,
+  pitch: string,
+  time: number,
+  params: InstrumentParams,
+  velocity: number,
+  voiceScope: string | null,
+  pitchMultiplier: number,
+): void {
+  if (pitchMultiplier !== 1) {
+    eng.noteOnAt(
+      inst.id,
+      pitch,
+      time,
+      params,
+      velocity,
+      voiceScope ?? undefined,
+      pitchMultiplier,
+    );
+  } else if (voiceScope) {
+    eng.noteOnAt(inst.id, pitch, time, params, velocity, voiceScope);
+  } else {
+    eng.noteOnAt(inst.id, pitch, time, params, velocity);
+  }
+}
+
+function glideForClip(
+  inst: Instrument,
+  from: string,
+  to: string,
+  time: number,
+  duration: number,
+  curve: InstrumentParams["legatoCurve"],
+  voiceScope: string | null,
+  pitchMultiplier: number,
+): void {
+  if (pitchMultiplier !== 1) {
+    eng.glideAt(
+      inst.id,
+      from,
+      to,
+      time,
+      duration,
+      curve,
+      voiceScope ?? undefined,
+      pitchMultiplier,
+    );
+  } else if (voiceScope) {
+    eng.glideAt(inst.id, from, to, time, duration, curve, voiceScope);
+  } else {
+    eng.glideAt(inst.id, from, to, time, duration, curve);
+  }
+}
+
 // `transpose` = the clip's semitone shift (one number instead of a duplicated
-// pattern for "the same hook a fourth up"); `over` = automated params for this
-// step (a patched copy of the instrument's params, see automation.ts)
+// pattern for "the same hook a fourth up"); `pitchMultiplier` then applies an
+// optional exact harmonic ratio. `over` = automated params for this step (a
+// patched copy of the instrument's params).
 export function schedulePatternNotes(
   pat: Pattern,
   patStep: number,
@@ -90,7 +145,12 @@ export function schedulePatternNotes(
   voiceScope: string | null = null,
   gain = 1,
   clipStepsRemaining = Infinity,
+  pitchMultiplier = 1,
 ): void {
+  const ratio =
+    Number.isFinite(pitchMultiplier) && pitchMultiplier > 0
+      ? pitchMultiplier
+      : 1;
   instruments.forEach((inst) => {
     const notes = pat.tracks[inst.id];
     if (!notes) {
@@ -126,11 +186,7 @@ export function schedulePatternNotes(
 
         if (!incoming) {
           const velocity = (n.vel ?? 1) * Math.max(0, Math.min(1, gain));
-          if (voiceScope) {
-            eng.noteOnAt(inst.id, pitch, time, params, velocity, voiceScope);
-          } else {
-            eng.noteOnAt(inst.id, pitch, time, params, velocity);
-          }
+          noteOnForClip(inst, pitch, time, params, velocity, voiceScope, ratio);
         }
         if (target && targetPitch) {
           const glide = legatoTransition(
@@ -143,26 +199,16 @@ export function schedulePatternNotes(
             0.005,
             elapsed(target.start - n.start) - elapsed(n.len),
           );
-          if (voiceScope) {
-            eng.glideAt(
-              inst.id,
-              pitch,
-              targetPitch,
-              time + elapsed(n.len),
-              glideTime,
-              glide.curve,
-              voiceScope,
-            );
-          } else {
-            eng.glideAt(
-              inst.id,
-              pitch,
-              targetPitch,
-              time + elapsed(n.len),
-              glideTime,
-              glide.curve,
-            );
-          }
+          glideForClip(
+            inst,
+            pitch,
+            targetPitch,
+            time + elapsed(n.len),
+            glideTime,
+            glide.curve,
+            voiceScope,
+            ratio,
+          );
           return;
         }
         // A terminal linked note owns the release for the complete
@@ -277,12 +323,13 @@ function scheduleSongStep(
         at,
         dur,
         insts,
-        clip.transpose || 0,
+        clip.transpose ?? 0,
         over,
         elapsed,
         `${clip.id}:${Math.floor(relStep / patSteps)}`,
         clip.gain ?? 1,
         clip.len - relStep,
+        clip.partial ?? 1,
       );
     }
   });

@@ -57,6 +57,7 @@ export interface ArrangementClip {
   start: number;
   len: number;
   transpose?: number; // semitones this clip shifts its pattern by (0/undefined = as written)
+  partial?: number; // optional exact harmonic multiplier (1/undefined = no multiplier)
   gain?: number; // 0..1 level multiplier for this clip (undefined = 1, i.e. full)
   selected?: boolean;
 }

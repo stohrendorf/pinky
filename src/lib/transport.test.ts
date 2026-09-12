@@ -101,6 +101,43 @@ describe("pattern note scheduling", () => {
     );
   });
 
+  it("keeps exact partial ratios through transposed note-on and legato glide", () => {
+    schedulePatternNotes(
+      chainedPattern,
+      0,
+      1,
+      0.1,
+      [lead],
+      19,
+      null,
+      undefined,
+      "partial-3:0",
+      1,
+      Infinity,
+      3,
+    );
+
+    expect(engine.noteOnAt).toHaveBeenCalledExactlyOnceWith(
+      "lead",
+      "G5",
+      1,
+      lead.params,
+      1,
+      "partial-3:0",
+      3,
+    );
+    expect(engine.glideAt).toHaveBeenCalledWith(
+      "lead",
+      "G5",
+      "A5",
+      1.4,
+      0.4,
+      "linear",
+      "partial-3:0",
+      3,
+    );
+  });
+
   it("keeps one voice alive by scheduling each portamento transition at its source note", () => {
     schedulePatternNotes(chainedPattern, 0, 1, 0.1, [lead]);
 

@@ -77,10 +77,16 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     params: Params,
     velocity = 1,
     scope?: string,
+    frequencyMultiplier = 1,
   ): void {
     const note = this.findNote(name);
     const now = this.currentTime();
-    if (!note || now === null) {
+    if (
+      !note ||
+      now === null ||
+      !Number.isFinite(frequencyMultiplier) ||
+      frequencyMultiplier <= 0
+    ) {
       return;
     }
 
@@ -89,7 +95,13 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     this.voices.replaceActive(key, at);
     const cost = this.voices.prepare(at);
     this.voices.load = cost;
-    const voice = this.createVoice(track, note.freq, at, params, velocity);
+    const voice = this.createVoice(
+      track,
+      note.freq * frequencyMultiplier,
+      at,
+      params,
+      velocity,
+    );
     this.voices.load = cost + voice.cost;
     this.voices.register(
       track,
@@ -125,10 +137,16 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     time: number,
     curve: CurveShape = "linear",
     scope?: string,
+    frequencyMultiplier = 1,
   ): boolean {
     const note = this.findNote(to);
     const now = this.currentTime();
-    if (!note || now === null) {
+    if (
+      !note ||
+      now === null ||
+      !Number.isFinite(frequencyMultiplier) ||
+      frequencyMultiplier <= 0
+    ) {
       return false;
     }
     const at = Math.max(atTime, now);
@@ -137,7 +155,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
       voiceKey(track, from, scope),
       voiceKey(track, to, scope),
       at,
-      note.freq,
+      note.freq * frequencyMultiplier,
       time,
       curve,
     );
