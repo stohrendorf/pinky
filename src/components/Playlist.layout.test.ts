@@ -79,7 +79,7 @@ describe("Playlist frozen track labels", () => {
       "onclick={() => adjustClipGain(CLIP_GAIN_STEP)}",
     );
     expect(playlist).toContain("onclick={resetClipGain}");
-    expect(playlist).toContain('class="clip-gain"');
+    expect(playlist).toContain('class="clip-gain clip-badge"');
   });
 
   it("lets selected clip pitch modifiers and level be entered directly", () => {
@@ -108,7 +108,23 @@ describe("Playlist frozen track labels", () => {
       'title="Show exact harmonic multiplier controls"',
     );
     expect(playlist).toContain("transposeClips(delta);");
-    expect(playlist).toContain('class="clip-transpose"');
+    expect(playlist).toContain('class="clip-pitch clip-badge"');
+  });
+
+  it("keeps clip names readable and combines active pitch modifiers in one badge", () => {
+    expect(playlist).toContain('class="clip-name clip-badge"');
+    expect(playlist).toContain(
+      "class:has-pitch-modifier={clip.transpose || hasPartialMultiplier(clip)}",
+    );
+    expect(playlist).toContain("clip.transpose &&");
+    expect(playlist).toContain("? ' · '");
+    expect(playlist).toMatch(
+      /\.clip\.has-pitch-modifier \.clip-name\s*\{[^}]*max-width:\s*calc\(100% - 72px\);/s,
+    );
+    expect(playlist).not.toMatch(
+      /\.clip\.has-pitch-modifier \.clip-name\s*\{[^}]*right:/s,
+    );
+    expect(playlist).toMatch(/\.clip-badge\s*\{[^}]*background:/s);
   });
 
   it("keeps song orientation visible by identifying all uses of the open pattern", () => {

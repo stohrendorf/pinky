@@ -101,6 +101,15 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toContain("patternFocused");
   });
 
+  it("keeps step numbers vertically centered and note bodies free of repeated pitch labels", () => {
+    const styles = styleRules(sequencer);
+
+    expect(styles.get(".time-marker")?.get("display")).toBe("flex");
+    expect(styles.get(".time-marker")?.get("align-items")).toBe("center");
+    expect(styles.get(".time-marker")?.get("padding")).toBe("0 4px");
+    expect(sequencer).not.toMatch(/class="note"[\s\S]*?>\s*\{n\.pitch\}/);
+  });
+
   it("uses a draggable timeline end handle for pattern length", () => {
     expect(sequencer).toMatch(
       /class="length-counter"\s*aria-label="Pattern length"/,
@@ -231,11 +240,11 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toMatch(/beginNoteDrag\(dragNote, r, s, s_raw\);/);
   });
 
-  it("replaces the note track when deleting so the roll redraws immediately", () => {
+  it("uses the immutable shared deletion operation for right-drag deletion", () => {
+    expect(sequencer).toContain("deleteNotes,");
     expect(sequencer).toMatch(
-      /function deleteNoteAt[\s\S]*const track = pat\.tracks\[\$selInstId\] \?\? \[\];[\s\S]*pat\.tracks\[\$selInstId\] = track\.filter\(note => note !== found\);/,
+      /function deleteNoteAt[\s\S]*if \(found\) \{\s*deleteNotes\(\[found\]\);/,
     );
-    expect(sequencer).not.toContain("notes.splice(notes.indexOf(found), 1);");
   });
 
   it("commits selection and legato edits as new track arrays so the roll redraws", () => {

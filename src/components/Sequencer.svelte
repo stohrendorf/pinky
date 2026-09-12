@@ -9,6 +9,7 @@
     import {
         clampVel,
         createLegatoBetweenSelected,
+        deleteNotes,
         editStep,
         removeInvalidLegatoLinks,
         shouldPlaceNote,
@@ -493,8 +494,7 @@
             n => rowOfNote[n.pitch] === r && s >= n.start && s < n.start + n.len,
         );
         if (found) {
-            pat.tracks[$selInstId] = track.filter(note => note !== found);
-            touch();
+            deleteNotes([found]);
         }
     }
 
@@ -1061,7 +1061,6 @@
                             tabindex="0"
                             title="{n.pitch} • velocity {Math.round(v * 100)}% (Alt+drag)"
                         >
-                            {n.pitch}
                             <div style="width: {v * 100}%" class="vel-bar"></div>
                             <div
                                 style="width: {Math.min(
@@ -1308,9 +1307,11 @@
     .time-marker {
         position: absolute;
         top: 0;
+        display: flex;
+        align-items: center;
         font-size: 9px;
         color: var(--color-text-subtle);
-        padding: 4px;
+        padding: 0 4px;
         border-left: 1px solid var(--border);
         height: 100%;
         box-sizing: border-box;

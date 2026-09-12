@@ -133,17 +133,29 @@ export function clearNoteSelection(): void {
   touch();
 }
 
+export function deleteNotes(notesToDelete: readonly Note[]): void {
+  const currentProject = get(project);
+  const pattern = curPattern();
+  const instrumentId = get(selInstId);
+  const notes = curNotes();
+  if (!currentProject || !pattern || !instrumentId || !notes) {
+    return;
+  }
+  const deleted = new Set(notesToDelete);
+  const keep = notes.filter((note) => !deleted.has(note));
+  if (keep.length === notes.length) {
+    return;
+  }
+  pattern.tracks = { ...pattern.tracks, [instrumentId]: keep };
+  touch();
+}
+
 export function deleteSelectedNotes(): void {
   const notes = curNotes();
   if (!notes) {
     return;
   }
-  const keep = notes.filter((n) => !n.selected);
-  if (keep.length === notes.length) {
-    return;
-  }
-  notes.splice(0, notes.length, ...keep);
-  touch();
+  deleteNotes(selectedOf(notes));
 }
 
 export function copySelectedNotes(): number {

@@ -1445,6 +1445,7 @@
                                 clip.patternId,
                             )}"
                             class="clip"
+                            class:has-pitch-modifier={clip.transpose || hasPartialMultiplier(clip)}
                             class:open-pattern={clip.patternId === $selPatId}
                             class:selected={clip.selected}
                             class:silent={laneSilent[clip.track]}
@@ -1463,25 +1464,20 @@
                             role="button"
                             tabindex="0"
                         >
-                            <div class="clip-name">{getPatternName(clip.patternId)}</div>
-                            {#if clip.transpose}
+                            <div class="clip-name clip-badge">{getPatternName(clip.patternId)}</div>
+                            {#if clip.transpose || hasPartialMultiplier(clip)}
                                 <div
-                                    class="clip-transpose"
-                                    title="Transposed by {clip.transpose} semitones"
+                                    class="clip-pitch clip-badge"
+                                    title={`Clip pitch: ${clip.transpose ? `${semiLabel(clip.transpose)} transpose` : 'written pitch'}${hasPartialMultiplier(clip) ? `${clip.transpose ? ' · ' : ''}${partialLabel(clip.partial)} harmonic partial` : ''}`}
                                 >
-                                    {semiLabel(clip.transpose)}
-                                </div>
-                            {/if}
-                            {#if hasPartialMultiplier(clip)}
-                                <div
-                                    class="clip-transpose"
-                                    title="Harmonic partial {clip.partial} ({partialLabel(clip.partial)} frequency)"
-                                >
-                                    {partialLabel(clip.partial)}
+                                    {clip.transpose ? semiLabel(clip.transpose) : ''}{clip.transpose &&
+                                    hasPartialMultiplier(clip)
+                                        ? ' · '
+                                        : ''}{hasPartialMultiplier(clip) ? partialLabel(clip.partial) : ''}
                                 </div>
                             {/if}
                             {#if clip.gain !== undefined && clip.gain !== 1}
-                                <div class="clip-gain" title={`Clip level: ${gainLabel(clip.gain)}`}>
+                                <div class="clip-gain clip-badge" title={`Clip level: ${gainLabel(clip.gain)}`}>
                                     {gainLabel(clip.gain)}
                                 </div>
                             {/if}
@@ -1968,8 +1964,22 @@
         top: 2px;
         left: 4px;
         z-index: 2;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         pointer-events: none;
+        max-width: calc(100% - 8px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .clip.has-pitch-modifier .clip-name {
+        max-width: calc(100% - 72px);
+    }
+
+    .clip-badge {
+        padding: 0 3px;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.45);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
 
     .clip-preview {
@@ -2074,16 +2084,13 @@
         outline: none;
     }
 
-    .clip-transpose {
+    .clip-pitch {
         position: absolute;
         top: 2px;
         right: 4px;
         z-index: 3;
         font-size: 9px;
         font-weight: bold;
-        padding: 0 3px;
-        border-radius: 3px;
-        background: rgba(0, 0, 0, 0.45);
         pointer-events: none;
     }
 
@@ -2094,9 +2101,6 @@
         z-index: 3;
         font-size: 9px;
         font-weight: bold;
-        padding: 0 3px;
-        border-radius: 3px;
-        background: rgba(0, 0, 0, 0.45);
         pointer-events: none;
     }
 
