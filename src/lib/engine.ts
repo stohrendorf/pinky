@@ -20,7 +20,7 @@ import { NoteScheduler } from "./note-scheduler";
  * everywhere except the bands the peaking filters boost: those survive.
  * Percussion uses the same trick: one wide (low-Q) band = noise burst,
  * a frequency sweep on the bands = kick/tom pitch drop. */
-import { noteByName } from "./notes";
+import { noteInfoByName } from "./notes";
 import {
   abortable,
   checkAbort,
@@ -1662,7 +1662,7 @@ function makeVoice(
 }
 
 const noteScheduler = new NoteScheduler<InstrumentParams>({
-  findNote: (name) => noteByName[name],
+  findNote: noteInfoByName,
   currentTime: () => (ctx ? ctx.currentTime : null),
   voices: voiceCollection,
   createVoice: makeVoice,

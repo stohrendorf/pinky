@@ -88,6 +88,7 @@ export function schedulePatternNotes(
   over: Map<string, InstrumentParams> | null = null,
   elapsed: (steps: number) => number = (steps) => steps * dur,
   voiceScope: string | null = null,
+  gain = 1,
 ): void {
   instruments.forEach((inst) => {
     const notes = pat.tracks[inst.id];
@@ -105,28 +106,30 @@ export function schedulePatternNotes(
           (source) =>
             source.legatoTo?.start === n.start &&
             source.legatoTo.pitch === n.pitch &&
-            isLegatoTarget(source, n.start),
+            isLegatoTarget(source, n.start) &&
+            (!transpose || !!transposePitch(source.pitch, transpose)),
         );
         const target = notes.find(
           (candidate) =>
             candidate.start === n.legatoTo?.start &&
             candidate.pitch === n.legatoTo?.pitch,
         );
+        const targetPitch =
+          target && isLegatoTarget(n, target.start)
+            ? transpose
+              ? transposePitch(target.pitch, transpose)
+              : target.pitch
+            : null;
 
         if (!incoming) {
+          const velocity = (n.vel ?? 1) * Math.max(0, Math.min(1, gain));
           if (voiceScope) {
-            eng.noteOnAt(inst.id, pitch, time, params, n.vel ?? 1, voiceScope);
+            eng.noteOnAt(inst.id, pitch, time, params, velocity, voiceScope);
           } else {
-            eng.noteOnAt(inst.id, pitch, time, params, n.vel ?? 1);
+            eng.noteOnAt(inst.id, pitch, time, params, velocity);
           }
         }
-        if (target && isLegatoTarget(n, target.start)) {
-          const targetPitch = transpose
-            ? transposePitch(target.pitch, transpose)
-            : target.pitch;
-          if (!targetPitch) {
-            return;
-          }
+        if (target && targetPitch) {
           const glide = legatoTransition(
             n,
             target.start,
@@ -271,6 +274,7 @@ function scheduleSongStep(
         over,
         elapsed,
         `${clip.id}:${Math.floor(relStep / patSteps)}`,
+        clip.gain ?? 1,
       );
     }
   });

@@ -171,6 +171,7 @@
     // Clip transpose: one number instead of a duplicated pattern for "the same
     // hook, a fourth up" — the scheduler shifts the notes while playing.
     const TRANSPOSE_MAX = 24;
+    const CLIP_GAIN_STEP = 0.1;
 
     function transposeClips(delta: number) {
         if (!$project || !selectedClips.length) {
@@ -193,7 +194,26 @@
         touch();
     }
 
+    function adjustClipGain(delta: number) {
+        if (!$project || !selectedClips.length) {
+            return;
+        }
+        selectedClips.forEach(c => {
+            c.gain = Math.max(0, Math.min(1, (c.gain ?? 1) + delta));
+        });
+        touch();
+    }
+
+    function resetClipGain() {
+        if (!$project || !selectedClips.length) {
+            return;
+        }
+        selectedClips.forEach(c => delete c.gain);
+        touch();
+    }
+
     const semiLabel = (n: number): string => (n > 0 ? '+' : '') + n;
+    const gainLabel = (gain: number | undefined): string => `${Math.round((gain ?? 1) * 100)}%`;
 
     function clearSelection() {
         if ($project) {
@@ -997,6 +1017,32 @@
                         0
                     </Button>
                     <span class="tip">(or Alt + wheel)</span>
+                    <span class="lbl">Level</span>
+                    <Button
+                        compact
+                        onclick={() => adjustClipGain(-CLIP_GAIN_STEP)}
+                        title="Lower the selected clips by 10%"
+                        variant="secondary"
+                    >
+                        −10%
+                    </Button>
+                    <span class="semis">{gainLabel(selectedClips[0].gain)}</span>
+                    <Button
+                        compact
+                        onclick={() => adjustClipGain(CLIP_GAIN_STEP)}
+                        title="Raise the selected clips by 10%"
+                        variant="secondary"
+                    >
+                        +10%
+                    </Button>
+                    <Button
+                        compact
+                        onclick={resetClipGain}
+                        title="Restore full clip level"
+                        variant="secondary"
+                    >
+                        100%
+                    </Button>
                 </div>
             {/if}
         </div>
@@ -1292,6 +1338,11 @@
                                     title="Transposed by {clip.transpose} semitones"
                                 >
                                     {semiLabel(clip.transpose)}
+                                </div>
+                            {/if}
+                            {#if clip.gain !== undefined && clip.gain !== 1}
+                                <div class="clip-gain" title={`Clip level: ${gainLabel(clip.gain)}`}>
+                                    {gainLabel(clip.gain)}
                                 </div>
                             {/if}
                             <div class="clip-preview">
@@ -1863,6 +1914,19 @@
     .clip-transpose {
         position: absolute;
         top: 2px;
+        right: 4px;
+        z-index: 3;
+        font-size: 9px;
+        font-weight: bold;
+        padding: 0 3px;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+    }
+
+    .clip-gain {
+        position: absolute;
+        bottom: 2px;
         right: 4px;
         z-index: 3;
         font-size: 9px;

@@ -69,6 +69,18 @@ describe("Playlist frozen track labels", () => {
     expect(playlist).toMatch(/\.clip-tools\s*\{[^}]*overflow-x:\s*auto;/s);
   });
 
+  it("offers per-instance clip level controls and marks attenuated clips", () => {
+    expect(playlist).toContain("function adjustClipGain(delta: number)");
+    expect(playlist).toContain(
+      "onclick={() => adjustClipGain(-CLIP_GAIN_STEP)}",
+    );
+    expect(playlist).toContain(
+      "onclick={() => adjustClipGain(CLIP_GAIN_STEP)}",
+    );
+    expect(playlist).toContain("onclick={resetClipGain}");
+    expect(playlist).toContain('class="clip-gain"');
+  });
+
   it("keeps song orientation visible by identifying all uses of the open pattern", () => {
     expect(playlist).toContain("currentPatternClips");
     expect(playlist).toContain("currentPatternLocations");
