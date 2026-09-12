@@ -359,6 +359,16 @@
         editMarker(id);
     }
 
+    function selectMarker(event: MouseEvent, id: string) {
+        event.stopPropagation();
+        if (suppressClick && event.detail !== 0) {
+            suppressClick = false;
+            return;
+        }
+        suppressClick = false;
+        selectedId = id;
+    }
+
     function markerKey(event: KeyboardEvent, point: MarkerPoint) {
         event.stopPropagation();
         if (drag) {
@@ -482,8 +492,9 @@
                             data-marker-id={point.id}
                             data-step={step}
                             disabled={$rendering}
-                            onclick={event => clickMarker(event, point.id)}
+                            onclick={event => selectMarker(event, point.id)}
                             oncontextmenu={event => openMarkerContextMenu(event, point.id)}
+                            ondblclick={event => clickMarker(event, point.id)}
                             onkeydown={event => markerKey(event, point)}
                             onlostpointercapture={cancelDrag}
                             onpointercancel={cancelDrag}

@@ -62,6 +62,7 @@ interface Actions {
   finishDrag: (event: PointerEvent) => void;
   cancelDrag: () => void;
   clickMarker: (event: MouseEvent, id: string) => void;
+  selectMarker: (event: MouseEvent, id: string) => void;
   markerKey: (event: KeyboardEvent, point: MarkerPoint) => void;
   handleDialogKey: (event: KeyboardEvent, dialog: HTMLElement) => void;
   dialogKeyboard: (node: HTMLElement) => { destroy: () => void };
@@ -86,7 +87,7 @@ function handlers(scope: object): Actions {
   }).outputText;
   return runInNewContext(
     `${js}\n({newMarker, addAtPointer, closeDialog, positionLabel, markerLabel, editMarker,
-        saveMarker, deleteMarker, movePoint, startDrag, updateDrag, finishDrag, cancelDrag, clickMarker,
+        saveMarker, deleteMarker, movePoint, startDrag, updateDrag, finishDrag, cancelDrag, clickMarker, selectMarker,
         openMarkerContextMenu, markerContextAction,
         markerKey, handleDialogKey, dialogKeyboard})`,
     scope,
@@ -367,7 +368,7 @@ describe("Conductor component", () => {
     expect(scope.touch).not.toHaveBeenCalled();
   });
 
-  it("moves the entire group only on drop and suppresses the following click, not the next deliberate click", () => {
+  it("moves the entire group only on drop and suppresses the following selection click", () => {
     const { p, scope, actions } = fixture(true);
     const point = scope.points[0];
     const before = JSON.stringify(p);
@@ -389,12 +390,30 @@ describe("Conductor component", () => {
       meter: { step: 8 },
     });
     expect(scope.touch).toHaveBeenCalledTimes(1);
-    actions.clickMarker(click(), point.id);
+    actions.selectMarker(click(), point.id);
     expect(scope.show).toBe(false);
     actions.startDrag(pointer(500), scope.points[0]);
     actions.finishDrag(pointer(502));
-    actions.clickMarker(click(), point.id);
+    actions.selectMarker(click(), point.id);
+    expect(scope.show).toBe(false);
+    actions.clickMarker(click(2), point.id);
     expect(scope.show).toBe(true);
+  });
+
+  it("selects markers on click and opens the editor only on double-click", () => {
+    const { scope, actions } = fixture(true);
+    const point = scope.points[0];
+    actions.selectMarker(click(), point.id);
+    expect(scope.selectedId).toBe(point.id);
+    expect(scope.show).toBe(false);
+    actions.clickMarker(click(2), point.id);
+    expect(scope.show).toBe(true);
+    expect(source).toContain(
+      "onclick={event => selectMarker(event, point.id)}",
+    );
+    expect(source).toContain(
+      "ondblclick={event => clickMarker(event, point.id)}",
+    );
   });
 
   it("accounts for scrolling during drag, zoom, pointer identity and integer snapping", () => {
