@@ -495,6 +495,18 @@ async function freshEngine() {
 }
 
 describe("engine graph isolation and latency trimming", () => {
+  it("rebuilds a closed live context instead of attempting to resume it", async () => {
+    const engine = await freshEngine();
+    await engine.ensureAudio();
+    const closed = Context.instances[0];
+    closed.state = "closed";
+
+    await engine.ensureAudio();
+
+    expect(closed.resume).not.toHaveBeenCalled();
+    expect(Context.instances).toHaveLength(2);
+  });
+
   it("does not discard a high partial near Nyquist", async () => {
     const engine = await freshEngine();
     await engine.ensureAudio();

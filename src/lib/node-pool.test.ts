@@ -3,11 +3,23 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NodePool } from "./node-pool";
 
 class FakeParam {
-  value: number;
+  private storedValue: number;
+  curveActive = false;
   readonly cancelScheduledValues = vi.fn();
 
   constructor(value = 0) {
-    this.value = value;
+    this.storedValue = value;
+  }
+
+  get value(): number {
+    return this.storedValue;
+  }
+
+  set value(value: number) {
+    if (this.curveActive) {
+      throw new DOMException("Can't add events during a curve event");
+    }
+    this.storedValue = value;
   }
 }
 
@@ -139,5 +151,36 @@ describe("NodePool", () => {
     expect(reused.Q.value).toBe(4);
     expect(reused.gain.value).toBe(6);
     expect(reused.detune.value).toBe(0);
+  });
+
+  it("keeps a filter cooling while a started curve prevents its reset", () => {
+    vi.stubGlobal("GainNode", FakeGainNode);
+    vi.stubGlobal("BiquadFilterNode", FakeBiquadFilterNode);
+    const context = {} as BaseAudioContext;
+    let now = 0;
+    const pool = new NodePool({ capacity: 2, coolTime: 0.2 });
+    pool.attach(
+      context,
+      new FakeGainNode(context) as unknown as GainNode,
+      () => now,
+    );
+
+    const first = pool.takeBiquad(
+      440,
+      3,
+      12,
+      context,
+    ) as unknown as FakeBiquadFilterNode;
+    first.frequency.curveActive = true;
+    pool.give(first as unknown as AudioNode);
+    now = 0.2;
+    pool.sweep(now);
+    expect(pool.coolingCount).toBe(1);
+    expect(pool.takeBiquad(880, 4, 6, context)).not.toBe(first);
+
+    first.frequency.curveActive = false;
+    now = 0.4;
+    pool.sweep(now);
+    expect(pool.takeBiquad(880, 4, 6, context)).toBe(first);
   });
 });

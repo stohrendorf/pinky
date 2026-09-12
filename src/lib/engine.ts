@@ -476,14 +476,19 @@ function pooling(): boolean {
 /* A reused param must start its new life empty: a leftover event (or a pending
  * `flattenLater` from the previous note) would otherwise fire into the new
  * voice. Bumping the token invalidates every flatten queued for this param. */
-function claimParam(prm: AudioParam, v: number): void {
+function claimParam(prm: AudioParam, v: number): boolean {
   paramTok.set(prm, ++tokSeq);
   try {
     prm.cancelScheduledValues(0);
   } catch (e) {
     /* nothing scheduled */
   }
-  prm.value = v;
+  try {
+    prm.value = v;
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 function takeGain(gain: number): GainNode {
@@ -1867,7 +1872,28 @@ export async function renderOffline(
 /* ---- lifecycle — one user gesture unlocks audio (autoplay policy) ---- */
 let initPromise: Promise<void> | null = null;
 
+function discardLiveAudio(): void {
+  const onTick = liveGraph?.onTick ?? engine.onTick;
+  cut(() => liveGraph?.mixer?.dispose());
+  cut(() => liveGraph?.limiter?.dispose());
+  if (liveCtx) {
+    void liveCtx.close();
+  }
+  engine = { onTick };
+  liveGraph = null;
+  liveCtx = null;
+  ctx = null;
+  masterControls = controlsFor(engine, master);
+  liveMasterControls = masterControls;
+}
+
+const isClosed = (context: AudioContext): boolean => context.state === "closed";
+
 export function ensureAudio(): Promise<void> {
+  if (liveCtx && isClosed(liveCtx)) {
+    discardLiveAudio();
+    initPromise = null;
+  }
   if (!initPromise) {
     if (rendering) {
       return Promise.reject(
@@ -1875,29 +1901,36 @@ export function ensureAudio(): Promise<void> {
       );
     }
     initPromise = initAudio().catch((error) => {
-      cut(() => liveGraph?.mixer?.dispose());
-      cut(() => liveGraph?.limiter?.dispose());
-      if (liveCtx) {
-        void liveCtx.close();
-      }
-      engine = { onTick: liveGraph?.onTick };
-      liveGraph = null;
-      liveCtx = null;
-      ctx = null;
-      masterControls = controlsFor(engine, master);
-      liveMasterControls = masterControls;
+      discardLiveAudio();
       initPromise = null;
       throw error;
     });
   }
-  if (liveCtx && liveCtx.state !== "running") {
-    liveCtx.resume();
-  }
-  return initPromise;
+  return initPromise.then(async () => {
+    const context = liveCtx;
+    if (!context || context.state === "running") {
+      return;
+    }
+    if (isClosed(context)) {
+      discardLiveAudio();
+      initPromise = null;
+      return ensureAudio();
+    }
+    try {
+      await context.resume();
+    } catch (error) {
+      if (isClosed(context)) {
+        discardLiveAudio();
+        initPromise = null;
+        return ensureAudio();
+      }
+      throw error;
+    }
+  });
 }
 
 window.addEventListener("beforeunload", () => {
   if (liveCtx) {
-    liveCtx.close();
+    void liveCtx.close();
   }
 });

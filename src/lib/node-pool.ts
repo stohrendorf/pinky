@@ -1,7 +1,7 @@
 export interface NodePoolOptions {
   capacity?: number;
   coolTime?: number;
-  reset?: (param: AudioParam, value: number) => void;
+  reset?: (param: AudioParam, value: number) => boolean;
 }
 
 /**
@@ -21,7 +21,7 @@ export class NodePool {
   private enabled = false;
   private readonly capacity: number;
   private readonly coolTime: number;
-  private readonly reset: (param: AudioParam, value: number) => void;
+  private readonly reset: (param: AudioParam, value: number) => boolean;
 
   constructor(options: NodePoolOptions = {}) {
     this.capacity = options.capacity ?? 1024;
@@ -77,11 +77,10 @@ export class NodePool {
       this.enabled && context === this.context ? this.biquads.pop() : undefined;
     if (node) {
       node.type = "peaking";
-      this.reset(node.frequency, frequency);
-      this.reset(node.Q, q);
-      this.reset(node.gain, gain);
-      this.reset(node.detune, 0);
-      return node;
+      if (this.resetBiquad(node, frequency, q, gain)) {
+        return node;
+      }
+      this.coolDown(node);
     }
     return new BiquadFilterNode(context, {
       type: "peaking",
@@ -121,10 +120,21 @@ export class NodePool {
     }
   }
 
-  /** Move cooled filters into the reusable filter pool. */
+  /** Move fully reset filters into the reusable filter pool. */
   sweep(now: number): void {
-    while (this.cooling.length && this.cooling[0].at <= now) {
-      const cooled = this.cooling.shift()!;
+    for (let i = this.cooling.length - 1; i >= 0; i--) {
+      const cooled = this.cooling[i];
+      if (cooled.at > now) {
+        continue;
+      }
+      // A curve that has already started cannot be replaced by writing .value
+      // in Firefox. Keep processing the disconnected filter into silence and
+      // retry later instead of returning a node whose old curve is still live.
+      if (!this.resetBiquad(cooled.node, 2000, 0.7, 0)) {
+        cooled.at = now + this.coolTime;
+        continue;
+      }
+      this.cooling.splice(i, 1);
       safe(() => cooled.node.disconnect(cooled.sink));
       if (this.biquads.length < this.capacity) {
         this.biquads.push(cooled.node);
@@ -146,13 +156,23 @@ export class NodePool {
       return;
     }
     node.type = "peaking";
-    this.reset(node.frequency, 2000);
-    this.reset(node.Q, 0.7);
-    this.reset(node.gain, 0);
-    this.reset(node.detune, 0);
+    this.resetBiquad(node, 2000, 0.7, 0);
     const sink = this.flushBus;
     safe(() => node.connect(sink));
     this.cooling.push({ node, at: this.now() + this.coolTime, sink });
+  }
+
+  private resetBiquad(
+    node: BiquadFilterNode,
+    frequency: number,
+    q: number,
+    gain: number,
+  ): boolean {
+    const frequencyReset = this.reset(node.frequency, frequency);
+    const qReset = this.reset(node.Q, q);
+    const gainReset = this.reset(node.gain, gain);
+    const detuneReset = this.reset(node.detune, 0);
+    return frequencyReset && qReset && gainReset && detuneReset;
   }
 }
 
@@ -162,14 +182,20 @@ interface CoolingNode {
   sink: GainNode;
 }
 
-function resetParam(param: AudioParam, value: number): void {
+function resetParam(param: AudioParam, value: number): boolean {
   try {
     param.cancelScheduledValues(0);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     // A node may already have been detached by the teardown sweep.
   }
-  param.value = value;
+  try {
+    param.value = value;
+    return true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return false;
+  }
 }
 
 function safe(action: () => void): void {
