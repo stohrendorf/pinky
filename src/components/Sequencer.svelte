@@ -40,9 +40,16 @@
     interface Props {
         contextualEditor?: string | null;
         onEditInstrument?: () => void;
+        onToggleFocus?: () => void;
+        patternFocused?: boolean;
     }
 
-    let { contextualEditor = $bindable(null), onEditInstrument = () => {} }: Props = $props();
+    let {
+        contextualEditor = $bindable(null),
+        onEditInstrument = () => {},
+        onToggleFocus = () => {},
+        patternFocused = false,
+    }: Props = $props();
 
     const NOTE_EDITOR_KEY = 'note';
     const DRAG_PREVIEW_TRACK = 'drag-preview';
@@ -841,13 +848,27 @@
                 </button>
                 <span class="toolbar-hint">Alt+drag = velocity</span>
             </div>
-            <button
-                class="instrument-edit"
-                onclick={onEditInstrument}
-                title="Edit the selected instrument"
-                type="button"
-                ><i class="fa fa-sliders"></i> Edit instrument
-            </button>
+            <div class="toolbar-actions">
+                <button
+                    class="pattern-focus"
+                    aria-label={patternFocused ? 'Exit pattern focus mode' : 'Focus pattern editor'}
+                    aria-pressed={patternFocused}
+                    onclick={onToggleFocus}
+                    title={patternFocused
+                        ? 'Exit pattern focus mode (Esc or Ctrl+Shift+F)'
+                        : 'Focus pattern editor (Ctrl+Shift+F)'}
+                    type="button"
+                >
+                    <i class="fa fa-{patternFocused ? 'compress' : 'expand'}" aria-hidden="true"></i>
+                </button>
+                <button
+                    class="instrument-edit"
+                    onclick={onEditInstrument}
+                    title="Edit the selected instrument"
+                    type="button"
+                    ><i class="fa fa-sliders"></i> Edit instrument
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1161,6 +1182,29 @@
         min-width: 0;
     }
 
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pattern-focus {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: transparent;
+        color: var(--primary-text);
+    }
+
+    .pattern-focus:hover,
+    .pattern-focus[aria-pressed='true'] {
+        border-color: var(--accent);
+        background: var(--color-accent-soft);
+        color: var(--accent);
+    }
+
     .pattern-preview {
         flex: 0 0 30px;
         height: 30px;
@@ -1189,7 +1233,8 @@
     .piano-roll {
         display: flex;
         flex-direction: column;
-        height: clamp(180px, 30vh, 340px);
+        flex: 1;
+        height: auto;
         min-height: 0;
         overflow: auto;
         position: relative;

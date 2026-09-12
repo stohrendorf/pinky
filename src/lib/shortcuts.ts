@@ -56,6 +56,7 @@ export const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
       ["← / →", "Nudge by a step (Shift = a beat)"],
       ["Alt + ↑ / ↓", "Louder / quieter (velocity)"],
       ["Alt + drag", "Set velocity"],
+      ["Ctrl + Shift + F", "Toggle pattern focus mode"],
       ["Esc", "Clear the note selection"],
     ],
   },

@@ -80,4 +80,25 @@ describe("workspace controls", () => {
       /\.split-divider\s*\{[\s\S]*border-top: 1px solid var\(--border\);/,
     );
   });
+
+  it("offers a shortcut-driven pattern-only focus mode", () => {
+    expect(app).toContain("let patternFocused = $state(false)");
+    expect(app).toContain(
+      "function handleWorkspaceShortcut(event: KeyboardEvent)",
+    );
+    expect(app).toContain("onkeydown={handleWorkspaceShortcut}");
+    expect(app).toMatch(/event\.key\.toLowerCase\(\) === 'f'/);
+    expect(app).toContain("event.key === 'Escape'");
+    expect(app).toContain("patternFocused={patternFocused}");
+    expect(app).toContain(
+      "onToggleFocus={() => (patternFocused = !patternFocused)}",
+    );
+    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*<TopBar\s*\/>/);
+    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*class="arranger-panel"/);
+    expect(app).toMatch(/\{#if !patternFocused}[\s\S]*class="scope-tray"/);
+    expect(app).toContain("class:pattern-focused={patternFocused}");
+    expect(app).toMatch(
+      /\.workspace-main\.pattern-focused\s*\{[\s\S]*grid-template-rows: minmax\(0, 1fr\);/,
+    );
+  });
 });

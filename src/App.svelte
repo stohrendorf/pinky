@@ -10,8 +10,8 @@
     import Shortcuts from './components/Shortcuts.svelte';
     import TopBar from './components/TopBar.svelte';
     import Dialog from './components/ui/Dialog.svelte';
-    import { initHistory } from './lib/history';
-    import { initProject, project } from './lib/project';
+    import {initHistory} from './lib/history';
+    import {initProject, project} from './lib/project';
 
     initProject();
     initHistory();
@@ -21,6 +21,27 @@
     let contextualEditor: string | null = $state(null);
     let workspaceMain = $state<HTMLElement>();
     let arrangerRatio = $state(0.5);
+    let patternFocused = $state(false);
+
+    function handleWorkspaceShortcut(event: KeyboardEvent) {
+        if (event.repeat) {
+            return;
+        }
+        if (patternFocused && event.key === 'Escape') {
+            event.preventDefault();
+            patternFocused = false;
+            return;
+        }
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            event.shiftKey &&
+            !event.altKey &&
+            event.key.toLowerCase() === 'f'
+        ) {
+            event.preventDefault();
+            patternFocused = !patternFocused;
+        }
+    }
 
     function setArrangerRatio(ratio: number) {
         arrangerRatio = Math.max(0.2, Math.min(0.8, ratio));
@@ -76,58 +97,69 @@
     }
 </script>
 
+<svelte:window onkeydown={handleWorkspaceShortcut} />
+
 {#if $project}
     <div class="workspace">
         <Shortcuts />
-        <TopBar />
+        {#if !patternFocused}
+            <TopBar />
+        {/if}
         <main
             bind:this={workspaceMain}
             style:--arranger-ratio={arrangerRatio}
             class="workspace-main"
+            class:pattern-focused={patternFocused}
         >
-            <section class="arranger-panel" aria-label="Song arranger">
-                <div class="editor-with-tree">
-                    <PatternBar />
-                    <Playlist bind:contextualEditor />
-                </div>
-            </section>
-            <button
-                class="split-divider"
-                aria-label="Resize arranger and pattern editor"
-                onkeydown={resizeDivider}
-                onpointercancel={stopDividerDrag}
-                onpointerdown={startDividerDrag}
-                onpointermove={dragDivider}
-                onpointerup={stopDividerDrag}
-                title="Drag to resize the arranger and pattern editor"
-                type="button"
-            ></button>
+            {#if !patternFocused}
+                <section class="arranger-panel" aria-label="Song arranger">
+                    <div class="editor-with-tree">
+                        <PatternBar />
+                        <Playlist bind:contextualEditor />
+                    </div>
+                </section>
+                <button
+                    class="split-divider"
+                    aria-label="Resize arranger and pattern editor"
+                    onkeydown={resizeDivider}
+                    onpointercancel={stopDividerDrag}
+                    onpointerdown={startDividerDrag}
+                    onpointermove={dragDivider}
+                    onpointerup={stopDividerDrag}
+                    title="Drag to resize the arranger and pattern editor"
+                    type="button"
+                ></button>
+            {/if}
             <section class="piano-roll-panel" aria-label="Pattern editor">
                 <div class="editor-with-tree">
                     <InstrumentTree onEdit={() => (showInstrumentEditor = true)} />
                     <Sequencer
                         onEditInstrument={() => (showInstrumentEditor = true)}
+                        onToggleFocus={() => (patternFocused = !patternFocused)}
+                        patternFocused={patternFocused}
                         bind:contextualEditor
                     />
                 </div>
             </section>
         </main>
-        <section class="scope-tray" class:collapsed={!scopeExpanded}>
-            <button
-                class="scope-toggle"
-                aria-expanded={scopeExpanded}
-                onclick={() => (scopeExpanded = !scopeExpanded)}
-            >
-                <span><i class="fa fa-chart-simple"></i> Scope</span>
-                <span
-                    >{scopeExpanded ? 'Collapse' : 'Expand'}
-                    <i class="fa fa-chevron-{scopeExpanded ? 'down' : 'up'}"></i></span
+        {#if !patternFocused}
+            <section class="scope-tray" class:collapsed={!scopeExpanded}>
+                <button
+                    class="scope-toggle"
+                    aria-expanded={scopeExpanded}
+                    onclick={() => (scopeExpanded = !scopeExpanded)}
                 >
-            </button>
-            {#if scopeExpanded}
-                <Scope />
-            {/if}
-        </section>
+                    <span><i class="fa fa-chart-simple"></i> Scope</span>
+                    <span
+                        >{scopeExpanded ? 'Collapse' : 'Expand'}
+                        <i class="fa fa-chevron-{scopeExpanded ? 'down' : 'up'}"></i></span
+                    >
+                </button>
+                {#if scopeExpanded}
+                    <Scope />
+                {/if}
+            </section>
+        {/if}
     </div>
 
     <Dialog
@@ -168,6 +200,10 @@
         gap: 8px;
         padding: 8px 12px;
         overflow: hidden;
+    }
+
+    .workspace-main.pattern-focused {
+        grid-template-rows: minmax(0, 1fr);
     }
 
     .split-divider {

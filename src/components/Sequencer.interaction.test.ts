@@ -85,6 +85,22 @@ describe("Sequencer note interactions", () => {
     expect(styles.get(".piano-roll-container")?.get("min-width")).toBe("0");
   });
 
+  it("fills the pattern pane and exposes a compact focus-mode control", () => {
+    const markup = componentMarkup(sequencer);
+    const styles = styleRules(sequencer);
+
+    expect(styles.get(".piano-roll")?.get("flex")).toBe("1");
+    expect(styles.get(".piano-roll")?.get("height")).toBe("auto");
+    expect(sequencer).not.toContain("height: clamp(180px, 30vh, 340px)");
+    expect(
+      elements(markup, "button").some((element) =>
+        hasAttribute(element, "class", "pattern-focus"),
+      ),
+    ).toBe(true);
+    expect(sequencer).toContain("onToggleFocus");
+    expect(sequencer).toContain("patternFocused");
+  });
+
   it("uses a draggable timeline end handle for pattern length", () => {
     expect(sequencer).toMatch(
       /class="length-counter"\s*aria-label="Pattern length"/,
