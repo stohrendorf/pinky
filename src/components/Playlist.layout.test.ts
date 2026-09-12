@@ -302,6 +302,12 @@ describe("Playlist frozen track labels", () => {
     );
   });
 
+  it("only follows the playhead while song playback is active", () => {
+    expect(playlist).toMatch(
+      /\$effect\.pre\(\(\) => \{\s*if \(\$playing && \$playMode === 'song' && \$curStep >= 0\)/,
+    );
+  });
+
   it("shows square left-edge insertion controls at every track divider and supports lane drag reordering", () => {
     expect(playlist).toContain('class="track-divider top-track-divider"');
     expect(playlist).toContain(

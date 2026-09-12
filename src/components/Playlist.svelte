@@ -1009,7 +1009,7 @@
     const cellWidth = $derived(arrangerZoom.width);
     const cellHeight = $derived(arrangerZoom.height);
     $effect.pre(() => {
-        if ($playing && $curStep >= 0) {
+        if ($playing && $playMode === 'song' && $curStep >= 0) {
             scrollPlayheadIntoView(playlistEl, $curStep, cellWidth);
         }
     });

@@ -268,6 +268,7 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toMatch(
       /function selectOnlyNote\(note: ExtendedNote\)[\s\S]*updateNoteSelection\(\(?current\)? => current === note\);/,
     );
+    expect(sequencer).toContain("class:selected={selectedNotes.includes(n)}");
   });
 
   it("measures drag coordinates against the scrolled grid background", () => {

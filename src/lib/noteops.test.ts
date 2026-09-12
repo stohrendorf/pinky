@@ -5,8 +5,11 @@ import type { Note, Project } from "./types";
 
 import { initHistory, undo } from "./history";
 import {
+  copySelectedNotes,
   deleteNotes,
   deleteSelectedNotes,
+  editStep,
+  pasteNotes,
   removeInvalidLegatoLinks,
   shouldPlaceNote,
   updateLegatoTargets,
@@ -154,6 +157,63 @@ describe("note deletion", () => {
     expect(get(project)?.patterns[0].tracks.lead).toEqual([
       { pitch: "C4", start: 0, len: 1 },
       kept,
+    ]);
+  });
+});
+
+describe("note copy and paste", () => {
+  function selectNotes(notes: Note[]): void {
+    project.set({
+      formatVersion: 1,
+      bpm: 120,
+      instruments: [],
+      patterns: [
+        {
+          id: "pattern",
+          name: "Pattern",
+          steps: 32,
+          color: "#fff",
+          tracks: { lead: notes },
+        },
+      ],
+      arrangement: [],
+      tracks: [],
+      zoom: {
+        seq: { width: 24, height: 14 },
+        arr: { width: 24, height: 32 },
+      },
+    } satisfies Project);
+    selPatId.set("pattern");
+    selInstId.set("lead");
+  }
+
+  it("copies selected internal legato links at the pasted positions", () => {
+    const source: Note = {
+      pitch: "C4",
+      start: 4,
+      len: 4,
+      selected: true,
+      legatoTo: { pitch: "E4", start: 8, curve: "smooth" },
+    };
+    const target: Note = { pitch: "E4", start: 8, len: 4, selected: true };
+    const track = [source, target];
+    selectNotes(track);
+    editStep.set(16);
+
+    expect(copySelectedNotes()).toBe(2);
+    pasteNotes();
+
+    const pasted = get(project)!.patterns[0].tracks.lead.slice(2);
+    expect(get(project)!.patterns[0].tracks.lead).not.toBe(track);
+    expect(pasted).toEqual([
+      {
+        pitch: "C4",
+        start: 16,
+        len: 4,
+        selected: true,
+        legatoTo: { pitch: "E4", start: 20, curve: "smooth" },
+      },
+      { pitch: "E4", start: 20, len: 4, selected: true },
     ]);
   });
 });

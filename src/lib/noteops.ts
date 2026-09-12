@@ -168,11 +168,22 @@ export function copySelectedNotes(): number {
     return 0;
   }
   const base = Math.min(...sel.map((n) => n.start));
+  const selected = new Set(sel);
   clipboard = sel.map((n) => ({
     pitch: n.pitch,
     start: n.start - base,
     len: n.len,
     vel: n.vel,
+    legatoTo:
+      n.legatoTo &&
+      notes.some(
+        (target) =>
+          selected.has(target) &&
+          target.pitch === n.legatoTo?.pitch &&
+          target.start === n.legatoTo.start,
+      )
+        ? { ...n.legatoTo, start: n.legatoTo.start - base }
+        : undefined,
   }));
   hasClipboard.set(true);
   return clipboard.length;
@@ -186,15 +197,29 @@ export function cutSelectedNotes(): void {
 
 // Paste at the edit cursor (last click in the roll), keeping relative timing.
 export function pasteNotes(): void {
+  const pattern = curPattern();
+  const instrumentId = get(selInstId);
   const notes = curNotes();
-  if (!notes || !clipboard.length) {
+  if (!pattern || !instrumentId || !notes || !clipboard.length) {
     return;
   }
   const at = Math.max(0, get(editStep));
-  notes.forEach((n) => (n.selected = false));
-  clipboard.forEach((c) =>
-    notes.push({ ...c, start: at + c.start, selected: true }),
+  const existing = notes.map((note) =>
+    note.selected ? { ...note, selected: false } : note,
   );
+  const pasted = clipboard.map((note) => ({
+    ...note,
+    start: at + note.start,
+    selected: true,
+    legatoTo: note.legatoTo && {
+      ...note.legatoTo,
+      start: at + note.legatoTo.start,
+    },
+  }));
+  pattern.tracks = {
+    ...pattern.tracks,
+    [instrumentId]: [...existing, ...pasted],
+  };
   touch();
 }
 

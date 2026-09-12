@@ -1065,7 +1065,7 @@
                                 2}px; background: {pat.color || 'var(--accent)'}; opacity: {0.4 +
                                 0.6 * v}"
                             class="note"
-                            class:selected={n.selected}
+                            class:selected={selectedNotes.includes(n)}
                             aria-label={`${n.pitch}, velocity ${Math.round(v * 100)} percent`}
                             ondblclick={stopPropagation(e => openNoteEditor(e as MouseEvent, n))}
                             onkeydown={event => openNoteEditorFromKeyboard(event, n)}
