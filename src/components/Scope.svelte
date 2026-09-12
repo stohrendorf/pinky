@@ -1,21 +1,12 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import {onMount} from 'svelte';
 
-    import type { VoiceBand } from '../lib/engine';
+    import type {VoiceBand} from '../lib/engine';
 
-    import {
-        activeVoiceBands,
-        audioSampleRate,
-        engineLoad,
-        getAnalyser,
-        masterState,
-    } from '../lib/engine';
-    import {
-        type FrequencyAnchor,
-        pinkNoisePower,
-        quadraticFrequencySamples,
-    } from '../lib/filter-response';
-    import { project } from '../lib/project';
+    import {activeVoiceBands, audioSampleRate, engineLoad, getAnalyser, masterState,} from '../lib/engine';
+    import {type FrequencyAnchor, pinkNoisePower, quadraticFrequencySamples,} from '../lib/filter-response';
+    import {audibleMixerIds, type MixerChannel, type MixerState} from '../lib/mixer';
+    import {project} from '../lib/project';
 
     let canvas: HTMLCanvasElement | undefined = $state();
 
@@ -32,7 +23,7 @@
      *
      * So the overlay predicts the *output spectrum*:
      *   rank(f) = level · env · (∏H(f) − 1)                (dry − filtered)
-     *   power(f) = Σ ranks² · pinkNoisePSD(f) · tilt(f) · masterVol²
+     *   power(f) = |Σ ranks|² · pinkNoisePSD(f) · tilt(f) · masterVol²
      * and is plotted on the analyser's own dB scale, so it lies on top of the
      * bars.
      *
@@ -60,6 +51,7 @@
      * trig or allocation is needed per band/column. */
     const CURVE_PTS = 1920; // regular display-grid samples of the overlay curve
     const MAX_RESONANCE_ANCHORS = 128; // exact narrow-band centers added to the regular grid
+    const MAX_BANDS = 32; // 24 harmonics + wide noise band + 3 formants, with headroom
     const CURVE_CAPACITY = CURVE_PTS + MAX_RESONANCE_ANCHORS * 3;
     const MAX_VOICES = 48; // dense sections stack far more; the loudest ones define the curve
     const OVERLAY_MS = 32; // recompute the overlay at ~30 fps, redraw the cached curve every frame
@@ -183,6 +175,55 @@
     const termsAt = (t: Float64Array, o: number, cw: number, c2w: number): number =>
         (t[o] + t[o + 1] * cw + t[o + 2] * c2w) / (t[o + 3] + t[o + 4] * cw + t[o + 5] * c2w);
 
+    function highpassTerms(out: Float64Array, o: number, f0: number, fs: number): void {
+        const w0 = (2 * Math.PI * Math.min(f0, fs * 0.49)) / fs;
+        const c = Math.cos(w0),
+            alpha = Math.sin(w0) / (2 * Math.SQRT1_2),
+            b0 = (1 + c) / 2,
+            b1 = -(1 + c),
+            b2 = b0,
+            a0 = 1 + alpha,
+            a1 = -2 * c,
+            a2 = 1 - alpha;
+        out[o] = (b0 * b0 + b1 * b1 + b2 * b2) / (a0 * a0);
+        out[o + 1] = (2 * (b0 * b1 + b1 * b2)) / (a0 * a0);
+        out[o + 2] = (2 * b0 * b2) / (a0 * a0);
+        out[o + 3] = 1 + (a1 * a1 + a2 * a2) / (a0 * a0);
+        out[o + 4] = (2 * a1 * (a0 + a2)) / (a0 * a0);
+        out[o + 5] = (2 * a2) / a0;
+    }
+
+    function directMixerTerms(
+        out: Float64Array,
+        inst: string,
+        mixer: MixerState | undefined,
+        audible: ReadonlySet<string> | null,
+        fs: number,
+    ): {gain: number; n: number} {
+        if (!mixer || !audible?.has(inst)) {
+            return mixer ? {gain: 0, n: 0} : {gain: 1, n: 0};
+        }
+        let id = inst,
+            strip: MixerChannel | undefined = mixer.channels[id],
+            gain = 1,
+            n = 0;
+        const seen = new Set<string>();
+        while (strip && !seen.has(id) && n + 18 <= out.length) {
+            seen.add(id);
+            highpassTerms(out, n, strip.highpass, fs);
+            shelfTerms(out, n + 6, 500, -strip.tilt, false, fs);
+            shelfTerms(out, n + 12, 2000, strip.tilt, true, fs);
+            n += 18;
+            gain *= strip.volume;
+            if (strip.output === 'master') {
+                break;
+            }
+            id = strip.output;
+            strip = mixer.buses.find(bus => bus.id === id);
+        }
+        return {gain, n};
+    }
+
     interface Chain {
         inst: string;
         env: number;
@@ -191,6 +232,9 @@
         terms: Float64Array;
         nPre: number; // bands taking part in the cancellation, stored first
         n: number;
+        mixerTerms: Float64Array;
+        mixerN: number;
+        mixerGain: number;
     }
 
     interface Dot {
@@ -241,9 +285,12 @@
                 env: 0,
                 level: 0,
                 bands: [],
-                terms: new Float64Array(BAND_C * 24),
+                terms: new Float64Array(BAND_C * MAX_BANDS),
                 nPre: 0,
                 n: 0,
+                mixerTerms: new Float64Array(18 * 8),
+                mixerN: 0,
+                mixerGain: 1,
             });
         }
 
@@ -295,7 +342,10 @@
                 lastOverlay = now;
                 curveOk = false;
                 dots.length = 0;
-                let voices = activeVoiceBands();
+                // An FFT describes the middle of its input window, rather than the
+                // newest sample. Read the matching past voice state so a moving
+                // resonance does not lead the measured bars by half an FFT.
+                let voices = activeVoiceBands(analyser.fftSize / (2 * fs));
                 if (voices.length) {
                     if (voices.length > MAX_VOICES) {
                         // keep the loudest — they shape the curve
@@ -304,21 +354,22 @@
                             .sort((a, b) => b.env * b.level - a.env * a.level)
                             .slice(0, MAX_VOICES);
                     }
-                    const anchors: FrequencyAnchor[] = [];
+                    const anchorCandidates: (FrequencyAnchor & {weight: number})[] = [];
                     for (const voice of voices) {
                         for (const band of voice.bands) {
                             if (band.q < 8 || band.freq > nyq * 0.5) {
                                 continue;
                             }
-                            anchors.push({ frequency: band.freq, q: band.q });
-                            if (anchors.length >= MAX_RESONANCE_ANCHORS) {
-                                break;
-                            }
-                        }
-                        if (anchors.length >= MAX_RESONANCE_ANCHORS) {
-                            break;
+                            anchorCandidates.push({
+                                frequency: band.freq,
+                                q: band.q,
+                                weight: voice.level * voice.env * Math.pow(10, band.gain / 40),
+                            });
                         }
                     }
+                    const anchors = anchorCandidates
+                        .sort((a, b) => b.weight - a.weight)
+                        .slice(0, MAX_RESONANCE_ANCHORS);
                     const frequencies = quadraticFrequencySamples(CURVE_PTS, nyq * 0.5, 1, anchors);
                     curvePoints = Math.min(frequencies.length, CURVE_CAPACITY);
                     for (let i = 0; i < curvePoints; i++) {
@@ -333,6 +384,8 @@
                         binT[i] = Math.min(fft.length - 1, Math.round((f / nyq) * fft.length));
                     }
                     const ms = masterState();
+                    const mixer = $project?.mixer;
+                    const audible = mixer ? audibleMixerIds(mixer) : null;
                     const gMaster = ms.vol * ms.vol;
                     shelfTerms(tilt, 0, 500, -ms.tilt, false, fs);
                     shelfTerms(tilt, 6, 2000, ms.tilt, true, fs);
@@ -343,6 +396,9 @@
                         ch.env = v.env;
                         ch.level = v.level;
                         ch.bands = v.bands;
+                        const mixerResponse = directMixerTerms(ch.mixerTerms, v.inst, mixer, audible, fs);
+                        ch.mixerN = mixerResponse.n;
+                        ch.mixerGain = mixerResponse.gain;
                         // cancelled bands first, the post-cancellation ones
                         // (formants) after them — see `chainRel`
                         let n = 0;
@@ -367,27 +423,32 @@
                         ch.n = n;
                         nv++;
                     }
-                    /* The stereo pink buffer has independent channels and ranks
-                     * are spread through the stereo field. Summing their complex
-                     * responses as one scalar creates nulls which the analyser
-                     * cannot have after that routing, so it reads rank power. */
+                    /* Each voice receives the same looping noise buffer, so it is
+                     * a coherent sum: response phases can reinforce or cancel.
+                     * Adding rank power instead invents energy between peaks and
+                     * misses actual nulls in stacked voices. The FFT combines the
+                     * buffer's independent left/right channels after this sum. */
                     const spectrumPower = (
                         cw: number,
                         sw: number,
                         c2w: number,
                         s2w: number,
                     ): number => {
-                        let power = 0;
+                        let real = 0,
+                            imaginary = 0;
                         for (let j = 0; j < nv; j++) {
                             const ch = chains[j];
                             chainResponse(ch.terms, ch.nPre, ch.n, cw, sw, c2w, s2w, response);
                             const level = ch.level * ch.env;
-                            power +=
-                                level *
-                                level *
-                                (response[0] * response[0] + response[1] * response[1]);
+                            let mixerPower = ch.mixerGain * ch.mixerGain;
+                            for (let k = 0; k < ch.mixerN; k += 6) {
+                                mixerPower *= termsAt(ch.mixerTerms, k, cw, c2w);
+                            }
+                            const scale = level * Math.sqrt(mixerPower);
+                            real += scale * response[0];
+                            imaginary += scale * response[1];
                         }
-                        return power;
+                        return real * real + imaginary * imaginary;
                     };
                     let peakDb = -Infinity;
                     for (let i = 0; i < curvePoints; i++) {

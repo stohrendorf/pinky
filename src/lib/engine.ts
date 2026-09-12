@@ -653,12 +653,14 @@ function audioRandom(): number {
   return random();
 }
 
-export function activeVoiceBands(): VoiceSnapshot[] {
+export function activeVoiceBands(analyserWindowSeconds = 0): VoiceSnapshot[] {
   const c = ctx;
   if (!c) {
     return [];
   }
-  return bandRegistry.snapshot(c.currentTime);
+  return bandRegistry.snapshot(
+    c.currentTime - Math.max(0, analyserWindowSeconds),
+  );
 }
 
 function pinkNoiseBuffer(seconds: number): AudioBuffer {
@@ -1410,6 +1412,8 @@ function makeRank(
       // The voice level depends on the formant level too (see `levelFor`),
       // so both are collected first and the gain is written once.
       let reLevel = false;
+      let visualChanged = false;
+      const visualFrequencyChanges = new Set<BandSpec>();
       if (differs(np.gain, app.gain, 0.004)) {
         app.gain = np.gain;
         reLevel = true;
@@ -1446,6 +1450,7 @@ function makeRank(
         if (dQ) {
           app.q = np.q;
         }
+        visualChanged = true;
       }
       if (formantBands.length) {
         if (differs(np.formant, app.formant, 0.004)) {
@@ -1456,6 +1461,7 @@ function makeRank(
           });
           app.formant = np.formant;
           reLevel = true; // keep the emphasis-not-volume trim in step
+          visualChanged = true;
         }
         /* Vowel morph: the formants are the one thing here a lane can
          * move *without* the pitch following it — sliding F1/F2 on a
@@ -1470,12 +1476,15 @@ function makeRank(
           rampTo(fb.bq.frequency, hz, at, t);
           fb.band.from = fb.band.target = hz;
           app.f[fb.i] = hz;
+          visualChanged = true;
+          visualFrequencyChanges.add(fb.band);
         }
       }
       if (reLevel) {
         const g = levelFor(app.gain, app.formant);
         rampTo(sum.gain, g, at, t);
         rec.level = g;
+        visualChanged = true;
       }
       // Vibrato depth: the LFO stays, only how far it reaches moves
       if (vibGains.length && differs(np.vib, app.vib, 0.5)) {
@@ -1491,6 +1500,7 @@ function makeRank(
           rampTo(noiseBand.bq.gain, g, at, t);
           noiseBand.band.gain = g;
           app.noise = np.noise;
+          visualChanged = true;
         }
         // only steer the wide band when it isn't riding a bend/glide
         if (
@@ -1505,7 +1515,21 @@ function makeRank(
           noiseBand.from = noiseBand.target = np.noiseFreq;
           noiseBand.band.from = noiseBand.band.target = np.noiseFreq;
           app.noiseFreq = np.noiseFreq;
+          visualChanged = true;
+          visualFrequencyChanges.add(noiseBand.band);
         }
+      }
+      if (visualChanged) {
+        bandRegistry.schedule(
+          rec,
+          bands,
+          rec.level,
+          at,
+          t,
+          "linear",
+          false,
+          visualFrequencyChanges,
+        );
       }
       curP = np;
     },
@@ -1587,6 +1611,7 @@ function makeRank(
       rec.end = Infinity;
       rec.bendStart = at;
       rec.pitchTime = time;
+      bandRegistry.schedule(rec, bands, rec.level, at, time, curve, true);
     },
   };
   return voice;

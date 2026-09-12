@@ -27,16 +27,24 @@ describe("Scope frequency sampling", () => {
     expect(engine).toContain("smoothingTimeConstant: 0");
   });
 
+  it("uses the FFT window's midpoint when reading scheduled voice state", () => {
+    expect(scope).toContain("activeVoiceBands(analyser.fftSize / (2 * fs))");
+    expect(engine).toContain("analyserWindowSeconds = 0");
+  });
+
+  it("includes the direct mixer high-pass, tilt, and fader path in the prediction", () => {
+    expect(scope).toContain("function directMixerTerms(");
+    expect(scope).toContain("highpassTerms(out, n, strip.highpass, fs)");
+    expect(scope).toContain("gain *= strip.volume");
+    expect(scope).toContain("mixerPower *= termsAt(ch.mixerTerms, k, cw, c2w)");
+  });
+
   it("uses the engine pink-noise source response instead of an idealized 1/f approximation", () => {
     expect(scope).toContain("pinkNoisePower(f, fs)");
     expect(scope).not.toContain("1000 / Math.max(20, f)");
   });
 
-  it("adds each stereo-spread rank as power and reuses that calculation for the dots", () => {
-    expect(scope).toContain("let power = 0;");
-    expect(scope).toMatch(
-      /power\s*\+=\s*level\s*\*\s*level\s*\*\s*\(response\[0]\s*\*\s*response\[0]\s*\+\s*response\[1]\s*\*\s*response\[1]\);/,
-    );
+  it("reuses the response calculation for the dots", () => {
     expect(scope).toMatch(
       /const spectrumPower\s*=\s*\(\s*cw:\s*number,\s*sw:\s*number,\s*c2w:\s*number,\s*s2w:\s*number,?\s*\)\s*:\s*number\s*=>/,
     );
@@ -45,10 +53,30 @@ describe("Scope frequency sampling", () => {
     );
   });
 
+  it("keeps every authored voice band and sums the shared noise source coherently", () => {
+    expect(scope).toContain("const MAX_BANDS = 32;");
+    expect(scope).toContain("const scale = level * Math.sqrt(mixerPower);");
+    expect(scope).toContain("real += scale * response[0];");
+    expect(scope).toContain("imaginary += scale * response[1];");
+    expect(scope).toContain("return real * real + imaginary * imaginary;");
+  });
+
+  it("selects exact narrow-band anchors by audible weight", () => {
+    expect(scope).toContain("const anchorCandidates:");
+    expect(scope).toContain(
+      "weight: voice.level * voice.env * Math.pow(10, band.gain / 40),",
+    );
+    expect(scope).toContain(".sort((a, b) => b.weight - a.weight)");
+  });
+
   it("evaluates each filter before chaining it so very low notes cannot underflow", () => {
     expect(scope).toContain(
       "const filterReal = (br * ar + bi * ai) / denominator;",
     );
     expect(scope).toContain("real -= 1;");
+  });
+
+  it("uses the normalized high-pass denominator in the direct mixer model", () => {
+    expect(scope).toContain("(2 * a1 * (a0 + a2)) / (a0 * a0)");
   });
 });
