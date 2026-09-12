@@ -179,6 +179,17 @@ describe("TopBar direct desktop controls", () => {
     expect(scope.loadDemoProject).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the browser save explicitly available from the demo picker", () => {
+    const panel = elements(markup, "div").find((node) =>
+      hasAttribute(node, "class", "demo-list"),
+    )!;
+    expect(
+      elements([panel], "button").some(
+        (button) => textContent(button) === "Load browser save",
+      ),
+    ).toBe(true);
+  });
+
   it("restores the project, selection and cursor and refuses restoration during rendering", () => {
     const recovery = {
       project: { bpm: 123 },

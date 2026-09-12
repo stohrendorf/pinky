@@ -51,6 +51,9 @@ export interface NoteSchedulerOptions<Params extends NoteSchedulingParams> {
   releaseTail: number;
 }
 
+const voiceKey = (track: string, name: string, scope?: string): string =>
+  scope ? `${track}:${scope}:${name}` : `${track}:${name}`;
+
 /** Coordinates note commands without knowing how notes or voices are implemented. */
 export class NoteScheduler<Params extends NoteSchedulingParams> {
   private readonly findNote: NoteSchedulerOptions<Params>["findNote"];
@@ -73,6 +76,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     atTime: number,
     params: Params,
     velocity = 1,
+    scope?: string,
   ): void {
     const note = this.findNote(name);
     const now = this.currentTime();
@@ -80,7 +84,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
       return;
     }
 
-    const key = track + ":" + name;
+    const key = voiceKey(track, name, scope);
     const at = Math.max(atTime, now);
     this.voices.replaceActive(key, at);
     const cost = this.voices.prepare(at);
@@ -100,12 +104,12 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     this.noteOnAt(track, name, 0, params);
   }
 
-  noteOffAt(track: string, name: string, atTime: number): void {
+  noteOffAt(track: string, name: string, atTime: number, scope?: string): void {
     const now = this.currentTime();
     if (now === null) {
       return;
     }
-    const key = track + ":" + name;
+    const key = voiceKey(track, name, scope);
     this.voices.noteOff(key, Math.max(atTime, now));
   }
 
@@ -120,6 +124,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     atTime: number,
     time: number,
     curve: CurveShape = "linear",
+    scope?: string,
   ): boolean {
     const note = this.findNote(to);
     const now = this.currentTime();
@@ -129,8 +134,8 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     const at = Math.max(atTime, now);
     return this.voices.glide(
       track,
-      track + ":" + from,
-      track + ":" + to,
+      voiceKey(track, from, scope),
+      voiceKey(track, to, scope),
       at,
       note.freq,
       time,

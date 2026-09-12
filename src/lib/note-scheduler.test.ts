@@ -99,6 +99,36 @@ describe("NoteScheduler", () => {
     );
   });
 
+  it("isolates simultaneous clip voices on the same instrument and pitch", () => {
+    const { instance, voices } = scheduler(2);
+
+    instance.noteOnAt("lead", "C4", 2, params, 1, "clip-a:0");
+    instance.noteOnAt("lead", "C4", 2, params, 1, "clip-b:0");
+    instance.glideAt("lead", "C4", "D4", 3, 0.2, "smooth", "clip-a:0");
+    instance.noteOffAt("lead", "C4", 4, "clip-b:0");
+
+    expect(voices.replaceActive).toHaveBeenNthCalledWith(
+      1,
+      "lead:clip-a:0:C4",
+      2,
+    );
+    expect(voices.replaceActive).toHaveBeenNthCalledWith(
+      2,
+      "lead:clip-b:0:C4",
+      2,
+    );
+    expect(voices.glide).toHaveBeenCalledWith(
+      "lead",
+      "lead:clip-a:0:C4",
+      "lead:clip-a:0:D4",
+      3,
+      293.66,
+      0.2,
+      "smooth",
+    );
+    expect(voices.noteOff).toHaveBeenCalledWith("lead:clip-b:0:C4", 4);
+  });
+
   it("delegates absolute and relative release commands with the current-time guard", () => {
     const { instance, voices } = scheduler(2);
 

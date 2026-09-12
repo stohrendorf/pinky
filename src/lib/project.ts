@@ -9,8 +9,13 @@ import axelFSongJson from "../../pinky-axelf.json";
 import divaSongJson from "../../pinky-diva.json";
 import noiseSongJson from "../../pinky-noise.json";
 import toccataSongJson from "../../pinky-toccata.json";
-import { createInstrument, PRESETS } from "./instruments";
-import { createMixer, isMixerState } from "./mixer";
+import {
+  createInstrument,
+  DEFAULT_PARAMS,
+  ensurePartials,
+  PRESETS,
+} from "./instruments";
+import { createMixer, defaultChannel, isMixerState } from "./mixer";
 import { buildBronzeMonsoon } from "./monsoon-demo";
 import { STEPS } from "./notes";
 import { buildBitHorizon, buildPocketTheory } from "./original-demos";
@@ -284,26 +289,235 @@ export function newEmptyProject(): Project {
 /* ---- persistence ---- */
 const LS_KEY = "pinky-project-v1";
 
-export function saveProject(): void {
+const record = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object";
+
+function projectFormatIssue(value: unknown): string {
+  if (!record(value)) {
+    return "the file does not contain a project object";
+  }
+  if (value.formatVersion !== PROJECT_FORMAT_VERSION) {
+    return `it uses project format ${String(value.formatVersion)}, but this version requires ${PROJECT_FORMAT_VERSION}`;
+  }
+  for (const key of [
+    "instruments",
+    "patterns",
+    "arrangement",
+    "tracks",
+  ] as const) {
+    if (!Array.isArray(value[key])) {
+      return `it is missing the ${key} list`;
+    }
+  }
+  return "it is incomplete or contains unsupported project data";
+}
+
+function logProjectFailure(
+  action: string,
+  reason: string,
+  error?: unknown,
+): void {
+  const message = `[Pinky] Could not ${action}: ${reason}.`;
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.warn(message, error);
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn(message);
+  }
+}
+
+function upgradeStoredMixer(
+  value: unknown,
+  instrumentIds: string[],
+): Project["mixer"] {
+  if (!record(value)) {
+    return undefined;
+  }
+  const fallback = createMixer(instrumentIds, false);
+  const rawBuses = Array.isArray(value.buses) ? value.buses : [];
+  const buses = rawBuses.filter(
+    (bus): bus is Record<string, unknown> => record(bus) && isProjectId(bus.id),
+  );
+  const busIds = new Set(buses.map((bus) => bus.id as string));
+  const channel = (source: unknown) => {
+    const defaults = defaultChannel();
+    if (!record(source)) {
+      return defaults;
+    }
+    const output =
+      source.output === "master" ||
+      (typeof source.output === "string" && busIds.has(source.output))
+        ? source.output
+        : "master";
+    return {
+      ...defaults,
+      ...source,
+      output,
+      compressor: record(source.compressor)
+        ? { ...defaults.compressor, ...source.compressor }
+        : defaults.compressor,
+      sends: Array.isArray(source.sends) ? source.sends : [],
+    };
+  };
+  const rawChannels = record(value.channels) ? value.channels : {};
+  const mixer = {
+    channels: Object.fromEntries(
+      instrumentIds.map((id) => [id, channel(rawChannels[id])]),
+    ),
+    buses: buses.map((bus) => ({
+      ...channel(bus),
+      id: bus.id as string,
+      name: typeof bus.name === "string" ? bus.name : "Bus",
+      effect: bus.effect === "delay" ? "delay" : "none",
+      delayTime: typeof bus.delayTime === "number" ? bus.delayTime : 0.25,
+      feedback: typeof bus.feedback === "number" ? bus.feedback : 0.35,
+    })),
+    master: record(value.master)
+      ? { ...fallback.master, ...value.master }
+      : fallback.master,
+  };
+  return isMixerState(mixer) ? mixer : undefined;
+}
+
+function upgradeStoredProject(value: unknown): Project | null {
+  if (isProject(value)) {
+    return value;
+  }
+  if (!record(value) || value.formatVersion !== PROJECT_FORMAT_VERSION) {
+    return null;
+  }
+  if (
+    !Array.isArray(value.instruments) ||
+    !Array.isArray(value.patterns) ||
+    !Array.isArray(value.arrangement) ||
+    !Array.isArray(value.tracks)
+  ) {
+    return null;
+  }
+  const candidate = JSON.parse(JSON.stringify(value)) as Project;
+  candidate.instruments = candidate.instruments.map((instrument) => ({
+    ...instrument,
+    params: ensurePartials({
+      ...DEFAULT_PARAMS,
+      ...(record(instrument.params) ? instrument.params : {}),
+    }),
+  }));
+  candidate.arrangement = candidate.arrangement.map((clip) => ({
+    ...clip,
+    // Clip IDs are internal selection keys and were not always UUIDs.
+    id: isProjectId(clip.id) ? clip.id : createId(),
+  }));
+  if (candidate.mixer !== undefined) {
+    candidate.mixer = upgradeStoredMixer(
+      candidate.mixer,
+      candidate.instruments.map((instrument) => instrument.id),
+    );
+  }
+  return isProject(candidate) ? candidate : null;
+}
+
+function needsCompatibilityUpgrade(value: unknown): boolean {
+  if (
+    !record(value) ||
+    value.formatVersion !== PROJECT_FORMAT_VERSION ||
+    !Array.isArray(value.instruments) ||
+    !Array.isArray(value.arrangement)
+  ) {
+    return false;
+  }
+  return (
+    value.instruments.some(
+      (instrument) =>
+        record(instrument) &&
+        record(instrument.params) &&
+        (typeof instrument.params.noiseBend !== "number" ||
+          !Array.isArray(instrument.params.partials)),
+    ) || value.arrangement.some((clip) => record(clip) && !isProjectId(clip.id))
+  );
+}
+
+export function saveProject(): boolean {
   const cur = get(project);
   if (!cur) {
-    return;
+    logProjectFailure("save the project", "there is no active project");
+    return false;
   }
-  localStorage.setItem(LS_KEY, JSON.stringify(cur));
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(cur);
+  } catch (error) {
+    logProjectFailure("save the project", "it could not be serialized", error);
+    return false;
+  }
+  try {
+    localStorage.setItem(LS_KEY, serialized);
+  } catch (error) {
+    logProjectFailure(
+      "save the project",
+      "browser storage is unavailable",
+      error,
+    );
+    return false;
+  }
   savedAt.set(Date.now());
+  return true;
 }
 
 export function loadSavedProject(): Project | null {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) {
-      return null;
-    }
-    const saved: unknown = JSON.parse(raw) as unknown;
-    return isProject(saved) ? saved : null;
-  } catch {
+    raw = localStorage.getItem(LS_KEY);
+  } catch (error) {
+    logProjectFailure(
+      "read the browser save",
+      "browser storage is unavailable",
+      error,
+    );
     return null;
   }
+  if (!raw) {
+    return null;
+  }
+
+  let saved: unknown;
+  try {
+    saved = JSON.parse(raw) as unknown;
+  } catch (error) {
+    logProjectFailure("load the browser save", "its JSON is invalid", error);
+    return null;
+  }
+  const upgraded = upgradeStoredProject(saved);
+  if (!upgraded) {
+    logProjectFailure("load the browser save", projectFormatIssue(saved));
+    return null;
+  }
+  if (!isProject(saved)) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(upgraded));
+    } catch (error) {
+      logProjectFailure(
+        "update the compatible browser save",
+        "browser storage is unavailable",
+        error,
+      );
+    }
+  }
+  return upgraded;
+}
+
+export function restoreSavedProject(): boolean {
+  const saved = loadSavedProject();
+  if (!saved) {
+    return false;
+  }
+  activeDemo.set(null);
+  project.set(saved);
+  selInstId.set(saved.instruments[0].id);
+  selPatId.set(saved.patterns[0].id);
+  lastPlayedPitch.set("C4");
+  songCursor.set(0);
+  return true;
 }
 
 /* ---- import / export ---- */
@@ -328,16 +542,23 @@ export function importProject(json: string): boolean {
   let p: unknown;
   try {
     p = JSON.parse(json) as unknown;
-  } catch {
+  } catch (error) {
+    logProjectFailure("import the song", "its JSON is invalid", error);
     return false;
   }
-  if (!isProject(p)) {
+  const imported = isProject(p)
+    ? p
+    : needsCompatibilityUpgrade(p)
+      ? upgradeStoredProject(p)
+      : null;
+  if (!imported) {
+    logProjectFailure("import the song", projectFormatIssue(p));
     return false;
   }
   activeDemo.set(null);
-  project.set(p);
-  selInstId.set(p.instruments[0].id);
-  selPatId.set(p.patterns[0].id);
+  project.set(imported);
+  selInstId.set(imported.instruments[0].id);
+  selPatId.set(imported.patterns[0].id);
   lastPlayedPitch.set("C4");
   songCursor.set(0); // a stale cursor from the previous song may sit past the new song's end
   return true;

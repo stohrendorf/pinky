@@ -1,13 +1,13 @@
 <script lang="ts">
-    import { tick } from 'svelte';
+    import {tick} from 'svelte';
 
-    import type { MasterId } from '../lib/master-controls';
-    import type { DemoSong } from '../lib/project';
-    import type { Project } from '../lib/types';
+    import type {MasterId} from '../lib/master-controls';
+    import type {DemoSong} from '../lib/project';
+    import type {Project} from '../lib/types';
 
-    import { BUDGET_MAX, BUDGET_MIN, getNodeBudget, setNodeBudget } from '../lib/engine';
-    import { MASTER_SLIDERS } from '../lib/instruments';
-    import { createMixer, ensureMixer } from '../lib/mixer';
+    import {BUDGET_MAX, BUDGET_MIN, getNodeBudget, setNodeBudget} from '../lib/engine';
+    import {MASTER_SLIDERS} from '../lib/instruments';
+    import {createMixer, ensureMixer} from '../lib/mixer';
     import {
         activeDemo,
         DEMO_LIBRARY,
@@ -15,9 +15,11 @@
         importProject,
         lastPlayedPitch,
         loadDemoProject,
+        loadSavedProject,
         newEmptyProject,
         playing,
         project,
+        restoreSavedProject,
         savedAt,
         saveProject,
         selInstId,
@@ -26,9 +28,9 @@
         songLabel,
         touch,
     } from '../lib/project';
-    import { exportWav, rendering } from '../lib/render';
-    import { showShortcuts } from '../lib/shortcuts';
-    import { playSong, seekSong, stopTransport } from '../lib/transport';
+    import {exportWav, rendering} from '../lib/render';
+    import {showShortcuts} from '../lib/shortcuts';
+    import {playSong, seekSong, stopTransport} from '../lib/transport';
     import ExportProgress from './ExportProgress.svelte';
     import Mixer from './Mixer.svelte';
     import Slider from './Slider.svelte';
@@ -56,6 +58,7 @@
     let showAlert = $state(false);
     let alertMessage = $state('');
     let activePanel = $state<'demos' | 'audio' | 'export' | null>(null);
+    let browserSaveAvailable = $state(loadSavedProject() !== null);
     let panelButton: HTMLButtonElement | undefined;
     let panelElement: HTMLDivElement | undefined = $state();
     let demoRecovery = $state.raw<{
@@ -220,10 +223,28 @@
         closePanel(true);
     }
 
+    function saveBrowserProject() {
+        browserSaveAvailable = saveProject() || loadSavedProject() !== null;
+    }
+
+    function loadBrowserSave() {
+        if ($rendering) {
+            return;
+        }
+        stopTransport();
+        if (!restoreSavedProject()) {
+            browserSaveAvailable = false;
+            return;
+        }
+        demoRecovery = null;
+        closePanel(true);
+    }
+
     // Save feedback — driven by the store, so Ctrl+S flashes it too
     let saved = $state('');
     $effect(() => {
         if ($savedAt) {
+            browserSaveAvailable = true;
             saved = 'Saved';
             const timer = setTimeout(() => (saved = ''), 1600);
             return () => clearTimeout(timer);
@@ -330,7 +351,7 @@
             <Button
                 compact
                 disabled={!$project || $rendering}
-                onclick={saveProject}
+                onclick={saveBrowserProject}
                 title="Save in this browser (Ctrl+S)"
                 variant="ghost"
             >
@@ -501,6 +522,17 @@
         >
             {#if activePanel === 'demos'}
                 <div class="demo-list">
+                    <button
+                        class="restore-project"
+                        disabled={$rendering || !browserSaveAvailable}
+                        onclick={loadBrowserSave}
+                        title={browserSaveAvailable
+                            ? 'Load the project saved in this browser'
+                            : 'No browser save is available'}
+                        type="button"
+                    >
+                        <i class="fa fa-hard-drive" aria-hidden="true"></i> Load browser save
+                    </button>
                     {#each DEMO_LIBRARY as d (d.id)}
                         <button
                             class="demo-item"

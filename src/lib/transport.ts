@@ -87,6 +87,7 @@ export function schedulePatternNotes(
   transpose = 0,
   over: Map<string, InstrumentParams> | null = null,
   elapsed: (steps: number) => number = (steps) => steps * dur,
+  voiceScope: string | null = null,
 ): void {
   instruments.forEach((inst) => {
     const notes = pat.tracks[inst.id];
@@ -113,7 +114,11 @@ export function schedulePatternNotes(
         );
 
         if (!incoming) {
-          eng.noteOnAt(inst.id, pitch, time, params, n.vel ?? 1);
+          if (voiceScope) {
+            eng.noteOnAt(inst.id, pitch, time, params, n.vel ?? 1, voiceScope);
+          } else {
+            eng.noteOnAt(inst.id, pitch, time, params, n.vel ?? 1);
+          }
         }
         if (target && isLegatoTarget(n, target.start)) {
           const targetPitch = transpose
@@ -132,24 +137,37 @@ export function schedulePatternNotes(
             0.005,
             elapsed(target.start - n.start) - elapsed(n.len),
           );
-          eng.glideAt(
-            inst.id,
-            pitch,
-            targetPitch,
-            time + elapsed(n.len),
-            glideTime,
-            glide.curve,
-          );
+          if (voiceScope) {
+            eng.glideAt(
+              inst.id,
+              pitch,
+              targetPitch,
+              time + elapsed(n.len),
+              glideTime,
+              glide.curve,
+              voiceScope,
+            );
+          } else {
+            eng.glideAt(
+              inst.id,
+              pitch,
+              targetPitch,
+              time + elapsed(n.len),
+              glideTime,
+              glide.curve,
+            );
+          }
           return;
         }
         // A terminal linked note owns the release for the complete
         // chain. Ordinary notes retain the slightly early release that
         // prevents stacked same-pitch notes from clicking together.
-        eng.noteOffAt(
-          inst.id,
-          pitch,
-          time + elapsed(n.len * (incoming ? 1 : 0.9)),
-        );
+        const offAt = time + elapsed(n.len * (incoming ? 1 : 0.9));
+        if (voiceScope) {
+          eng.noteOffAt(inst.id, pitch, offAt, voiceScope);
+        } else {
+          eng.noteOffAt(inst.id, pitch, offAt);
+        }
       }
     });
   });
@@ -242,15 +260,17 @@ function scheduleSongStep(
       if (!pat) {
         return;
       }
+      const patSteps = pat.steps || STEPS;
       schedulePatternNotes(
         pat,
-        relStep % (pat.steps || STEPS),
+        relStep % patSteps,
         at,
         dur,
         insts,
         clip.transpose || 0,
         over,
         elapsed,
+        `${clip.id}:${Math.floor(relStep / patSteps)}`,
       );
     }
   });

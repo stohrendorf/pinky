@@ -106,6 +106,54 @@ afterEach(() => {
 });
 
 describe("conductor-aware scheduling", () => {
+  it("keeps converging legato chains from separate clips independently addressable", () => {
+    const p = score();
+    const instrumentId = p.instruments[0].id;
+    const firstPattern = p.patterns[0];
+    firstPattern.tracks[instrumentId] = [
+      {
+        pitch: "D5",
+        start: 0,
+        len: 2,
+        legatoTo: { pitch: "C5", start: 3, curve: "smooth" },
+      },
+      { pitch: "C5", start: 3, len: 1 },
+    ];
+    const secondPattern = {
+      ...firstPattern,
+      id: createId(),
+      tracks: {
+        [instrumentId]: [
+          {
+            pitch: "G4",
+            start: 0,
+            len: 2,
+            legatoTo: { pitch: "C5", start: 3, curve: "smooth" as const },
+          },
+          { pitch: "C5", start: 3, len: 1 },
+        ],
+      },
+    };
+    p.patterns.push(secondPattern);
+    const firstClip = p.arrangement[0];
+    firstClip.len = 4;
+    const secondClip = {
+      ...firstClip,
+      id: createId(),
+      patternId: secondPattern.id,
+    };
+    p.arrangement.push(secondClip);
+
+    scheduleRange(p, 0, 4);
+
+    expect(vi.mocked(engine.glideAt).mock.calls.map((call) => call[6])).toEqual(
+      [`${firstClip.id}:0`, `${secondClip.id}:0`],
+    );
+    expect(
+      vi.mocked(engine.noteOffAt).mock.calls.map((call) => call[3]),
+    ).toEqual([`${firstClip.id}:0`, `${secondClip.id}:0`]);
+  });
+
   it("maps note starts, releases across markers and automation through the same ramp integral", () => {
     const p = score(),
       timing = createTimingMap(p),
@@ -120,6 +168,7 @@ describe("conductor-aware scheduling", () => {
       id,
       "C5",
       timing.secondsAt(10.8),
+      `${p.arrangement[0].id}:0`,
     );
     const automation = vi.mocked(engine.automateMaster).mock.calls[8];
     expect(automation[2]).toBe(1);
@@ -157,6 +206,7 @@ describe("conductor-aware scheduling", () => {
       id,
       "D5",
       timing.secondsAt(20),
+      `${p.arrangement[0].id}:0`,
     );
   });
 
