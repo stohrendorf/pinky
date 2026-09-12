@@ -12,14 +12,24 @@ const contextMenu = readFileSync(
 );
 
 describe("TreeView contextual menus and folders", () => {
-  it("dismisses menus globally and keeps one menu state per tree view", () => {
+  it("opens menus at right-click positions and consumes dismissal clicks", () => {
     expect(treeView).toContain(
       "import ContextMenu from './ContextMenu.svelte';",
     );
     expect(treeView).toMatch(/let openMenu: string \| null = \$state\(null\);/);
-    expect(treeView).toContain("menuAnchor");
+    expect(treeView).toContain("menuPoint");
+    expect(treeView).toContain("function openContextMenu");
+    expect(treeView).toContain(
+      "oncontextmenu={event => openContextMenu(event, entry.item.id)}",
+    );
+    expect(treeView).toMatch(
+      /oncontextmenu=\{event =>\s*openContextMenu\(event, `folder:\$\{entry\.path}`\)}/,
+    );
+    expect(treeView).not.toContain("fa-ellipsis-vertical");
     expect(contextMenu).toMatch(/position:\s*fixed/);
     expect(contextMenu).toContain("onclickcapture={handleWindowClick}");
+    expect(contextMenu).toContain("event.preventDefault();");
+    expect(contextMenu).toContain("event.stopPropagation();");
   });
 
   it("renders folder state and recursive item counts", () => {

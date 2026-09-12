@@ -274,6 +274,26 @@ describe("Playlist frozen track labels", () => {
     );
   });
 
+  it("opens context menus for track and automation headers instead of applying a single right-click action", () => {
+    expect(playlist).toContain(
+      "import ContextMenu from './ui/ContextMenu.svelte'",
+    );
+    expect(playlist).toContain("function openTrackContextMenu");
+    expect(playlist).toContain("function openAutomationContextMenu");
+    expect(playlist).toContain("function selectContextMenuAction");
+    expect(playlist).toContain(
+      "oncontextmenu={event => openTrackContextMenu(event, t)}",
+    );
+    expect(playlist).toContain(
+      "oncontextmenu={event => openAutomationContextMenu(event, lane)}",
+    );
+    expect(playlist).toContain("label: 'Rename track'");
+    expect(playlist).toContain("label: 'Remove automation lane'");
+    expect(playlist).not.toContain(
+      "oncontextmenu={preventDefault(() => changeTrackColor(t))}",
+    );
+  });
+
   it("shows square left-edge insertion controls at every track divider and supports lane drag reordering", () => {
     expect(playlist).toContain('class="track-divider top-track-divider"');
     expect(playlist).toContain(

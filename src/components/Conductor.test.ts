@@ -48,6 +48,8 @@ interface Drag {
 interface Actions {
   newMarker: (at?: number) => void;
   addAtPointer: (event: MouseEvent) => void;
+  openMarkerContextMenu: (event: MouseEvent, id: string) => void;
+  markerContextAction: (action: string) => void;
   closeDialog: () => void;
   positionLabel: (step: number) => string;
   markerLabel: (point: MarkerPoint) => string;
@@ -85,6 +87,7 @@ function handlers(scope: object): Actions {
   return runInNewContext(
     `${js}\n({newMarker, addAtPointer, closeDialog, positionLabel, markerLabel, editMarker,
         saveMarker, deleteMarker, movePoint, startDrag, updateDrag, finishDrag, cancelDrag, clickMarker,
+        openMarkerContextMenu, markerContextAction,
         markerKey, handleDialogKey, dialogKeyboard})`,
     scope,
   ) as Actions;
@@ -136,6 +139,8 @@ function fixture(grouped = false) {
     error: "",
     show: false,
     laneMessage: "",
+    contextMarkerId: null as string | null,
+    contextMenuPoint: null as { x: number; y: number } | null,
     suppressClick: false,
     drag: null as Drag | null,
     dragProject: null as Project | null,
@@ -176,7 +181,13 @@ function pointer(clientX: number, pointerId = 1) {
 }
 
 function click(detail = 1) {
-  return { detail, stopPropagation: vi.fn() } as unknown as MouseEvent;
+  return {
+    detail,
+    stopPropagation: vi.fn(),
+    preventDefault: vi.fn(),
+    clientX: 120,
+    clientY: 80,
+  } as unknown as MouseEvent;
 }
 
 describe("Conductor component", () => {
@@ -241,6 +252,32 @@ describe("Conductor component", () => {
     actions.newMarker();
     expect(p.conductor?.sections).toHaveLength(1);
     expect(scope.touch).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens a desktop context menu for a marker and applies its edit and delete actions", () => {
+    const { p, scope, actions } = fixture(true);
+    const point = scope.points[0];
+    const event = click();
+
+    actions.openMarkerContextMenu(event, point.id);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(scope.selectedId).toBe(point.id);
+    expect(scope.contextMarkerId).toBe(point.id);
+    expect(scope.contextMenuPoint).toEqual({ x: 120, y: 80 });
+
+    actions.markerContextAction("edit");
+    expect(scope.show).toBe(true);
+    expect(scope.contextMarkerId).toBeNull();
+    actions.closeDialog();
+
+    actions.openMarkerContextMenu(click(), point.id);
+    actions.markerContextAction("delete");
+    expect(p.conductor?.sections).toEqual([]);
+    expect(p.conductor?.tempos).toEqual([]);
+    expect(p.conductor?.meters).toEqual([]);
+    expect(scope.touch).toHaveBeenCalledTimes(1);
+    expect(scope.selectedId).toBeNull();
   });
 
   it("places at the clicked step with a scrolled/zoomed lane and clamps the start", () => {

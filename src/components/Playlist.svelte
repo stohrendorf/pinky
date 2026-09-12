@@ -50,6 +50,7 @@
     import Button from './ui/Button.svelte';
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
+    import ContextMenu from './ui/ContextMenu.svelte';
     import Dialog from './ui/Dialog.svelte';
     import Prompt from './ui/Prompt.svelte';
 
@@ -177,6 +178,10 @@
     let showTrackColor = $state(false);
     let showRemoveTrack = $state(false);
     let trackToRemove: number | null = null;
+    let contextMenuTarget = $state<
+        { kind: 'track'; trackIndex: number } | { kind: 'automation'; lane: Lane } | null
+    >(null);
+    let contextMenuPoint = $state<{ x: number; y: number } | null>(null);
     let draggingTrack: number | null = $state(null);
     let draggingAutomationLane: string | null = null;
     let dragInsertionRow: number | null = $state(null);
@@ -640,6 +645,71 @@
         }
         editingTrackIdx = trackIdx;
         showTrackColor = true;
+    }
+
+    function closeContextMenu() {
+        contextMenuTarget = null;
+        contextMenuPoint = null;
+    }
+
+    function openTrackContextMenu(event: MouseEvent, trackIndex: number) {
+        event.preventDefault();
+        event.stopPropagation();
+        contextMenuTarget = { kind: 'track', trackIndex };
+        contextMenuPoint = { x: event.clientX, y: event.clientY };
+    }
+
+    function openAutomationContextMenu(event: MouseEvent, lane: Lane) {
+        event.preventDefault();
+        event.stopPropagation();
+        contextMenuTarget = { kind: 'automation', lane };
+        contextMenuPoint = { x: event.clientX, y: event.clientY };
+    }
+
+    function contextMenuActions() {
+        if (contextMenuTarget?.kind === 'track') {
+            return [
+                { id: 'rename', label: 'Rename track', icon: 'fa-pencil' },
+                { id: 'color', label: 'Track color', icon: 'fa-palette' },
+                { id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark' },
+                { id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones' },
+                {
+                    id: 'delete',
+                    label: 'Remove track',
+                    icon: 'fa-trash',
+                    disabled: ($project?.tracks.length ?? 0) <= 1,
+                },
+            ];
+        }
+        if (contextMenuTarget?.kind === 'automation') {
+            return [{ id: 'delete', label: 'Remove automation lane', icon: 'fa-trash' }];
+        }
+        return [];
+    }
+
+    function selectContextMenuAction(action: string) {
+        const target = contextMenuTarget;
+        closeContextMenu();
+        if (!target) {
+            return;
+        }
+        if (target.kind === 'automation') {
+            if (action === 'delete') {
+                requestRemoveAutoLane(target.lane);
+            }
+            return;
+        }
+        if (action === 'rename') {
+            editTrack(target.trackIndex);
+        } else if (action === 'color') {
+            changeTrackColor(target.trackIndex);
+        } else if (action === 'mute') {
+            toggleTrackMute(target.trackIndex);
+        } else if (action === 'solo') {
+            toggleTrackSolo(target.trackIndex);
+        } else if (action === 'delete') {
+            requestRemoveTrack(target.trackIndex);
+        }
     }
 
     function onTrackColorChange(value: string) {
@@ -1284,7 +1354,7 @@
                                 class:dragging={draggingTrack === t}
                                 class:silent={laneSilent[t]}
                                 draggable="true"
-                                oncontextmenu={preventDefault(() => changeTrackColor(t))}
+                                oncontextmenu={event => openTrackContextMenu(event, t)}
                                 ondblclick={() => editTrack(t)}
                                 ondragend={clearDragState}
                                 ondragover={preventDefault(event =>
@@ -1339,6 +1409,7 @@
                             )}"
                             class="auto-label track-label"
                             draggable="true"
+                            oncontextmenu={event => openAutomationContextMenu(event, lane)}
                             ondragend={clearDragState}
                             ondragover={preventDefault(event =>
                                 updateDragInsertion(event as DragEvent, rowIndex),
@@ -1546,6 +1617,13 @@
         <AutomationPicker onadd={addAutoLane} project={$project} />
     {/if}
 </Dialog>
+<ContextMenu
+    actions={contextMenuActions()}
+    onclose={closeContextMenu}
+    onselect={selectContextMenuAction}
+    open={contextMenuTarget !== null}
+    point={contextMenuPoint}
+/>
 <Prompt
     label="New Name"
     onsubmit={onRenameTrack}

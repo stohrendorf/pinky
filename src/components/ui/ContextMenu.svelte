@@ -4,6 +4,7 @@
     interface Props {
         open?: boolean;
         anchor?: HTMLElement | null;
+        point?: { x: number; y: number } | null;
         actions?: { id: string; label: string; icon?: string; disabled?: boolean }[];
         onselect?: (action: string) => void;
         onclose?: () => void;
@@ -12,6 +13,7 @@
     const {
         open = false,
         anchor = null,
+        point = null,
         actions = [],
         onselect = () => {},
         onclose = () => {},
@@ -21,19 +23,17 @@
     let position = $state({ top: 0, left: 0 });
 
     async function updatePosition() {
-        if (!anchor) {
+        if (!anchor && !point) {
             return;
         }
         await tick();
-        const bounds = anchor.getBoundingClientRect();
         const menuWidth = menuEl?.offsetWidth || 150;
         const menuHeight = menuEl?.offsetHeight || actions.length * 30 + 8;
+        const left = point?.x ?? anchor!.getBoundingClientRect().right - menuWidth;
+        const top = point?.y ?? anchor!.getBoundingClientRect().bottom + 2;
         position = {
-            top: Math.max(4, Math.min(bounds.bottom + 2, window.innerHeight - menuHeight - 4)),
-            left: Math.max(
-                4,
-                Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 4),
-            ),
+            top: Math.max(4, Math.min(top, window.innerHeight - menuHeight - 4)),
+            left: Math.max(4, Math.min(left, window.innerWidth - menuWidth - 4)),
         };
     }
 
@@ -45,6 +45,8 @@
         ) {
             return;
         }
+        event.preventDefault();
+        event.stopPropagation();
         onclose();
     }
 

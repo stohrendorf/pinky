@@ -43,7 +43,7 @@
 
     const collapsedFolders = new SvelteSet<string>();
     let openMenu: string | null = $state(null);
-    let menuAnchor: HTMLElement | null = $state(null);
+    let menuPoint: { x: number; y: number } | null = $state(null);
 
     const entries = $derived(flattenNameTree(items, { sortFolders }));
     const visibleEntries = $derived(
@@ -99,16 +99,14 @@
 
     function closeMenu() {
         openMenu = null;
-        menuAnchor = null;
+        menuPoint = null;
     }
 
-    function toggleMenu(id: string, event: MouseEvent) {
-        if (openMenu === id) {
-            closeMenu();
-            return;
-        }
+    function openContextMenu(event: MouseEvent, id: string) {
+        event.preventDefault();
+        event.stopPropagation();
         openMenu = id;
-        menuAnchor = event.currentTarget as HTMLElement;
+        menuPoint = { x: event.clientX, y: event.clientY };
     }
 </script>
 
@@ -151,6 +149,8 @@
                         <button
                             class="row-main"
                             onclick={() => toggleFolder(entry.path)}
+                            oncontextmenu={event =>
+                                openContextMenu(event, `folder:${entry.path}`)}
                             title={entry.path}
                             type="button"
                         >
@@ -163,14 +163,6 @@
                                 aria-label={`${entry.itemCount} items`}>{entry.itemCount}</span
                             >
                         </button>
-                        {#if folderActions.length}
-                            <button
-                                class="dots"
-                                aria-label="{entry.label} folder actions"
-                                onclick={event => toggleMenu(`folder:${entry.path}`, event)}
-                                type="button"><i class="fa fa-ellipsis-vertical"></i></button
-                            >
-                        {/if}
                     </div>
                 {:else}
                     <div
@@ -184,6 +176,7 @@
                         <button
                             class="row-main"
                             onclick={() => select(entry.item)}
+                            oncontextmenu={event => openContextMenu(event, entry.item.id)}
                             title={entry.item.name}
                             type="button"
                         >
@@ -213,14 +206,6 @@
                                 type="button"><i class="fa fa-headphones"></i></button
                             >
                         {/if}
-                        {#if itemActions.length}
-                            <button
-                                class="dots"
-                                aria-label="{entry.label} actions"
-                                onclick={event => toggleMenu(entry.item.id, event)}
-                                type="button"><i class="fa fa-ellipsis-vertical"></i></button
-                            >
-                        {/if}
                     </div>
                 {/if}
             {/each}
@@ -232,7 +217,6 @@
 
 <ContextMenu
     actions={openMenu?.startsWith('folder:') ? folderActions : itemActions}
-    anchor={menuAnchor}
     onclose={closeMenu}
     onselect={actionId => {
         if (openMenu?.startsWith('folder:')) {
@@ -245,6 +229,7 @@
         }
     }}
     open={openMenu !== null}
+    point={menuPoint}
 />
 
 <style>
@@ -400,19 +385,6 @@
         width: 9px;
         color: var(--secondary-text);
         font-size: 10px;
-    }
-
-    .dots {
-        flex: 0 0 28px;
-        padding: 4px;
-        background: transparent;
-        border: 0;
-        color: var(--secondary-text);
-        cursor: pointer;
-    }
-
-    .dots:hover {
-        color: var(--accent);
     }
 
     .toggle {

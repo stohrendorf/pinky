@@ -14,6 +14,7 @@
     import { playing, project, songCursor, touch } from '../lib/project';
     import { rendering } from '../lib/render';
     import { barAt, createTimingMap } from '../lib/timing';
+    import ContextMenu from './ui/ContextMenu.svelte';
     import Dialog from './ui/Dialog.svelte';
 
     interface Props {
@@ -46,6 +47,8 @@
     let error = $state('');
     let laneMessage = $state('');
     let selectedId = $state<string | null>(null);
+    let contextMarkerId = $state<string | null>(null);
+    let contextMenuPoint = $state<{ x: number; y: number } | null>(null);
     let editorProject: Project | null = null;
     let editorSnapshot = '';
     let opener: HTMLElement | null = null;
@@ -152,6 +155,44 @@
     function addAtPointer(event: MouseEvent) {
         const left = (event.currentTarget as HTMLElement).getBoundingClientRect().left;
         newMarker((event.clientX - left) / cellWidth);
+    }
+
+    function closeMarkerContextMenu() {
+        contextMarkerId = null;
+        contextMenuPoint = null;
+    }
+
+    function openMarkerContextMenu(event: MouseEvent, id: string) {
+        event.preventDefault();
+        event.stopPropagation();
+        if ($rendering) {
+            return;
+        }
+        selectedId = id;
+        contextMarkerId = id;
+        contextMenuPoint = { x: event.clientX, y: event.clientY };
+    }
+
+    function markerContextAction(action: string) {
+        const id = contextMarkerId;
+        closeMarkerContextMenu();
+        if (!id) {
+            return;
+        }
+        if (action === 'edit') {
+            editMarker(id);
+            return;
+        }
+        if (action !== 'delete' || !$project || $playing || $rendering) {
+            return;
+        }
+        const point = points.find(item => item.id === id);
+        if (!point) {
+            return;
+        }
+        $project.conductor = removeMarkerAt(conductor, point.step);
+        selectedId = null;
+        touch();
     }
 
     function editMarker(id: string) {
@@ -442,6 +483,7 @@
                             data-step={step}
                             disabled={$rendering}
                             onclick={event => clickMarker(event, point.id)}
+                            oncontextmenu={event => openMarkerContextMenu(event, point.id)}
                             onkeydown={event => markerKey(event, point)}
                             onlostpointercapture={cancelDrag}
                             onpointercancel={cancelDrag}
@@ -457,6 +499,17 @@
     </div>
     <span class="lane-status" class:drag-feedback={!!drag?.moved} role="status">{laneMessage}</span>
 </div>
+
+<ContextMenu
+    actions={[
+        { id: 'edit', label: 'Edit marker', icon: 'fa-pen' },
+        { id: 'delete', label: 'Delete marker', icon: 'fa-trash', disabled: $playing || $rendering },
+    ]}
+    onclose={closeMarkerContextMenu}
+    onselect={markerContextAction}
+    open={contextMarkerId !== null}
+    point={contextMenuPoint}
+/>
 
 <Dialog title="Edit marker" width="360px" bind:show>
     {#if show}
