@@ -32,6 +32,8 @@ export interface Note {
 
 export type CurveShape = "hold" | "linear" | "ease-in" | "ease-out" | "smooth";
 
+export type AutomationCurveShape = "none" | CurveShape;
+
 export interface LegatoLink {
   pitch: string;
   start: number;
@@ -72,9 +74,8 @@ export interface ArrangementClip {
 export interface AutomationPoint {
   step: number; // position on the arranger timeline (steps)
   value: number; // parameter value in its own unit
-  curve?: CurveShape; // interpolation to the following point (undefined = linear)
-  // `false` starts a gap: the lane stops overriding its target until the
-  // next active point. Undefined preserves the original always-active lanes.
+  curve?: AutomationCurveShape; // interpolation to the following point (undefined = linear)
+  // Legacy gap marker. New gaps use `curve: "none"` on the preceding point.
   active?: boolean;
 }
 

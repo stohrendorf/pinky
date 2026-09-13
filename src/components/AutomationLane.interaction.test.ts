@@ -6,6 +6,10 @@ const automationLane = readFileSync(
   fileURLToPath(new URL("./AutomationLane.svelte", import.meta.url)),
   "utf8",
 );
+const playlist = readFileSync(
+  fileURLToPath(new URL("./Playlist.svelte", import.meta.url)),
+  "utf8",
+);
 
 describe("AutomationLane selection workflow", () => {
   it("clears the arranger-wide selected point before adding another point", () => {
@@ -20,7 +24,6 @@ describe("AutomationLane selection workflow", () => {
   it("renders every dense automation point without adding a DOM node per point", () => {
     expect(automationLane).toContain("function pointMarkerPath");
     expect(automationLane).toContain("const pointPath = $derived");
-    expect(automationLane).toContain("const inactivePointPath = $derived");
     expect(automationLane).toContain("const path = $derived(curvePath(pts));");
     expect(automationLane).toContain(
       '<path style="stroke: {color}" class="curve-nodes" d={pointPath} />',
@@ -28,16 +31,43 @@ describe("AutomationLane selection workflow", () => {
     expect(automationLane).not.toContain("MAX_VISIBLE_POINT_HANDLES");
   });
 
-  it("lets a point end an automation section and renders the following gap", () => {
-    expect(automationLane).toContain("function setPointActive");
+  it("uses None interpolation to create a visible automation gap", () => {
+    expect(automationLane).toContain("if (start.curve === 'none'");
+    expect(automationLane).toContain("function curveFillPath");
+    expect(automationLane).toContain("closeSegment(start);");
     expect(automationLane).toContain(
-      'aria-label="Automation active from this point"',
+      "const fillPath = $derived(curveFillPath(pts));",
     );
-    expect(automationLane).toContain(
-      "point.active = active ? undefined : false;",
+    expect(automationLane).not.toContain("Automation active from this point");
+  });
+
+  it("deletes a control point with a dedicated right-click handler", () => {
+    expect(automationLane).toContain("function onContextMenu");
+    expect(automationLane).toContain("if (e.button === 2)");
+    expect(automationLane).toContain("deletedWithRightButton = true;");
+    expect(automationLane).toContain("e.preventDefault();");
+    expect(automationLane).toContain("deletePoint(hit);");
+    expect(automationLane).toContain("oncontextmenu={onContextMenu}");
+  });
+
+  it("invalidates the point-derived render state after every point edit", () => {
+    expect(automationLane).toContain("let pointRevision = $state(0);");
+    expect(automationLane).toContain("function refreshPoints()");
+    expect(automationLane).toContain("pointRevision++;");
+    expect(automationLane).toContain("void pointRevision;");
+    expect(automationLane).toContain("refreshPoints();");
+  });
+
+  it("keeps the parent selection current when a curve changes or its point is removed", () => {
+    expect(automationLane).toMatch(
+      /function setPointCurve[\s\S]*setAutomationPointCurve\(\s*lane,\s*point,[\s\S]*onselect\(updated\);[\s\S]*refreshPoints\(\);/,
     );
-    expect(automationLane).toContain(
-      "class:inactive={activePoint.active === false}",
-    );
+    expect(automationLane).toContain("pointsMatch(selectedPoint, point)");
+    expect(automationLane).toContain("function pointsMatch");
+  });
+
+  it("expects the arranger selection to preserve the lane point identity", () => {
+    expect(playlist).toContain("selectedAutomationPoint");
+    expect(playlist).toContain("$state.raw(null)");
   });
 });

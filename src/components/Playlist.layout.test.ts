@@ -170,7 +170,7 @@ describe("Playlist frozen track labels", () => {
 
   it("coordinates one selected automation point and popup across all lanes", () => {
     expect(playlist).toMatch(
-      /let selectedAutomationPoint:\s*\{\s*laneId: string;\s*point: AutomationPoint\s*}\s*\| null\s*= \$state\(null\)/,
+      /let selectedAutomationPoint:\s*\{\s*laneId: string;\s*point: AutomationPoint\s*}\s*\| null\s*= \$state\.raw\(null\)/,
     );
     expect(playlist).toMatch(
       /selectedPoint=\{selectedAutomationPoint\?\.laneId\s*===\s*lane\.id\s*\?\s*selectedAutomationPoint\.point\s*:\s*null}/,

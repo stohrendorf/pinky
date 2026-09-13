@@ -1,7 +1,7 @@
 import type {
+  AutomationCurveShape,
   AutomationLane,
   AutomationPoint,
-  CurveShape,
   InstrumentParams,
   NoteParamOverrides,
   Project,
@@ -44,7 +44,8 @@ export function parseMixerTarget(target: string): ParsedMixerTarget | null {
   }
 }
 
-export const CURVE_SHAPES: { id: CurveShape; label: string }[] = [
+export const CURVE_SHAPES: { id: AutomationCurveShape; label: string }[] = [
+  { id: "none", label: "None" },
   { id: "hold", label: "Hold" },
   { id: "linear", label: "Linear" },
   { id: "ease-in", label: "Ease in" },
@@ -53,7 +54,7 @@ export const CURVE_SHAPES: { id: CurveShape; label: string }[] = [
 ];
 
 export function segmentProgress(
-  curve: CurveShape | undefined,
+  curve: AutomationCurveShape | undefined,
   progress: number,
 ): number {
   const t = Math.max(0, Math.min(1, progress));
@@ -281,6 +282,9 @@ export function laneOverrideAt(
     return null;
   }
   const next = pts[index + 1];
+  if (current.curve === "none" && next && step > current.step) {
+    return null;
+  }
   if (!next || next.active === false) {
     return next && step < next.step ? laneValueAt(lane, step) : current.value;
   }
@@ -317,6 +321,25 @@ export function setAutomationPointValue(
   clampPoint(lane, pt);
   sortPoints(lane);
   return true;
+}
+
+export function setAutomationPointCurve(
+  lane: AutomationLane,
+  pt: AutomationPoint,
+  curve: AutomationCurveShape,
+): AutomationPoint | null {
+  if (!CURVE_SHAPES.some((shape) => shape.id === curve)) {
+    return null;
+  }
+  const index = lane.points.indexOf(pt);
+  if (index < 0) {
+    return null;
+  }
+  const updated = { ...pt, curve };
+  lane.points = lane.points.map((point, pointIndex) =>
+    pointIndex === index ? updated : point,
+  );
+  return updated;
 }
 
 // Human-readable "Bass · Pitch Bend"

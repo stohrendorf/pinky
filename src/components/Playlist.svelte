@@ -130,7 +130,9 @@
     let isRightDragging = false;
     let selectionStart = $state({ s: 0, t: 0 });
     let selectionEnd = $state({ s: 0, t: 0 });
-    let selectedAutomationPoint: { laneId: string; point: AutomationPoint } | null = $state(null);
+    // Keep the lane's original point reference. Deep $state proxies would make
+    // the selected point fail identity lookups in the lane when it is edited.
+    let selectedAutomationPoint: { laneId: string; point: AutomationPoint } | null = $state.raw(null);
 
     const previewCache = new Map<string, PreviewNote[]>();
 

@@ -6,6 +6,7 @@
         clampPoint,
         CURVE_SHAPES,
         segmentProgress,
+        setAutomationPointCurve,
         setAutomationPointValue,
         sortPoints,
     } from '../lib/automation';
@@ -55,6 +56,14 @@
     let editingValue = $state('');
     let editingError = $state('');
     let editorInput: HTMLInputElement | undefined = $state();
+    let pointRevision = $state(0);
+    let deletedWithRightButton = false;
+
+    function refreshPoints() {
+        lane.points = [...lane.points];
+        pointRevision++;
+        touch();
+    }
 
     function local(e: MouseEvent): { step: number; value: number } {
         const r = svgEl!.getBoundingClientRect();
@@ -80,7 +89,21 @@
     }
 
     function onDown(e: MouseEvent) {
-        if (e.button === 1) {
+        if (e.button === 2) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!canEdit) {
+                onblocked();
+                return;
+            }
+            const hit = pointAt(e);
+            if (hit) {
+                deletedWithRightButton = true;
+                deletePoint(hit);
+            }
+            return;
+        }
+        if (e.button !== 0) {
             return;
         } // middle drag = the playlist's pan gesture
         e.stopPropagation();
@@ -88,23 +111,6 @@
             contextualEditor = null;
         }
         const hit = pointAt(e);
-        if (e.button === 2) {
-            // right-click removes a point (never the last one)
-            if (hit && pts.length > 1) {
-                lane.points = pts.filter(p => p !== hit);
-                if (selectedPoint === hit) {
-                    onselect(null);
-                }
-                if (editingPoint === hit) {
-                    closePointEditor();
-                }
-                touch();
-            }
-            return;
-        }
-        if (e.button !== 0) {
-            return;
-        }
         if (!canEdit) {
             onblocked();
             return;
@@ -126,7 +132,38 @@
         sortPoints(lane);
         onselect(pt);
         drag = pt;
-        touch();
+        refreshPoints();
+    }
+
+    function deletePoint(point: AutomationPoint) {
+        if (pts.length <= 1) {
+            return;
+        }
+        lane.points = pts.filter(p => p !== point);
+        if (selectedPoint && pointsMatch(selectedPoint, point)) {
+            onselect(null);
+        }
+        if (editingPoint === point) {
+            closePointEditor();
+        }
+        refreshPoints();
+    }
+
+    function onContextMenu(e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (deletedWithRightButton) {
+            deletedWithRightButton = false;
+            return;
+        }
+        if (!canEdit) {
+            onblocked();
+            return;
+        }
+        const hit = pointAt(e);
+        if (hit) {
+            deletePoint(hit);
+        }
     }
 
     function onMove(e: MouseEvent) {
@@ -138,9 +175,8 @@
         drag.value = l.value;
         clampPoint(lane, drag);
         sortPoints(lane);
-        lane.points = [...lane.points];
         onselect(drag);
-        touch();
+        refreshPoints();
     }
 
     function onUp() {
@@ -164,7 +200,7 @@
         }
         if (setAutomationPointValue(lane, editingPoint, editingValue)) {
             onselect(editingPoint);
-            touch();
+            refreshPoints();
             closePointEditor();
         } else {
             editingError = 'Enter a number';
@@ -176,7 +212,7 @@
             return;
         }
         onselect(point);
-        touch();
+        refreshPoints();
     }
 
     function onPointEditorKeydown(e: KeyboardEvent) {
@@ -209,22 +245,21 @@
             point.step = Math.max(0, Math.round(point.step + (e.key === 'ArrowRight' ? 1 : -1)));
             clampPoint(lane, point);
             sortPoints(lane);
-            lane.points = [...lane.points];
             onselect(point);
-            touch();
+            refreshPoints();
             return;
         }
         if ((e.key === 'Delete' || e.key === 'Backspace') && pts.length > 1) {
             e.preventDefault();
             e.stopPropagation();
             lane.points = pts.filter(p => p !== point);
-            if (selectedPoint === point) {
+            if (selectedPoint && pointsMatch(selectedPoint, point)) {
                 onselect(null);
             }
             if (editingPoint === point) {
                 closePointEditor();
             }
-            touch();
+            refreshPoints();
         }
     }
 
@@ -233,7 +268,6 @@
             return '';
         }
         const segments: string[] = [];
-        let from: AutomationPoint | null = null;
         const addSegment = (start: AutomationPoint, end: AutomationPoint) => {
             if (start.curve === 'hold') {
                 segments.push(`L ${end.step * cellWidth} ${valToY(start.value)}`);
@@ -247,25 +281,55 @@
                 segments.push(`L ${step * cellWidth} ${valToY(value)}`);
             }
         };
-        for (const to of points) {
-            if (to.active === false) {
-                if (from) {
-                    addSegment(from, to);
-                }
-                from = null;
-                continue;
+        let start = points[0];
+        segments.push(`M ${start.step * cellWidth} ${valToY(start.value)}`);
+        for (let index = 1; index < points.length; index++) {
+            const end = points[index];
+            if (start.curve === 'none' || end.active === false) {
+                segments.push(`M ${end.step * cellWidth} ${valToY(end.value)}`);
+            } else {
+                addSegment(start, end);
             }
-            if (!from) {
-                segments.push(`M ${to.step * cellWidth} ${valToY(to.value)}`);
-                from = to;
-                continue;
+            start = end;
+        }
+        segments.push(`L ${width} ${valToY(start.value)}`);
+        return segments.join(' ');
+    }
+
+    function curveFillPath(points: AutomationPoint[]): string {
+        if (!points.length) {
+            return '';
+        }
+        const segments: string[] = [];
+        const addSegment = (start: AutomationPoint, end: AutomationPoint) => {
+            if (start.curve === 'hold') {
+                segments.push(`L ${end.step * cellWidth} ${valToY(start.value)}`);
+                segments.push(`L ${end.step * cellWidth} ${valToY(end.value)}`);
+                return;
             }
-            addSegment(from, to);
-            from = to;
+            for (let sample = 1; sample <= 12; sample++) {
+                const t = sample / 12;
+                const step = start.step + (end.step - start.step) * t;
+                const value = start.value + (end.value - start.value) * segmentProgress(start.curve, t);
+                segments.push(`L ${step * cellWidth} ${valToY(value)}`);
+            }
+        };
+        const closeSegment = (point: AutomationPoint) => {
+            segments.push(`L ${point.step * cellWidth} ${height} Z`);
+        };
+        let start = points[0];
+        segments.push(`M ${start.step * cellWidth} ${height} L ${start.step * cellWidth} ${valToY(start.value)}`);
+        for (let index = 1; index < points.length; index++) {
+            const end = points[index];
+            if (start.curve === 'none' || end.active === false) {
+                closeSegment(start);
+                segments.push(`M ${end.step * cellWidth} ${height} L ${end.step * cellWidth} ${valToY(end.value)}`);
+            } else {
+                addSegment(start, end);
+            }
+            start = end;
         }
-        if (from) {
-            segments.push(`L ${width} ${valToY(from.value)}`);
-        }
+        segments.push(`L ${width} ${valToY(start.value)} L ${width} ${height} Z`);
         return segments.join(' ');
     }
 
@@ -284,19 +348,25 @@
     }
 
     function setPointCurve(point: AutomationPoint, curve: string) {
-        if (!CURVE_SHAPES.some(shape => shape.id === curve)) {
+        const updated = setAutomationPointCurve(
+            lane,
+            point,
+            curve as NonNullable<AutomationPoint['curve']>,
+        );
+        if (!updated) {
             return;
         }
-        point.curve = curve as AutomationPoint['curve'];
-        lane.points = [...lane.points];
-        touch();
+        onselect(updated);
+        refreshPoints();
     }
 
-    function setPointActive(point: AutomationPoint, active: boolean) {
-        point.active = active ? undefined : false;
-        lane.points = [...lane.points];
-        touch();
+    function pointsMatch(first: AutomationPoint, second: AutomationPoint): boolean {
+        return (
+            first === second ||
+            (first.step === second.step && first.value === second.value && first.curve === second.curve)
+        );
     }
+
 
     function pointControlPosition(point: AutomationPoint): number {
         const editorWidth = 250;
@@ -314,27 +384,16 @@
         (y: number) => def.min + ((height - PAD - y) / (height - 2 * PAD)) * span,
     );
     // the drawn path: held before the first point, held after the last one
-    const pts = $derived(lane.points);
+    const pts = $derived.by(() => {
+        void pointRevision;
+        return lane.points;
+    });
     const activePoint = $derived(editingPoint ?? selectedPoint);
-    const activePointPath = $derived(
-        pointMarkerPath(activePoint ? [activePoint] : []),
-    );
     const pointPath = $derived(
-        pointMarkerPath(
-            pts.filter(point => point !== activePoint && point.active !== false),
-        ),
-    );
-    const inactivePointPath = $derived(
-        pointMarkerPath(
-            pts.filter(point => point !== activePoint && point.active === false),
-        ),
+        pointMarkerPath(pts.filter(point => point !== activePoint)),
     );
     const path = $derived(curvePath(pts));
-    const fillPath = $derived(
-        path && !pts.some(point => point.active === false)
-            ? `${path} L ${width} ${height} L 0 ${height} Z`
-            : '',
-    );
+    const fillPath = $derived(curveFillPath(pts));
     $effect.pre(() => {
         if (contextualEditor !== editorKey && editingPoint) {
             editingPoint = null;
@@ -351,7 +410,7 @@
         class="auto-lane"
         aria-label={`${def.label} automation editor`}
         {height}
-        oncontextmenu={preventDefault(() => {})}
+        oncontextmenu={onContextMenu}
         onmousedown={onDown}
         role="grid"
         tabindex="0"
@@ -370,16 +429,10 @@
                 <path style="stroke: {color}" class="curve" d={path} />
             {/if}
             <path style="stroke: {color}" class="curve-nodes" d={pointPath} />
-            <path
-                style="stroke: {color}"
-                class="curve-nodes inactive"
-                d={inactivePointPath}
-            />
             {#if activePoint}
                 <g
                     class="pt"
                     class:active={selectedPoint === activePoint || editingPoint === activePoint}
-                    class:inactive={activePoint.active === false}
                     aria-label={`${def.label}: ${fmt(activePoint.value)} at step ${Math.round(activePoint.step)}`}
                     onfocus={() => onselect(activePoint)}
                     onkeydown={e => onPointKeydown(e, activePoint)}
@@ -419,15 +472,6 @@
                     type="number"
                     value={selectedPoint.value}
                 />
-            </label>
-            <label class="point-active">
-                <input
-                    aria-label="Automation active from this point"
-                    checked={selectedPoint.active !== false}
-                    onchange={event => setPointActive(selectedPoint, event.currentTarget.checked)}
-                    type="checkbox"
-                />
-                {selectedPoint.active === false ? 'Resume automation' : 'Automation active'}
             </label>
             {#if selectedPoint !== pts[pts.length - 1]}
                 <select
@@ -521,12 +565,6 @@
         filter: drop-shadow(0 0 3px rgba(255, 244, 244, 0.55));
     }
 
-    .pt.inactive .curve-node,
-    .curve-nodes.inactive {
-        fill: var(--color-canvas);
-        stroke-dasharray: 2 1;
-        opacity: 0.55;
-    }
 
     .point-readout,
     .point-editor {
@@ -579,18 +617,6 @@
 
     .point-readout input {
         width: 64px;
-    }
-
-    .point-active {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        cursor: pointer;
-    }
-
-    .point-active input {
-        width: auto;
-        margin: 0;
     }
 
     .point-editor input {
