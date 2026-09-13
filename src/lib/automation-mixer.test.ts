@@ -6,11 +6,15 @@ import {
   automationCurrentValue,
   autoParamDef,
   autoParams,
+  instrumentOverrides,
   laneColor,
+  laneOverrideAt,
   laneTitle,
+  masterAutomation,
   mixerAutomation,
   mixerTarget,
   parseMixerTarget,
+  withNoteOverrides,
 } from "./automation";
 import { DEFAULT_PARAMS } from "./instruments";
 import { createMixer } from "./mixer";
@@ -49,6 +53,68 @@ const project = (): Project => {
 };
 
 describe("mixer automation targets", () => {
+  it("returns no override before, during, and after explicit lane gaps", () => {
+    const lane = {
+      id: "gap",
+      target: "lead/one",
+      param: "tone",
+      points: [
+        { step: 4, value: 0.2 },
+        { step: 8, value: 0.8, active: false },
+        { step: 12, value: 0.6 },
+      ],
+    };
+
+    expect(laneOverrideAt(lane, 0)).toBeNull();
+    expect(laneOverrideAt(lane, 6)).toBe(0.5);
+    expect(laneOverrideAt(lane, 8)).toBeNull();
+    expect(laneOverrideAt(lane, 12)).toBe(0.6);
+  });
+
+  it("restores persisted instrument, mixer, and master values inside a gap", () => {
+    const p = project();
+    p.automation = [
+      {
+        id: "instrument-gap",
+        target: "lead/one",
+        param: "tone",
+        points: [{ step: 4, value: 0.2, active: false }],
+      },
+      {
+        id: "master-gap",
+        target: "master",
+        param: "vol",
+        points: [{ step: 4, value: 0.2, active: false }],
+      },
+      {
+        id: "mixer-gap",
+        target: mixerTarget("channel", "lead/one"),
+        param: "pan",
+        points: [{ step: 4, value: 0.2, active: false }],
+      },
+    ];
+
+    expect(instrumentOverrides(p, 4)?.get("lead/one")?.tone).toBe(
+      DEFAULT_PARAMS.tone,
+    );
+    expect(masterAutomation(p, 4)).toEqual([{ param: "vol", value: 0.8 }]);
+    expect(mixerAutomation(p, 4)).toEqual([
+      {
+        target: { kind: "channel", id: "lead/one" },
+        param: "pan",
+        value: -0.3,
+      },
+    ]);
+  });
+
+  it("merges only finite numeric note overrides over the automation baseline", () => {
+    expect(
+      withNoteOverrides(
+        { ...DEFAULT_PARAMS, tone: 0.25, q: 45 },
+        { tone: 0.8, q: Number.NaN },
+      ),
+    ).toMatchObject({ tone: 0.8, q: 45 });
+  });
   it("round-trips collision-prone channel and bus ids without treating them as instruments", () => {
     for (const [kind, id] of [
       ["channel", "lead/one"],

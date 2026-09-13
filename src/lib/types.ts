@@ -23,6 +23,9 @@ export interface Note {
   start: number;
   len: number;
   vel?: number; // 0..1 loudness of this hit (undefined = 1, i.e. full)
+  // Optional instrument values for this note only. They win over the
+  // instrument's arranged automation while this voice is active.
+  overrides?: NoteParamOverrides;
   selected?: boolean;
   legatoTo?: LegatoLink;
 }
@@ -70,6 +73,9 @@ export interface AutomationPoint {
   step: number; // position on the arranger timeline (steps)
   value: number; // parameter value in its own unit
   curve?: CurveShape; // interpolation to the following point (undefined = linear)
+  // `false` starts a gap: the lane stops overriding its target until the
+  // next active point. Undefined preserves the original always-active lanes.
+  active?: boolean;
 }
 
 export interface AutomationLane {
@@ -129,6 +135,17 @@ export interface InstrumentParams {
   // above, then freely hand-editable (drawbars, odd-only, bell partials ...).
   partials?: PartialSpec[];
 }
+
+export type InstrumentParamKey = Extract<
+  {
+    [K in keyof InstrumentParams]: InstrumentParams[K] extends number
+      ? K
+      : never;
+  }[keyof InstrumentParams],
+  string
+>;
+
+export type NoteParamOverrides = Record<string, number | undefined>;
 
 export interface Instrument {
   id: string;

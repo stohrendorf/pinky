@@ -126,6 +126,32 @@ describe("VoiceCollection", () => {
     expect(other.setParams).not.toHaveBeenCalled();
   });
 
+  it("keeps note overrides through automation and transitions to the next note's values", () => {
+    const voices = collection();
+    const held = voice(1, 1);
+    voices.register("lead", "lead:C4", 0, held, 1, { gain: 0.4 });
+
+    voices.automate("lead", { gain: 0.8 }, 1, 0.1);
+    expect(held.setParams).toHaveBeenLastCalledWith({ gain: 0.4 }, 1, 0.1);
+
+    expect(
+      voices.glide("lead", "lead:C4", "lead:D4", 2, 293.66, 0.5, "smooth", {
+        gain: 0.7,
+      }),
+    ).toBe(true);
+    expect(held.setParams).toHaveBeenLastCalledWith(
+      { gain: 0.7 },
+      2,
+      0.5,
+      "smooth",
+    );
+
+    voices.automate("lead", { gain: 0.2 }, 2.25, 0.1);
+    expect(held.setParams).toHaveBeenCalledTimes(2);
+    voices.automate("lead", { gain: 0.2 }, 2.5, 0.1);
+    expect(held.setParams).toHaveBeenLastCalledWith({ gain: 0.2 }, 2.5, 0.1);
+  });
+
   it("stops and forgets every voice on an all-notes-off command", () => {
     const voices = collection();
     const first = voice(2, 1);

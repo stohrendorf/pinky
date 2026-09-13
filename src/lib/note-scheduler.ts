@@ -16,6 +16,8 @@ export interface NoteSchedulingCollection<Params> {
     frequency: number,
     time: number,
     curve?: CurveShape,
+    params?: Params,
+    overrides?: Partial<Params>,
   ): boolean;
 
   replaceActive(key: string, at: number): void;
@@ -28,6 +30,7 @@ export interface NoteSchedulingCollection<Params> {
     at: number,
     voice: ManagedVoice<Params>,
     tail: number,
+    overrides?: Partial<Params>,
   ): void;
 
   noteOff(key: string, at: number): void;
@@ -78,6 +81,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     velocity = 1,
     scope?: string,
     frequencyMultiplier = 1,
+    overrides?: Partial<Params>,
   ): void {
     const note = this.findNote(name);
     const now = this.currentTime();
@@ -103,13 +107,12 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
       velocity,
     );
     this.voices.load = cost + voice.cost;
-    this.voices.register(
-      track,
-      key,
-      at,
-      voice,
-      params.rel * this.releaseTail + 0.1,
-    );
+    const tail = params.rel * this.releaseTail + 0.1;
+    if (overrides) {
+      this.voices.register(track, key, at, voice, tail, overrides);
+    } else {
+      this.voices.register(track, key, at, voice, tail);
+    }
   }
 
   noteOn(track: string, name: string, params: Params): void {
@@ -138,6 +141,8 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
     curve: CurveShape = "linear",
     scope?: string,
     frequencyMultiplier = 1,
+    params?: Params,
+    overrides?: Partial<Params>,
   ): boolean {
     const note = this.findNote(to);
     const now = this.currentTime();
@@ -150,7 +155,7 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
       return false;
     }
     const at = Math.max(atTime, now);
-    return this.voices.glide(
+    const args = [
       track,
       voiceKey(track, from, scope),
       voiceKey(track, to, scope),
@@ -158,7 +163,10 @@ export class NoteScheduler<Params extends NoteSchedulingParams> {
       note.freq * frequencyMultiplier,
       time,
       curve,
-    );
+    ] as const;
+    return params
+      ? this.voices.glide(...args, params, overrides)
+      : this.voices.glide(...args);
   }
 
   allNotesOff(): void {

@@ -931,6 +931,34 @@ function rampTo(
   flattenLater(prm, v, at + t, forceLive); // ... and drop the timeline once it lands
 }
 
+function rampWithCurve(
+  prm: AudioParam,
+  v: number,
+  at: number,
+  t: number,
+  curve: CurveShape,
+  from?: number,
+): void {
+  if (curve === "linear") {
+    rampTo(prm, v, at, t, false, from);
+    return;
+  }
+  const start = from ?? prm.value;
+  prm.cancelScheduledValues(at);
+  prm.setValueAtTime(start, at);
+  // Do not use a Web Audio curve event here. A following automation tick must
+  // be able to retarget the value during a legato without making the param
+  // unreusable in Firefox.
+  for (let index = 1; index <= 16; index++) {
+    const progress = segmentProgress(curve, index / 16);
+    prm.linearRampToValueAtTime(
+      start + (v - start) * progress,
+      at + (t * index) / 16,
+    );
+  }
+  flattenLater(prm, v, at + t);
+}
+
 const differs = (a: number, b: number, eps: number): boolean =>
   Math.abs(a - b) > eps;
 
@@ -1399,7 +1427,12 @@ function makeRank(
      * bend/glide — only shapes the next note, which is honest for a
      * one-shot-per-note engine. Untouched params are skipped on purpose:
      * a scheduled event on a biquad param costs per-sample coefficients. */
-    setParams(np: InstrumentParams, at: number, ramp: number) {
+    setParams(
+      np: InstrumentParams,
+      at: number,
+      ramp: number,
+      curve?: CurveShape,
+    ) {
       if (voice.dead) {
         return;
       } // recycled — its nodes are another voice's now
@@ -1408,7 +1441,13 @@ function makeRank(
       // a pending event — i.e. it stays on the expensive per-sample
       // coefficient path for the entire sweep. A 40 ms ramp is smooth to
       // the ear and lets the param settle (and be flattened) in between.
-      const t = Math.max(0.005, Math.min(ramp, 0.04));
+      const t = curve
+        ? Math.max(0.005, ramp)
+        : Math.max(0.005, Math.min(ramp, 0.04));
+      const rampParam = (param: AudioParam, value: number, from?: number) =>
+        curve
+          ? rampWithCurve(param, value, at, t, curve, from)
+          : rampTo(param, value, at, t, false, from);
       // Deliberately coarse: every accepted change costs a scheduled
       // event on an AudioParam, and a biquad with a pending event is
       // recomputed *per sample*. A sweep that moves by a thousandth of
@@ -1430,7 +1469,7 @@ function makeRank(
         if (!pan) {
           insertPan(v);
         } else {
-          rampTo(pan.pan, v, at, t);
+          rampParam(pan.pan, v);
         }
         app.pan = np.pan;
       }
@@ -1440,12 +1479,12 @@ function makeRank(
         harmBands.forEach(({ bq, r, level }, i) => {
           if (dTone) {
             const g = 40 * np.tone * level;
-            rampTo(bq.gain, g, at, t);
+            rampParam(bq.gain, g);
             bands[i].gain = g;
           }
           if (dQ) {
             const q = np.q * Math.sqrt(r);
-            rampTo(bq.Q, q, at, t);
+            rampParam(bq.Q, q);
             bands[i].q = q;
           }
         });
@@ -1461,7 +1500,7 @@ function makeRank(
         if (differs(np.formant, app.formant, 0.004)) {
           formantBands.forEach((fb) => {
             const g = FORMANT_DB * np.formant * fb.w;
-            rampTo(fb.bq.gain, g, at, t);
+            rampParam(fb.bq.gain, g);
             fb.band.gain = g;
           });
           app.formant = np.formant;
@@ -1478,7 +1517,7 @@ function makeRank(
           if (!differs(hz, app.f[fb.i], Math.max(5, app.f[fb.i] * 0.02))) {
             continue;
           }
-          rampTo(fb.bq.frequency, hz, at, t);
+          rampParam(fb.bq.frequency, hz);
           fb.band.from = fb.band.target = hz;
           app.f[fb.i] = hz;
           visualChanged = true;
@@ -1487,7 +1526,7 @@ function makeRank(
       }
       if (reLevel) {
         const g = levelFor(app.gain, app.formant);
-        rampTo(sum.gain, g, at, t);
+        rampParam(sum.gain, g);
         rec.level = g;
         visualChanged = true;
       }
@@ -1495,14 +1534,14 @@ function makeRank(
       if (vibGains.length && differs(np.vib, app.vib, 0.5)) {
         const ratio = Math.pow(2, Math.max(0, np.vib) / 1200) - 1;
         for (const { g, r } of vibGains) {
-          rampTo(g.gain, bendTarget * r * ratio, at, t);
+          rampParam(g.gain, bendTarget * r * ratio);
         }
         app.vib = np.vib;
       }
       if (noiseBand) {
         if (differs(np.noise, app.noise, 0.004)) {
           const g = 40 * np.noise;
-          rampTo(noiseBand.bq.gain, g, at, t);
+          rampParam(noiseBand.bq.gain, g);
           noiseBand.band.gain = g;
           app.noise = np.noise;
           visualChanged = true;
@@ -1516,7 +1555,7 @@ function makeRank(
           ) &&
           noiseBand.from === noiseBand.target
         ) {
-          rampTo(noiseBand.bq.frequency, np.noiseFreq, at, t);
+          rampParam(noiseBand.bq.frequency, np.noiseFreq);
           noiseBand.from = noiseBand.target = np.noiseFreq;
           noiseBand.band.from = noiseBand.band.target = np.noiseFreq;
           app.noiseFreq = np.noiseFreq;

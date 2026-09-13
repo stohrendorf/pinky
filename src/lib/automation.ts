@@ -3,6 +3,7 @@ import type {
   AutomationPoint,
   CurveShape,
   InstrumentParams,
+  NoteParamOverrides,
   Project,
 } from "./types";
 
@@ -143,7 +144,7 @@ type NumericInstrumentParam = {
 }[keyof InstrumentParams] &
   string;
 
-function isNumericInstrumentParam(
+export function isNumericInstrumentParam(
   param: string,
 ): param is NumericInstrumentParam {
   return (
@@ -177,6 +178,26 @@ function isNumericInstrumentParam(
       pan: true,
     }
   );
+}
+
+export function withNoteOverrides(
+  params: InstrumentParams,
+  overrides: NoteParamOverrides | undefined,
+): InstrumentParams {
+  if (!overrides) {
+    return params;
+  }
+  const next = { ...params };
+  for (const [param, value] of Object.entries(overrides)) {
+    if (
+      isNumericInstrumentParam(param) &&
+      typeof value === "number" &&
+      Number.isFinite(value)
+    ) {
+      next[param] = value;
+    }
+  }
+  return next;
 }
 
 export function autoParams(target: string): AutoParamDef[] {
@@ -238,6 +259,32 @@ export function laneValueAt(lane: AutomationLane, step: number): number {
     }
   }
   return last.value;
+}
+
+// The value that should override a target at this step. A disabled point ends
+// the preceding section and leaves the underlying target value untouched until
+// a later active point starts another section.
+export function laneOverrideAt(
+  lane: AutomationLane,
+  step: number,
+): number | null {
+  const pts = lane.points;
+  if (!pts.length || step < pts[0].step) {
+    return null;
+  }
+  let index = 0;
+  while (index + 1 < pts.length && pts[index + 1].step <= step) {
+    index++;
+  }
+  const current = pts[index];
+  if (current.active === false) {
+    return null;
+  }
+  const next = pts[index + 1];
+  if (!next || next.active === false) {
+    return next && step < next.step ? laneValueAt(lane, step) : current.value;
+  }
+  return laneValueAt(lane, step);
 }
 
 export function sortPoints(lane: AutomationLane): void {
@@ -357,8 +404,9 @@ export function instrumentOverrides(
       out = new Map();
     }
     const cur = out.get(inst.id) || { ...inst.params };
-    if (isNumericInstrumentParam(lane.param)) {
-      cur[lane.param] = clampTo(d, laneValueAt(lane, step));
+    const value = laneOverrideAt(lane, step);
+    if (value !== null && isNumericInstrumentParam(lane.param)) {
+      cur[lane.param] = clampTo(d, value);
     }
     out.set(inst.id, cur);
   }
@@ -375,10 +423,12 @@ export function masterAutomation(
       continue;
     }
     const d = autoParamDef(lane);
-    if (d) {
+    const value = d && laneOverrideAt(lane, step);
+    const fallback = d && automationCurrentValue(p, lane.target, lane.param);
+    if (d && (value !== null || fallback !== null)) {
       out.push({
         param: lane.param,
-        value: clampTo(d, laneValueAt(lane, step)),
+        value: clampTo(d, value ?? fallback!),
       });
     }
   }
@@ -406,11 +456,13 @@ export function mixerAutomation(
         ? !!p.mixer?.channels[target.id]
         : !!p.mixer?.buses.find((bus) => bus.id === target.id);
     const d = autoParamDef(lane);
-    if (exists && d) {
+    const value = d && laneOverrideAt(lane, step);
+    const fallback = d && automationCurrentValue(p, lane.target, lane.param);
+    if (exists && d && (value !== null || fallback !== null)) {
       out.push({
         target,
         param: lane.param,
-        value: clampTo(d, laneValueAt(lane, step)),
+        value: clampTo(d, value ?? fallback!),
       });
     }
   }

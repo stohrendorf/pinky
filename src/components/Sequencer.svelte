@@ -1,9 +1,9 @@
 <script lang="ts">
     import {onDestroy, onMount, tick} from 'svelte';
 
-    import type {Note, Pattern} from '../lib/types';
+    import type {Note, NoteParamOverrides, Pattern} from '../lib/types';
 
-    import {CURVE_SHAPES, segmentProgress} from '../lib/automation';
+    import {CURVE_SHAPES, INSTRUMENT_AUTO_PARAMS, segmentProgress} from '../lib/automation';
     import {ensureAudio, glideAt, noteOff, noteOnAt} from '../lib/engine';
     import {legatoTransition} from '../lib/legato';
     import {
@@ -216,7 +216,8 @@
     let selectionStart = $state({ s: 0, r: 0 });
     let selectionEnd = $state({ s: 0, r: 0 });
     let noteEditor: ExtendedNote | null = $state(null);
-    let noteDraft = $state({ vel: 100 });
+    let noteDraft = $state({vel: 100, overrides: {} as NoteParamOverrides});
+    let overrideToAdd = $state('');
     let noteEditorPosition = $state({ left: 4, top: 4 });
     let noteEditorError = $state('');
     let noteEditorInput: HTMLInputElement | undefined = $state();
@@ -443,7 +444,11 @@
         const selectedNote = note.selected ? note : selectOnlyNote(note);
         const row = rowOfNote[selectedNote.pitch] ?? 0;
         noteEditor = selectedNote;
-        noteDraft = { vel: Math.round((selectedNote.vel ?? 1) * 100) };
+        noteDraft = {
+            vel: Math.round((selectedNote.vel ?? 1) * 100),
+            overrides: {...selectedNote.overrides},
+        };
+        overrideToAdd = '';
         noteEditorPosition = {
             left: Math.max(4, Math.min(steps * cellWidth - 228, selectedNote.start * cellWidth)),
             top: Math.max(
@@ -484,10 +489,35 @@
             return;
         }
         noteEditor.vel = clampVel(velocityPercent / 100);
+        const overrides = Object.fromEntries(
+            Object.entries(noteDraft.overrides).filter(
+                ([param, value]) =>
+                    INSTRUMENT_AUTO_PARAMS.some(def => def.param === param) &&
+                    Number.isFinite(value),
+            ),
+        ) as NoteParamOverrides;
+        noteEditor.overrides = Object.keys(overrides).length ? overrides : undefined;
         const replacements = replaceEditedNotes([noteEditor]);
         noteEditor = replacements.get(noteEditor) ?? noteEditor;
         touch();
         closeNoteEditor();
+    }
+
+    function addNoteOverride() {
+        const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === overrideToAdd);
+        if (!def || noteDraft.overrides[def.param] !== undefined) {
+            return;
+        }
+        noteDraft.overrides = {
+            ...noteDraft.overrides,
+            [def.param]: (selectedInstrument().params as unknown as Record<string, number>)[def.param],
+        };
+        overrideToAdd = '';
+    }
+
+    function removeNoteOverride(param: keyof NoteParamOverrides) {
+        const {[param]: _, ...remaining} = noteDraft.overrides;
+        noteDraft.overrides = remaining;
     }
 
     function onNoteEditorKeydown(e: KeyboardEvent) {
@@ -1123,6 +1153,36 @@
                                 <span>%</span>
                             </div>
                         </label>
+                        <details class="note-overrides">
+                            <summary>Instrument overrides</summary>
+                            <div class="note-override-add">
+                                <select aria-label="Instrument parameter to override" bind:value={overrideToAdd}>
+                                    <option value="">Add parameter…</option>
+                                    {#each INSTRUMENT_AUTO_PARAMS as def}
+                                        <option disabled={noteDraft.overrides[def.param] !== undefined} value={def.param}>
+                                            {def.label}
+                                        </option>
+                                    {/each}
+                                </select>
+                                <button onclick={addNoteOverride} type="button">Add</button>
+                            </div>
+                            {#each INSTRUMENT_AUTO_PARAMS.filter(def => noteDraft.overrides[def.param] !== undefined) as def (def.param)}
+                                <label class="note-override-value">
+                                    <span>{def.label}</span>
+                                    <input
+                                        aria-label={`Override ${def.label}`}
+                                        inputmode="decimal"
+                                        max={def.max}
+                                        min={def.min}
+                                        step={def.step}
+                                        type="number"
+                                        bind:value={noteDraft.overrides[def.param]}
+                                    />
+                                    {#if def.unit}<em>{def.unit}</em>{/if}
+                                    <button aria-label={`Clear ${def.label} override`} onclick={() => removeNoteOverride(def.param)} type="button">×</button>
+                                </label>
+                            {/each}
+                        </details>
                         {#if noteEditorError}<small>{noteEditorError}</small>{/if}
                         <div class="note-editor-actions">
                             <button onclick={closeNoteEditor} type="button">Cancel</button>
@@ -1512,6 +1572,62 @@
     .note-editor input[type='range'] {
         width: 100%;
         accent-color: var(--accent);
+    }
+
+    .note-overrides {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 4px;
+        padding-top: 3px;
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .note-overrides summary {
+        cursor: pointer;
+        font-size: 10px;
+    }
+
+    .note-override-add,
+    .note-override-value {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .note-override-add select {
+        min-width: 0;
+        padding: 2px 3px;
+        border: 1px solid var(--color-border);
+        border-radius: 3px;
+        background: var(--surface-input);
+        color: var(--primary-text);
+        font: inherit;
+    }
+
+    .note-override-value {
+        grid-template-columns: minmax(0, 1fr) 58px auto auto;
+        font-size: 10px;
+    }
+
+    .note-override-value input {
+        width: 58px;
+    }
+
+    .note-override-value em {
+        min-width: 12px;
+        font-style: normal;
+        opacity: 0.7;
+    }
+
+    .note-overrides button {
+        padding: 2px 5px;
+        border: 1px solid var(--color-border);
+        border-radius: 3px;
+        background: var(--border);
+        color: var(--primary-text);
+        font: inherit;
+        cursor: pointer;
     }
 
     .note-editor input::-webkit-outer-spin-button,

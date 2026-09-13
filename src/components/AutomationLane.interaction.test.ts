@@ -26,4 +26,15 @@ describe("AutomationLane selection workflow", () => {
       "const activePoint = editingPoint ?? selectedPoint;",
     );
   });
+
+  it("lets a point end an automation section and renders the following gap", () => {
+    expect(automationLane).toContain("function setPointActive");
+    expect(automationLane).toContain(
+      'aria-label="Automation active from this point"',
+    );
+    expect(automationLane).toContain(
+      "point.active = active ? undefined : false;",
+    );
+    expect(automationLane).toContain("class:inactive={p.active === false}");
+  });
 });

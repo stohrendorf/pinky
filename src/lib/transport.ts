@@ -2,12 +2,19 @@
 import { get } from "svelte/store";
 
 import type { TimingMap } from "./timing";
-import type { Instrument, InstrumentParams, Pattern, Project } from "./types";
+import type {
+  Instrument,
+  InstrumentParams,
+  NoteParamOverrides,
+  Pattern,
+  Project,
+} from "./types";
 
 import {
   instrumentOverrides,
   masterAutomation,
   mixerAutomation,
+  withNoteOverrides,
 } from "./automation";
 import * as eng from "./engine";
 import { isLegatoTarget, legatoTransition } from "./legato";
@@ -83,8 +90,20 @@ function noteOnForClip(
   velocity: number,
   voiceScope: string | null,
   pitchMultiplier: number,
+  overrides?: NoteParamOverrides,
 ): void {
-  if (pitchMultiplier !== 1) {
+  if (overrides) {
+    eng.noteOnAt(
+      inst.id,
+      pitch,
+      time,
+      params,
+      velocity,
+      voiceScope ?? undefined,
+      pitchMultiplier,
+      overrides,
+    );
+  } else if (pitchMultiplier !== 1) {
     eng.noteOnAt(
       inst.id,
       pitch,
@@ -110,8 +129,23 @@ function glideForClip(
   curve: InstrumentParams["legatoCurve"],
   voiceScope: string | null,
   pitchMultiplier: number,
+  params?: InstrumentParams,
+  overrides?: NoteParamOverrides,
 ): void {
-  if (pitchMultiplier !== 1) {
+  if (params) {
+    eng.glideAt(
+      inst.id,
+      from,
+      to,
+      time,
+      duration,
+      curve,
+      voiceScope ?? undefined,
+      pitchMultiplier,
+      params,
+      overrides,
+    );
+  } else if (pitchMultiplier !== 1) {
     eng.glideAt(
       inst.id,
       from,
@@ -146,6 +180,7 @@ export function schedulePatternNotes(
   gain = 1,
   clipStepsRemaining = Infinity,
   pitchMultiplier = 1,
+  paramsAt?: (instrument: Instrument, offset: number) => InstrumentParams,
 ): void {
   const ratio =
     Number.isFinite(pitchMultiplier) && pitchMultiplier > 0
@@ -156,9 +191,12 @@ export function schedulePatternNotes(
     if (!notes) {
       return;
     }
-    const params = over?.get(inst.id) || inst.params;
     notes.forEach((n) => {
       if (n.start === patStep) {
+        const params = withNoteOverrides(
+          paramsAt?.(inst, 0) || over?.get(inst.id) || inst.params,
+          n.overrides,
+        );
         const pitch = transpose ? transposePitch(n.pitch, transpose) : n.pitch;
         if (!pitch) {
           return;
@@ -183,10 +221,27 @@ export function schedulePatternNotes(
               ? transposePitch(target.pitch, transpose)
               : target.pitch
             : null;
+        const targetParams = target
+          ? withNoteOverrides(
+              paramsAt?.(inst, target.start - n.start) ||
+                over?.get(inst.id) ||
+                inst.params,
+              target.overrides,
+            )
+          : null;
 
         if (!incoming) {
           const velocity = (n.vel ?? 1) * Math.max(0, Math.min(1, gain));
-          noteOnForClip(inst, pitch, time, params, velocity, voiceScope, ratio);
+          noteOnForClip(
+            inst,
+            pitch,
+            time,
+            params,
+            velocity,
+            voiceScope,
+            ratio,
+            n.overrides,
+          );
         }
         if (target && targetPitch) {
           const glide = legatoTransition(
@@ -208,6 +263,10 @@ export function schedulePatternNotes(
             glide.curve,
             voiceScope,
             ratio,
+            paramsAt || n.overrides || target.overrides
+              ? targetParams!
+              : undefined,
+            target.overrides,
           );
           return;
         }
@@ -336,6 +395,9 @@ function scheduleSongStep(
         clip.gain ?? 1,
         clip.len - relStep,
         clip.partial ?? 1,
+        (instrument, offset) =>
+          instrumentOverrides(p, s + offset)?.get(instrument.id) ||
+          instrument.params,
       );
     }
   });

@@ -40,6 +40,14 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toMatch(
       /noteEditorInput\?\.focus\(\)[\s\S]*noteEditorInput\?\.select\(\)/,
     );
+    expect(sequencer).toContain('class="note-overrides"');
+    expect(sequencer).toContain(
+      'aria-label="Instrument parameter to override"',
+    );
+    expect(sequencer).toContain("function addNoteOverride()");
+    expect(sequencer).toContain(
+      "noteEditor.overrides = Object.keys(overrides).length ? overrides : undefined;",
+    );
   });
 
   it("records the selected notes before starting an Alt-drag velocity edit", () => {

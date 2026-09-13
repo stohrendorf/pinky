@@ -178,4 +178,65 @@ describe("pattern note scheduling", () => {
 
     expect(engine.noteOffAt).toHaveBeenCalledExactlyOnceWith("lead", "E4", 3);
   });
+
+  it("blends a note override into the destination's automation baseline", () => {
+    const pattern: Pattern = {
+      ...chainedPattern,
+      tracks: {
+        lead: [
+          {
+            pitch: "C4",
+            start: 0,
+            len: 4,
+            overrides: { q: 90 },
+            legatoTo: { pitch: "D4", start: 8, curve: "smooth" },
+          },
+          { pitch: "D4", start: 8, len: 4 },
+        ],
+      },
+    };
+    const automatedParams = (_: Instrument, offset: number) => ({
+      ...lead.params,
+      q: offset ? 50 : 30,
+    });
+
+    schedulePatternNotes(
+      pattern,
+      0,
+      1,
+      0.1,
+      [lead],
+      0,
+      null,
+      undefined,
+      null,
+      1,
+      Infinity,
+      1,
+      automatedParams,
+    );
+
+    expect(engine.noteOnAt).toHaveBeenCalledExactlyOnceWith(
+      "lead",
+      "C4",
+      1,
+      expect.objectContaining({ q: 90 }),
+      1,
+      undefined,
+      1,
+      { q: 90 },
+    );
+    expect(engine.glideAt).toHaveBeenCalledWith(
+      "lead",
+      "C4",
+      "D4",
+      1.4,
+      0.4,
+      "smooth",
+      undefined,
+      1,
+      expect.objectContaining({ q: 50 }),
+      undefined,
+    );
+  });
 });

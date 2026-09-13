@@ -233,23 +233,40 @@
         if (!points.length) {
             return '';
         }
-        const segments = [`M 0 ${valToY(points[0].value)}`];
-        for (let index = 1; index < points.length; index++) {
-            const from = points[index - 1];
-            const to = points[index];
-            if (from.curve === 'hold') {
-                segments.push(`L ${to.step * cellWidth} ${valToY(from.value)}`);
-                segments.push(`L ${to.step * cellWidth} ${valToY(to.value)}`);
-                continue;
+        const segments: string[] = [];
+        let from: AutomationPoint | null = null;
+        const addSegment = (start: AutomationPoint, end: AutomationPoint) => {
+            if (start.curve === 'hold') {
+                segments.push(`L ${end.step * cellWidth} ${valToY(start.value)}`);
+                segments.push(`L ${end.step * cellWidth} ${valToY(end.value)}`);
+                return;
             }
             for (let sample = 1; sample <= 12; sample++) {
                 const t = sample / 12;
-                const step = from.step + (to.step - from.step) * t;
-                const value = from.value + (to.value - from.value) * segmentProgress(from.curve, t);
+                const step = start.step + (end.step - start.step) * t;
+                const value = start.value + (end.value - start.value) * segmentProgress(start.curve, t);
                 segments.push(`L ${step * cellWidth} ${valToY(value)}`);
             }
+        };
+        for (const to of points) {
+            if (to.active === false) {
+                if (from) {
+                    addSegment(from, to);
+                }
+                from = null;
+                continue;
+            }
+            if (!from) {
+                segments.push(`M ${to.step * cellWidth} ${valToY(to.value)}`);
+                from = to;
+                continue;
+            }
+            addSegment(from, to);
+            from = to;
         }
-        segments.push(`L ${width} ${valToY(points[points.length - 1].value)}`);
+        if (from) {
+            segments.push(`L ${width} ${valToY(from.value)}`);
+        }
         return segments.join(' ');
     }
 
@@ -258,6 +275,12 @@
             return;
         }
         point.curve = curve as AutomationPoint['curve'];
+        lane.points = [...lane.points];
+        touch();
+    }
+
+    function setPointActive(point: AutomationPoint, active: boolean) {
+        point.active = active ? undefined : false;
         lane.points = [...lane.points];
         touch();
     }
@@ -296,7 +319,11 @@
         return pts.filter((_, index) => visibleIndexes.has(index));
     });
     const path = $derived(curvePath(pts));
-    const fillPath = $derived(path ? `${path} L ${width} ${height} L 0 ${height} Z` : '');
+    const fillPath = $derived(
+        path && !pts.some(point => point.active === false)
+            ? `${path} L ${width} ${height} L 0 ${height} Z`
+            : '',
+    );
     $effect.pre(() => {
         if (contextualEditor !== editorKey && editingPoint) {
             editingPoint = null;
@@ -333,6 +360,7 @@
                 <g
                     class="pt"
                     class:active={selectedPoint === p || editingPoint === p}
+                    class:inactive={p.active === false}
                     aria-label={`${def.label}: ${fmt(p.value)} at step ${Math.round(p.step)}`}
                     onfocus={() => onselect(p)}
                     onkeydown={e => onPointKeydown(e, p)}
@@ -374,6 +402,15 @@
                 />
             </label>
             <span>· step {Math.round(selectedPoint.step)}</span>
+            <label class="point-active">
+                <input
+                    aria-label="Automation active from this point"
+                    checked={selectedPoint.active !== false}
+                    onchange={event => setPointActive(selectedPoint, event.currentTarget.checked)}
+                    type="checkbox"
+                />
+                {selectedPoint.active === false ? 'Resume automation' : 'Automation active'}
+            </label>
             {#if selectedPoint !== pts[pts.length - 1]}
                 <select
                     aria-label="Curve to next point"
@@ -460,6 +497,12 @@
         filter: drop-shadow(0 0 3px rgba(255, 244, 244, 0.55));
     }
 
+    .pt.inactive .curve-node {
+        fill: var(--color-canvas);
+        stroke-dasharray: 2 1;
+        opacity: 0.55;
+    }
+
     .point-readout,
     .point-editor {
         position: absolute;
@@ -511,6 +554,18 @@
 
     .point-readout input {
         width: 64px;
+    }
+
+    .point-active {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        cursor: pointer;
+    }
+
+    .point-active input {
+        width: auto;
+        margin: 0;
     }
 
     .point-editor input {

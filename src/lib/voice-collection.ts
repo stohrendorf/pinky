@@ -7,13 +7,20 @@ export interface ManagedVoice<Params = unknown> {
   loudness: (at: number) => number;
   stop: (at: number) => void;
   glide: (freq: number, at: number, time: number, curve?: CurveShape) => void;
-  setParams: (params: Params, at: number, ramp: number) => void;
+  setParams: (
+    params: Params,
+    at: number,
+    ramp: number,
+    curve?: CurveShape,
+  ) => void;
 }
 
 interface LiveVoice<Params> {
   inst: string;
   voice: ManagedVoice<Params>;
   tail: number;
+  overrides?: Partial<Params>;
+  transitionUntil?: number;
 }
 
 interface LastVoice<Params> {
@@ -28,9 +35,10 @@ export interface VoiceCollectionSnapshot<Params = unknown> {
   live: LiveVoice<Params>[];
 }
 
-export interface VoiceCollectionOptions {
+export interface VoiceCollectionOptions<Params = unknown> {
   maxVoices?: () => number;
   maxNodes: () => number;
+  mergeParams?: (base: Params, overrides: Partial<Params>) => Params;
 }
 
 /** Owns voice identity, lifecycle bookkeeping, and polyphony policy. */
@@ -40,11 +48,17 @@ export class VoiceCollection<Params = unknown> {
   private readonly lastOnTrack = new Map<string, LastVoice<Params>>();
   private readonly maxVoices: () => number;
   private readonly maxNodes: () => number;
+  private readonly mergeParams: (
+    base: Params,
+    overrides: Partial<Params>,
+  ) => Params;
   private currentLoad = 0;
 
-  constructor(options: VoiceCollectionOptions) {
+  constructor(options: VoiceCollectionOptions<Params>) {
     this.maxVoices = options.maxVoices ?? (() => 96);
     this.maxNodes = options.maxNodes;
+    this.mergeParams =
+      options.mergeParams ?? ((base, overrides) => ({ ...base, ...overrides }));
   }
 
   get load(): number {
@@ -119,12 +133,22 @@ export class VoiceCollection<Params = unknown> {
     frequency: number,
     time: number,
     curve: CurveShape = "linear",
+    params?: Params,
+    overrides?: Partial<Params>,
   ): boolean {
     const voice = this.active.get(fromKey);
     if (!voice || voice.dead || voice.stopAt <= at + 0.005) {
       return false;
     }
     voice.glide(frequency, at, time, curve);
+    const live = this.live.find((entry) => entry.voice === voice);
+    if (live) {
+      live.overrides = overrides;
+      live.transitionUntil = at + time;
+    }
+    if (params) {
+      voice.setParams(params, at, time, curve);
+    }
     this.active.delete(fromKey);
     this.active.set(toKey, voice);
     this.lastOnTrack.set(track, { voice, key: toKey, start: at });
@@ -141,6 +165,7 @@ export class VoiceCollection<Params = unknown> {
     at: number,
     voice: ManagedVoice<Params>,
     tail: number,
+    overrides?: Partial<Params>,
   ): void {
     this.active.set(key, voice);
     this.lastOnTrack.set(track, { voice, key, start: at });
@@ -148,6 +173,7 @@ export class VoiceCollection<Params = unknown> {
       inst: track.startsWith("live-") ? track.slice(5) : track,
       voice,
       tail,
+      overrides,
     });
     this.currentLoad += voice.cost;
   }
@@ -164,10 +190,18 @@ export class VoiceCollection<Params = unknown> {
   automate(inst: string, params: Params, at: number, ramp: number): void {
     this.prune(at);
     for (const live of this.live) {
-      if (live.inst !== inst || live.voice.stopAt <= at) {
+      if (
+        live.inst !== inst ||
+        live.voice.stopAt <= at ||
+        (live.transitionUntil !== undefined && at < live.transitionUntil)
+      ) {
         continue;
       }
-      live.voice.setParams(params, at, ramp);
+      live.voice.setParams(
+        live.overrides ? this.mergeParams(params, live.overrides) : params,
+        at,
+        ramp,
+      );
     }
   }
 
