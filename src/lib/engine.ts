@@ -93,7 +93,7 @@ function controlsFor(
         : null,
     currentTime: () => graph.master?.context.currentTime ?? 0,
     rampTo: (param, value, at, duration, from) =>
-      rampTo(param, value, at, duration, graph === liveGraph, from),
+      rampTo(param, value, at, duration, false, from, false),
   });
 }
 
@@ -924,11 +924,14 @@ function rampTo(
   t: number,
   forceLive = false,
   from?: number,
+  flatten = true,
 ): void {
   prm.cancelScheduledValues(at);
   prm.setValueAtTime(from ?? prm.value, at);
   prm.linearRampToValueAtTime(v, at + t);
-  flattenLater(prm, v, at + t, forceLive); // ... and drop the timeline once it lands
+  if (flatten) {
+    flattenLater(prm, v, at + t, forceLive); // ... and drop the timeline once it lands
+  }
 }
 
 function rampWithCurve(

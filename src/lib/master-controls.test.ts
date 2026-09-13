@@ -86,6 +86,16 @@ describe("MasterControls", () => {
     );
   });
 
+  it("reports the scheduled master endpoint instead of the static AudioParam value", () => {
+    const { instance } = controls();
+
+    instance.automate("vol", 0.05, 10, 0.05);
+    expect(instance.state().vol).toBe(0.05);
+
+    instance.automate("vol", 0.8, 11, 0.05);
+    expect(instance.state().vol).toBe(0.8);
+  });
+
   it("keeps value state and command calls isolated when targets are absent", () => {
     const { instance, values, rampTo } = controls(null);
 

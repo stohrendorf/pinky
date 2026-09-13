@@ -80,8 +80,15 @@ export class MasterControls {
   state(): { vol: number; tilt: number } {
     const targets = this.targets();
     return {
-      vol: targets ? targets.volume.value : this.values.vol,
-      tilt: targets ? targets.tiltHigh.value : this.values.tilt,
+      // `AudioParam.value` is the base value. It deliberately does not report
+      // the endpoint of an automation timeline, so use our scheduled value
+      // whenever the transport owns this control.
+      vol:
+        this.lastAutomated.vol ??
+        (targets ? targets.volume.value : this.values.vol),
+      tilt:
+        this.lastAutomated.tilt ??
+        (targets ? targets.tiltHigh.value : this.values.tilt),
     };
   }
 
