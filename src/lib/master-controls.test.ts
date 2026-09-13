@@ -54,20 +54,20 @@ describe("MasterControls", () => {
     );
   });
 
-  it("coalesces small automation changes and enforces a minimum ramp", () => {
+  it("schedules every master automation change and enforces a minimum ramp", () => {
     const { instance, rampTo } = controls();
 
     instance.automate("vol", 0.5, 10, 0.001);
     instance.automate("vol", 0.502, 11, 0.1);
     instance.automate("vol", 0.51, 12, 0.1);
 
-    expect(rampTo).toHaveBeenCalledTimes(2);
+    expect(rampTo).toHaveBeenCalledTimes(3);
     expect(rampTo).toHaveBeenLastCalledWith(
       expect.anything(),
       0.51,
       12,
       0.1,
-      0.5,
+      0.502,
     );
   });
 

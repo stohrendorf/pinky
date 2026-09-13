@@ -1,11 +1,11 @@
 <script lang="ts">
-    import {tick} from 'svelte';
+    import {onMount, tick} from 'svelte';
 
     import type {MasterId} from '../lib/master-controls';
     import type {DemoSong} from '../lib/project';
     import type {Project} from '../lib/types';
 
-    import {BUDGET_MAX, BUDGET_MIN, getNodeBudget, setNodeBudget} from '../lib/engine';
+    import {BUDGET_MAX, BUDGET_MIN, getNodeBudget, masterState, setNodeBudget} from '../lib/engine';
     import {MASTER_SLIDERS} from '../lib/instruments';
     import {createMixer, ensureMixer} from '../lib/mixer';
     import {
@@ -41,6 +41,10 @@
 
     const legacyMaster = createMixer([], false).master;
     const masterParams = $derived({ ...($project?.mixer?.master ?? legacyMaster) });
+    let liveMaster = $state({vol: legacyMaster.vol, tilt: legacyMaster.tilt});
+    const displayedMasterParams = $derived(
+        $playing ? {...masterParams, ...liveMaster} : masterParams,
+    );
     const mixerDialogWidth = $derived(
         `min(${Math.max(
             520,
@@ -69,6 +73,15 @@
         songCursor: number;
         lastPlayedPitch: string;
     } | null>(null);
+
+    onMount(() => {
+        const timer = setInterval(() => {
+            if ($playing) {
+                liveMaster = masterState();
+            }
+        }, 1000 / 30);
+        return () => clearInterval(timer);
+    });
 
     function togglePanel(panel: 'demos' | 'audio' | 'export', button: HTMLButtonElement) {
         if (activePanel === panel) {
@@ -572,7 +585,7 @@
                                     <Slider
                                         {...s}
                                         onchange={v => setMaster(s.id as MasterId, v)}
-                                        value={masterParams[s.id as MasterId]}
+                                        value={displayedMasterParams[s.id as MasterId]}
                                     />
                                 {/each}
                             </fieldset>

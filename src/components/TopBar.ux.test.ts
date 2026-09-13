@@ -14,6 +14,16 @@ const source = componentSource(new URL("./TopBar.svelte", import.meta.url));
 const markup = componentMarkup(source);
 
 describe("TopBar direct desktop controls", () => {
+  it("reflects live master volume and tilt automation without changing saved controls", () => {
+    expect(source).toContain("import {onMount, tick} from 'svelte'");
+    expect(source).toContain("masterState");
+    expect(source).toContain("let liveMaster = $state");
+    expect(source).toContain(
+      "$playing ? {...masterParams, ...liveMaster} : masterParams",
+    );
+    expect(source).toContain("value={displayedMasterParams[s.id as MasterId]}");
+  });
+
   it("keeps project commands and timing directly accessible", () => {
     const main = elements(markup, "div").find((node) =>
       hasAttribute(node, "class", "topbar-main"),
