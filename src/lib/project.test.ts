@@ -167,6 +167,30 @@ describe("project import", () => {
     expect(isProjectId(imported.arrangement[0].id)).toBe(true);
     expect(imported.instruments[0].params.partials?.length).toBeGreaterThan(0);
   });
+
+  it("repairs legacy automation lane IDs and their layout references", () => {
+    const legacy = newEmptyProject();
+    const legacyLaneId = "a1-x4w9";
+    legacy.automation = [
+      {
+        id: legacyLaneId,
+        target: legacy.instruments[0].id,
+        param: "tone",
+        points: [{ step: 0, value: 0.5 }],
+      },
+    ];
+    legacy.automationOrder = [legacyLaneId];
+    legacy.automationPositions = { [legacyLaneId]: 0 };
+
+    expect(importProject(JSON.stringify(legacy))).toBe(true);
+
+    const imported = get(project)!;
+    const importedLane = imported.automation![0];
+    expect(isProjectId(importedLane.id)).toBe(true);
+    expect(importedLane.id).not.toBe(legacyLaneId);
+    expect(imported.automationOrder).toEqual([importedLane.id]);
+    expect(imported.automationPositions).toEqual({ [importedLane.id]: 0 });
+  });
 });
 
 describe("project identity updates", () => {

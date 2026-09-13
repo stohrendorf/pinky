@@ -13,11 +13,13 @@ import {
   masterAutomation,
   mixerAutomation,
   mixerTarget,
+  newLane,
   parseMixerTarget,
   withNoteOverrides,
 } from "./automation";
 import { DEFAULT_PARAMS } from "./instruments";
 import { createMixer } from "./mixer";
+import { isProjectId } from "./types";
 
 const project = (): Project => {
   const mixer = createMixer(["lead/one"]);
@@ -53,6 +55,10 @@ const project = (): Project => {
 };
 
 describe("mixer automation targets", () => {
+  it("creates automation lanes with valid project IDs", () => {
+    expect(isProjectId(newLane("lead/one", "tone", 0.5).id)).toBe(true);
+  });
+
   it("returns no override before, during, and after explicit lane gaps", () => {
     const lane = {
       id: "gap",

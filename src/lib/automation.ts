@@ -1,10 +1,12 @@
-import type {
-  AutomationCurveShape,
-  AutomationLane,
-  AutomationPoint,
-  InstrumentParams,
-  NoteParamOverrides,
-  Project,
+import { INSTRUMENT_PANELS, MASTER_SLIDERS } from "./instruments";
+import {
+  type AutomationCurveShape,
+  type AutomationLane,
+  type AutomationPoint,
+  createId,
+  type InstrumentParams,
+  type NoteParamOverrides,
+  type Project,
 } from "./types";
 
 /* Automation — parameter curves over the song timeline.
@@ -13,7 +15,6 @@ import type {
  * The scheduler reads every lane once per 16th step: instrument lanes produce a
  * patched copy of the instrument's params for the notes starting on that step,
  * master lanes are ramped straight onto the master AudioParams. */
-import { INSTRUMENT_PANELS, MASTER_SLIDERS } from "./instruments";
 
 export const MASTER_TARGET = "master";
 const MIXER_TARGET_PREFIX = "mixer|";
@@ -219,15 +220,13 @@ export function autoParamDef(lane: AutomationLane): AutoParamDef | null {
   return autoParams(lane.target).find((d) => d.param === lane.param) || null;
 }
 
-let nextLaneId = 1;
-
 export function newLane(
   target: string,
   param: string,
   value: number,
 ): AutomationLane {
   return {
-    id: "a" + nextLaneId++ + "-" + Math.random().toString(36).slice(2, 6),
+    id: createId(),
     target,
     param,
     points: [{ step: 0, value }],

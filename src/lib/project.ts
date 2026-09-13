@@ -432,6 +432,24 @@ function upgradeStoredProject(value: unknown): Project | null {
     // Clip IDs are internal selection keys and were not always UUIDs.
     id: isProjectId(clip.id) ? clip.id : createId(),
   }));
+  const automationIds = new Map<string, string>();
+  candidate.automation = candidate.automation?.map((lane) => {
+    const id = isProjectId(lane.id) ? lane.id : createId();
+    automationIds.set(lane.id, id);
+    return { ...lane, id };
+  });
+  if (automationIds.size) {
+    candidate.automationOrder = candidate.automationOrder?.map(
+      (id) => automationIds.get(id) ?? id,
+    );
+    candidate.automationPositions = candidate.automationPositions
+      ? Object.fromEntries(
+          Object.entries(candidate.automationPositions).map(
+            ([id, position]) => [automationIds.get(id) ?? id, position],
+          ),
+        )
+      : undefined;
+  }
   if (candidate.mixer !== undefined) {
     candidate.mixer = upgradeStoredMixer(
       candidate.mixer,
@@ -457,7 +475,10 @@ function needsCompatibilityUpgrade(value: unknown): boolean {
         record(instrument.params) &&
         (typeof instrument.params.noiseBend !== "number" ||
           !Array.isArray(instrument.params.partials)),
-    ) || value.arrangement.some((clip) => record(clip) && !isProjectId(clip.id))
+    ) ||
+    value.arrangement.some((clip) => record(clip) && !isProjectId(clip.id)) ||
+    (Array.isArray(value.automation) &&
+      value.automation.some((lane) => record(lane) && !isProjectId(lane.id)))
   );
 }
 
