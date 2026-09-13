@@ -17,14 +17,15 @@ describe("AutomationLane selection workflow", () => {
     );
   });
 
-  it("samples dense automation point handles while preserving the full curve", () => {
-    expect(automationLane).toContain("const MAX_VISIBLE_POINT_HANDLES = 160;");
-    expect(automationLane).toContain("const visiblePoints = $derived.by");
+  it("renders every dense automation point without adding a DOM node per point", () => {
+    expect(automationLane).toContain("function pointMarkerPath");
+    expect(automationLane).toContain("const pointPath = $derived");
+    expect(automationLane).toContain("const inactivePointPath = $derived");
     expect(automationLane).toContain("const path = $derived(curvePath(pts));");
-    expect(automationLane).toContain("{#each visiblePoints as p}");
     expect(automationLane).toContain(
-      "const activePoint = editingPoint ?? selectedPoint;",
+      '<path style="stroke: {color}" class="curve-nodes" d={pointPath} />',
     );
+    expect(automationLane).not.toContain("MAX_VISIBLE_POINT_HANDLES");
   });
 
   it("lets a point end an automation section and renders the following gap", () => {
@@ -35,6 +36,8 @@ describe("AutomationLane selection workflow", () => {
     expect(automationLane).toContain(
       "point.active = active ? undefined : false;",
     );
-    expect(automationLane).toContain("class:inactive={p.active === false}");
+    expect(automationLane).toContain(
+      "class:inactive={activePoint.active === false}",
+    );
   });
 });

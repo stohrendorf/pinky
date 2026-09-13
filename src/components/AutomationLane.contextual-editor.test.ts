@@ -32,7 +32,7 @@ describe("AutomationLane contextual node editing", () => {
     expect(lane).not.toContain(
       "ondblclick={stopPropagation(() => openPointEditor(p))}",
     );
-    expect(lane).toContain("onkeydown={e => onPointKeydown(e, p)}");
+    expect(lane).toContain("onkeydown={e => onPointKeydown(e, activePoint)}");
     expect(lane).toContain('role="button"');
     expect(lane).toContain('tabindex="0"');
     expect(lane).toMatch(/e\.key === 'ArrowUp'[\s\S]*setAutomationPointValue/);
@@ -41,7 +41,9 @@ describe("AutomationLane contextual node editing", () => {
 
   it("keeps only the arranger-selected node active and closes for another popup", () => {
     expect(lane).toContain("selectedPoint?: AutomationPoint | null");
-    expect(lane).toMatch(/selectedPoint === p \|\| editingPoint === p/);
+    expect(lane).toMatch(
+      /selectedPoint === activePoint \|\| editingPoint === activePoint/,
+    );
     expect(lane).toMatch(/contextualEditor !== editorKey && editingPoint/);
     expect(functionHasAssignment(lane, "onDown", "contextualEditor")).toBe(
       true,
@@ -71,12 +73,12 @@ describe("AutomationLane contextual node editing", () => {
   });
 
   it("draws hold segments as a true step at the destination point", () => {
-    expect(lane).toContain("if (from.curve === 'hold')");
+    expect(lane).toContain("if (start.curve === 'hold')");
     expect(lane).toContain(
-      "segments.push(`L ${to.step * cellWidth} ${valToY(from.value)}`);",
+      "segments.push(`L ${end.step * cellWidth} ${valToY(start.value)}`);",
     );
     expect(lane).toContain(
-      "segments.push(`L ${to.step * cellWidth} ${valToY(to.value)}`);",
+      "segments.push(`L ${end.step * cellWidth} ${valToY(end.value)}`);",
     );
     expect(lane).not.toContain("segmentProgress(from.curve, 1)");
   });

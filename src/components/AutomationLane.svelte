@@ -48,7 +48,6 @@
     }: Props = $props();
 
     const PAD = 5; // px of headroom so the extreme values stay grabbable
-    const MAX_VISIBLE_POINT_HANDLES = 160;
 
     let svgEl: SVGSVGElement | undefined = $state();
     let drag: AutomationPoint | null = null;
@@ -270,6 +269,20 @@
         return segments.join(' ');
     }
 
+    // Render every point as a compound path instead of a DOM element per
+    // point. Dense imported lanes remain inexpensive, while every authored
+    // node stays visible and selectable through pointAt().
+    function pointMarkerPath(points: AutomationPoint[]): string {
+        const radius = 3.5;
+        return points
+            .map(point => {
+                const x = point.step * cellWidth;
+                const y = valToY(point.value);
+                return `M ${x - radius} ${y} a ${radius} ${radius} 0 1 0 ${radius * 2} 0 a ${radius} ${radius} 0 1 0 ${-radius * 2} 0`;
+            })
+            .join(' ');
+    }
+
     function setPointCurve(point: AutomationPoint, curve: string) {
         if (!CURVE_SHAPES.some(shape => shape.id === curve)) {
             return;
@@ -302,22 +315,20 @@
     );
     // the drawn path: held before the first point, held after the last one
     const pts = $derived(lane.points);
-    const visiblePoints = $derived.by(() => {
-        if (pts.length <= MAX_VISIBLE_POINT_HANDLES) {
-            return pts;
-        }
-        const visibleIndexes = new Set<number>();
-        for (let index = 0; index < MAX_VISIBLE_POINT_HANDLES; index++) {
-            visibleIndexes.add(
-                Math.round((index * (pts.length - 1)) / (MAX_VISIBLE_POINT_HANDLES - 1)),
-            );
-        }
-        const activePoint = editingPoint ?? selectedPoint;
-        if (activePoint) {
-            visibleIndexes.add(pts.indexOf(activePoint));
-        }
-        return pts.filter((_, index) => visibleIndexes.has(index));
-    });
+    const activePoint = $derived(editingPoint ?? selectedPoint);
+    const activePointPath = $derived(
+        pointMarkerPath(activePoint ? [activePoint] : []),
+    );
+    const pointPath = $derived(
+        pointMarkerPath(
+            pts.filter(point => point !== activePoint && point.active !== false),
+        ),
+    );
+    const inactivePointPath = $derived(
+        pointMarkerPath(
+            pts.filter(point => point !== activePoint && point.active === false),
+        ),
+    );
     const path = $derived(curvePath(pts));
     const fillPath = $derived(
         path && !pts.some(point => point.active === false)
@@ -353,30 +364,38 @@
             y1={valToY(def.min + span / 2)}
             y2={valToY(def.min + span / 2)}
         />
-        {#if path}
+        {#if pts.length}
             <path style="fill: {color}" class="curve-fill" d={fillPath} />
-            <path style="stroke: {color}" class="curve" d={path} />
-            {#each visiblePoints as p}
+            {#if path}
+                <path style="stroke: {color}" class="curve" d={path} />
+            {/if}
+            <path style="stroke: {color}" class="curve-nodes" d={pointPath} />
+            <path
+                style="stroke: {color}"
+                class="curve-nodes inactive"
+                d={inactivePointPath}
+            />
+            {#if activePoint}
                 <g
                     class="pt"
-                    class:active={selectedPoint === p || editingPoint === p}
-                    class:inactive={p.active === false}
-                    aria-label={`${def.label}: ${fmt(p.value)} at step ${Math.round(p.step)}`}
-                    onfocus={() => onselect(p)}
-                    onkeydown={e => onPointKeydown(e, p)}
+                    class:active={selectedPoint === activePoint || editingPoint === activePoint}
+                    class:inactive={activePoint.active === false}
+                    aria-label={`${def.label}: ${fmt(activePoint.value)} at step ${Math.round(activePoint.step)}`}
+                    onfocus={() => onselect(activePoint)}
+                    onkeydown={e => onPointKeydown(e, activePoint)}
                     role="button"
                     tabindex="0"
                 >
                     <circle
                         style="stroke: {color}"
                         class="curve-node"
-                        cx={p.step * cellWidth}
-                        cy={valToY(p.value)}
+                        cx={activePoint.step * cellWidth}
+                        cy={valToY(activePoint.value)}
                         r="3.5"
                     />
-                    <title>{fmt(p.value)} @ step {Math.round(p.step)}</title>
+                    <title>{fmt(activePoint.value)} @ step {Math.round(activePoint.step)}</title>
                 </g>
-            {/each}
+            {/if}
         {/if}
         <text class="val" x="4" y="11">{fmt(def.max)}</text>
         <text class="val" x="4" y={height - 4}>{fmt(def.min)}</text>
@@ -401,7 +420,6 @@
                     value={selectedPoint.value}
                 />
             </label>
-            <span>· step {Math.round(selectedPoint.step)}</span>
             <label class="point-active">
                 <input
                     aria-label="Automation active from this point"
@@ -480,6 +498,12 @@
         vector-effect: non-scaling-stroke;
     }
 
+    .curve-nodes {
+        fill: var(--color-canvas);
+        stroke-width: 1.5;
+        vector-effect: non-scaling-stroke;
+    }
+
     .pt {
         outline: none;
     }
@@ -497,7 +521,8 @@
         filter: drop-shadow(0 0 3px rgba(255, 244, 244, 0.55));
     }
 
-    .pt.inactive .curve-node {
+    .pt.inactive .curve-node,
+    .curve-nodes.inactive {
         fill: var(--color-canvas);
         stroke-dasharray: 2 1;
         opacity: 0.55;
