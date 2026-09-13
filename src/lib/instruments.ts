@@ -192,7 +192,7 @@ export const INSTRUMENT_PANELS: PanelDef[] = [
     title: "EQ Voice",
     sliders: [
       { id: "tone", label: "Tone Level", min: 0, max: 1, step: 0.01 },
-      { id: "q", label: "Resonance (Q)", min: 5, max: 120, step: 1 },
+      { id: "q", label: "Resonance (Q)", min: 1, max: 120, step: 1 },
       // the harmonic structure itself lives in the Harmonics editor below
     ],
   },
