@@ -48,6 +48,9 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toContain(
       "noteEditor.overrides = Object.keys(overrides).length ? overrides : undefined;",
     );
+    expect(sequencer).toMatch(
+      /let noteEditor:\s*ExtendedNote \| null\s*= \$state\.raw\(null\)/,
+    );
   });
 
   it("records the selected notes before starting an Alt-drag velocity edit", () => {

@@ -215,7 +215,9 @@
     let isRightDragging = false;
     let selectionStart = $state({ s: 0, r: 0 });
     let selectionEnd = $state({ s: 0, r: 0 });
-    let noteEditor: ExtendedNote | null = $state(null);
+    // Keep the pattern track's original note reference so Apply can replace it
+    // after the draft values have been edited.
+    let noteEditor: ExtendedNote | null = $state.raw(null);
     let noteDraft = $state({vel: 100, overrides: {} as NoteParamOverrides});
     let overrideToAdd = $state('');
     let noteEditorPosition = $state({ left: 4, top: 4 });
