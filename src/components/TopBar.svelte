@@ -61,7 +61,7 @@
     let showConfirmNew = $state(false);
     let showAlert = $state(false);
     let alertMessage = $state('');
-    let activePanel = $state<'demos' | 'audio' | 'export' | null>(null);
+    let activePanel = $state<'main' | 'audio' | null>(null);
     let browserSaveAvailable = $state(loadSavedProject() !== null);
     let panelButton: HTMLButtonElement | undefined;
     let panelElement: HTMLDivElement | undefined = $state();
@@ -83,7 +83,7 @@
         return () => clearInterval(timer);
     });
 
-    function togglePanel(panel: 'demos' | 'audio' | 'export', button: HTMLButtonElement) {
+    function togglePanel(panel: 'main' | 'audio', button: HTMLButtonElement) {
         if (activePanel === panel) {
             closePanel(true);
             return;
@@ -127,7 +127,7 @@
             return;
         }
         if (
-            (activePanel !== 'demos' && activePanel !== 'export') ||
+            activePanel !== 'main' ||
             !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
         ) {
             return;
@@ -185,6 +185,7 @@
         if ($rendering) {
             return;
         }
+        closePanel(true);
         showConfirmNew = true;
     }
 
@@ -238,6 +239,15 @@
 
     function saveBrowserProject() {
         browserSaveAvailable = saveProject() || loadSavedProject() !== null;
+        closePanel(true);
+    }
+
+    function openProject() {
+        if ($rendering) {
+            return;
+        }
+        closePanel(true);
+        fileInput?.click();
     }
 
     function loadBrowserSave() {
@@ -331,9 +341,19 @@
 
 <header class="topbar">
     <div class="topbar-main">
-        <span class="brand">
+        <button
+            class="brand main-menu-toggle"
+            aria-controls="main-menu"
+            aria-expanded={activePanel === 'main'}
+            aria-haspopup="dialog"
+            disabled={$rendering}
+            onclick={e => togglePanel('main', e.currentTarget)}
+            title="Pinky main menu"
+            type="button"
+        >
             <i class="fa fa-wave-square" aria-hidden="true"></i> Pinky
-        </span>
+            <i class="fa fa-angle-down" aria-hidden="true"></i>
+        </button>
         <a
             class="github-link"
             aria-label="Pinky on GitHub"
@@ -344,83 +364,6 @@
         >
             <i class="fa-brands fa-github"></i>
         </a>
-        <div class="project-controls" aria-label="Project" role="group">
-            <Button
-                compact
-                disabled={$rendering}
-                onclick={newProject}
-                title="New project"
-                variant="ghost"
-                >New
-            </Button>
-            <Button
-                compact
-                disabled={$rendering}
-                onclick={() => fileInput?.click()}
-                title="Open a project file (JSON)"
-                variant="ghost"
-                >Open
-            </Button>
-            <Button
-                compact
-                disabled={!$project || $rendering}
-                onclick={saveBrowserProject}
-                title="Save in this browser (Ctrl+S)"
-                variant="ghost"
-            >
-                {#if saved}
-                    <span class="save-icon"><i class="fa fa-check" aria-hidden="true"></i></span>
-                {:else}
-                    <span class="save-icon"><i class="fa fa-save" aria-hidden="true"></i></span>
-                {/if}
-                Save
-            </Button>
-            <span class="saved-flash" aria-live="polite">{saved}</span>
-        </div>
-        <div class="export-controls" aria-label="Download" role="group">
-            <button
-                class="panel-toggle"
-                aria-controls="export-panel"
-                aria-expanded={activePanel === 'export'}
-                aria-haspopup="dialog"
-                disabled={!$project || $rendering}
-                onclick={e => togglePanel('export', e.currentTarget)}
-                title="Export project or audio"
-                type="button"
-            >
-                Export <i class="fa fa-angle-down" aria-hidden="true"></i>
-            </button>
-            {#if activePanel === 'export'}
-                <div
-                    bind:this={panelElement}
-                    id="export-panel"
-                    class="toolbar-panel export-panel"
-                    aria-label="Export"
-                    onkeydown={handleMenuKeydown}
-                    role="dialog"
-                    tabindex="-1"
-                >
-                    <button
-                        class="export-item"
-                        disabled={!$project || $rendering}
-                        onclick={downloadProject}
-                        title="Download an editable project"
-                        type="button"
-                    >
-                        <i class="fa fa-download" aria-hidden="true"></i> Project file (.json)
-                    </button>
-                    <button
-                        class="export-item"
-                        disabled={!$project || $rendering}
-                        onclick={exportAudio}
-                        title="Render the marked loop or whole song (Ctrl+E)"
-                        type="button"
-                    >
-                        <i class="fa fa-wave-square" aria-hidden="true"></i> Audio (.wav)
-                    </button>
-                </div>
-            {/if}
-        </div>
         <div class="session-group" aria-label="Transport and timing" role="group">
             <div class="transport-controls">
                 <IconButton
@@ -481,18 +424,6 @@
         </div>
         <span class="song-label" title={$songLabel}>{$songLabel}</span>
         <div class="utility-group">
-            <button
-                class="panel-toggle"
-                aria-controls="topbar-panel"
-                aria-expanded={activePanel === 'demos'}
-                aria-haspopup="dialog"
-                disabled={$rendering}
-                onclick={e => togglePanel('demos', e.currentTarget)}
-                title="Load a demo song"
-                type="button"
-            >
-                Demos <i class="fa fa-angle-down" aria-hidden="true"></i>
-            </button>
             <Button
                 className="mixer-toggle"
                 compact
@@ -523,57 +454,106 @@
         </div>
     </div>
 
-    {#if activePanel === 'demos' || activePanel === 'audio'}
+    {#if activePanel === 'main' || activePanel === 'audio'}
         <div
             bind:this={panelElement}
-            id="topbar-panel"
-            class="toolbar-panel"
-            aria-label={activePanel === 'demos' ? 'Demo songs' : 'Audio'}
+            id={activePanel === 'main' ? 'main-menu' : 'topbar-panel'}
+            class="toolbar-panel {activePanel === 'main' ? 'main-menu-panel' : ''}"
+            aria-label={activePanel === 'main' ? 'Pinky main menu' : 'Audio'}
             onkeydown={handleMenuKeydown}
             role="dialog"
             tabindex="-1"
         >
-            {#if activePanel === 'demos'}
-                <div class="demo-list">
-                    <button
-                        class="restore-project"
-                        disabled={$rendering || !browserSaveAvailable}
-                        onclick={loadBrowserSave}
-                        title={browserSaveAvailable
-                            ? 'Load the project saved in this browser'
-                            : 'No browser save is available'}
-                        type="button"
-                    >
-                        <i class="fa fa-hard-drive" aria-hidden="true"></i> Load browser save
-                    </button>
-                    {#each DEMO_LIBRARY as d (d.id)}
+            {#if activePanel === 'main'}
+                <div class="main-menu">
+                    <section class="main-menu-section" aria-label="Project">
+                        <h3>Project</h3>
+                        <button class="menu-item" disabled={$rendering} onclick={newProject} type="button">
+                            <i class="fa fa-file" aria-hidden="true"></i> New project
+                        </button>
+                        <button class="menu-item" disabled={$rendering} onclick={openProject} type="button">
+                            <i class="fa fa-folder-open" aria-hidden="true"></i> Open project
+                        </button>
                         <button
-                            class="demo-item"
-                            aria-pressed={$activeDemo === d.id}
-                            disabled={$rendering}
-                            onclick={() => demo(d.id)}
-                            title={d.title}
+                            class="menu-item"
+                            disabled={!$project || $rendering}
+                            onclick={saveBrowserProject}
                             type="button"
                         >
-                            <i class="fa {d.icon}" aria-hidden="true"></i>
-                            <span>{d.label}</span>
-                            {#if $activeDemo === d.id}<i
-                                    class="fa fa-check demo-check"
-                                    aria-hidden="true"
-                                ></i>{/if}
+                            {#if saved}
+                                <span class="save-icon"><i class="fa fa-check" aria-hidden="true"></i></span>
+                            {:else}
+                                <span class="save-icon"><i class="fa fa-save" aria-hidden="true"></i></span>
+                            {/if}
+                            Save to browser
                         </button>
-                    {/each}
-                    {#if demoRecovery}
                         <button
-                            class="restore-project"
-                            disabled={$rendering}
-                            onclick={restoreDemoProject}
-                            title="Restore the project from before you started exploring demos (this session only)"
+                            class="menu-item"
+                            disabled={$rendering || !browserSaveAvailable}
+                            onclick={loadBrowserSave}
+                            title={browserSaveAvailable
+                                ? 'Load the project saved in this browser'
+                                : 'No browser save is available'}
                             type="button"
                         >
-                            <i class="fa fa-rotate-left" aria-hidden="true"></i> Restore previous project
+                            <i class="fa fa-hard-drive" aria-hidden="true"></i> Load browser save
                         </button>
-                    {/if}
+                    </section>
+                    <section class="main-menu-section" aria-label="Export">
+                        <h3>Export</h3>
+                        <button
+                            class="menu-item"
+                            disabled={!$project || $rendering}
+                            onclick={downloadProject}
+                            title="Download an editable project"
+                            type="button"
+                        >
+                            <i class="fa fa-download" aria-hidden="true"></i> Project file (.json)
+                        </button>
+                        <button
+                            class="menu-item"
+                            disabled={!$project || $rendering}
+                            onclick={exportAudio}
+                            title="Render the marked loop or whole song (Ctrl+E)"
+                            type="button"
+                        >
+                            <i class="fa fa-wave-square" aria-hidden="true"></i> Audio (.wav)
+                        </button>
+                    </section>
+                    <section class="main-menu-section" aria-label="Demos">
+                        <h3>Demos</h3>
+                        <div class="demo-list">
+                            {#each DEMO_LIBRARY as d (d.id)}
+                                <button
+                                    class="demo-item"
+                                    aria-pressed={$activeDemo === d.id}
+                                    disabled={$rendering}
+                                    onclick={() => demo(d.id)}
+                                    title={d.title}
+                                    type="button"
+                                >
+                                    <i class="fa {d.icon}" aria-hidden="true"></i>
+                                    <span>{d.label}</span>
+                                    {#if $activeDemo === d.id}<i
+                                            class="fa fa-check demo-check"
+                                            aria-hidden="true"
+                                        ></i>{/if}
+                                </button>
+                            {/each}
+                            {#if demoRecovery}
+                                <button
+                                    class="restore-project"
+                                    disabled={$rendering}
+                                    onclick={restoreDemoProject}
+                                    title="Restore the project from before you started exploring demos (this session only)"
+                                    type="button"
+                                >
+                                    <i class="fa fa-rotate-left" aria-hidden="true"></i> Restore previous project
+                                </button>
+                            {/if}
+                        </div>
+                    </section>
+                    <span class="saved-flash" aria-live="polite">{saved}</span>
                 </div>
             {:else}
                 <div class="audio-controls">
@@ -664,8 +644,6 @@
         padding: 0 12px;
     }
 
-    .project-controls,
-    .export-controls,
     .session-group,
     .utility-group {
         display: flex;
@@ -674,7 +652,6 @@
         flex: 0 0 auto;
     }
 
-    .export-controls,
     .session-group {
         border-left: 1px solid var(--border);
         padding-left: 12px;
@@ -684,18 +661,11 @@
         gap: 12px;
     }
 
-    .export-controls {
-        position: relative;
-    }
-
-    .toolbar-panel.export-panel {
+    .toolbar-panel.main-menu-panel {
         left: 12px;
         right: auto;
         top: calc(100% + 9px);
-        width: 220px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+        width: min(320px, calc(100vw - 24px));
     }
 
     .brand {
@@ -707,6 +677,31 @@
         font-size: 14px;
         font-weight: 700;
         letter-spacing: 0.04em;
+    }
+
+    .main-menu-toggle {
+        padding: 6px 8px;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        background: transparent;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .main-menu-toggle:hover:not(:disabled),
+    .main-menu-toggle[aria-expanded='true'] {
+        border-color: var(--border);
+        background: var(--color-surface-hover);
+    }
+
+    .main-menu-toggle:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .main-menu-toggle > i:last-child {
+        color: var(--color-text-muted);
+        font-size: 10px;
     }
 
     .github-link {
@@ -754,7 +749,7 @@
     }
 
     .panel-toggle:disabled,
-    .export-item:disabled,
+    .menu-item:disabled,
     .demo-item:disabled,
     .restore-project:disabled {
         opacity: 0.3;
@@ -901,7 +896,33 @@
         gap: 2px;
     }
 
-    .export-item,
+    .main-menu {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-menu-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px 0;
+    }
+
+    .main-menu-section + .main-menu-section {
+        border-top: 1px solid var(--border);
+    }
+
+    .main-menu-section h3 {
+        margin: 0;
+        padding: 0 10px 4px;
+        color: var(--color-text-muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .menu-item,
     .demo-item,
     .restore-project {
         display: flex;
@@ -918,8 +939,8 @@
         cursor: pointer;
     }
 
-    .export-item:hover:not(:disabled),
-    .export-item:focus-visible,
+    .menu-item:hover:not(:disabled),
+    .menu-item:focus-visible,
     .demo-item:hover:not(:disabled),
     .demo-item:focus-visible,
     .restore-project:hover:not(:disabled),

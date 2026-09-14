@@ -13,7 +13,7 @@ import {
 const source = componentSource(new URL("./TopBar.svelte", import.meta.url));
 const markup = componentMarkup(source);
 
-describe("TopBar direct desktop controls", () => {
+describe("TopBar main menu and desktop controls", () => {
   it("reflects live master volume and tilt automation without changing saved controls", () => {
     expect(source).toContain("import {onMount, tick} from 'svelte'");
     expect(source).toContain("masterState");
@@ -24,14 +24,13 @@ describe("TopBar direct desktop controls", () => {
     expect(source).toContain("value={displayedMasterParams[s.id as MasterId]}");
   });
 
-  it("keeps project commands and timing directly accessible", () => {
+  it("keeps timing directly accessible while moving project commands behind the logo", () => {
     const main = elements(markup, "div").find((node) =>
       hasAttribute(node, "class", "topbar-main"),
     )!;
     const labels = components([main], "Button").map(textContent);
-    expect(labels).toEqual(
-      expect.arrayContaining(["New", "Open", "Save", "Mixer"]),
-    );
+    expect(labels).toEqual(expect.arrayContaining(["Mixer"]));
+    expect(labels).not.toEqual(expect.arrayContaining(["New", "Open", "Save"]));
     for (const label of ["Tempo (BPM)", "Swing (%)"]) {
       expect(
         elements([main], "input").some((node) =>
@@ -56,27 +55,42 @@ describe("TopBar direct desktop controls", () => {
     }
   });
 
-  it("groups occasional downloads under one named Export dropdown", () => {
-    const trigger = elements(markup, "button").find(
-      (node) => textContent(node) === "Export",
+  it("groups project, browser recovery, export, and demos in the logo main menu", () => {
+    const trigger = elements(markup, "button").find((node) =>
+      hasAttribute(node, "class", "brand main-menu-toggle"),
     )!;
     expect(trigger).toBeDefined();
-    expect(hasAttribute(trigger, "aria-controls", "export-panel")).toBe(true);
+    expect(textContent(trigger)).toContain("Pinky");
+    expect(hasAttribute(trigger, "aria-controls", "main-menu")).toBe(true);
     expect(hasAttribute(trigger, "aria-expanded")).toBe(true);
     expect(hasAttribute(trigger, "aria-haspopup", "dialog")).toBe(true);
-    const panel = elements(markup, "div").find((node) =>
-      hasAttribute(node, "id", "export-panel"),
+    const menu = elements(markup, "div").find((node) =>
+      hasAttribute(node, "class", "main-menu"),
     )!;
-    expect(panel).toBeDefined();
-    expect(hasAttribute(panel, "role", "dialog")).toBe(true);
-    expect(hasAttribute(panel, "aria-label", "Export")).toBe(true);
-    expect(elements([panel], "button").map(textContent)).toEqual([
+    expect(menu).toBeDefined();
+    const sections = elements([menu], "section");
+    const projectSection = sections.find((node) =>
+      hasAttribute(node, "aria-label", "Project"),
+    )!;
+    expect(elements([projectSection], "button").map(textContent)).toEqual([
+      "New project",
+      "Open project",
+      "Save to browser",
+      "Load browser save",
+    ]);
+    const exportSection = sections.find((node) =>
+      hasAttribute(node, "aria-label", "Export"),
+    )!;
+    expect(elements([exportSection], "button").map(textContent)).toEqual([
       "Project file (.json)",
       "Audio (.wav)",
     ]);
+    expect(
+      sections.some((node) => hasAttribute(node, "aria-label", "Demos")),
+    ).toBe(true);
   });
 
-  it("closes Export after downloading a project, but blocks downloads during rendering", () => {
+  it("closes the main menu after downloading a project, but blocks downloads during rendering", () => {
     const scope = {
       $project: {},
       $rendering: true,
@@ -96,7 +110,7 @@ describe("TopBar direct desktop controls", () => {
     expect(scope.closePanel).toHaveBeenCalledWith(true);
   });
 
-  it("closes Export before rendering audio and clears its trigger focus only after completion", async () => {
+  it("closes the main menu before rendering audio and clears its trigger focus only after completion", async () => {
     let finish!: () => void;
     const scope = {
       $project: {},
@@ -144,13 +158,13 @@ describe("TopBar direct desktop controls", () => {
       "togglePanel",
       scope,
     );
-    toggle("demos", trigger);
+    toggle("main", trigger);
     await Promise.resolve();
-    expect(scope.activePanel).toBe("demos");
+    expect(scope.activePanel).toBe("main");
     expect(scope.panelButton).toBe(trigger);
     expect(first.focus).toHaveBeenCalledOnce();
     expect(scope.loadDemoProject).not.toHaveBeenCalled();
-    toggle("demos", trigger);
+    toggle("main", trigger);
     expect(scope.closePanel).toHaveBeenCalledWith(true);
     toggle("audio", trigger);
     expect(scope.activePanel).toBe("audio");
@@ -189,12 +203,15 @@ describe("TopBar direct desktop controls", () => {
     expect(scope.loadDemoProject).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps the browser save explicitly available from the demo picker", () => {
-    const panel = elements(markup, "div").find((node) =>
-      hasAttribute(node, "class", "demo-list"),
+  it("keeps the browser save in the project section instead of the demo list", () => {
+    const menu = elements(markup, "div").find((node) =>
+      hasAttribute(node, "class", "main-menu"),
+    )!;
+    const projectSection = elements([menu], "section").find((node) =>
+      hasAttribute(node, "aria-label", "Project"),
     )!;
     expect(
-      elements([panel], "button").some(
+      elements([projectSection], "button").some(
         (button) => textContent(button) === "Load browser save",
       ),
     ).toBe(true);
@@ -287,7 +304,7 @@ describe("TopBar direct desktop controls", () => {
     expect(scope.closePanel).toHaveBeenCalledWith(true);
   });
 
-  it.each(["demos", "export"])(
+  it.each(["main"])(
     "navigates %s with arrows, Home and End without acting",
     (activePanel) => {
       const buttons = [
@@ -328,7 +345,7 @@ describe("TopBar direct desktop controls", () => {
   it("clears toolbar-trigger focus when dismissal requests it so Space returns to transport", async () => {
     const opener = { blur: vi.fn() };
     const scope = {
-      activePanel: "demos" as string | null,
+      activePanel: "main" as string | null,
       panelButton: opener,
       tick: () => Promise.resolve(),
     };
