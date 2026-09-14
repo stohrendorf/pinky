@@ -16,40 +16,27 @@ const sequencer = componentSource(
 );
 
 describe("Sequencer note interactions", () => {
-  it("opens a focused contextual editor for note velocity on double-click", () => {
-    expect(sequencer).toContain("function openNoteEditor");
-    expect(sequencer).toMatch(
-      /ondblclick=\{stopPropagation\(\(?e\)? => openNoteEditor\(e as MouseEvent, n\)\)\}/,
-    );
-    expect(sequencer).toContain('class="note-editor"');
-    expect(sequencer).toContain('aria-label="Edit note values"');
+  it("edits all selected note properties in a persistent sidebar", () => {
+    expect(sequencer).not.toContain("function openNoteEditor");
+    expect(sequencer).not.toContain('class="note-editor"');
+    expect(sequencer).not.toContain("ondblclick=");
+    expect(sequencer).toContain('class="note-inspector"');
+    expect(sequencer).toContain('aria-label="Selected note properties"');
     expect(sequencer).toContain('type="range"');
-    expect(sequencer).toContain('aria-label="Velocity percentage"');
+    expect(sequencer).toContain('aria-label="Selected notes velocity"');
     expect(sequencer).toMatch(
-      /max="100"[\s\S]*min="1"[\s\S]*bind:value=\{noteDraft\.vel\}/,
-    );
-    expect(sequencer).not.toContain("bind:value={noteDraft.pitch}");
-    expect(sequencer).toContain(
-      "noteEditorError = 'Enter a velocity from 1 to 100%';",
-    );
-    expect(sequencer).toContain(
-      "noteEditor.vel = clampVel(velocityPercent / 100);",
-    );
-    expect(sequencer).not.toContain("noteDraft.start");
-    expect(sequencer).not.toContain("noteDraft.len");
-    expect(sequencer).toMatch(
-      /noteEditorInput\?\.focus\(\)[\s\S]*noteEditorInput\?\.select\(\)/,
+      /max="100"[\s\S]*min="1"[\s\S]*updateSelectedVelocity/,
     );
     expect(sequencer).toContain('class="note-overrides"');
     expect(sequencer).toContain(
       'aria-label="Instrument parameter to override"',
     );
-    expect(sequencer).toContain("function addNoteOverride()");
+    expect(sequencer).toContain("function addSelectedNoteOverride()");
     expect(sequencer).toContain(
-      "noteEditor.overrides = Object.keys(overrides).length ? overrides : undefined;",
+      "function updateSelectedNoteOverride(param: string, value: number)",
     );
-    expect(sequencer).toMatch(
-      /let noteEditor:\s*ExtendedNote \| null\s*= \$state\.raw\(null\)/,
+    expect(sequencer).toContain(
+      "placeholder={value === null ? 'Mixed' : undefined}",
     );
   });
 
@@ -62,11 +49,9 @@ describe("Sequencer note interactions", () => {
     );
   });
 
-  it("closes when an automation editor becomes active", () => {
-    expect(sequencer).toContain("const NOTE_EDITOR_KEY = 'note'");
-    expect(sequencer).toMatch(
-      /contextualEditor !== NOTE_EDITOR_KEY && noteEditor/,
-    );
+  it("marks notes with parameter overrides without changing their note content", () => {
+    expect(sequencer).toContain("class:has-overrides=");
+    expect(sequencer).toContain(".note.has-overrides");
   });
 
   it("keeps the pattern editor header from forcing a wider panel", () => {
@@ -158,12 +143,18 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).not.toContain("target.start + glide.time / stepDuration");
   });
 
-  it("shows a contextual pitch-slide overlay for a valid pair of selected notes", () => {
-    expect(sequencer).toContain("const selectedSlidePair = $derived.by");
-    expect(sequencer).toMatch(/target\.start < source\.start \+ source\.len/);
-    expect(sequencer).toContain('class="slide-overlay"');
+  it("offers pitch-slide controls only for a sequential selected note set", () => {
+    expect(sequencer).toContain("const selectedLegatoSequence = $derived.by");
     expect(sequencer).toContain(
-      "selectedSlidePair.source.start + selectedSlidePair.source.len",
+      "isLegatoTarget(sequence[index - 1], note.start)",
+    );
+    expect(sequencer).toContain('class="note-legato-actions"');
+    expect(sequencer).toContain("const selectedLegatoJoins = $derived");
+    expect(sequencer).toContain("const selectedLegatoCanConnect = $derived");
+    expect(sequencer).toContain("selectedLegatoCurve !== 'mixed'");
+    expect(sequencer).toContain("selectionKey: selectedLegatoSelectionKey");
+    expect(sequencer).toContain(
+      "selectedLegatoCurveChoice?.selectionKey === selectedLegatoSelectionKey",
     );
     expect(sequencer).toContain("dragLegatoTargets = new Map");
     expect(sequencer).toMatch(
@@ -221,22 +212,27 @@ describe("Sequencer note interactions", () => {
     );
   });
 
-  it("uses accessible icon-only pitch-slide actions", () => {
+  it("edits and removes sequential pitch slides from the selected-note sidebar", () => {
     expect(sequencer).toContain("function removeLegato");
     expect(
       functionHasCall(sequencer, "removeLegato", "commitCurrentTrack"),
     ).toBe(true);
     expect(sequencer).toMatch(
-      /aria-label="Create pitch slide"[\s\S]*<i class="fa fa-link" aria-hidden="true"><\/i>/,
+      /aria-label="Remove pitch slides"[\s\S]*onclick=\{removeLegato\}[\s\S]*<i class="fa fa-link-slash" aria-hidden="true"><\/i>/,
     );
     expect(sequencer).toMatch(
-      /aria-label="Edit pitch slide"[\s\S]*<i class="fa fa-sliders" aria-hidden="true"><\/i>/,
+      /aria-label="Create missing pitch slides"[\s\S]*disabled=\{!selectedLegatoCanConnect\}[\s\S]*onclick=\{addLegato\}/,
+    );
+    expect(sequencer).toContain(
+      '<option disabled value="mixed">Mixed</option>',
     );
     expect(sequencer).toMatch(
-      /aria-label="Remove pitch slide"[\s\S]*onclick=\{removeLegato\}[\s\S]*<i class="fa fa-trash" aria-hidden="true"><\/i>/,
+      /aria-label="Create missing pitch slides"[\s\S]*<i class="fa fa-link" aria-hidden="true"><\/i>/,
     );
+    expect(sequencer).not.toContain("</i> Connect");
+    expect(sequencer).not.toContain("</i> Remove slides");
+    expect(sequencer).not.toContain("<span>Type</span>");
     expect(sequencer).not.toContain("Move pitch to second note");
-    expect(sequencer).not.toContain("Remove slide");
   });
 
   it("initializes each movable note drag from the current track and auditions it immediately", () => {

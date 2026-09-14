@@ -1,11 +1,11 @@
 <script lang="ts">
     import {onDestroy, onMount, tick} from 'svelte';
 
-    import type {Note, NoteParamOverrides, Pattern} from '../lib/types';
+    import type {Note, Pattern} from '../lib/types';
 
     import {CURVE_SHAPES, INSTRUMENT_AUTO_PARAMS, segmentProgress} from '../lib/automation';
     import {ensureAudio, glideAt, noteOff, noteOnAt} from '../lib/engine';
-    import {legatoTransition} from '../lib/legato';
+    import {isLegatoTarget, legatoTransition} from '../lib/legato';
     import {
         clampVel,
         createLegatoBetweenSelected,
@@ -39,20 +39,17 @@
     import {preventDefault, stopPropagation} from './event-modifiers';
 
     interface Props {
-        contextualEditor?: string | null;
         onEditInstrument?: () => void;
         onToggleFocus?: () => void;
         patternFocused?: boolean;
     }
 
-    let {
-        contextualEditor = $bindable(null),
+    const {
         onEditInstrument = () => {},
         onToggleFocus = () => {},
         patternFocused = false,
     }: Props = $props();
 
-    const NOTE_EDITOR_KEY = 'note';
     const DRAG_PREVIEW_TRACK = 'drag-preview';
 
     const patternPlaying = $derived($playing && $playMode === 'pattern');
@@ -217,13 +214,11 @@
     let selectionEnd = $state({ s: 0, r: 0 });
     // Keep the pattern track's original note reference so Apply can replace it
     // after the draft values have been edited.
-    let noteEditor: ExtendedNote | null = $state.raw(null);
-    let noteDraft = $state({vel: 100, overrides: {} as NoteParamOverrides});
     let overrideToAdd = $state('');
-    let noteEditorPosition = $state({ left: 4, top: 4 });
-    let noteEditorError = $state('');
-    let noteEditorInput: HTMLInputElement | undefined = $state();
-    let legatoMenuOpen = $state(false);
+    let selectedLegatoCurveChoice = $state<{
+        selectionKey: string;
+        curve: NonNullable<Note['legatoTo']>['curve'];
+    } | null>(null);
 
     onMount(async () => {
         await tick();
@@ -378,34 +373,56 @@
     }
 
     function addLegato() {
-        if (createLegatoBetweenSelected()) {
+        const curve = selectedLegatoCurve;
+        if (!selectedLegatoCanConnect || curve === 'mixed') {
+            return;
+        }
+        if (createLegatoBetweenSelected(curve)) {
             commitCurrentTrack();
         }
     }
 
     function updateLegatoCurve(curve: string) {
-        if (
-            !selectedSlidePair?.connected ||
-            !selectedSlidePair.source.legatoTo ||
-            !CURVE_SHAPES.some(shape => shape.id === curve)
-        ) {
+        if (!CURVE_SHAPES.some(shape => shape.id === curve)) {
             return;
         }
-        selectedSlidePair.source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
+        selectedLegatoCurveChoice = {
+            selectionKey: selectedLegatoSelectionKey,
+            curve: curve as NonNullable<Note['legatoTo']>['curve'],
+        };
+        if (!selectedLegatoHasConnections) {
+            return;
+        }
+        selectedLegatoSequence.slice(0, -1).forEach((source, index) => {
+            const target = selectedLegatoSequence[index + 1];
+            if (
+                source.legatoTo?.pitch === target.pitch &&
+                source.legatoTo.start === target.start
+            ) {
+                source.legatoTo.curve = curve as NonNullable<Note['legatoTo']>['curve'];
+            }
+        });
         commitCurrentTrack();
     }
 
     function removeLegato() {
-        if (!selectedSlidePair?.connected || !selectedSlidePair.source.legatoTo) {
+        if (!selectedLegatoSequence.length) {
             return;
         }
-        delete selectedSlidePair.source.legatoTo;
-        commitCurrentTrack();
-        legatoMenuOpen = false;
-    }
-
-    function toggleLegatoMenu() {
-        legatoMenuOpen = !legatoMenuOpen;
+        let removed = false;
+        selectedLegatoSequence.slice(0, -1).forEach((source, index) => {
+            const target = selectedLegatoSequence[index + 1];
+            if (
+                source.legatoTo?.pitch === target.pitch &&
+                source.legatoTo.start === target.start
+            ) {
+                delete source.legatoTo;
+                removed = true;
+            }
+        });
+        if (removed) {
+            commitCurrentTrack();
+        }
     }
 
     function legatoPath(source: Note, target: Note): string {
@@ -441,91 +458,57 @@
                   : 1;
     }
 
-    function openNoteEditor(e: Event, note: ExtendedNote) {
-        e.preventDefault();
-        const selectedNote = note.selected ? note : selectOnlyNote(note);
-        const row = rowOfNote[selectedNote.pitch] ?? 0;
-        noteEditor = selectedNote;
-        noteDraft = {
-            vel: Math.round((selectedNote.vel ?? 1) * 100),
-            overrides: {...selectedNote.overrides},
-        };
-        overrideToAdd = '';
-        noteEditorPosition = {
-            left: Math.max(4, Math.min(steps * cellWidth - 228, selectedNote.start * cellWidth)),
-            top: Math.max(
-                4,
-                Math.min(ROW_NOTES.length * cellHeight - 84, (row + 1) * cellHeight + 4),
-            ),
-        };
-        noteEditorError = '';
-        lastPlayedPitch.set(selectedNote.pitch);
-        contextualEditor = NOTE_EDITOR_KEY;
-        tick().then(() => {
-            noteEditorInput?.focus();
-            noteEditorInput?.select();
-        });
-    }
-
-    function openNoteEditorFromKeyboard(event: KeyboardEvent, note: ExtendedNote) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            openNoteEditor(event, note);
-        }
-    }
-
-    function closeNoteEditor() {
-        noteEditor = null;
-        noteEditorError = '';
-        if (contextualEditor === NOTE_EDITOR_KEY) {
-            contextualEditor = null;
-        }
-    }
-
-    function saveNoteEditor() {
-        if (!noteEditor) {
+    function updateSelectedVelocity(value: number) {
+        if (!Number.isFinite(value) || value < 1 || value > 100) {
             return;
         }
-        const velocityPercent = Number(noteDraft.vel);
-        if (!Number.isFinite(velocityPercent) || velocityPercent < 1 || velocityPercent > 100) {
-            noteEditorError = 'Enter a velocity from 1 to 100%';
-            return;
-        }
-        noteEditor.vel = clampVel(velocityPercent / 100);
-        const overrides = Object.fromEntries(
-            Object.entries(noteDraft.overrides).filter(
-                ([param, value]) =>
-                    INSTRUMENT_AUTO_PARAMS.some(def => def.param === param) &&
-                    Number.isFinite(value),
-            ),
-        ) as NoteParamOverrides;
-        noteEditor.overrides = Object.keys(overrides).length ? overrides : undefined;
-        const replacements = replaceEditedNotes([noteEditor]);
-        noteEditor = replacements.get(noteEditor) ?? noteEditor;
+        selectedNotes.forEach(note => (note.vel = clampVel(value / 100)));
+        replaceEditedNotes(selectedNotes);
         touch();
-        closeNoteEditor();
     }
 
-    function addNoteOverride() {
-        const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === overrideToAdd);
-        if (!def || noteDraft.overrides[def.param] !== undefined) {
+    function updateSelectedNoteOverride(param: string, value: number) {
+        const def = INSTRUMENT_AUTO_PARAMS.find(candidate => candidate.param === param);
+        if (!def || !Number.isFinite(value)) {
             return;
         }
-        noteDraft.overrides = {
-            ...noteDraft.overrides,
-            [def.param]: (selectedInstrument().params as unknown as Record<string, number>)[def.param],
-        };
+        const normalizedValue = Math.max(def.min, Math.min(def.max, value));
+        selectedNotes.forEach(note => {
+            note.overrides = {...note.overrides, [param]: normalizedValue};
+        });
+        replaceEditedNotes(selectedNotes);
+        touch();
+    }
+
+    function addSelectedNoteOverride() {
+        const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === overrideToAdd);
+        if (!def) {
+            return;
+        }
+        updateSelectedNoteOverride(
+            def.param,
+            (selectedInstrument().params as unknown as Record<string, number>)[def.param],
+        );
         overrideToAdd = '';
     }
 
-    function removeNoteOverride(param: keyof NoteParamOverrides) {
-        const {[param]: _, ...remaining} = noteDraft.overrides;
-        noteDraft.overrides = remaining;
+    function removeSelectedNoteOverride(param: string) {
+        selectedNotes.forEach(note => {
+            const {[param]: _, ...remaining} = note.overrides ?? {};
+            note.overrides = Object.keys(remaining).length ? remaining : undefined;
+        });
+        replaceEditedNotes(selectedNotes);
+        touch();
     }
 
-    function onNoteEditorKeydown(e: KeyboardEvent) {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            closeNoteEditor();
+    function selectNoteFromKeyboard(event: KeyboardEvent, note: ExtendedNote) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            if (event.shiftKey) {
+                toggleNoteSelection(note);
+            } else {
+                selectOnlyNote(note);
+            }
         }
     }
 
@@ -829,6 +812,66 @@
         selectionRevision;
         return notes.filter(n => n.selected) as ExtendedNote[];
     });
+    const selectedVelocity = $derived.by(() => {
+        const velocities = selectedNotes.map(note => note.vel ?? 1);
+        return velocities.length && velocities.every(value => value === velocities[0])
+            ? Math.round(velocities[0] * 100)
+            : null;
+    });
+    const selectedOverrideDefinitions = $derived(
+        INSTRUMENT_AUTO_PARAMS.filter(def =>
+            selectedNotes.some(note => note.overrides?.[def.param] !== undefined),
+        ),
+    );
+    function selectedOverrideValue(param: string): number | null {
+        const values = selectedNotes.map(note => note.overrides?.[param]);
+        return values.length &&
+            values.every(value => Number.isFinite(value)) &&
+            values.every(value => value === values[0])
+            ? (values[0] ?? null)
+            : null;
+    }
+    const selectedLegatoSequence = $derived.by(() => {
+        const sequence = [...selectedNotes].sort(
+            (a, b) => a.start - b.start || (rowOfNote[a.pitch] ?? 0) - (rowOfNote[b.pitch] ?? 0),
+        );
+        return sequence.length >= 2 &&
+            sequence.every(
+                (note, index) => index === 0 || isLegatoTarget(sequence[index - 1], note.start),
+            )
+            ? sequence
+            : [];
+    });
+    const selectedLegatoJoins = $derived(
+        selectedLegatoSequence.slice(0, -1).map((source, index) => {
+            const target = selectedLegatoSequence[index + 1];
+            const connected =
+                source.legatoTo?.pitch === target.pitch && source.legatoTo.start === target.start;
+            return {connected, curve: connected ? (source.legatoTo?.curve ?? 'linear') : null};
+        }),
+    );
+    const selectedLegatoHasConnections = $derived(selectedLegatoJoins.some(join => join.connected));
+    const selectedLegatoAllConnected = $derived(
+        selectedLegatoJoins.length > 0 && selectedLegatoJoins.every(join => join.connected),
+    );
+    const selectedLegatoSelectionKey = $derived(
+        selectedLegatoSequence.map(note => `${note.pitch}:${note.start}`).join('|'),
+    );
+    const selectedLegatoCurve = $derived.by<NonNullable<Note['legatoTo']>['curve'] | 'mixed'>(() => {
+        const curves = selectedLegatoJoins.flatMap(join => (join.curve ? [join.curve] : []));
+        const detectedCurve =
+            !curves.length || curves.every(curve => curve === curves[0])
+                ? curves[0] ?? 'linear'
+                : 'mixed';
+        return selectedLegatoCurveChoice?.selectionKey === selectedLegatoSelectionKey
+            ? selectedLegatoCurveChoice.curve
+            : detectedCurve;
+    });
+    const selectedLegatoCanConnect = $derived(
+        selectedLegatoJoins.length > 0 &&
+            !selectedLegatoAllConnected &&
+            selectedLegatoCurve !== 'mixed',
+    );
     const legatoLines = $derived(
         notes.flatMap(source => {
             if (!source.legatoTo) {
@@ -844,32 +887,6 @@
             return [{ source, target }];
         }),
     );
-    const selectedSlidePair = $derived.by(() => {
-        if (selectedNotes.length !== 2) {
-            return null;
-        }
-        const [source, target] = [...selectedNotes].sort((a, b) => a.start - b.start);
-        if (!source || !target || target.start < source.start + source.len) {
-            return null;
-        }
-        return {
-            source,
-            target,
-            connected:
-                source.legatoTo?.pitch === target.pitch && source.legatoTo.start === target.start,
-        };
-    });
-    $effect(() => {
-        if (!selectedSlidePair?.connected) {
-            legatoMenuOpen = false;
-        }
-    });
-    $effect.pre(() => {
-        if (contextualEditor !== NOTE_EDITOR_KEY && noteEditor) {
-            noteEditor = null;
-            noteEditorError = '';
-        }
-    });
 </script>
 
 <svelte:window onmousemove={handleMouseMoveGlobal} onmouseup={handleMouseUp} />
@@ -927,16 +944,17 @@
         </div>
     </div>
 
-    <div
-        bind:this={rollEl}
-        class="piano-roll"
-        aria-label="Piano roll editor"
-        oncontextmenu={preventDefault(() => {})}
-        onmousedown={handleRollMouseDown}
-        onwheel={handleWheel}
-        role="grid"
-        tabindex="0"
-    >
+    <div class="pattern-workspace">
+        <div
+            bind:this={rollEl}
+            class="piano-roll"
+            aria-label="Piano roll editor"
+            oncontextmenu={preventDefault(() => {})}
+            onmousedown={handleRollMouseDown}
+            onwheel={handleWheel}
+            role="grid"
+            tabindex="0"
+        >
         <div class="piano-roll-header">
             <div class="corner">
                 <div class="length-counter" aria-label="Pattern length">{steps} steps</div>
@@ -1012,73 +1030,6 @@
                             <path class="legato-line" d={legatoPath(line.source, line.target)} />
                         {/each}
                     </svg>
-                    {#if selectedSlidePair}
-                        {@const slideStart =
-                            selectedSlidePair.source.start + selectedSlidePair.source.len}
-                        {@const slideMidpoint = {
-                            left: ((slideStart + selectedSlidePair.target.start) / 2) * cellWidth,
-                            top:
-                                ((rowOfNote[selectedSlidePair.source.pitch] +
-                                    rowOfNote[selectedSlidePair.target.pitch] +
-                                    1) /
-                                    2) *
-                                cellHeight,
-                        }}
-                        <div
-                            style="left: {slideMidpoint.left}px; top: {slideMidpoint.top}px;"
-                            class="slide-overlay"
-                        >
-                            {#if selectedSlidePair.connected}
-                                <button
-                                    class="slide-action"
-                                    aria-expanded={legatoMenuOpen}
-                                    aria-label="Edit pitch slide"
-                                    onclick={toggleLegatoMenu}
-                                    onmousedown={stopPropagation()}
-                                    title="Edit pitch slide"
-                                    type="button"
-                                >
-                                    <i class="fa fa-sliders" aria-hidden="true"></i>
-                                </button>
-                                {#if legatoMenuOpen}
-                                    <div
-                                        class="slide-menu"
-                                        aria-label="Pitch slide options"
-                                    >
-                                        <select
-                                            aria-label="Pitch slide type"
-                                            onchange={event => updateLegatoCurve(event.currentTarget.value)}
-                                            value={selectedSlidePair.source.legatoTo?.curve || 'linear'}
-                                        >
-                                            {#each CURVE_SHAPES as shape (shape.id)}
-                                                <option value={shape.id}>{shape.label}</option>
-                                            {/each}
-                                        </select>
-                                        <button
-                                            class="slide-action"
-                                            aria-label="Remove pitch slide"
-                                            onclick={removeLegato}
-                                            title="Remove pitch slide"
-                                            type="button"
-                                        >
-                                            <i class="fa fa-trash" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                {/if}
-                            {:else}
-                                <button
-                                    class="slide-action"
-                                    aria-label="Create pitch slide"
-                                    onclick={addLegato}
-                                    onmousedown={stopPropagation()}
-                                    title="Create pitch slide"
-                                    type="button"
-                                >
-                                    <i class="fa fa-link" aria-hidden="true"></i>
-                                </button>
-                            {/if}
-                        </div>
-                    {/if}
                     {#each ghosts as n}
                         {@const r = rowOfNote[n.pitch]}
                         <div
@@ -1097,10 +1048,10 @@
                                 2}px; background: {pat.color || 'var(--accent)'}; opacity: {0.4 +
                                 0.6 * v}"
                             class="note"
+                            class:has-overrides={Object.values(n.overrides ?? {}).some(Number.isFinite)}
                             class:selected={selectedNotes.includes(n)}
                             aria-label={`${n.pitch}, velocity ${Math.round(v * 100)} percent`}
-                            ondblclick={stopPropagation(e => openNoteEditor(e as MouseEvent, n))}
-                            onkeydown={event => openNoteEditorFromKeyboard(event, n)}
+                            onkeydown={event => selectNoteFromKeyboard(event, n)}
                             onmousedown={stopPropagation(e => {
                                 const mouseEvent = e as MouseEvent;
                                 const gridPosition = gridPositionAt(mouseEvent);
@@ -1122,77 +1073,6 @@
                     {/each}
                 </div>
 
-                {#if noteEditor}
-                    <!-- svelte-ignore a11y_no_noninteractive_element_interactions (the form stops pointer and Escape events from reaching the spatial editor) -->
-                    <form
-                        style="left: {noteEditorPosition.left}px; top: {noteEditorPosition.top}px;"
-                        class="note-editor"
-                        aria-label="Edit note values"
-                        onkeydown={onNoteEditorKeydown}
-                        onmousedown={stopPropagation()}
-                        onsubmit={preventDefault(saveNoteEditor)}
-                    >
-                        <label>
-                            Velocity
-                            <div class="velocity-inputs">
-                                <input
-                                    aria-label="Velocity percentage"
-                                    max="100"
-                                    min="1"
-                                    step="1"
-                                    type="range"
-                                    bind:value={noteDraft.vel}
-                                />
-                                <input
-                                    bind:this={noteEditorInput}
-                                    aria-label="Velocity percentage"
-                                    max="100"
-                                    min="1"
-                                    step="1"
-                                    type="number"
-                                    bind:value={noteDraft.vel}
-                                />
-                                <span>%</span>
-                            </div>
-                        </label>
-                        <details class="note-overrides">
-                            <summary>Instrument overrides</summary>
-                            <div class="note-override-add">
-                                <select aria-label="Instrument parameter to override" bind:value={overrideToAdd}>
-                                    <option value="">Add parameter…</option>
-                                    {#each INSTRUMENT_AUTO_PARAMS as def}
-                                        <option disabled={noteDraft.overrides[def.param] !== undefined} value={def.param}>
-                                            {def.label}
-                                        </option>
-                                    {/each}
-                                </select>
-                                <button onclick={addNoteOverride} type="button">Add</button>
-                            </div>
-                            {#each INSTRUMENT_AUTO_PARAMS.filter(def => noteDraft.overrides[def.param] !== undefined) as def (def.param)}
-                                <label class="note-override-value">
-                                    <span>{def.label}</span>
-                                    <input
-                                        aria-label={`Override ${def.label}`}
-                                        inputmode="decimal"
-                                        max={def.max}
-                                        min={def.min}
-                                        step={def.step}
-                                        type="number"
-                                        bind:value={noteDraft.overrides[def.param]}
-                                    />
-                                    {#if def.unit}<em>{def.unit}</em>{/if}
-                                    <button aria-label={`Clear ${def.label} override`} onclick={() => removeNoteOverride(def.param)} type="button">×</button>
-                                </label>
-                            {/each}
-                        </details>
-                        {#if noteEditorError}<small>{noteEditorError}</small>{/if}
-                        <div class="note-editor-actions">
-                            <button onclick={closeNoteEditor} type="button">Cancel</button>
-                            <button type="submit">Apply</button>
-                        </div>
-                    </form>
-                {/if}
-
                 {#if currentPatternPlayheadStep !== null}
                     {#each currentPatternPlayheadSteps as playheadStep, index (`${playheadStep}-${index}`)}
                         <div
@@ -1203,6 +1083,134 @@
                 {/if}
             </div>
         </div>
+        </div>
+        <aside class="note-inspector" aria-label="Selected note properties">
+            {#if selectedNotes.length}
+                <header>
+                    <div class="note-inspector-header-actions">
+                        {#if selectedLegatoSequence.length}
+                            <div class="note-legato-actions" aria-label="Pitch slides">
+                                <select
+                                    aria-label="Pitch slide type"
+                                    onchange={event => updateLegatoCurve(event.currentTarget.value)}
+                                    title="Pitch slide type"
+                                    value={selectedLegatoCurve}
+                                >
+                                    {#if selectedLegatoCurve === 'mixed'}
+                                        <option disabled value="mixed">Mixed</option>
+                                    {/if}
+                                    {#each CURVE_SHAPES as shape (shape.id)}
+                                        <option value={shape.id}>{shape.label}</option>
+                                    {/each}
+                                </select>
+                                <button
+                                    aria-label="Create missing pitch slides"
+                                    disabled={!selectedLegatoCanConnect}
+                                    onclick={addLegato}
+                                    title="Create missing pitch slides"
+                                    type="button"
+                                >
+                                    <i class="fa fa-link" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                    aria-label="Remove pitch slides"
+                                    disabled={!selectedLegatoHasConnections}
+                                    onclick={removeLegato}
+                                    title="Remove pitch slides"
+                                    type="button"
+                                >
+                                    <i class="fa fa-link-slash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        {/if}
+                    </div>
+                </header>
+                <label class="note-property">
+                    <span>Velocity</span>
+                    <div class="velocity-inputs">
+                        <input
+                            aria-label="Selected notes velocity"
+                            max="100"
+                            min="1"
+                            oninput={event =>
+                                updateSelectedVelocity(
+                                    Number((event.currentTarget as HTMLInputElement).value),
+                                )}
+                            step="1"
+                            type="range"
+                            value={selectedVelocity ?? 100}
+                        />
+                        <input
+                            aria-label="Selected notes velocity percentage"
+                            max="100"
+                            min="1"
+                            onchange={event =>
+                                updateSelectedVelocity(
+                                    Number((event.currentTarget as HTMLInputElement).value),
+                                )}
+                            placeholder={selectedVelocity === null ? 'Mixed' : undefined}
+                            step="1"
+                            type="number"
+                            value={selectedVelocity ?? ''}
+                        />
+                        <span>%</span>
+                    </div>
+                </label>
+                <section class="note-overrides" aria-label="Instrument overrides">
+                    <h4>Instrument overrides</h4>
+                    <div class="note-override-add">
+                        <select aria-label="Instrument parameter to override" bind:value={overrideToAdd}>
+                            <option value="">Add parameter…</option>
+                            {#each INSTRUMENT_AUTO_PARAMS as def}
+                                <option
+                                    disabled={selectedNotes.every(
+                                        note => note.overrides?.[def.param] !== undefined,
+                                    )}
+                                    value={def.param}
+                                >
+                                    {def.label}
+                                </option>
+                            {/each}
+                        </select>
+                        <button onclick={addSelectedNoteOverride} type="button">Add</button>
+                    </div>
+                    {#each selectedOverrideDefinitions as def (def.param)}
+                        {@const value = selectedOverrideValue(def.param)}
+                        <label class="note-override-value">
+                            <span>{def.label}</span>
+                            <input
+                                aria-label={`Override ${def.label}`}
+                                inputmode="decimal"
+                                max={def.max}
+                                min={def.min}
+                                onchange={event =>
+                                    updateSelectedNoteOverride(
+                                        def.param,
+                                        Number((event.currentTarget as HTMLInputElement).value),
+                                    )}
+                                placeholder={value === null ? 'Mixed' : undefined}
+                                step={def.step}
+                                type="number"
+                                value={value ?? ''}
+                            />
+                            {#if def.unit}<em>{def.unit}</em>{/if}
+                            <button
+                                aria-label={`Clear ${def.label} override from selected notes`}
+                                onclick={() => removeSelectedNoteOverride(def.param)}
+                                type="button"
+                            >
+                                ×
+                            </button>
+                        </label>
+                    {/each}
+                </section>
+                {#if !selectedLegatoSequence.length && selectedNotes.length > 1}
+                    <p class="legato-hint">Pitch slides require non-overlapping notes in time order.</p>
+                {/if}
+            {:else}
+                <p class="empty-inspector">Select one or more notes to edit their shared properties.</p>
+            {/if}
+        </aside>
     </div>
 </div>
 
@@ -1322,8 +1330,16 @@
         flex: 1;
         height: auto;
         min-height: 0;
+        min-width: 0;
         overflow: auto;
         position: relative;
+    }
+
+    .pattern-workspace {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
     }
 
     .piano-roll-header {
@@ -1498,6 +1514,16 @@
         z-index: 5;
     }
 
+    .note.has-overrides {
+        box-shadow: 0 0 7px color-mix(in srgb, var(--accent2) 85%, transparent);
+    }
+
+    .note.selected.has-overrides {
+        box-shadow:
+            0 0 4px rgba(255, 255, 255, 0.5),
+            0 0 8px color-mix(in srgb, var(--accent2) 85%, transparent);
+    }
+
     .resize-handle {
         position: absolute;
         right: 0;
@@ -1529,23 +1555,53 @@
         z-index: 1;
     }
 
-    .note-editor {
-        position: absolute;
-        z-index: 50;
+    .note-inspector {
+        flex: 0 0 236px;
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 5px 6px;
-        width: 220px;
-        padding: 7px;
-        border: 1px solid var(--accent);
-        border-radius: 5px;
-        background: #11111f;
-        box-shadow: 0 5px 16px rgba(0, 0, 0, 0.45);
+        align-content: start;
+        gap: 10px;
+        overflow: auto;
+        padding: 10px;
+        border-left: 1px solid var(--border);
+        background: var(--color-surface);
         color: var(--primary-text);
-        font-size: 10px;
+        font-size: 11px;
     }
 
-    .note-editor label {
+    .note-inspector header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .note-inspector-header-actions,
+    .note-legato-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .note-inspector-header-actions {
+        min-width: 0;
+    }
+
+    .note-inspector h3,
+    .note-inspector h4 {
+        margin: 0;
+        font-size: 11px;
+    }
+
+    .note-inspector header span {
+        min-width: 18px;
+        padding: 1px 5px;
+        border-radius: 9px;
+        background: var(--color-accent-selection);
+        color: var(--accent);
+        text-align: center;
+    }
+
+    .note-property {
         display: grid;
         gap: 2px;
     }
@@ -1557,7 +1613,7 @@
         gap: 4px;
     }
 
-    .note-editor input[type='number'] {
+    .note-inspector input[type='number'] {
         width: 100%;
         min-width: 0;
         box-sizing: border-box;
@@ -1571,22 +1627,16 @@
         -moz-appearance: textfield;
     }
 
-    .note-editor input[type='range'] {
+    .note-inspector input[type='range'] {
         width: 100%;
         accent-color: var(--accent);
     }
 
     .note-overrides {
-        grid-column: 1 / -1;
         display: grid;
         gap: 4px;
-        padding-top: 3px;
         border-top: 1px solid var(--border-subtle);
-    }
-
-    .note-overrides summary {
-        cursor: pointer;
-        font-size: 10px;
+        padding-top: 8px;
     }
 
     .note-override-add,
@@ -1632,35 +1682,36 @@
         cursor: pointer;
     }
 
-    .note-editor input::-webkit-outer-spin-button,
-    .note-editor input::-webkit-inner-spin-button {
+    .note-inspector input::-webkit-outer-spin-button,
+    .note-inspector input::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
 
-    .note-editor input:focus {
+    .note-inspector input:focus,
+    .note-inspector select:focus {
         border-color: var(--accent);
         outline: none;
     }
 
-    .note-editor small,
-    .note-editor-actions {
-        grid-column: 1 / -1;
+    .note-legato-actions select {
+        min-width: 0;
+        max-width: 86px;
+        padding: 3px 4px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: var(--surface-input);
+        color: var(--primary-text);
+        font: inherit;
     }
 
-    .note-editor small {
-        color: var(--color-error);
-    }
-
-    .note-editor-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 5px;
-    }
-
-    .note-editor-actions button {
-        padding: 3px 6px;
-        border: 0;
+    .note-legato-actions button {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        padding: 0;
+        border: 1px solid var(--border);
         border-radius: 3px;
         background: var(--border);
         color: var(--primary-text);
@@ -1668,8 +1719,16 @@
         cursor: pointer;
     }
 
-    .note-editor-actions button[type='submit'] {
-        background: var(--accent);
+    .note-legato-actions button:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: var(--color-accent-soft);
+    }
+
+    .empty-inspector,
+    .legato-hint {
+        margin: 0;
+        color: var(--color-text-muted);
+        line-height: 1.4;
     }
 
     .selection-rect {
@@ -1696,59 +1755,6 @@
         opacity: 0.9;
     }
 
-    .slide-overlay {
-        position: absolute;
-        z-index: 6;
-        pointer-events: auto;
-        transform: translate(-50%, -50%);
-    }
-
-    .slide-action {
-        display: grid;
-        width: 26px;
-        height: 26px;
-        padding: 0;
-        border: 1px solid var(--accent);
-        border-radius: 4px;
-        background: var(--color-accent-selection);
-        color: var(--primary-text);
-        cursor: pointer;
-        place-items: center;
-    }
-
-    .slide-action:hover {
-        background: var(--color-accent-soft);
-    }
-
-    .slide-action:focus-visible {
-        outline: 2px solid var(--accent2);
-        outline-offset: 2px;
-    }
-
-    .slide-menu {
-        position: absolute;
-        top: calc(100% + 5px);
-        left: 50%;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 4px;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        background: var(--color-surface);
-        box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
-        transform: translateX(-50%);
-    }
-
-    .slide-menu select {
-        width: 76px;
-        padding: 3px 4px;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: var(--surface-input);
-        color: var(--primary-text);
-        font: inherit;
-    }
 
     .playhead {
         position: absolute;

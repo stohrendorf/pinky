@@ -96,7 +96,9 @@ export function updateLegatoTargets(
   removeInvalidLegatoLinks(notes);
 }
 
-export function createLegatoBetweenSelected(): boolean {
+export function createLegatoBetweenSelected(
+  curve: NonNullable<Note["legatoTo"]>["curve"] = "linear",
+): boolean {
   const notes = curNotes();
   if (!notes) {
     return false;
@@ -105,12 +107,27 @@ export function createLegatoBetweenSelected(): boolean {
     (a, b) => a.start - b.start || idxOfNote[a.pitch] - idxOfNote[b.pitch],
   );
   if (
-    selected.length !== 2 ||
-    !isLegatoTarget(selected[0], selected[1].start)
+    selected.length < 2 ||
+    selected.some(
+      (note, index) =>
+        index > 0 && !isLegatoTarget(selected[index - 1], note.start),
+    )
   ) {
     return false;
   }
-  selected[0].legatoTo = { pitch: selected[1].pitch, start: selected[1].start };
+  selected.slice(0, -1).forEach((source, index) => {
+    const target = selected[index + 1];
+    if (
+      source.legatoTo?.pitch !== target.pitch ||
+      source.legatoTo.start !== target.start
+    ) {
+      source.legatoTo = {
+        pitch: target.pitch,
+        start: target.start,
+        ...(curve === "linear" ? {} : { curve }),
+      };
+    }
+  });
   touch();
   return true;
 }

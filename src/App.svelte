@@ -136,7 +136,6 @@
                         onEditInstrument={() => (showInstrumentEditor = true)}
                         onToggleFocus={() => (patternFocused = !patternFocused)}
                         patternFocused={patternFocused}
-                        bind:contextualEditor
                     />
                 </div>
             </section>

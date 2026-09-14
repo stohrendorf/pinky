@@ -47,10 +47,10 @@ describe("workspace controls", () => {
     );
   });
 
-  it("shares contextual editor ownership between the arranger and piano roll", () => {
+  it("keeps contextual editor ownership with the arranger", () => {
     expect(app).toContain("let contextualEditor: string | null = $state(null)");
     expect(app).toMatch(/<Playlist\s+bind:contextualEditor\s*\/>/);
-    expect(app).toContain("bind:contextualEditor");
+    expect(app).not.toMatch(/<Sequencer[\s\S]*bind:contextualEditor/);
     expect(app).toMatch(
       /onEditInstrument=\{\(\)\s*=>\s*\(?showInstrumentEditor\s*=\s*true\)?}/,
     );

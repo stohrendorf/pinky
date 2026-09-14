@@ -1285,7 +1285,7 @@
                     onclick={openAddAuto}
                     title="Add automation lane"
                 >
-                    <i class="fa-brands fa-think-peaks"></i>
+                    <i class="fa fa-bezier-curve"></i>
                 </button>
             </div>
         </div>

@@ -6,6 +6,7 @@ import type { Note, Project } from "./types";
 import { initHistory, undo } from "./history";
 import {
   copySelectedNotes,
+  createLegatoBetweenSelected,
   deleteNotes,
   deleteSelectedNotes,
   editStep,
@@ -38,6 +39,73 @@ describe("shouldPlaceNote", () => {
 });
 
 describe("legato note edits", () => {
+  function selectNotes(notes: Note[]): void {
+    project.set({
+      formatVersion: 1,
+      bpm: 120,
+      instruments: [],
+      patterns: [
+        {
+          id: "pattern",
+          name: "Pattern",
+          steps: 16,
+          color: "#fff",
+          tracks: { lead: notes },
+        },
+      ],
+      arrangement: [],
+      tracks: [],
+      zoom: {
+        seq: { width: 24, height: 14 },
+        arr: { width: 24, height: 32 },
+      },
+    } satisfies Project);
+    selPatId.set("pattern");
+    selInstId.set("lead");
+  }
+
+  it("connects every selected note only when they form a non-overlapping sequence", () => {
+    const notes: Note[] = [
+      { pitch: "C4", start: 0, len: 4, selected: true },
+      { pitch: "E4", start: 4, len: 4, selected: true },
+      { pitch: "G4", start: 8, len: 4, selected: true },
+    ];
+    selectNotes(notes);
+
+    expect(createLegatoBetweenSelected()).toBe(true);
+    expect(notes[0].legatoTo).toEqual({ pitch: "E4", start: 4 });
+    expect(notes[1].legatoTo).toEqual({ pitch: "G4", start: 8 });
+
+    notes[1].start = 3;
+    expect(createLegatoBetweenSelected()).toBe(false);
+  });
+
+  it("fills only missing selected joins with the requested curve", () => {
+    const notes: Note[] = [
+      {
+        pitch: "C4",
+        start: 0,
+        len: 4,
+        selected: true,
+        legatoTo: { pitch: "E4", start: 4, curve: "smooth" },
+      },
+      { pitch: "E4", start: 4, len: 4, selected: true },
+      { pitch: "G4", start: 8, len: 4, selected: true },
+    ];
+    selectNotes(notes);
+
+    expect(createLegatoBetweenSelected("ease-out")).toBe(true);
+    expect(notes[0].legatoTo).toEqual({
+      pitch: "E4",
+      start: 4,
+      curve: "smooth",
+    });
+    expect(notes[1].legatoTo).toEqual({
+      pitch: "G4",
+      start: 8,
+      curve: "ease-out",
+    });
+  });
   it("keeps a portamento link attached when its selected notes move together", () => {
     const source: Note = {
       pitch: "C4",
