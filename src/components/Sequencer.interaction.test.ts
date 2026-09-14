@@ -28,16 +28,25 @@ describe("Sequencer note interactions", () => {
       /max="100"[\s\S]*min="1"[\s\S]*updateSelectedVelocity/,
     );
     expect(sequencer).toContain('class="note-overrides"');
+    expect(sequencer).toContain('aria-label="Add instrument override"');
     expect(sequencer).toContain(
-      'aria-label="Instrument parameter to override"',
+      "function addSelectedNoteOverride(param: string)",
     );
-    expect(sequencer).toContain("function addSelectedNoteOverride()");
+    expect(sequencer).toContain(
+      "function selectNoteOverrideToAdd(param: string)",
+    );
+    expect(sequencer).toContain("actions={noteOverrideAddActions}");
+    expect(sequencer).toContain('class="fa fa-plus"');
     expect(sequencer).toContain(
       "function updateSelectedNoteOverride(param: string, value: number)",
     );
     expect(sequencer).toContain(
       "placeholder={value === null ? 'Mixed' : undefined}",
     );
+    expect(sequencer).toContain("class:mixed={value === null}");
+    expect(sequencer).toContain("class:mixed={selectedVelocity === null}");
+    expect(sequencer).toContain(".note-override-value.mixed input");
+    expect(sequencer).toContain("border-color: var(--color-warning)");
   });
 
   it("records the selected notes before starting an Alt-drag velocity edit", () => {
@@ -226,6 +235,10 @@ describe("Sequencer note interactions", () => {
     expect(sequencer).toContain(
       '<option disabled value="mixed">Mixed</option>',
     );
+    expect(sequencer).toContain(
+      "class:mixed={selectedLegatoCurve === 'mixed'}",
+    );
+    expect(sequencer).toContain(".note-legato-actions select.mixed");
     expect(sequencer).toMatch(
       /aria-label="Create missing pitch slides"[\s\S]*<i class="fa fa-link" aria-hidden="true"><\/i>/,
     );

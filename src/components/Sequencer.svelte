@@ -37,6 +37,7 @@
         handleViewportWheel,
     } from '../lib/viewport';
     import {preventDefault, stopPropagation} from './event-modifiers';
+    import ContextMenu from './ui/ContextMenu.svelte';
 
     interface Props {
         onEditInstrument?: () => void;
@@ -214,7 +215,8 @@
     let selectionEnd = $state({ s: 0, r: 0 });
     // Keep the pattern track's original note reference so Apply can replace it
     // after the draft values have been edited.
-    let overrideToAdd = $state('');
+    let overrideAddMenuOpen = $state(false);
+    let overrideAddAnchor = $state<HTMLButtonElement | null>(null);
     let selectedLegatoCurveChoice = $state<{
         selectionKey: string;
         curve: NonNullable<Note['legatoTo']>['curve'];
@@ -480,8 +482,8 @@
         touch();
     }
 
-    function addSelectedNoteOverride() {
-        const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === overrideToAdd);
+    function addSelectedNoteOverride(param: string) {
+        const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === param);
         if (!def) {
             return;
         }
@@ -489,7 +491,11 @@
             def.param,
             (selectedInstrument().params as unknown as Record<string, number>)[def.param],
         );
-        overrideToAdd = '';
+    }
+
+    function selectNoteOverrideToAdd(param: string) {
+        overrideAddMenuOpen = false;
+        addSelectedNoteOverride(param);
     }
 
     function removeSelectedNoteOverride(param: string) {
@@ -823,6 +829,13 @@
             selectedNotes.some(note => note.overrides?.[def.param] !== undefined),
         ),
     );
+    const noteOverrideAddActions = $derived(
+        INSTRUMENT_AUTO_PARAMS.map(def => ({
+            id: def.param,
+            label: def.label,
+            disabled: selectedNotes.every(note => note.overrides?.[def.param] !== undefined),
+        })),
+    );
     function selectedOverrideValue(param: string): number | null {
         const values = selectedNotes.map(note => note.overrides?.[param]);
         return values.length &&
@@ -1091,6 +1104,7 @@
                         {#if selectedLegatoSequence.length}
                             <div class="note-legato-actions" aria-label="Pitch slides">
                                 <select
+                                    class:mixed={selectedLegatoCurve === 'mixed'}
                                     aria-label="Pitch slide type"
                                     onchange={event => updateLegatoCurve(event.currentTarget.value)}
                                     title="Pitch slide type"
@@ -1127,7 +1141,7 @@
                 </header>
                 <label class="note-property">
                     <span>Velocity</span>
-                    <div class="velocity-inputs">
+                    <div class="velocity-inputs" class:mixed={selectedVelocity === null}>
                         <input
                             aria-label="Selected notes velocity"
                             max="100"
@@ -1157,26 +1171,22 @@
                     </div>
                 </label>
                 <section class="note-overrides" aria-label="Instrument overrides">
-                    <h4>Instrument overrides</h4>
-                    <div class="note-override-add">
-                        <select aria-label="Instrument parameter to override" bind:value={overrideToAdd}>
-                            <option value="">Add parameter…</option>
-                            {#each INSTRUMENT_AUTO_PARAMS as def}
-                                <option
-                                    disabled={selectedNotes.every(
-                                        note => note.overrides?.[def.param] !== undefined,
-                                    )}
-                                    value={def.param}
-                                >
-                                    {def.label}
-                                </option>
-                            {/each}
-                        </select>
-                        <button onclick={addSelectedNoteOverride} type="button">Add</button>
-                    </div>
+                    <header class="note-overrides-header">
+                        <h4>Instrument overrides</h4>
+                        <button
+                            bind:this={overrideAddAnchor}
+                            class="note-override-add"
+                            aria-label="Add instrument override"
+                            onclick={() => (overrideAddMenuOpen = !overrideAddMenuOpen)}
+                            title="Add instrument override"
+                            type="button"
+                        >
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                        </button>
+                    </header>
                     {#each selectedOverrideDefinitions as def (def.param)}
                         {@const value = selectedOverrideValue(def.param)}
-                        <label class="note-override-value">
+                        <label class="note-override-value" class:mixed={value === null}>
                             <span>{def.label}</span>
                             <input
                                 aria-label={`Override ${def.label}`}
@@ -1199,7 +1209,7 @@
                                 onclick={() => removeSelectedNoteOverride(def.param)}
                                 type="button"
                             >
-                                ×
+                                <i class="fa fa-trash"></i>
                             </button>
                         </label>
                     {/each}
@@ -1213,6 +1223,14 @@
         </aside>
     </div>
 </div>
+
+<ContextMenu
+    actions={noteOverrideAddActions}
+    anchor={overrideAddAnchor}
+    onclose={() => (overrideAddMenuOpen = false)}
+    onselect={selectNoteOverrideToAdd}
+    open={overrideAddMenuOpen}
+/>
 
 <style>
     .piano-roll-container {
@@ -1586,19 +1604,9 @@
         min-width: 0;
     }
 
-    .note-inspector h3,
     .note-inspector h4 {
         margin: 0;
         font-size: 11px;
-    }
-
-    .note-inspector header span {
-        min-width: 18px;
-        padding: 1px 5px;
-        border-radius: 9px;
-        background: var(--color-accent-selection);
-        color: var(--accent);
-        text-align: center;
     }
 
     .note-property {
@@ -1639,7 +1647,6 @@
         padding-top: 8px;
     }
 
-    .note-override-add,
     .note-override-value {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -1647,14 +1654,19 @@
         gap: 4px;
     }
 
-    .note-override-add select {
-        min-width: 0;
-        padding: 2px 3px;
-        border: 1px solid var(--color-border);
-        border-radius: 3px;
-        background: var(--surface-input);
-        color: var(--primary-text);
-        font: inherit;
+    .note-overrides-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .note-overrides .note-override-add {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        padding: 0;
     }
 
     .note-override-value {
@@ -1664,6 +1676,12 @@
 
     .note-override-value input {
         width: 58px;
+    }
+
+    .velocity-inputs.mixed input[type='number'],
+    .note-override-value.mixed input {
+        border-color: var(--color-warning);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-warning) 45%, transparent);
     }
 
     .note-override-value em {
@@ -1703,6 +1721,11 @@
         background: var(--surface-input);
         color: var(--primary-text);
         font: inherit;
+    }
+
+    .note-legato-actions select.mixed {
+        border-color: var(--color-warning);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-warning) 45%, transparent);
     }
 
     .note-legato-actions button {
