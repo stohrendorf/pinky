@@ -217,6 +217,10 @@
     // after the draft values have been edited.
     let overrideAddMenuOpen = $state(false);
     let overrideAddAnchor = $state<HTMLButtonElement | null>(null);
+    let noteOverrideContext = $state<{
+        param: string;
+        point: {x: number; y: number};
+    } | null>(null);
     let selectedLegatoCurveChoice = $state<{
         selectionKey: string;
         curve: NonNullable<Note['legatoTo']>['curve'];
@@ -482,6 +486,18 @@
         touch();
     }
 
+    function updateSelectedNoteOverrideInput(param: string, input: HTMLInputElement) {
+        if (!input.value.trim() || !Number.isFinite(input.valueAsNumber)) {
+            return;
+        }
+        updateSelectedNoteOverride(param, input.valueAsNumber);
+    }
+
+    function restoreSelectedNoteOverrideInput(param: string, input: HTMLInputElement) {
+        const value = selectedOverrideValue(param);
+        input.value = value === null ? '' : String(value);
+    }
+
     function addSelectedNoteOverride(param: string) {
         const def = INSTRUMENT_AUTO_PARAMS.find(value => value.param === param);
         if (!def) {
@@ -505,6 +521,19 @@
         });
         replaceEditedNotes(selectedNotes);
         touch();
+    }
+
+    function openNoteOverrideContextMenu(event: MouseEvent, param: string) {
+        event.preventDefault();
+        event.stopPropagation();
+        noteOverrideContext = {param, point: {x: event.clientX, y: event.clientY}};
+    }
+
+    function selectNoteOverrideContextAction(action: string) {
+        if (action === 'clear' && noteOverrideContext) {
+            removeSelectedNoteOverride(noteOverrideContext.param);
+        }
+        noteOverrideContext = null;
     }
 
     function selectNoteFromKeyboard(event: KeyboardEvent, note: ExtendedNote) {
@@ -836,6 +865,17 @@
             disabled: selectedNotes.every(note => note.overrides?.[def.param] !== undefined),
         })),
     );
+    const noteOverrideContextActions = $derived(
+        noteOverrideContext
+            ? [
+                  {
+                      id: 'clear',
+                      label: 'Clear override',
+                      icon: 'fa-trash',
+                  },
+              ]
+            : [],
+    );
     function selectedOverrideValue(param: string): number | null {
         const values = selectedNotes.map(note => note.overrides?.[param]);
         return values.length &&
@@ -844,6 +884,26 @@
             ? (values[0] ?? null)
             : null;
     }
+
+    function selectedOverrideRange(param: string) {
+        const values = selectedNotes
+            .map(note => note.overrides?.[param])
+            .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+            .sort((a, b) => a - b);
+        if (!values.length) {
+            return null;
+        }
+        return {
+            min: values[0]!,
+            max: values[values.length - 1]!,
+            median: (values[0]! + values[values.length - 1]!) / 2,
+        };
+    }
+
+    function overrideRangePercent(value: number, min: number, max: number): number {
+        return ((Math.max(min, Math.min(max, value)) - min) / (max - min)) * 100;
+    }
+
     const selectedLegatoSequence = $derived.by(() => {
         const sequence = [...selectedNotes].sort(
             (a, b) => a.start - b.start || (rowOfNote[a.pitch] ?? 0) - (rowOfNote[b.pitch] ?? 0),
@@ -1186,31 +1246,74 @@
                     </header>
                     {#each selectedOverrideDefinitions as def (def.param)}
                         {@const value = selectedOverrideValue(def.param)}
-                        <label class="note-override-value" class:mixed={value === null}>
+                        {@const range = selectedOverrideRange(def.param)}
+                        {@const rangeMin = def.min ?? 0}
+                        {@const rangeMax = def.max ?? 1}
+                        {@const mixedStart = range ? overrideRangePercent(range.min, rangeMin, rangeMax) : 0}
+                        {@const mixedEnd = range ? overrideRangePercent(range.max, rangeMin, rangeMax) : 0}
+                        {@const mixedMedian = range
+                            ? overrideRangePercent(range.median, rangeMin, rangeMax)
+                            : 0}
+                        <label
+                            class="note-override-value"
+                            class:mixed={value === null}
+                            oncontextmenu={event => openNoteOverrideContextMenu(event, def.param)}
+                        >
                             <span>{def.label}</span>
-                            <input
-                                aria-label={`Override ${def.label}`}
-                                inputmode="decimal"
-                                max={def.max}
-                                min={def.min}
-                                onchange={event =>
-                                    updateSelectedNoteOverride(
-                                        def.param,
-                                        Number((event.currentTarget as HTMLInputElement).value),
-                                    )}
-                                placeholder={value === null ? 'Mixed' : undefined}
-                                step={def.step}
-                                type="number"
-                                value={value ?? ''}
-                            />
-                            {#if def.unit}<em>{def.unit}</em>{/if}
-                            <button
-                                aria-label={`Clear ${def.label} override from selected notes`}
-                                onclick={() => removeSelectedNoteOverride(def.param)}
-                                type="button"
+                            <div class="note-override-exact-value">
+                                <input
+                                    aria-label={`Override ${def.label}`}
+                                    inputmode="decimal"
+                                    max={def.max}
+                                    min={def.min}
+                                    onblur={event =>
+                                        restoreSelectedNoteOverrideInput(
+                                            def.param,
+                                            event.currentTarget as HTMLInputElement,
+                                        )}
+                                    onchange={event =>
+                                        updateSelectedNoteOverrideInput(
+                                            def.param,
+                                            event.currentTarget as HTMLInputElement,
+                                        )}
+                                    placeholder={value === null ? 'Mixed' : undefined}
+                                    step={def.step}
+                                    type="number"
+                                    value={value ?? ''}
+                                />
+                                {#if def.unit}<em>{def.unit}</em>{/if}
+                            </div>
+                            <div
+                                style={`--mixed-start: ${mixedStart}%; --mixed-end: ${mixedEnd}%; --mixed-median: ${mixedMedian}%;`}
+                                class="note-override-slider-frame"
+                                class:mixed={value === null}
                             >
-                                <i class="fa fa-trash"></i>
-                            </button>
+                                {#if value === null}
+                                    <span class="mixed-override-track" aria-hidden="true"></span>
+                                    <span class="mixed-override-range" aria-hidden="true"></span>
+                                    <span class="mixed-override-marker" aria-hidden="true"></span>
+                                {/if}
+                                <input
+                                    class="note-override-slider"
+                                    class:mixed={value === null}
+                                    aria-label={
+                                        value === null
+                                            ? `Resolve mixed ${def.label}`
+                                            : `Adjust ${def.label}`
+                                    }
+                                    max={def.max}
+                                    min={def.min}
+                                    oninput={event =>
+                                        updateSelectedNoteOverride(
+                                            def.param,
+                                            (event.currentTarget as HTMLInputElement).valueAsNumber,
+                                        )}
+                                    step={def.step}
+                                    title={value === null ? 'Mixed values — drag to set all' : undefined}
+                                    type="range"
+                                    value={value ?? range?.median ?? def.min}
+                                />
+                            </div>
                         </label>
                     {/each}
                 </section>
@@ -1230,6 +1333,14 @@
     onclose={() => (overrideAddMenuOpen = false)}
     onselect={selectNoteOverrideToAdd}
     open={overrideAddMenuOpen}
+/>
+
+<ContextMenu
+    actions={noteOverrideContextActions}
+    onclose={() => (noteOverrideContext = null)}
+    onselect={selectNoteOverrideContextAction}
+    open={noteOverrideContext !== null}
+    point={noteOverrideContext?.point}
 />
 
 <style>
@@ -1649,9 +1760,13 @@
 
     .note-override-value {
         display: grid;
+        grid-template-areas:
+            'label exact'
+            'slider slider';
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 4px;
+        padding: 2px 0;
     }
 
     .note-overrides-header {
@@ -1670,16 +1785,98 @@
     }
 
     .note-override-value {
-        grid-template-columns: minmax(0, 1fr) 58px auto auto;
         font-size: 10px;
     }
 
-    .note-override-value input {
-        width: 58px;
+    .note-override-value > span {
+        grid-area: label;
+    }
+
+    .note-override-exact-value {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        grid-area: exact;
+    }
+
+    .note-override-exact-value input[type='number'] {
+        width: 46px;
+    }
+
+    .note-override-slider-frame {
+        grid-area: slider;
+        min-width: 0;
+    }
+
+    .note-override-slider {
+        width: 100%;
+    }
+
+    .note-override-slider-frame.mixed {
+        position: relative;
+        height: 14px;
+        margin: 2px 0;
+    }
+
+    .note-override-slider-frame.mixed:focus-within {
+        outline: 1px solid var(--color-warning);
+        outline-offset: 1px;
+    }
+
+    .mixed-override-track,
+    .mixed-override-range,
+    .mixed-override-marker {
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .mixed-override-track {
+        top: 3px;
+        right: 0;
+        left: 0;
+        height: 6px;
+        border-radius: 999px;
+        background: repeating-linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--color-warning) 20%, var(--surface-input)) 0 3px,
+            color-mix(in srgb, var(--color-warning) 6%, var(--surface-input)) 3px 6px
+        );
+    }
+
+    .mixed-override-range {
+        top: 3px;
+        left: var(--mixed-start);
+        width: calc(var(--mixed-end) - var(--mixed-start));
+        height: 6px;
+        border-radius: 999px;
+        background: var(--color-warning);
+    }
+
+    .mixed-override-marker {
+        top: 1px;
+        left: var(--mixed-median);
+        box-sizing: border-box;
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--surface-input);
+        border-radius: 999px;
+        background: var(--color-warning);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-warning) 45%, var(--surface-input));
+        transform: translateX(-50%);
+    }
+
+    .note-override-slider.mixed {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        height: 12px;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
     }
 
     .velocity-inputs.mixed input[type='number'],
-    .note-override-value.mixed input {
+    .note-override-value.mixed input[type='number'] {
         border-color: var(--color-warning);
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-warning) 45%, transparent);
     }

@@ -41,11 +41,45 @@ describe("Sequencer note interactions", () => {
       "function updateSelectedNoteOverride(param: string, value: number)",
     );
     expect(sequencer).toContain(
+      "function updateSelectedNoteOverrideInput(param: string, input: HTMLInputElement)",
+    );
+    expect(sequencer).toContain("input.valueAsNumber");
+    expect(sequencer).toContain("`Adjust ${def.label}`");
+    expect(sequencer).toContain('type="range"');
+    expect(sequencer).toContain(
       "placeholder={value === null ? 'Mixed' : undefined}",
     );
     expect(sequencer).toContain("class:mixed={value === null}");
     expect(sequencer).toContain("class:mixed={selectedVelocity === null}");
-    expect(sequencer).toContain(".note-override-value.mixed input");
+    expect(sequencer).toContain(
+      ".note-override-value.mixed input[type='number']",
+    );
+    expect(sequencer).toContain('class="note-override-slider"');
+    expect(sequencer).toContain("class:mixed={value === null}");
+    expect(sequencer).toContain("Resolve mixed ${def.label}");
+    expect(sequencer).toContain("value={value ?? range?.median ?? def.min}");
+    expect(sequencer).toContain(
+      "function selectedOverrideRange(param: string)",
+    );
+    expect(sequencer).toContain(
+      "(values[0]! + values[values.length - 1]!) / 2",
+    );
+    expect(sequencer).toContain("--mixed-start: ${mixedStart}%");
+    expect(sequencer).toContain("--mixed-end: ${mixedEnd}%");
+    expect(sequencer).toContain("--mixed-median: ${mixedMedian}%");
+    expect(sequencer).toContain('class="note-override-slider-frame"');
+    expect(sequencer).toContain('class="mixed-override-track"');
+    expect(sequencer).toContain('class="mixed-override-range"');
+    expect(sequencer).toContain('class="mixed-override-marker"');
+    expect(sequencer).toContain(".note-override-slider-frame.mixed");
+    expect(sequencer).toContain("repeating-linear-gradient");
+    expect(sequencer).toContain(".mixed-override-marker");
+    expect(sequencer).toContain("width: 12px");
+    expect(sequencer).toContain("border: 2px solid");
+    expect(sequencer).toContain("opacity: 0");
+    expect(sequencer).toContain("function openNoteOverrideContextMenu(");
+    expect(sequencer).toContain("actions={noteOverrideContextActions}");
+    expect(sequencer).toContain(".note-override-exact-value");
     expect(sequencer).toContain("border-color: var(--color-warning)");
   });
 
