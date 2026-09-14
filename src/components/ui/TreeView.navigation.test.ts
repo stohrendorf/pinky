@@ -62,23 +62,13 @@ describe("TreeView folder navigation", () => {
     expect([...scope.collapsedFolders]).toEqual(["03 Outro"]);
   });
 
-  it("provides names for the tree and folder tools, and full paths for truncated rows", () => {
+  it("provides full paths for truncated rows", () => {
     const markup = componentMarkup(source);
     const tree = elements(markup, "div").find((node) =>
       hasAttribute(node, "role", "tree"),
     )!;
     expect(hasAttribute(tree, "aria-label")).toBe(true);
     const buttons = elements(markup, "button");
-    expect(
-      buttons.some((node) =>
-        hasAttribute(node, "aria-label", "Collapse all folders"),
-      ),
-    ).toBe(true);
-    expect(
-      buttons.some((node) =>
-        hasAttribute(node, "aria-label", "Expand all folders"),
-      ),
-    ).toBe(true);
     const rows = buttons.filter((node) =>
       hasAttribute(node, "class", "row-main"),
     );

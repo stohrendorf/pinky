@@ -114,23 +114,6 @@
     <div class="tree-heading">
         <span>{title} <span class="tree-count">{items.length}</span></span>
         <div class="header-actions">
-            {#if entries.some(entry => entry.kind === 'folder')}
-                <button
-                    class="folder-tool"
-                    aria-label="Collapse all folders"
-                    onclick={collapseAll}
-                    title="Collapse all folders"
-                    type="button"><i class="fa fa-compress" aria-hidden="true"></i></button
-                >
-                <button
-                    class="folder-tool"
-                    aria-label="Expand all folders"
-                    disabled={collapsedFolders.size === 0}
-                    onclick={expandAll}
-                    title="Expand all folders"
-                    type="button"><i class="fa fa-expand" aria-hidden="true"></i></button
-                >
-            {/if}
             {@render headerActions?.()}
         </div>
     </div>
@@ -266,27 +249,6 @@
         display: flex;
         align-items: center;
         gap: 4px;
-    }
-
-    .folder-tool {
-        width: 24px;
-        height: 22px;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        background: var(--color-surface);
-        color: var(--primary-text);
-        cursor: pointer;
-        font-size: 11px;
-    }
-
-    .folder-tool:hover,
-    .folder-tool:focus-visible {
-        background: var(--color-surface-hover);
-    }
-
-    .folder-tool:disabled {
-        opacity: 0.4;
-        cursor: default;
     }
 
     .tree-list {
