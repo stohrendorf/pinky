@@ -1990,6 +1990,7 @@
         flex-direction: column;
         background-image: linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
         background-size: var(--cell-width) 100%;
+        padding-bottom: 1rem;
     }
 
     .bar-line {
