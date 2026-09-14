@@ -253,27 +253,6 @@ describe("Playlist frozen track labels", () => {
     );
   });
 
-  it("offers guarded lane removal beside the existing track controls", () => {
-    expect(playlist).toContain('aria-label="Remove track"');
-    expect(playlist).toContain('class="auto-label track-label"');
-    expect(playlist).toMatch(
-      /<button\b(?=[^>]*\bclass="ms remove-track")(?=[^>]*\baria-label="Remove automation lane")[^>]*>/,
-    );
-    expect(playlist).toContain("requestRemoveAutoLane(lane)");
-    expect(playlist).toContain("let showRemoveAutoLane = $state(false)");
-    expect(playlist).toContain("import Confirm from './ui/Confirm.svelte'");
-    expect(playlist).toContain('title="Remove Automation Lane"');
-    expect(playlist).toContain("bind:show={showRemoveAutoLane}");
-    expect(playlist).toContain('confirmLabel="Remove lane"');
-    expect(playlist).toContain("onconfirm={removeAutoLane}");
-    expect(playlist).toContain("showRemoveTrack");
-    expect(playlist).toContain('confirmLabel="Remove track"');
-    expect(playlist).toContain("onconfirm={removeTrack}");
-    expect(playlist).toMatch(
-      /removeArrangementTrack\(\s*\$project\.tracks,\s*\$project\.arrangement,\s*trackToRemove,?\s*\)/,
-    );
-  });
-
   it("opens context menus for track and automation headers instead of applying a single right-click action", () => {
     expect(playlist).toContain(
       "import ContextMenu from './ui/ContextMenu.svelte'",

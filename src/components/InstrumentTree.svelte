@@ -22,8 +22,6 @@
         { id: 'edit', label: 'Edit instrument', icon: 'fa-sliders' },
         { id: 'clone', label: 'Clone instrument', icon: 'fa-copy' },
         { id: 'rename', label: 'Rename', icon: 'fa-pencil' },
-        { id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark' },
-        { id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones' },
         { id: 'delete', label: 'Delete', icon: 'fa-trash' },
     ];
 
@@ -56,26 +54,22 @@
         if (!instrument) {
             return;
         }
-        if (actionId === 'edit') {
-            onEdit();
-        }
-        if (actionId === 'clone') {
-            cloneInstrument(instrument.id);
-        }
-        if (actionId === 'rename') {
-            renameValue = instrument.name;
-            showRename = true;
-        }
-        if (actionId === 'mute') {
-            instrument.mute = !instrument.mute;
-            touch();
-        }
-        if (actionId === 'solo') {
-            instrument.solo = !instrument.solo;
-            touch();
-        }
-        if (actionId === 'delete' && ($project?.instruments.length || 0) > 1) {
-            showDelete = true;
+        switch(actionId) {
+            case 'edit':
+                onEdit();
+                break;
+            case 'clone':
+                cloneInstrument(instrument.id);
+                break;
+            case 'rename':
+                renameValue = instrument.name;
+                showRename = true;
+                break;
+            case 'delete':
+                if (actionId === 'delete' && ($project?.instruments.length || 0) > 1) {
+                    showDelete = true;
+                }
+                break;
         }
     }
 

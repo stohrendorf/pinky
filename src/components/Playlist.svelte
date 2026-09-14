@@ -675,24 +675,23 @@
     }
 
     function contextMenuActions() {
-        if (contextMenuTarget?.kind === 'track') {
-            return [
-                { id: 'rename', label: 'Rename track', icon: 'fa-pencil' },
-                { id: 'color', label: 'Track color', icon: 'fa-palette' },
-                { id: 'mute', label: 'Mute / unmute', icon: 'fa-volume-xmark' },
-                { id: 'solo', label: 'Solo / unsolo', icon: 'fa-headphones' },
-                {
-                    id: 'delete',
-                    label: 'Remove track',
-                    icon: 'fa-trash',
-                    disabled: ($project?.tracks.length ?? 0) <= 1,
-                },
-            ];
+        switch(contextMenuTarget?.kind) {
+            case 'track':
+                return [
+                    {id: 'rename', label: 'Rename track', icon: 'fa-pencil'},
+                    {id: 'color', label: 'Track color', icon: 'fa-palette'},
+                    {
+                        id: 'delete',
+                        label: 'Remove track',
+                        icon: 'fa-trash',
+                        disabled: ($project?.tracks.length ?? 0) <= 1,
+                    },
+                ];
+            case 'automation':
+                return [{id: 'delete', label: 'Remove automation lane', icon: 'fa-trash'}];
+            default:
+                return [];
         }
-        if (contextMenuTarget?.kind === 'automation') {
-            return [{ id: 'delete', label: 'Remove automation lane', icon: 'fa-trash' }];
-        }
-        return [];
     }
 
     function selectContextMenuAction(action: string) {
@@ -707,16 +706,16 @@
             }
             return;
         }
-        if (action === 'rename') {
-            editTrack(target.trackIndex);
-        } else if (action === 'color') {
-            changeTrackColor(target.trackIndex);
-        } else if (action === 'mute') {
-            toggleTrackMute(target.trackIndex);
-        } else if (action === 'solo') {
-            toggleTrackSolo(target.trackIndex);
-        } else if (action === 'delete') {
-            requestRemoveTrack(target.trackIndex);
+        switch(action) {
+            case 'rename':
+                editTrack(target.trackIndex);
+                break;
+            case 'color':
+                changeTrackColor(target.trackIndex);
+                break;
+            case 'delete':
+                requestRemoveTrack(target.trackIndex);
+                break;
         }
     }
 
@@ -1400,15 +1399,6 @@
                                     onmousedown={stopPropagation()}
                                     title="Solo lane"><i class="fa fa-headphones"></i></button
                                 >
-                                <button
-                                    class="ms remove-track"
-                                    aria-label="Remove track"
-                                    disabled={$project!.tracks.length <= 1}
-                                    onclick={stopPropagation(() => requestRemoveTrack(t))}
-                                    ondblclick={stopPropagation()}
-                                    onmousedown={stopPropagation()}
-                                    title="Remove track"><i class="fa fa-trash"></i></button
-                                >
                             </div>
                         </div>
                     {/if}
@@ -1450,14 +1440,6 @@
                             >
                                 {laneValueLabel(lane, autoStep)}
                             </div>
-                            <button
-                                class="ms remove-track"
-                                aria-label="Remove automation lane"
-                                onclick={stopPropagation(() => requestRemoveAutoLane(lane))}
-                                onmousedown={stopPropagation()}
-                                title="Remove this automation lane"
-                                ><i class="fa fa-trash"></i></button
-                            >
                         </div>
                     {/if}
                 {/each}
@@ -1985,22 +1967,9 @@
         color: #282238;
     }
 
-    .track-label .remove-track:hover:not(:disabled) {
-        color: #ff6b8a;
-    }
-
     .track-label .ms:disabled {
         opacity: 0.2;
         cursor: default;
-    }
-
-    .track-label .remove-track {
-        font-size: 13px;
-    }
-
-    .track-label .remove-track:disabled {
-        cursor: default;
-        opacity: 0.12;
     }
 
     .grid-row.silent {
