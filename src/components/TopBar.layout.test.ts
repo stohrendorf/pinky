@@ -33,27 +33,30 @@ describe("TopBar desktop layout", () => {
     ).toBe(false);
   });
 
-  it("separates project, downloads and transport without hiding their commands", () => {
-    for (const label of ["Project", "Download", "Transport and timing"]) {
-      const group = elements(markup, "div").find((node) =>
+  it("keeps project commands structured in the main menu beside direct transport", () => {
+    for (const label of ["Project", "Export", "Demos"]) {
+      const group = elements(markup, "section").find((node) =>
         hasAttribute(node, "aria-label", label),
       );
       expect(group).toBeDefined();
-      expect(hasAttribute(group!, "role", "group")).toBe(true);
     }
+    const transport = elements(markup, "div").find((node) =>
+      hasAttribute(node, "aria-label", "Transport and timing"),
+    );
+    expect(hasAttribute(transport!, "role", "group")).toBe(true);
     expect(elements(markup, "details")).toHaveLength(0);
     expect(components(markup, "InstrumentPanel")).toHaveLength(0);
   });
 
-  it("keeps the brand noninteractive and exposes the source through a separate GitHub icon", () => {
-    const brand = elements(markup, "span").find((node) =>
-      hasAttribute(node, "class", "brand"),
+  it("uses the brand as the main-menu trigger and keeps the GitHub icon separate", () => {
+    const brand = elements(markup, "button").find((node) =>
+      hasAttribute(node, "class", "brand main-menu-toggle"),
     )!;
     expect(brand).toBeDefined();
     expect(textContent(brand)).toBe("Pinky");
-    for (const attribute of ["href", "onclick", "tabindex", "aria-expanded"]) {
-      expect(hasAttribute(brand, attribute)).toBe(false);
-    }
+    expect(hasAttribute(brand, "aria-controls", "main-menu")).toBe(true);
+    expect(hasAttribute(brand, "aria-expanded")).toBe(true);
+    expect(hasAttribute(brand, "onclick")).toBe(true);
     const github = elements(markup, "a").find((node) =>
       hasAttribute(node, "href", "https://github.com/stohrendorf/pinky"),
     )!;
@@ -89,9 +92,9 @@ describe("TopBar desktop layout", () => {
     }
   });
 
-  it("has only one Save action and announces confirmation without reserving header space", () => {
-    const saves = components(markup, "Button").filter(
-      (node) => textContent(node) === "Save",
+  it("has one browser-save action in the main menu and announces confirmation", () => {
+    const saves = elements(markup, "button").filter(
+      (node) => textContent(node) === "Save to browser",
     );
     expect(saves).toHaveLength(1);
     expect(
@@ -108,22 +111,24 @@ describe("TopBar desktop layout", () => {
     );
   });
 
-  it("uses named nonmodal panels with no nested settings or permanent help paragraphs", () => {
+  it("uses named nonmodal main-menu and Audio panels without permanent help paragraphs", () => {
     const toggles = elements(markup, "button").filter((node) =>
       hasAttribute(node, "aria-controls", "topbar-panel"),
     );
-    expect(toggles.map(textContent)).toEqual(["Demos", "Audio"]);
+    expect(toggles.map(textContent)).toEqual(["Audio"]);
     for (const toggle of toggles) {
       expect(hasAttribute(toggle, "aria-expanded")).toBe(true);
       expect(hasAttribute(toggle, "aria-haspopup", "dialog")).toBe(true);
     }
-    const panel = elements(markup, "div").find((node) =>
-      hasAttribute(node, "id", "topbar-panel"),
+    expect(toolbar).toContain(
+      "id={activePanel === 'main' ? 'main-menu' : 'topbar-panel'}",
+    );
+    expect(toolbar).toContain('role="dialog"');
+    expect(toolbar).not.toContain("aria-modal");
+    const mainMenu = elements(markup, "div").find((node) =>
+      hasAttribute(node, "class", "main-menu"),
     )!;
-    expect(hasAttribute(panel, "role", "dialog")).toBe(true);
-    expect(hasAttribute(panel, "aria-label")).toBe(true);
-    expect(hasAttribute(panel, "aria-modal")).toBe(false);
-    expect(elements([panel], "p")).toHaveLength(0);
+    expect(elements([mainMenu], "p")).toHaveLength(0);
     expect(styleRules(toolbar).get(".toolbar-panel")?.get("overflow")).toBe(
       "auto",
     );

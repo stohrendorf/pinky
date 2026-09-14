@@ -27,7 +27,10 @@ interface Fragment {
 interface Attribute {
   name: string;
   type: string;
-  value?: { data?: string; expression?: unknown; type: string }[] | true;
+  value?:
+    | { data?: string; expression?: unknown; type: string }[]
+    | { data?: string; expression?: unknown; type: string }
+    | true;
 }
 
 export function componentSource(url: URL): string {
@@ -68,12 +71,13 @@ export function hasAttribute(
   if (value === undefined) {
     return true;
   }
-  return (
-    attribute.value !== true &&
-    attribute.value?.some(
-      (part) => part.type === "Text" && part.data === value,
-    ) === true
-  );
+  const parts =
+    attribute.value === true || attribute.value === undefined
+      ? []
+      : Array.isArray(attribute.value)
+        ? attribute.value
+        : [attribute.value];
+  return parts.some((part) => part.type === "Text" && part.data === value);
 }
 
 export function textContent(node: Node): string {

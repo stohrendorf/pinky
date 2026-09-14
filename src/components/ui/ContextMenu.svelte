@@ -1,3 +1,8 @@
+<script lang="ts" module>
+    const CONTEXT_MENU_OPEN_EVENT = 'pinky:context-menu-open';
+    let nextContextMenuId = 0;
+</script>
+
 <script lang="ts">
     import { onMount, tick } from 'svelte';
 
@@ -21,6 +26,7 @@
 
     let menuEl: HTMLDivElement | undefined = $state();
     let position = $state({ top: 0, left: 0 });
+    const menuId = ++nextContextMenuId;
 
     async function updatePosition() {
         if (!anchor && !point) {
@@ -56,9 +62,16 @@
         }
     }
 
+    function handleOtherContextMenu(event: Event) {
+        if (open && (event as CustomEvent<number>).detail !== menuId) {
+            onclose();
+        }
+    }
+
     $effect.pre(() => {
         if (open) {
             updatePosition();
+            window.dispatchEvent(new CustomEvent(CONTEXT_MENU_OPEN_EVENT, { detail: menuId }));
         }
     });
 
@@ -66,9 +79,11 @@
         const reposition = () => updatePosition();
         window.addEventListener('resize', reposition);
         window.addEventListener('scroll', reposition, true);
+        window.addEventListener(CONTEXT_MENU_OPEN_EVENT, handleOtherContextMenu);
         return () => {
             window.removeEventListener('resize', reposition);
             window.removeEventListener('scroll', reposition, true);
+            window.removeEventListener(CONTEXT_MENU_OPEN_EVENT, handleOtherContextMenu);
         };
     });
 </script>
