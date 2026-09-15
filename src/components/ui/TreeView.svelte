@@ -22,6 +22,7 @@
         showMuteSolo?: boolean;
         sortFolders?: boolean;
         title?: string;
+        usedItemIds?: ReadonlySet<string>;
     }
 
     const {
@@ -39,6 +40,7 @@
         showMuteSolo = false,
         sortFolders = false,
         title = 'Items',
+        usedItemIds = new Set(),
     }: Props = $props();
 
     const collapsedFolders = new SvelteSet<string>();
@@ -170,6 +172,13 @@
                                     ><i class="fa fa-music"></i></span
                                 >{/if}
                             <span>{entry.label}</span>
+                            {#if usedItemIds.has(entry.item.id)}
+                                <span
+                                    class="usage-indicator"
+                                    aria-label="Used in current pattern"
+                                    title="Used in current pattern"
+                                ></span>
+                            {/if}
                         </button>
                         {#if showMuteSolo}
                             <button
@@ -295,6 +304,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .usage-indicator {
+        flex: 0 0 auto;
+        width: 6px;
+        height: 6px;
+        margin-left: auto;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 5px var(--color-accent-soft);
     }
 
     .folder-row {

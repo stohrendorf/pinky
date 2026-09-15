@@ -1,9 +1,9 @@
 <script lang="ts">
     import type {NamedTreeItem} from '../lib/name-tree';
-    import type {Instrument} from '../lib/types';
+    import type {Instrument, Pattern} from '../lib/types';
 
     import {createInstrument} from '../lib/instruments';
-    import {cloneInstrument, project, renameInstrument, selInstId, touch} from '../lib/project';
+    import {cloneInstrument, project, renameInstrument, selInstId, selPatId, touch} from '../lib/project';
     import Confirm from './ui/Confirm.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
@@ -28,6 +28,17 @@
     const selected = $derived(
         ($project?.instruments.find(i => i.id === $selInstId) ||
             $project?.instruments[0]) as Instrument,
+    );
+    const pattern = $derived(
+        ($project?.patterns.find(candidate => candidate.id === $selPatId) ||
+            $project?.patterns[0]) as Pattern | undefined,
+    );
+    const usedInstrumentIds = $derived(
+        new Set(
+            Object.entries(pattern?.tracks ?? {})
+                .filter(([, notes]) => notes.length > 0)
+                .map(([instrumentId]) => instrumentId),
+        ),
     );
 
     function choose(item: NamedTreeItem): Instrument | null {
@@ -164,6 +175,7 @@
         selectedId={selected?.id}
         showMuteSolo={true}
         title="Instruments"
+        usedItemIds={usedInstrumentIds}
     >
         {#snippet headerActions()}
             <button

@@ -14,6 +14,7 @@ describe("TreeView folder navigation", () => {
       onselect,
       selectedId: null,
       title: "Tracks",
+      usedItemIds: new Set(["beat"]),
     };
     const { rerender } = render(TreeView, props);
 
@@ -21,6 +22,8 @@ describe("TreeView folder navigation", () => {
     expect(screen.getByTitle("02 Main")).not.toBeNull();
     expect(screen.getByTitle("02 Main/Drums")).not.toBeNull();
     expect(screen.getByTitle("02 Main/Drums/beat")).not.toBeNull();
+    expect(screen.getByLabelText("Used in current pattern")).not.toBeNull();
+    expect(screen.queryByTitle("Used in current pattern")).not.toBeNull();
 
     await fireEvent.click(screen.getByTitle("02 Main"));
     await fireEvent.click(screen.getByTitle("03 Outro"));
