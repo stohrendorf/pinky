@@ -1,57 +1,28 @@
+import { render, screen } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 
-import {
-  componentMarkup,
-  componentSource,
-  elements,
-  hasAttribute,
-  styleRules,
-} from "../test/svelte-semantics";
-
-const preview = componentSource(
-  new URL("./FilterPreview.svelte", import.meta.url),
-);
+import { DEFAULT_PARAMS } from "../lib/instruments";
+import FilterPreview from "./FilterPreview.svelte";
 
 describe("FilterPreview", () => {
-  it("uses a dense response curve so narrow resonances remain visible", () => {
-    const svg = elements(componentMarkup(preview), "svg")[0];
-    const response = elements(componentMarkup(preview), "path").find((node) =>
-      hasAttribute(node, "class", "response"),
-    );
+  it("renders an accessible, dense response curve and redraws it for changed inputs", () => {
+    const params = { ...DEFAULT_PARAMS };
+    const { rerender } = render(FilterPreview, { note: "C4", params });
+    const curve = screen.getByRole("img", { name: "Filter curve for C4" });
+    const path = curve.querySelector("path.response");
+    const commands = path?.getAttribute("d")?.match(/[ML] /g) ?? [];
 
-    expect(svg).toBeDefined();
-    expect(hasAttribute(svg, "role", "img")).toBe(true);
-    expect(response).toBeDefined();
-    expect(hasAttribute(response!, "d")).toBe(true);
-  });
+    expect(screen.getByLabelText("Filter response preview")).not.toBeNull();
+    expect(commands.length).toBeGreaterThan(300);
 
-  it("keeps the preview focused on the curve without a redundant caption", () => {
-    const captions = elements(componentMarkup(preview), "figcaption");
+    const initialPath = path?.getAttribute("d");
+    rerender({ note: "A4", params: { ...params, q: 5, tone: 0.25 } });
 
-    expect(captions).toHaveLength(0);
-  });
-
-  it("scales the plotted response to its measured range instead of clipping quiet values", () => {
-    const response = elements(componentMarkup(preview), "path").find((node) =>
-      hasAttribute(node, "class", "response"),
-    );
-
-    expect(response).toBeDefined();
-    expect(hasAttribute(response!, "d")).toBe(true);
-  });
-
-  it("keeps the moved curve tall enough to read its response shape", () => {
-    expect(styleRules(preview).get("svg")?.get("height")).toBe("104px");
-  });
-
-  it("keeps its input props reactive so parameter changes redraw the curve immediately", () => {
-    const previewRoot = elements(componentMarkup(preview), "section").find(
-      (node) => hasAttribute(node, "class", "filter-preview"),
-    );
-
-    expect(previewRoot).toBeDefined();
+    const updatedCurve = screen.getByRole("img", {
+      name: "Filter curve for A4",
+    });
     expect(
-      hasAttribute(previewRoot!, "aria-label", "Filter response preview"),
-    ).toBe(true);
+      updatedCurve.querySelector("path.response")?.getAttribute("d"),
+    ).not.toBe(initialPath);
   });
 });

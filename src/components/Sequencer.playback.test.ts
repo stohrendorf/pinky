@@ -1,64 +1,114 @@
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import { tick } from "svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Project } from "../lib/types";
+
+import { createInstrument } from "../lib/instruments";
 import {
-  componentFunction,
-  componentMarkup,
-  componentSource,
-  elements,
-  hasAttribute,
-  textContent,
-} from "../test/svelte-semantics";
+  playing,
+  playMode,
+  project,
+  selInstId,
+  selPatId,
+} from "../lib/project";
+import { rendering } from "../lib/render";
+import Sequencer from "./Sequencer.svelte";
 
-const source = componentSource(new URL("./Sequencer.svelte", import.meta.url));
+const transport = vi.hoisted(() => ({
+  playPattern: vi.fn(),
+  stopTransport: vi.fn(),
+}));
+
+vi.mock("../lib/engine", () => ({
+  ensureAudio: vi.fn(),
+  glideAt: vi.fn(),
+  noteOff: vi.fn(),
+  noteOnAt: vi.fn(),
+}));
+vi.mock("../lib/transport", () => transport);
+
+function setProject(): Project {
+  const instrument = createInstrument("Lead");
+  const value: Project = {
+    formatVersion: 1,
+    instruments: [instrument],
+    patterns: [
+      {
+        id: "pattern",
+        name: "Pattern",
+        steps: 16,
+        color: "#53d8fb",
+        tracks: {},
+      },
+    ],
+    arrangement: [],
+    tracks: [],
+    bpm: 120,
+    zoom: { seq: { width: 24, height: 14 }, arr: { width: 1, height: 1 } },
+  };
+  project.set(value);
+  selInstId.set(instrument.id);
+  selPatId.set("pattern");
+  return value;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  project.set(null);
+  selInstId.set(null);
+  selPatId.set(null);
+  playing.set(false);
+  playMode.set("");
+  rendering.set(false);
+});
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("pattern auditioning", () => {
-  it("places a named, icon-only toggle beside the piano roll", () => {
-    const toolbar = elements(componentMarkup(source), "div").find((node) =>
-      hasAttribute(node, "class", "editor-toolbar"),
-    )!;
-    const button = elements([toolbar], "button").find((node) =>
-      hasAttribute(node, "aria-label", "Play pattern"),
-    )!;
-    expect(button).toBeDefined();
-    expect(hasAttribute(button, "aria-pressed")).toBe(true);
-    expect(hasAttribute(button, "title")).toBe(true);
-    expect(hasAttribute(button, "type", "button")).toBe(true);
-    expect(textContent(button)).toBe("");
+  it("renders an accessible icon-only pattern audition toggle", () => {
+    setProject();
+    render(Sequencer);
+
+    const toggle = screen.getByRole("button", { name: "Play pattern" });
+    expect(toggle.getAttribute("type")).toBe("button");
+    expect(toggle.getAttribute("title")).toBe(
+      "Play selected pattern on repeat (Shift+Space)",
+    );
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(toggle.textContent).toBe("");
   });
 
-  it.each([
-    [false, "", false],
-    [true, "song", false],
-    [true, "pattern", true],
-  ])(
-    "toggles playback from playing=%s, mode=%s",
-    ($playing, $playMode, stops) => {
-      const scope = {
-        $playing,
-        $playMode,
-        $rendering: false,
-        $project: {},
-        playPattern: vi.fn(),
-        stopTransport: vi.fn(),
-      };
-      const toggle = componentFunction<() => void>(
-        source,
-        "togglePatternPlayback",
-        scope,
-      );
-      toggle();
-      expect(scope.stopTransport).toHaveBeenCalledTimes(stops ? 1 : 0);
-      expect(scope.playPattern).toHaveBeenCalledTimes(stops ? 0 : 1);
-    },
-  );
+  it("starts auditioning unless the pattern is already playing, then stops it", async () => {
+    setProject();
+    render(Sequencer);
+    const toggle = screen.getByRole("button", { name: "Play pattern" });
 
-  it.each([
-    { $project: {}, $rendering: true },
-    { $project: null, $rendering: false },
-  ])("does not audition without a project or while exporting (%j)", (state) => {
-    const scope = { ...state, playPattern: vi.fn(), stopTransport: vi.fn() };
-    componentFunction<() => void>(source, "togglePatternPlayback", scope)();
-    expect(scope.playPattern).not.toHaveBeenCalled();
-    expect(scope.stopTransport).not.toHaveBeenCalled();
+    await fireEvent.click(toggle);
+    expect(transport.playPattern).toHaveBeenCalledOnce();
+    expect(transport.stopTransport).not.toHaveBeenCalled();
+
+    playing.set(true);
+    playMode.set("pattern");
+    await tick();
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect(toggle.getAttribute("title")).toBe(
+      "Stop pattern playback (Shift+Space)",
+    );
+    await fireEvent.click(toggle);
+    expect(transport.stopTransport).toHaveBeenCalledOnce();
+  });
+
+  it("disables auditioning while an export is active", async () => {
+    setProject();
+    render(Sequencer);
+    rendering.set(true);
+    await tick();
+    expect(screen.getByRole("button", { name: "Play pattern" })).toHaveProperty(
+      "disabled",
+      true,
+    );
   });
 });

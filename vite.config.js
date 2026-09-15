@@ -9,4 +9,12 @@ export default defineConfig({
     // reliably accepted by audioWorklet.addModule() in all browsers
     assetsInlineLimit: 0,
   },
+  resolve: process.env.VITEST
+    ? {
+        conditions: ["browser"],
+      }
+    : undefined,
+  test: {
+    environment: "jsdom",
+  },
 });

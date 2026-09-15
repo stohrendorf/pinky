@@ -1,80 +1,76 @@
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import { createRawSnippet, tick } from "svelte";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import {
-  componentFunction,
-  componentSource,
-} from "../../test/svelte-semantics";
+import Dialog from "./Dialog.svelte";
 
-const source = componentSource(new URL("./Dialog.svelte", import.meta.url));
+const controls = createRawSnippet(() => ({
+  render: () =>
+    '<div><button type="button">First</button><button disabled type="button">Disabled</button><button type="button">Last</button></div>',
+}));
 
-function fixture() {
-  const first = {
-    matches: () => false,
-    checkVisibility: () => true,
-    focus: vi.fn(),
-  };
-  const last = { ...first, focus: vi.fn() };
-  const hidden = { ...first, checkVisibility: () => false, focus: vi.fn() };
-  const disabled = { ...first, matches: () => true, focus: vi.fn() };
-  const dialogEl = {
-    querySelectorAll: () => [disabled, first, last, hidden],
-    focus: vi.fn(),
-  };
-  const document: { activeElement: unknown } = { activeElement: last };
-  const close = vi.fn();
-  const handle = componentFunction<(event: object) => void>(
-    source,
-    "handleKey",
-    {
-      dialogEl,
-      document,
-      close,
-    },
-  );
-  const event = {
-    key: "Tab",
-    shiftKey: false,
-    defaultPrevented: false,
-    preventDefault: vi.fn(),
-    stopPropagation: vi.fn(),
-  };
-  return { first, last, dialogEl, document, close, handle, event };
-}
+beforeAll(() => {
+  if (!HTMLElement.prototype.checkVisibility) {
+    Object.defineProperty(HTMLElement.prototype, "checkVisibility", {
+      configurable: true,
+      value: () => true,
+    });
+  }
+});
+
+afterEach(cleanup);
 
 describe("Dialog keyboard containment", () => {
-  it("wraps Tab from the last usable control to the first", () => {
-    const f = fixture();
-    f.handle(f.event);
-    expect(f.first.focus).toHaveBeenCalledOnce();
-    expect(f.event.preventDefault).toHaveBeenCalledOnce();
+  it("contains Tab navigation among its visible, enabled controls", async () => {
+    render(Dialog, { children: controls, show: true, title: "Editor" });
+    await tick();
+
+    const dialog = screen.getByRole("dialog", { name: "Editor" });
+    const close = dialog.querySelector<HTMLButtonElement>(".close-btn")!;
+    const first = screen.getByRole("button", { name: "First" });
+    const last = screen.getByRole("button", { name: "Last" });
+
+    expect(document.activeElement).toBe(dialog);
+
+    last.focus();
+    await fireEvent.keyDown(last, { key: "Tab" });
+    expect(document.activeElement).toBe(close);
+
+    close.focus();
+    await fireEvent.keyDown(close, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+
+    dialog.focus();
+    await fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
   });
 
-  it("wraps Shift+Tab from the first control and initial dialog focus", () => {
-    const f = fixture();
-    f.event.shiftKey = true;
-    f.document.activeElement = f.first;
-    f.handle(f.event);
-    f.document.activeElement = f.dialogEl;
-    f.handle(f.event);
-    expect(f.last.focus).toHaveBeenCalledTimes(2);
-  });
+  it("contains shortcut events without cancelling them and dismisses on Escape", async () => {
+    const onclose = vi.fn();
+    render(Dialog, {
+      children: controls,
+      onclose,
+      show: true,
+      title: "Editor",
+    });
 
-  it("contains editor shortcuts without preventing normal button activation", () => {
-    const f = fixture();
-    f.event.key = " ";
-    f.handle(f.event);
-    expect(f.event.stopPropagation).toHaveBeenCalledOnce();
-    expect(f.event.preventDefault).not.toHaveBeenCalled();
-  });
+    const dialog = screen.getByRole("dialog", { name: "Editor" });
+    const close = dialog.querySelector<HTMLButtonElement>(".close-btn")!;
+    const shortcut = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: " ",
+    });
+    const bodyHandler = vi.fn();
+    document.body.addEventListener("keydown", bodyHandler);
+    close.dispatchEvent(shortcut);
+    document.body.removeEventListener("keydown", bodyHandler);
 
-  it("respects child key handlers and dismisses on Escape", () => {
-    const f = fixture();
-    f.event.defaultPrevented = true;
-    f.handle(f.event);
-    expect(f.first.focus).not.toHaveBeenCalled();
-    f.event.defaultPrevented = false;
-    f.event.key = "Escape";
-    f.handle(f.event);
-    expect(f.close).toHaveBeenCalledOnce();
+    expect(shortcut.defaultPrevented).toBe(false);
+    expect(bodyHandler).not.toHaveBeenCalled();
+
+    await fireEvent.keyDown(close, { key: "Escape" });
+    expect(onclose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -1,412 +1,263 @@
-import { describe, expect, it } from "vitest";
-
 import {
-  componentFunction,
-  componentMarkup,
-  components,
-  componentSource,
-  elements,
-  functionHasCall,
-  hasAttribute,
-  styleRules,
-} from "../test/svelte-semantics";
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/svelte";
+import { tick } from "svelte";
+import { get } from "svelte/store";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const sequencer = componentSource(
-  new URL("./Sequencer.svelte", import.meta.url),
-);
+import type { Note, Project } from "../lib/types";
+
+import { INSTRUMENT_AUTO_PARAMS } from "../lib/automation";
+import { createInstrument } from "../lib/instruments";
+import {
+  curStep,
+  lastPlayedPitch,
+  playing,
+  playMode,
+  project,
+  selInstId,
+  selPatId,
+} from "../lib/project";
+import { rendering } from "../lib/render";
+import Sequencer from "./Sequencer.svelte";
+
+const audio = vi.hoisted(() => ({
+  ensureAudio: vi.fn(),
+  glideAt: vi.fn(() => false),
+  noteOff: vi.fn(),
+  noteOnAt: vi.fn(),
+}));
+
+vi.mock("../lib/engine", () => audio);
+vi.mock("../lib/transport", () => ({
+  playPattern: vi.fn(),
+  stopTransport: vi.fn(),
+}));
+
+function fixture(notes: Note[] = []): Project {
+  const instrument = createInstrument("Lead");
+  return {
+    formatVersion: 1,
+    instruments: [instrument],
+    patterns: [
+      {
+        id: "pattern",
+        name: "Pattern",
+        steps: 16,
+        color: "#53d8fb",
+        tracks: { [instrument.id]: notes },
+      },
+    ],
+    arrangement: [],
+    tracks: [],
+    bpm: 120,
+    zoom: { seq: { width: 24, height: 14 }, arr: { width: 1, height: 1 } },
+  };
+}
+
+function renderSequencer(notes: Note[] = []) {
+  const value = fixture(notes);
+  project.set(value);
+  selInstId.set(value.instruments[0].id);
+  selPatId.set("pattern");
+  return { value, ...render(Sequencer) };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  audio.ensureAudio.mockResolvedValue(undefined);
+  audio.glideAt.mockReturnValue(false);
+  project.set(null);
+  selInstId.set(null);
+  selPatId.set(null);
+  playing.set(false);
+  playMode.set("");
+  curStep.set(-1);
+  rendering.set(false);
+});
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("Sequencer note interactions", () => {
-  it("edits all selected note properties in a persistent sidebar", () => {
-    expect(sequencer).not.toContain("function openNoteEditor");
-    expect(sequencer).not.toContain('class="note-editor"');
-    expect(sequencer).not.toContain("ondblclick=");
-    expect(sequencer).toContain('class="note-inspector"');
-    expect(sequencer).toContain('aria-label="Selected note properties"');
-    expect(sequencer).toContain('type="range"');
-    expect(sequencer).toContain('aria-label="Selected notes velocity"');
-    expect(sequencer).toMatch(
-      /max="100"[\s\S]*min="1"[\s\S]*updateSelectedVelocity/,
-    );
-    expect(sequencer).toContain('class="note-overrides"');
-    expect(sequencer).toContain('aria-label="Add instrument override"');
-    expect(sequencer).toContain(
-      "function addSelectedNoteOverride(param: string)",
-    );
-    expect(sequencer).toContain(
-      "function selectNoteOverrideToAdd(param: string)",
-    );
-    expect(sequencer).toContain("actions={noteOverrideAddActions}");
-    expect(sequencer).toContain('class="fa fa-plus"');
-    expect(sequencer).toContain(
-      "function updateSelectedNoteOverride(param: string, value: number)",
-    );
-    expect(sequencer).toContain(
-      "function updateSelectedNoteOverrideInput(param: string, input: HTMLInputElement)",
-    );
-    expect(sequencer).toContain("input.valueAsNumber");
-    expect(sequencer).toContain("`Adjust ${def.label}`");
-    expect(sequencer).toContain('type="range"');
-    expect(sequencer).toContain(
-      "placeholder={value === null ? 'Mixed' : undefined}",
-    );
-    expect(sequencer).toContain("class:mixed={value === null}");
-    expect(sequencer).toContain("class:mixed={selectedVelocity === null}");
-    expect(sequencer).toContain(
-      ".note-override-value.mixed input[type='number']",
-    );
-    expect(sequencer).toContain('class="note-override-slider"');
-    expect(sequencer).toContain("class:mixed={value === null}");
-    expect(sequencer).toContain("Resolve mixed ${def.label}");
-    expect(sequencer).toContain("value={value ?? range?.median ?? def.min}");
-    expect(sequencer).toContain(
-      "function selectedOverrideRange(param: string)",
-    );
-    expect(sequencer).toContain(
-      "(values[0]! + values[values.length - 1]!) / 2",
-    );
-    expect(sequencer).toContain("--mixed-start: ${mixedStart}%");
-    expect(sequencer).toContain("--mixed-end: ${mixedEnd}%");
-    expect(sequencer).toContain("--mixed-median: ${mixedMedian}%");
-    expect(sequencer).toContain('class="note-override-slider-frame"');
-    expect(sequencer).toContain('class="mixed-override-track"');
-    expect(sequencer).toContain('class="mixed-override-range"');
-    expect(sequencer).toContain('class="mixed-override-marker"');
-    expect(sequencer).toContain(".note-override-slider-frame.mixed");
-    expect(sequencer).toContain("repeating-linear-gradient");
-    expect(sequencer).toContain(".mixed-override-marker");
-    expect(sequencer).toContain("width: 12px");
-    expect(sequencer).toContain("border: 2px solid");
-    expect(sequencer).toContain("opacity: 0");
-    expect(sequencer).toContain("function openNoteOverrideContextMenu(");
-    expect(sequencer).toContain("actions={noteOverrideContextActions}");
-    expect(sequencer).toContain(".note-override-exact-value");
-    expect(sequencer).toContain("border-color: var(--color-warning)");
-  });
+  it("edits shared properties and resolves mixed overrides for selected notes", async () => {
+    const tone = INSTRUMENT_AUTO_PARAMS.find(({ param }) => param === "tone")!;
+    const first: Note = {
+      pitch: "C5",
+      start: 0,
+      len: 2,
+      vel: 0.35,
+      selected: true,
+      overrides: { tone: 0.2 },
+      legatoTo: { pitch: "E5", start: 2, curve: "linear" },
+    };
+    const second: Note = {
+      pitch: "E5",
+      start: 2,
+      len: 2,
+      vel: 0.8,
+      selected: true,
+      overrides: { tone: 0.8 },
+    };
+    const { value } = renderSequencer([first, second]);
 
-  it("records the selected notes before starting an Alt-drag velocity edit", () => {
-    expect(sequencer).toMatch(
-      /if \(e\.altKey && found\) \{[\s\S]*dragTargets = notes\.filter\(n => n\.selected\) as ExtendedNote\[\];[\s\S]*velMode = true;/,
-    );
-    expect(sequencer).toMatch(
-      /if \(velMode && dragNote\) \{[\s\S]*const targetNotes = draggedNotes\(\);[\s\S]*replaceEditedNotes\(targetNotes\);/,
-    );
-  });
-
-  it("marks notes with parameter overrides without changing their note content", () => {
-    expect(sequencer).toContain("class:has-overrides=");
-    expect(sequencer).toContain(".note.has-overrides");
-  });
-
-  it("keeps the pattern editor header from forcing a wider panel", () => {
-    const markup = componentMarkup(sequencer);
-    const styles = styleRules(sequencer);
-
-    expect(components(markup, "PatternBar")).toHaveLength(0);
+    expect(screen.getByLabelText("Selected note properties")).toBeTruthy();
     expect(
-      elements(markup, "div").some((element) =>
-        hasAttribute(element, "class", "editor-toolbar"),
-      ),
+      screen
+        .getByRole("button", { name: /C5, velocity 35 percent/i })
+        .classList.contains("selected"),
     ).toBe(true);
     expect(
-      elements(markup, "span").some((element) =>
-        hasAttribute(element, "class", "toolbar-hint"),
-      ),
+      screen
+        .getByRole("button", { name: /C5, velocity 35 percent/i })
+        .classList.contains("has-overrides"),
     ).toBe(true);
     expect(
-      elements(markup, "button").some((element) =>
-        hasAttribute(element, "class", "instrument-edit"),
-      ),
+      screen
+        .getByRole("button", { name: /E5, velocity 80 percent/i })
+        .classList.contains("selected"),
     ).toBe(true);
-    expect(styles.get(".toolbar-row")?.get("grid-template-columns")).toBe(
-      "minmax(0, 1fr) auto",
-    );
-    expect(styles.get(".toolbar-hint")?.get("text-align")).toBe("center");
-    expect(styles.get(".piano-roll-container")?.get("min-width")).toBe("0");
-  });
-
-  it("fills the pattern pane and exposes a compact focus-mode control", () => {
-    const markup = componentMarkup(sequencer);
-    const styles = styleRules(sequencer);
-
-    expect(styles.get(".piano-roll")?.get("flex")).toBe("1");
-    expect(styles.get(".piano-roll")?.get("height")).toBe("auto");
-    expect(sequencer).not.toContain("height: clamp(180px, 30vh, 340px)");
     expect(
-      elements(markup, "button").some((element) =>
-        hasAttribute(element, "class", "pattern-focus"),
-      ),
-    ).toBe(true);
-    expect(sequencer).toContain("onToggleFocus");
-    expect(sequencer).toContain("patternFocused");
-  });
-
-  it("keeps step numbers vertically centered and note bodies free of repeated pitch labels", () => {
-    const styles = styleRules(sequencer);
-
-    expect(styles.get(".time-marker")?.get("display")).toBe("flex");
-    expect(styles.get(".time-marker")?.get("align-items")).toBe("center");
-    expect(styles.get(".time-marker")?.get("padding")).toBe("0 4px");
-    expect(sequencer).not.toMatch(/class="note"[\s\S]*?>\s*\{n\.pitch\}/);
-  });
-
-  it("uses a draggable timeline end handle for pattern length", () => {
-    expect(sequencer).toMatch(
-      /class="length-counter"\s*aria-label="Pattern length"/,
-    );
-    expect(sequencer).toContain('class="pattern-end-handle"');
-    expect(sequencer).toContain("function startPatternResize");
-    expect(sequencer).toContain("function handlePatternResize");
-    expect(sequencer).toMatch(/aria-valuemax="512"[\s\S]*aria-valuemin="1"/);
-    expect(sequencer).toContain(
-      "setPatternSteps((event.clientX - rect.left) / cellWidth)",
-    );
-    expect(sequencer).toMatch(
-      /\?\s*\{\s*\.\.\.pattern,\s*steps:\s*nextSteps,\s*tracks\s*\}/,
-    );
-    expect(sequencer).not.toContain("pat.steps = nextSteps;");
-    expect(sequencer).not.toContain("Shorten pattern by four steps");
-    expect(sequencer).not.toContain("Extend pattern by four steps");
-    expect(sequencer).toMatch(/\.corner\s*\{[^}]*width:\s*88px;/s);
-    expect(sequencer).toMatch(/\.side-bar\s*\{[^}]*width:\s*88px;/s);
-  });
-
-  it("draws legato links with their selected transition curve", () => {
-    expect(sequencer).toContain("function legatoPath");
-    expect(sequencer).toContain("segmentProgress(glide.curve, t)");
-    expect(sequencer).toContain("d={legatoPath(line.source, line.target)}");
-    expect(sequencer).toMatch(/\.legato-line\s*\{[^}]*fill:\s*none;/s);
-    expect(sequencer).not.toContain('<line class="legato-line"');
-  });
-
-  it("draws the portamento curve from the source end to the target start", () => {
-    expect(sequencer).toMatch(
-      /legatoTransition\(\s*source,\s*target\.start,\s*stepDuration/,
-    );
-    expect(sequencer).toContain("sourceX + (targetX - sourceX) * t");
-    expect(sequencer).not.toContain("target.start + glide.time / stepDuration");
-  });
-
-  it("offers pitch-slide controls only for a sequential selected note set", () => {
-    expect(sequencer).toContain("const selectedLegatoSequence = $derived.by");
-    expect(sequencer).toContain(
-      "isLegatoTarget(sequence[index - 1], note.start)",
-    );
-    expect(sequencer).toContain('class="note-legato-actions"');
-    expect(sequencer).toContain("const selectedLegatoJoins = $derived");
-    expect(sequencer).toContain("const selectedLegatoCanConnect = $derived");
-    expect(sequencer).toContain("selectedLegatoCurve !== 'mixed'");
-    expect(sequencer).toContain("selectionKey: selectedLegatoSelectionKey");
-    expect(sequencer).toContain(
-      "selectedLegatoCurveChoice?.selectionKey === selectedLegatoSelectionKey",
-    );
-    expect(sequencer).toContain("dragLegatoTargets = new Map");
-    expect(sequencer).toMatch(
-      /updateLegatoTargets\(notes,\s*originalPositions,\s*dragLegatoTargets\)/,
-    );
-  });
-
-  it("selects a newly added note before using it as the active drag target", () => {
-    expect(sequencer).toMatch(
-      /const newNote: ExtendedNote = \{\s*pitch:\s*ROW_NOTES\[r\]\.name,\s*start:\s*s,\s*len:\s*1,\s*selected:\s*true,?\s*\};/,
-    );
-  });
-
-  it("replaces the current instrument track when adding a note so the roll redraws", () => {
-    expect(sequencer).toMatch(
-      /const track = \[\s*\.\.\.\(pat\.tracks\[\$selInstId\] \?\? \[\]\),\s*newNote,?\s*\];/,
-    );
-    expect(sequencer).toContain("pat.tracks[$selInstId] = track;");
-    expect(sequencer).toMatch(
-      /dragNote = pat\.tracks\[\$selInstId\]\[track\.length - 1\] as ExtendedNote;/,
-    );
-    expect(sequencer).not.toContain("notes.push(newNote);");
-  });
-
-  it("replaces dragged and resized notes so their updated geometry redraws immediately", () => {
-    expect(sequencer).toContain("function replaceEditedNotes");
-    expect(sequencer).toContain("function draggedNotes");
-    expect(sequencer).toContain("let dragTargets: ExtendedNote[] = [];");
-    expect(sequencer).toContain("return dragTargets;");
-    expect(sequencer).toContain("const track = pat.tracks[$selInstId] ?? [];");
-    expect(sequencer).toMatch(
-      /pat\.tracks\[\$selInstId\] = track\.map\(note => replacements\.get\(note\) \?\? note\);/,
-    );
-    expect(sequencer).toMatch(
-      /dragTargets = dragTargets\.map\(note => replacements\.get\(note\) \?\? note\);/,
-    );
-    expect(sequencer).toMatch(
-      /const targetNotes = draggedNotes\(\);[\s\S]*replaceEditedNotes\(targetNotes\)[\s\S]*dragNote = replacements\.get\(dragNote\) \?\? dragNote;/,
-    );
-  });
-
-  it("keeps a newly placed note as the active drag target until mouse-up", () => {
-    expect(sequencer).toMatch(
-      /const newNote: ExtendedNote = \{\s*pitch:\s*ROW_NOTES\[r\]\.name,\s*start:\s*s,\s*len:\s*1,\s*selected:\s*true,?\s*\};[\s\S]*dragNote = pat\.tracks\[\$selInstId\]\[track\.length - 1\] as ExtendedNote;[\s\S]*beginNoteDrag\(dragNote, r, s, s_raw\);/,
-    );
-    expect(sequencer).toMatch(/dragNote = null;\s*dragTargets = \[\];/);
-  });
-
-  it("clears a note selection before a plain empty-cell click can add a note", () => {
-    expect(sequencer).toContain(
-      "shouldPlaceNote(selectedNotes.length > 0, e.shiftKey)",
-    );
-    expect(sequencer).toMatch(
-      /if \(!shouldPlaceNote\(selectedNotes\.length > 0, e\.shiftKey\)\) \{\s*clearSelection\(\);\s*return;\s*\}[\s\S]*const newNote: ExtendedNote/,
-    );
-  });
-
-  it("edits and removes sequential pitch slides from the selected-note sidebar", () => {
-    expect(sequencer).toContain("function removeLegato");
+      screen
+        .getByLabelText("Selected notes velocity percentage")
+        .getAttribute("placeholder"),
+    ).toBe("Mixed");
     expect(
-      functionHasCall(sequencer, "removeLegato", "commitCurrentTrack"),
-    ).toBe(true);
-    expect(sequencer).toMatch(
-      /aria-label="Remove pitch slides"[\s\S]*onclick=\{removeLegato\}[\s\S]*<i class="fa fa-link-slash" aria-hidden="true"><\/i>/,
-    );
-    expect(sequencer).toMatch(
-      /aria-label="Create missing pitch slides"[\s\S]*disabled=\{!selectedLegatoCanConnect\}[\s\S]*onclick=\{addLegato\}/,
-    );
-    expect(sequencer).toContain(
-      '<option disabled value="mixed">Mixed</option>',
-    );
-    expect(sequencer).toContain(
-      "class:mixed={selectedLegatoCurve === 'mixed'}",
-    );
-    expect(sequencer).toContain(".note-legato-actions select.mixed");
-    expect(sequencer).toMatch(
-      /aria-label="Create missing pitch slides"[\s\S]*<i class="fa fa-link" aria-hidden="true"><\/i>/,
-    );
-    expect(sequencer).not.toContain("</i> Connect");
-    expect(sequencer).not.toContain("</i> Remove slides");
-    expect(sequencer).not.toContain("<span>Type</span>");
-    expect(sequencer).not.toContain("Move pitch to second note");
-  });
+      screen
+        .getByLabelText(`Override ${tone.label}`)
+        .getAttribute("placeholder"),
+    ).toBe("Mixed");
 
-  it("initializes each movable note drag from the current track and auditions it immediately", () => {
-    expect(sequencer).toContain("function beginNoteDrag");
-    expect(sequencer).toMatch(
-      /const targetNotes = note\.selected\s*\?[\s\S]*pat\.tracks\[\$selInstId\][\s\S]*filter\(current => current\.selected\)[\s\S]*:\s*\[note\];/,
-    );
-    expect(sequencer).toMatch(
-      /dragTargets = targetNotes;[\s\S]*void previewDraggedNote\(note\);/,
-    );
-    expect(sequencer).toMatch(/beginNoteDrag\(found, r, s, s_raw\);/);
-    expect(sequencer).toMatch(/beginNoteDrag\(dragNote, r, s, s_raw\);/);
-  });
+    await fireEvent.input(screen.getByLabelText("Selected notes velocity"), {
+      target: { value: "65" },
+    });
+    expect(
+      value.patterns[0].tracks[value.instruments[0].id].map((note) => note.vel),
+    ).toEqual([0.65, 0.65]);
 
-  it("uses the immutable shared deletion operation for right-drag deletion", () => {
-    expect(sequencer).toContain("deleteNotes,");
-    expect(sequencer).toMatch(
-      /function deleteNoteAt[\s\S]*if \(found\) \{\s*deleteNotes\(\[found\]\);/,
-    );
-  });
-
-  it("keeps selection as local view state while committing note content edits", () => {
-    expect(sequencer).toMatch(
-      /function commitCurrentTrack\(\)[\s\S]*pat\.tracks\[\$selInstId\] = \[\.\.\.\(pat\.tracks\[\$selInstId\] \?\? \[\]\)\];/,
-    );
-    expect(sequencer).toContain("let selectionRevision = $state(0);");
-    expect(sequencer).toContain("selectionRevision++;");
-    expect(sequencer).toContain("const displayedNotes = $derived.by");
-    expect(functionHasCall(sequencer, "addLegato", "commitCurrentTrack")).toBe(
-      true,
-    );
-  });
-
-  it("replaces selection-changed notes so their selected border follows the logical selection", () => {
-    expect(sequencer).toContain("function updateNoteSelection");
-    expect(sequencer).toContain("function selectOnlyNote");
-    expect(sequencer).toMatch(
-      /function clearSelection\(\)[\s\S]*updateNoteSelection\(\(?note\)? => \(?note\.selected \? false : note\.selected\)?\);/,
-    );
-    expect(sequencer).toMatch(
-      /function selectOnlyNote\(note: ExtendedNote\)[\s\S]*updateNoteSelection\(\(?current\)? => current === note\);/,
-    );
-    expect(sequencer).toContain("class:selected={selectedNotes.includes(n)}");
-  });
-
-  it("measures drag coordinates against the scrolled grid background", () => {
-    expect(sequencer).toContain("function gridPositionAt");
-    expect(sequencer).toContain("rollEl.querySelector('.grid-container')");
-    expect(sequencer).toMatch(
-      /handleMouseDown\(mouseEvent, gridPosition\.r, gridPosition\.s\);/,
-    );
-  });
-
-  it("retunes the held preview voice whenever a dragged note changes pitch", () => {
-    expect(sequencer).toContain("const DRAG_PREVIEW_TRACK = 'drag-preview'");
-    expect(sequencer).toContain("function previewDraggedNote");
-    expect(sequencer).toContain("const pitch = note.pitch;");
-    expect(sequencer).toContain("const velocity = note.vel ?? 1;");
-    expect(functionHasCall(sequencer, "previewDraggedNote", "glideAt")).toBe(
-      true,
-    );
-    expect(sequencer).toContain(
-      "let activePreviewPitch: string | null = null;",
-    );
-    expect(sequencer).toContain("const previousPitch = activePreviewPitch;");
-    expect(sequencer).toContain("lastPlayedPitch.set(pitch);");
-    expect(sequencer).toContain(
-      "glideAt(DRAG_PREVIEW_TRACK, previousPitch, pitch, 0, 0.015)",
-    );
-    expect(functionHasCall(sequencer, "previewDraggedNote", "noteOff")).toBe(
-      true,
-    );
-    expect(sequencer).toContain(
-      "noteOnAt(DRAG_PREVIEW_TRACK, pitch, 0, selectedInstrument().params, velocity);",
-    );
-    expect(sequencer).toContain("activePreviewPitch = pitch;");
-    expect(sequencer).toContain("previewDraggedNote(dragNote);");
-    expect(sequencer).toContain("function stopDragPreview");
-    expect(sequencer).toContain("stopDragPreview();");
-  });
-
-  it("follows the active pattern playhead and hides song playback outside the open pattern", () => {
-    const playheadStep = (playing: boolean, mode: string, curStep: number) =>
-      componentFunction<() => number[]>(sequencer, "patternPlayheadSteps", {
-        $playing: playing,
-        $playMode: mode,
-        $curStep: curStep,
-        $project: { arrangement: [], tracks: [] },
-        pat: { id: "pattern" },
-        steps: 16,
-      })();
-
-    expect(sequencer).toContain("playMode");
-    expect(sequencer).toContain("function patternPlayheadSteps");
-    expect(sequencer).toContain("if ($playMode === 'pattern')");
-    expect(playheadStep(true, "pattern", 19)).toEqual([3]);
-    expect(playheadStep(true, "preview", 19)).toEqual([]);
-    expect(sequencer).toMatch(
-      /scrollPlayheadIntoView\(rollEl,\s*currentPatternPlayheadStep,\s*cellWidth,\s*88\)/,
-    );
-    expect(sequencer).toContain("{#if currentPatternPlayheadStep !== null}");
-  });
-
-  it("shows every active position of the open pattern during overlapping song clips", () => {
-    const playheadSteps = componentFunction<() => number[]>(
-      sequencer,
-      "patternPlayheadSteps",
+    await fireEvent.input(
+      screen.getByLabelText(`Resolve mixed ${tone.label}`),
       {
-        $playing: true,
-        $playMode: "song",
-        $curStep: 12,
-        $project: {
-          tracks: [{}, {}],
-          arrangement: [
-            { patternId: "pattern", start: 0, len: 16, track: 0 },
-            { patternId: "pattern", start: 8, len: 16, track: 1 },
-          ],
-        },
-        pat: { id: "pattern" },
-        steps: 16,
+        target: { value: "0.5" },
       },
     );
+    expect(
+      value.patterns[0].tracks[value.instruments[0].id].map(
+        (note) => note.overrides?.tone,
+      ),
+    ).toEqual([0.5, 0.5]);
+    expect(screen.getByLabelText(`Adjust ${tone.label}`).value).toBe("0.5");
+  });
 
-    expect(playheadSteps()).toEqual([12, 4]);
-    expect(sequencer).toContain("function patternPlayheadSteps");
-    expect(sequencer).toContain(
-      "{#each currentPatternPlayheadSteps as playheadStep, index",
+  it("lets a sequential selection edit and remove pitch slides", async () => {
+    const first: Note = {
+      pitch: "C5",
+      start: 0,
+      len: 2,
+      selected: true,
+      legatoTo: { pitch: "E5", start: 2, curve: "linear" },
+    };
+    const second: Note = { pitch: "E5", start: 2, len: 2, selected: true };
+    const { value } = renderSequencer([first, second]);
+
+    const type = screen.getByLabelText("Pitch slide type");
+    expect((type as HTMLSelectElement).value).toBe("linear");
+    expect(
+      screen.getByRole("button", { name: "Create missing pitch slides" }),
+    ).toHaveProperty("disabled", true);
+    expect(
+      screen.getByRole("button", { name: "Remove pitch slides" }),
+    ).toHaveProperty("disabled", false);
+
+    await fireEvent.change(type, { target: { value: "smooth" } });
+    expect(
+      value.patterns[0].tracks[value.instruments[0].id][0].legatoTo?.curve,
+    ).toBe("smooth");
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Remove pitch slides" }),
+    );
+    expect(
+      value.patterns[0].tracks[value.instruments[0].id][0].legatoTo,
+    ).toBeUndefined();
+    expect(
+      screen.getByRole("button", { name: "Create missing pitch slides" }),
+    ).toHaveProperty("disabled", false);
+  });
+
+  it("supports focus, keyboard pattern resizing, and drag auditioning", async () => {
+    const focus = vi.fn();
+    const note: Note = { pitch: "C5", start: 0, len: 1, selected: true };
+    const value = fixture([note]);
+    project.set(value);
+    selInstId.set(value.instruments[0].id);
+    selPatId.set("pattern");
+    render(Sequencer, { props: { onToggleFocus: focus } });
+    await tick();
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Focus pattern editor" }),
+    );
+    expect(focus).toHaveBeenCalledOnce();
+
+    const resize = screen.getByRole("slider", {
+      name: "Resize pattern length",
+    });
+    expect(resize.getAttribute("aria-valuenow")).toBe("16");
+    await fireEvent.keyDown(resize, { key: "ArrowRight" });
+    expect(get(project)?.patterns[0]?.steps).toBe(17);
+    expect(screen.getByLabelText("Pattern length").textContent).toContain(
+      "17 steps",
+    );
+
+    await fireEvent.mouseDown(
+      screen.getByRole("button", { name: /C5, velocity 100 percent/i }),
+      {
+        button: 0,
+        clientX: 1,
+        clientY: 827,
+      },
+    );
+    await waitFor(() => expect(audio.noteOnAt).toHaveBeenCalledOnce());
+    expect(audio.noteOnAt).toHaveBeenCalledWith(
+      "drag-preview",
+      "C5",
+      0,
+      value.instruments[0].params,
+      1,
+    );
+    expect(get(lastPlayedPitch)).toBe("C5");
+  });
+
+  it("renders playheads only for active occurrences of the open pattern", async () => {
+    const { container, value } = renderSequencer();
+    playing.set(true);
+    playMode.set("pattern");
+    curStep.set(19);
+    await waitFor(() =>
+      expect(container.querySelectorAll(".playhead")).toHaveLength(1),
+    );
+    expect(
+      container.querySelector(".playhead")?.getAttribute("style"),
+    ).toContain("left: 72px");
+
+    value.arrangement = [
+      { id: "one", patternId: "pattern", track: 0, start: 0, len: 16 },
+      { id: "two", patternId: "pattern", track: 1, start: 8, len: 16 },
+    ];
+    value.tracks = [
+      { name: "One", color: "#fff" },
+      { name: "Two", color: "#fff" },
+    ];
+    project.set(value);
+    playMode.set("song");
+    curStep.set(12);
+    await waitFor(() =>
+      expect(container.querySelectorAll(".playhead")).toHaveLength(2),
     );
   });
 });

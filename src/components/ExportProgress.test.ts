@@ -1,124 +1,138 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { compile } from "svelte/compiler";
-import { render } from "svelte/server";
-import { describe, expect, it, vi } from "vitest";
+/** @vitest-environment jsdom */
+import { cleanup, render, screen } from "@testing-library/svelte";
+import { tick } from "svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ExportProgressState } from "../lib/render";
 
 import ExportProgress from "./ExportProgress.svelte";
 
-const current = vi.hoisted(() => ({
-  value: null as ExportProgressState | null,
-}));
-const source = readFileSync(
-  fileURLToPath(new URL("./ExportProgress.svelte", import.meta.url)),
-  "utf8",
-);
-vi.mock("../lib/render", () => ({
-  exportProgress: {
-    subscribe: (run: (value: ExportProgressState | null) => void) => {
-      run(current.value);
-      return () => {};
+const current = vi.hoisted(() => {
+  let value: ExportProgressState | null = null;
+  const subscribers = new Set<(state: ExportProgressState | null) => void>();
+
+  return {
+    exportProgress: {
+      subscribe(run: (state: ExportProgressState | null) => void) {
+        subscribers.add(run);
+        run(value);
+        return () => subscribers.delete(run);
+      },
     },
-  },
+    set(state: ExportProgressState | null) {
+      value = state;
+      for (const run of subscribers) {
+        run(value);
+      }
+    },
+  };
+});
+vi.mock("../lib/render", () => ({
+  exportProgress: current.exportProgress,
   cancelExport: vi.fn(),
   dismissExportError: vi.fn(),
   exportWav: vi.fn(),
 }));
 
-function markup(state: ExportProgressState): string {
-  current.value = state;
-  return render(ExportProgress).body;
+async function setProgress(state: ExportProgressState) {
+  current.set(state);
+  await tick();
 }
 
+async function show(state: ExportProgressState) {
+  await setProgress(state);
+  render(ExportProgress);
+  await tick();
+}
+
+beforeEach(() => {
+  HTMLDialogElement.prototype.close = vi.fn(function close(
+    this: HTMLDialogElement,
+  ) {
+    this.removeAttribute("open");
+  });
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal(
+    this: HTMLDialogElement,
+  ) {
+    this.setAttribute("open", "");
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  current.set(null);
+  vi.restoreAllMocks();
+});
+
 describe("export progress modal", () => {
-  it("compiles the native modal without accessibility warnings", () => {
-    const result = compile(source, {
-      filename: "ExportProgress.svelte",
-      generate: "client",
-    });
-    expect(result.js.code.length).toBeGreaterThan(0);
-    expect(
-      result.warnings.filter((warning) => warning.code.startsWith("a11y")),
-    ).toEqual([]);
-  });
-
-  it("requires an explicit second choice before cancelling an active export", () => {
-    expect(source).toContain("let confirmCancel = $state(false);");
-    expect(source).toContain("confirmCancel = true;");
-    expect(source).toContain("Cancel export?");
-    expect(source).toContain("Keep rendering");
-    expect(source).toContain("Abort export");
-    expect(source).toMatch(/class="danger"[\s\S]*Abort export/);
-    expect(source).toMatch(/class="danger"[\s\S]*Cancel export/);
-  });
-
   it.each([null, 0, 0.45, 1])(
     "cancels non-suspendable renders without waiting for native completion at progress %s",
-    (progress) => {
+    async (progress) => {
       const state: ExportProgressState = {
         stage: "rendering",
         progress,
         cancelling: false,
         canSuspend: false,
       };
-      const active = markup(state);
-      expect(active).not.toContain(
-        "Cancellation waits for rendering to finish.",
-      );
-      const cancelled = markup({ ...state, cancelling: true });
-      expect(cancelled).toContain("Cancelling…");
-      expect(cancelled).toContain("No file is downloaded after cancellation.");
+      await show(state);
+      expect(
+        screen.queryByText("Cancellation waits for rendering to finish."),
+      ).toBeNull();
+      await setProgress({ ...state, cancelling: true });
+      expect(screen.getByRole("status").textContent).toBe("Cancelling…");
+      expect(
+        screen.getByText(/No file is downloaded after cancellation\./),
+      ).not.toBeNull();
     },
   );
 
   it.each([true, undefined])(
     "does not infer suspension support from null progress (%s)",
-    (canSuspend) => {
-      const html = markup({
+    async (canSuspend) => {
+      await show({
         stage: "rendering",
         progress: null,
         cancelling: true,
         canSuspend,
       });
-      expect(html).toContain("Cancelling…");
-      expect(html).not.toContain("Cancellation waits for rendering to finish.");
+      expect(screen.getByRole("status").textContent).toBe("Cancelling…");
+      expect(
+        screen.queryByText("Cancellation waits for rendering to finish."),
+      ).toBeNull();
     },
   );
 
-  it("distinguishes waiting for telemetry from graph initialization", () => {
-    expect(
-      markup({
-        stage: "rendering",
-        progress: null,
-        cancelling: false,
-        canSuspend: false,
-      }),
-    ).toContain("Waiting for audio progress…");
-    expect(
-      markup({ stage: "preparing", progress: null, cancelling: false }),
-    ).toContain("Initializing the audio graph…");
+  it("distinguishes waiting for telemetry from graph initialization", async () => {
+    await show({
+      stage: "rendering",
+      progress: null,
+      cancelling: false,
+      canSuspend: false,
+    });
+    expect(screen.getByText("Waiting for audio progress…")).not.toBeNull();
+    await setProgress({
+      stage: "preparing",
+      progress: null,
+      cancelling: false,
+    });
+    expect(screen.getByText("Initializing the audio graph…")).not.toBeNull();
   });
 
-  it("labels the ETA as approximate and stage-local and hides it during cancellation or errors", () => {
+  it("labels the ETA as approximate and stage-local and hides it during cancellation or errors", async () => {
     const state: ExportProgressState = {
       stage: "rendering",
       progress: 0.45,
       cancelling: false,
       etaSeconds: 125,
     };
-    const html = markup(state);
-    expect(html).toContain("45% of this stage");
-    expect(html).toContain("Approx. 2 min left in this stage");
-    expect(markup({ ...state, cancelling: true })).not.toContain(
-      "left in this stage",
-    );
-    expect(
-      markup({ ...state, stage: "error", error: "Render failed" }),
-    ).not.toContain("left in this stage");
-    expect(markup({ ...state, etaSeconds: null })).not.toContain(
-      "left in this stage",
-    );
+    await show(state);
+    expect(screen.getByText("45% of this stage")).not.toBeNull();
+    expect(screen.getByText("Approx. 2 min left in this stage")).not.toBeNull();
+    await setProgress({ ...state, cancelling: true });
+    expect(screen.queryByText(/left in this stage/)).toBeNull();
+    await setProgress({ ...state, stage: "error", error: "Render failed" });
+    expect(screen.queryByText(/left in this stage/)).toBeNull();
+    await setProgress({ ...state, etaSeconds: null });
+    expect(screen.queryByText(/left in this stage/)).toBeNull();
   });
 });

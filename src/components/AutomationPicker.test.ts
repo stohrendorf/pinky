@@ -1,61 +1,75 @@
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  componentMarkup,
-  components,
-  componentSource,
-  elements,
-  hasAttribute,
-  textContent,
-} from "../test/svelte-semantics";
+import type { Project } from "../lib/types";
 
-const picker = componentSource(
-  new URL("./AutomationPicker.svelte", import.meta.url),
-);
-const playlist = componentSource(new URL("./Playlist.svelte", import.meta.url));
+import { autoParams } from "../lib/automation";
+import { DEFAULT_PARAMS } from "../lib/instruments";
+import { createMixer } from "../lib/mixer";
+import AutomationPicker from "./AutomationPicker.svelte";
+
+afterEach(cleanup);
+
+function project(automation: Project["automation"] = []): Project {
+  const instrument = {
+    id: "lead",
+    name: "Lead",
+    color: "#53d8fb",
+    params: { ...DEFAULT_PARAMS },
+  };
+
+  return {
+    formatVersion: 1,
+    instruments: [instrument],
+    mixer: createMixer([instrument.id]),
+    patterns: [],
+    arrangement: [],
+    tracks: [],
+    automation,
+    bpm: 120,
+    zoom: { seq: { width: 24, height: 32 }, arr: { width: 24, height: 32 } },
+  };
+}
 
 describe("automation lane chooser", () => {
-  it("uses accessible target tabs and the shared slash-name tree visual", () => {
-    const tabs = elements(componentMarkup(picker), "button").filter((tab) =>
-      hasAttribute(tab, "role", "tab"),
-    );
+  it("switches among accessible instrument, mixer, and global target tabs", async () => {
+    render(AutomationPicker, { project: project() });
 
-    expect(tabs.map(textContent)).toEqual([
-      "Instruments",
-      "Mixer",
-      "Global FX",
-    ]);
-    expect(picker).toContain("import TreeView from './ui/TreeView.svelte'");
-    const tree = components(componentMarkup(picker), "TreeView").find((node) =>
-      hasAttribute(node, "title", "Channels and buses"),
-    );
+    const instruments = screen.getByRole("tab", { name: "Instruments" });
+    expect(instruments.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tree", { name: "Instruments" })).not.toBeNull();
 
-    expect(tree).toBeDefined();
-    expect(hasAttribute(tree!, "items")).toBe(true);
+    await fireEvent.click(screen.getByRole("tab", { name: "Mixer" }));
+    expect(
+      screen.getByRole("tree", { name: "Channels and buses" }),
+    ).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Lead channel" })).not.toBeNull();
+
+    await fireEvent.click(screen.getByRole("tab", { name: "Global FX" }));
+    expect(screen.getByRole("button", { name: "Master FX" })).not.toBeNull();
   });
 
-  it("keeps instrument controls in editor panel groups and names encoded mixer targets", () => {
-    expect(picker).toContain("INSTRUMENT_AUTO_GROUPS");
-    expect(picker).toContain("mixerTarget('channel', instrument.id)");
-    expect(picker).toContain("mixerTarget('bus', bus.id)");
-    expect(picker).toContain("{#each parameterGroups as group");
+  it("adds the selected instrument parameter through its callback", async () => {
+    const onadd = vi.fn();
+    const fixture = project();
+    const param = autoParams(fixture.instruments[0].id)[0].param;
+    render(AutomationPicker, { project: fixture, onadd });
+
+    await fireEvent.click(screen.getByRole("button", { name: "Add lane" }));
+
+    expect(onadd).toHaveBeenCalledWith(fixture.instruments[0].id, param);
   });
 
-  it("prevents duplicate lanes and replaces the old explanatory form with concise copy", () => {
-    expect(picker).toContain("lane.target === target && lane.param === param");
-    expect(picker).toContain("disabled={!param || !!duplicate}");
-    expect(picker).toContain("This lane already exists.");
-    const automationPicker = components(
-      componentMarkup(playlist),
-      "AutomationPicker",
-    )[0];
+  it("disables adding a lane that already exists", () => {
+    const fixture = project();
+    const param = autoParams(fixture.instruments[0].id)[0].param;
+    fixture.automation = [
+      { id: "existing", target: fixture.instruments[0].id, param, points: [] },
+    ];
+    render(AutomationPicker, { project: fixture, onadd: vi.fn() });
 
-    expect(automationPicker).toBeDefined();
-    expect(hasAttribute(automationPicker, "onadd")).toBe(true);
-    expect(hasAttribute(automationPicker, "project")).toBe(true);
-    expect(playlist).not.toContain("<select bind:value={addTarget}>");
-    expect(playlist).not.toContain(
-      "The lane starts at the parameter's current value",
-    );
+    const add = screen.getByRole("button", { name: "Add lane" });
+    expect(add.hasAttribute("disabled")).toBe(true);
+    expect(screen.getByText("This lane already exists.")).not.toBeNull();
   });
 });

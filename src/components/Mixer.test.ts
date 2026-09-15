@@ -1,16 +1,20 @@
+import {
+  cleanup,
+  render as renderComponent,
+  screen,
+} from "@testing-library/svelte";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 import { tick } from "svelte";
 import { compile } from "svelte/compiler";
-import { render } from "svelte/server";
 import {
   createSourceFile,
   isFunctionDeclaration,
   ScriptTarget,
   transpileModule,
 } from "typescript";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { MixerChannel, MixerMaster } from "../lib/mixer";
 import type { Project } from "../lib/types";
@@ -24,24 +28,17 @@ import {
   removeMixerBus,
   resolveMixer,
 } from "../lib/mixer";
-import {
-  componentMarkup,
-  components,
-  elements,
-  hasAttribute,
-} from "../test/svelte-semantics";
 import MixerFader from "./MixerFader.svelte";
 import MixerStrip from "./MixerStrip.svelte";
 
 const source = (name: string) =>
-  readFileSync(
-    fileURLToPath(new URL(`./${name}.svelte`, import.meta.url)),
-    "utf8",
-  );
+  readFileSync(resolve("src", "components", `${name}.svelte`), "utf8");
 const mixer = source("Mixer");
 const strip = source("MixerStrip");
 const fader = source("MixerFader");
 const toolbar = source("TopBar");
+
+afterEach(cleanup);
 
 interface MixerActions {
   editChannel: (id: string, change: (channel: MixerChannel) => void) => void;
@@ -146,15 +143,32 @@ describe("Mixer component controls", () => {
     },
   );
 
-  it("opens directly from the toolbar and mounts meters only while the dialog is open", () => {
-    const main = elements(componentMarkup(toolbar), "div").find((node) =>
-      hasAttribute(node, "class", "topbar-main"),
-    )!;
+  it("keeps compact labelled strip controls available before selection", () => {
+    const channel = resolveMixer(undefined, ["bass"]).channels.bass;
+    renderComponent(MixerStrip, {
+      id: "bass",
+      name: "Bass",
+      color: "#abcdef",
+      kind: "Instrument",
+      selected: false,
+      channel,
+      outputs: [],
+      peak: 0,
+      rms: 0,
+      onselect: vi.fn(),
+      onedit: vi.fn(),
+    });
+
     expect(
-      components([main], "Button").some((node) =>
-        hasAttribute(node, "className", "mixer-toggle"),
-      ),
-    ).toBe(true);
+      screen
+        .getByRole("button", { name: "Mute Bass" })
+        .getAttribute("aria-pressed"),
+    ).toBe("false");
+    expect(
+      screen
+        .getByRole("button", { name: "Solo Bass" })
+        .getAttribute("aria-pressed"),
+    ).toBe("false");
     expect(toolbar).toMatch(
       /<Dialog[^>]*title="Mixer"[^>]*bind:show=\{showMixer}>\s*\{#if showMixer}[\s\S]*<Mixer\s*\/>/,
     );
@@ -219,34 +233,32 @@ describe("Mixer component controls", () => {
 
   it("shows compact labelled balance controls instead of a form on every strip", () => {
     const channel = resolveMixer(undefined, ["bass"]).channels.bass;
-    const html = render(MixerStrip, {
-      props: {
-        id: "bass",
-        name: "Bass",
-        color: "#abcdef",
-        kind: "Instrument",
-        selected: false,
-        channel,
-        outputs: [],
-        peak: 0.5,
-        rms: 0.25,
-        onselect: vi.fn(),
-        onedit: vi.fn(),
-      },
-    }).body;
-    expect(html).toContain('aria-label="Bass fader"');
-    expect(html).toContain('aria-label="Bass pan"');
-    expect(html).toContain('aria-label="Mute Bass"');
-    expect(html).toContain('aria-label="Solo Bass"');
-    expect(html).toContain("fa fa-volume-xmark");
-    expect(html).toContain("fa fa-headphones");
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain("Out → Master");
-    expect(html).not.toContain("···");
-    expect(html).not.toMatch(/>M<|>S</);
-    expect(html).not.toContain("<select");
-    expect(html).not.toContain("Reverb send");
-    expect(html).not.toContain("Processing &amp; sends");
+    const { container } = renderComponent(MixerStrip, {
+      id: "bass",
+      name: "Bass",
+      color: "#abcdef",
+      kind: "Instrument",
+      selected: false,
+      channel,
+      outputs: [],
+      peak: 0.5,
+      rms: 0.25,
+      onselect: vi.fn(),
+      onedit: vi.fn(),
+    });
+    expect(screen.getByRole("slider", { name: "Bass fader" })).not.toBeNull();
+    expect(screen.getByRole("slider", { name: "Bass pan" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Mute Bass" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Solo Bass" })).not.toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: "Bass settings" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(screen.getByText("Out → Master")).not.toBeNull();
+    expect(container.querySelector("select")).toBeNull();
+    expect(screen.queryByText("Reverb send")).toBeNull();
+    expect(screen.queryByText("Processing & sends")).toBeNull();
   });
 
   it("shares bounded vertical faders and stereo sample meters with Master", () => {
@@ -260,22 +272,34 @@ describe("Mixer component controls", () => {
       actions.change({ valueAsNumber });
     }
     expect(values).toEqual([0, 0.75, 1]);
-    const html = render(MixerFader, {
-      props: {
-        name: "Master",
-        value: 0.5,
-        max: 1,
-        peaks: [0, 2],
-        onchange: vi.fn(),
-      },
-    }).body;
-    expect(html).toContain('aria-orientation="vertical"');
-    expect(html).toContain('aria-valuetext="-6.0 dB"');
-    expect(html).toContain('aria-label="Master L peak"');
-    expect(html).toContain('aria-label="Master R peak"');
-    expect(html).toContain('aria-valuenow="-60"');
-    expect(html).toContain('aria-valuenow="6"');
-    expect(html).not.toMatch(/NaN|Infinity/);
+    const { container } = renderComponent(MixerFader, {
+      name: "Master",
+      value: 0.5,
+      max: 1,
+      peaks: [0, 2],
+      onchange: vi.fn(),
+    });
+    expect(
+      screen
+        .getByRole("slider", { name: "Master fader" })
+        .getAttribute("aria-orientation"),
+    ).toBe("vertical");
+    expect(
+      screen
+        .getByRole("slider", { name: "Master fader" })
+        .getAttribute("aria-valuetext"),
+    ).toBe("-6.0 dB");
+    expect(
+      screen
+        .getByRole("meter", { name: "Master L peak" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("-60");
+    expect(
+      screen
+        .getByRole("meter", { name: "Master R peak" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("6");
+    expect(container.textContent).not.toMatch(/NaN|Infinity/);
     expect(fader).toContain("writing-mode: vertical-lr");
     expect(fader).toContain("direction: rtl");
   });

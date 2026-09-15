@@ -1,34 +1,31 @@
-import { render } from "svelte/server";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/svelte";
+import { describe, expect, it, vi } from "vitest";
 
-import {
-  componentMarkup,
-  componentSource,
-  elements,
-  hasAttribute,
-} from "../test/svelte-semantics";
 import Slider from "./Slider.svelte";
 
-const slider = componentSource(new URL("./Slider.svelte", import.meta.url));
-
 describe("Slider", () => {
-  it("keeps its value prop reactive for external updates", () => {
-    const range = elements(componentMarkup(slider), "input").find((node) =>
-      hasAttribute(node, "type", "range"),
-    );
+  it("updates its rendered value for external changes and reports input changes", async () => {
+    const onchange = vi.fn();
+    const props = {
+      label: "Level",
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: 0.25,
+      onchange,
+    };
+    const { rerender } = render(Slider, props);
+    const range = screen.getByRole("slider", { name: /level/i });
 
-    expect(range).toBeDefined();
-    expect(hasAttribute(range!, "value")).toBe(true);
-    expect(hasAttribute(range!, "oninput")).toBe(true);
+    expect((range as HTMLInputElement).value).toBe("0.25");
+    expect(screen.getByText("0.25")).not.toBeNull();
 
-    const initial = render(Slider, {
-      props: { label: "Level", min: 0, max: 1, step: 0.01, value: 0.25 },
-    });
-    const updated = render(Slider, {
-      props: { label: "Level", min: 0, max: 1, step: 0.01, value: 0.75 },
-    });
+    rerender({ ...props, value: 0.75 });
 
-    expect(initial.body).toContain('value="0.25"');
-    expect(updated.body).toContain('value="0.75"');
+    expect((range as HTMLInputElement).value).toBe("0.75");
+    expect(screen.getByText("0.75")).not.toBeNull();
+
+    await fireEvent.input(range, { target: { value: "0.5" } });
+    expect(onchange).toHaveBeenCalledWith(0.5);
   });
 });

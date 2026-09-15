@@ -1,171 +1,183 @@
-import { describe, expect, it } from "vitest";
-
 import {
-  componentMarkup,
-  components,
-  componentSource,
-  eachBlocks,
-  elements,
-  hasAttribute,
-  styleRules,
-  textContent,
-} from "../test/svelte-semantics";
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const toolbar = componentSource(new URL("./TopBar.svelte", import.meta.url));
-const markup = componentMarkup(toolbar);
+import type { Project } from "../lib/types";
+
+import { createInstrument } from "../lib/instruments";
+import {
+  activeDemo,
+  DEMO_LIBRARY,
+  lastPlayedPitch,
+  playing,
+  project,
+  savedAt,
+  selInstId,
+  selPatId,
+  songCursor,
+  songLabel,
+} from "../lib/project";
+import TopBar from "./TopBar.svelte";
+
+const rendering = vi.hoisted(() => ({ value: false }));
+
+vi.mock("../lib/render", () => ({
+  cancelExport: vi.fn(),
+  dismissExportError: vi.fn(),
+  exportProgress: {
+    subscribe: (run: (value: null) => void) => (run(null), () => {}),
+  },
+  exportWav: vi.fn(),
+  rendering: {
+    subscribe: (run: (value: boolean) => void) => (
+      run(rendering.value),
+      () => {}
+    ),
+  },
+}));
+
+vi.mock("../lib/transport", () => ({
+  playSong: vi.fn(),
+  seekSong: vi.fn(),
+  stopTransport: vi.fn(),
+}));
+
+function fixture(): Project {
+  const instrument = createInstrument("Bass");
+  return {
+    arrangement: [],
+    bpm: 120,
+    formatVersion: 1,
+    instruments: [instrument],
+    patterns: [],
+    tracks: [],
+    zoom: { seq: { height: 1, width: 1 }, arr: { height: 1, width: 1 } },
+  };
+}
+
+beforeEach(() => {
+  rendering.value = false;
+  localStorage.clear();
+  project.set(fixture());
+  activeDemo.set(null);
+  lastPlayedPitch.set("C4");
+  playing.set(false);
+  savedAt.set(0);
+  selInstId.set(null);
+  selPatId.set(null);
+  songCursor.set(0);
+  songLabel.set("Untitled song");
+});
+
+afterEach(() => cleanup());
 
 describe("TopBar desktop layout", () => {
-  it("offers the shared demo registry with current-song state and descriptions on hover", () => {
-    const list = elements(markup, "div").find((node) =>
-      hasAttribute(node, "class", "demo-list"),
-    )!;
-    expect(eachBlocks([list])).toHaveLength(1);
-    const item = elements([list], "button").find((node) =>
-      hasAttribute(node, "class", "demo-item"),
-    )!;
-    expect(hasAttribute(item, "aria-pressed")).toBe(true);
-    expect(hasAttribute(item, "title")).toBe(true);
-    expect(hasAttribute(item, "disabled")).toBe(true);
+  it("keeps transport and timing controls directly available beside the logo", () => {
+    render(TopBar);
+
+    const brand = screen.getByRole("button", { name: /pinky/i });
+    expect(brand.getAttribute("aria-controls")).toBe("main-menu");
+    expect(brand.getAttribute("aria-expanded")).toBe("false");
     expect(
-      components(markup, "Dialog").some((node) =>
-        hasAttribute(node, "title", "Demo songs"),
-      ),
-    ).toBe(false);
+      screen
+        .getByRole("link", { name: "Pinky on GitHub" })
+        .getAttribute("href"),
+    ).toBe("https://github.com/stohrendorf/pinky");
+    expect(
+      screen.getByRole("group", { name: "Transport and timing" }),
+    ).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Play song" })).not.toBeNull();
+    expect(screen.getByLabelText("Tempo (BPM)")).not.toBeNull();
+    expect(screen.getByLabelText("Swing (%)")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Mixer" })).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Keyboard shortcuts (?)" }),
+    ).not.toBeNull();
   });
 
-  it("keeps project commands structured in the main menu beside direct transport", () => {
-    for (const label of ["Project", "Export", "Demos"]) {
-      const group = elements(markup, "section").find((node) =>
-        hasAttribute(node, "aria-label", label),
+  it("opens a named main menu containing project, export, and demo actions", async () => {
+    render(TopBar);
+    const brand = screen.getByRole("button", { name: /pinky/i });
+
+    await fireEvent.click(brand);
+    const menu = screen.getByRole("dialog", { name: "Pinky main menu" });
+    expect(brand.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      within(menu).getByRole("heading", { name: "Project" }),
+    ).not.toBeNull();
+    expect(
+      within(menu).getByRole("button", { name: "New project" }),
+    ).not.toBeNull();
+    expect(
+      within(menu).getByRole("button", { name: "Open project" }),
+    ).not.toBeNull();
+    expect(
+      within(menu).getAllByRole("button", { name: "Save to browser" }),
+    ).toHaveLength(1);
+    expect(
+      within(menu).getByRole("heading", { name: "Export" }),
+    ).not.toBeNull();
+    expect(
+      within(menu).getByRole("button", { name: "Project file (.json)" }),
+    ).not.toBeNull();
+    expect(
+      within(menu).getByRole("button", { name: "Audio (.wav)" }),
+    ).not.toBeNull();
+    expect(within(menu).getByRole("heading", { name: "Demos" })).not.toBeNull();
+  });
+
+  it("renders the shared demos with descriptions and marks the active demo", async () => {
+    activeDemo.set(DEMO_LIBRARY[0].id);
+    render(TopBar);
+
+    await fireEvent.click(screen.getByRole("button", { name: /pinky/i }));
+    for (const demo of DEMO_LIBRARY) {
+      const button = screen.getByRole("button", { name: demo.label });
+      expect(button.getAttribute("title")).toBe(demo.title);
+      expect(button.getAttribute("aria-pressed")).toBe(
+        demo.id === DEMO_LIBRARY[0].id ? "true" : "false",
       );
-      expect(group).toBeDefined();
     }
-    const transport = elements(markup, "div").find((node) =>
-      hasAttribute(node, "aria-label", "Transport and timing"),
-    );
-    expect(hasAttribute(transport!, "role", "group")).toBe(true);
-    expect(elements(markup, "details")).toHaveLength(0);
-    expect(components(markup, "InstrumentPanel")).toHaveLength(0);
   });
 
-  it("uses the brand as the main-menu trigger and keeps the GitHub icon separate", () => {
-    const brand = elements(markup, "button").find((node) =>
-      hasAttribute(node, "class", "brand main-menu-toggle"),
-    )!;
-    expect(brand).toBeDefined();
-    expect(textContent(brand)).toBe("Pinky");
-    expect(hasAttribute(brand, "aria-controls", "main-menu")).toBe(true);
-    expect(hasAttribute(brand, "aria-expanded")).toBe(true);
-    expect(hasAttribute(brand, "onclick")).toBe(true);
-    const github = elements(markup, "a").find((node) =>
-      hasAttribute(node, "href", "https://github.com/stohrendorf/pinky"),
-    )!;
-    expect(github).toBeDefined();
-    expect(hasAttribute(github, "aria-label", "Pinky on GitHub")).toBe(true);
-    expect(hasAttribute(github, "title", "Pinky on GitHub")).toBe(true);
+  it("shows master and performance controls in the Audio panel", async () => {
+    render(TopBar);
+
+    await fireEvent.click(screen.getByRole("button", { name: /audio/i }));
+    const panel = screen.getByRole("dialog", { name: "Audio" });
     expect(
-      elements([github], "i").some((node) =>
-        hasAttribute(node, "class", "fa-brands fa-github"),
-      ),
+      within(panel).getByRole("heading", { name: "Master" }),
+    ).not.toBeNull();
+    expect(
+      within(panel).getByRole("heading", { name: "Performance" }),
+    ).not.toBeNull();
+    expect(within(panel).getAllByRole("slider").length).toBeGreaterThan(1);
+    expect(
+      screen
+        .getByRole("button", { name: /audio/i })
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+  });
+
+  it("disables menu and transport actions while audio is rendering", async () => {
+    rendering.value = true;
+    render(TopBar);
+
+    expect(
+      screen.getByRole("button", { name: /pinky/i }).hasAttribute("disabled"),
     ).toBe(true);
-    const help = componentMarkup(
-      componentSource(new URL("./Shortcuts.svelte", import.meta.url)),
-    );
-    const link = elements(help, "a").find((node) =>
-      hasAttribute(node, "href", "https://github.com/stohrendorf/pinky"),
-    )!;
-    expect(link).toBeDefined();
-    expect(hasAttribute(link, "rel", "noopener noreferrer")).toBe(true);
-    expect(hasAttribute(link, "target", "_blank")).toBe(true);
-    expect(textContent(link)).toBe("Source and issues on GitHub");
-  });
-
-  it("keeps a single compact desktop row rather than wrapping into a mobile header", () => {
-    const styles = styleRules(toolbar);
-    expect(styles.get(".topbar-main")?.get("height")).toBe("48px");
-    for (const selector of [
-      ".topbar-main",
-      ".session-group",
-      ".transport-controls",
-    ]) {
-      expect(styles.get(selector)?.get("flex-wrap")).not.toBe("wrap");
-    }
-  });
-
-  it("has one browser-save action in the main menu and announces confirmation", () => {
-    const saves = elements(markup, "button").filter(
-      (node) => textContent(node) === "Save to browser",
-    );
-    expect(saves).toHaveLength(1);
     expect(
-      elements([saves[0]], "i").map((node) =>
-        hasAttribute(node, "aria-hidden", "true"),
-      ),
-    ).toEqual([true, true]);
-    const feedback = elements(markup, "span").find((node) =>
-      hasAttribute(node, "class", "saved-flash"),
-    )!;
-    expect(hasAttribute(feedback, "aria-live", "polite")).toBe(true);
-    expect(styleRules(toolbar).get(".saved-flash")?.get("position")).toBe(
-      "absolute",
-    );
-  });
-
-  it("uses named nonmodal main-menu and Audio panels without permanent help paragraphs", () => {
-    const toggles = elements(markup, "button").filter((node) =>
-      hasAttribute(node, "aria-controls", "topbar-panel"),
-    );
-    expect(toggles.map(textContent)).toEqual(["Audio"]);
-    for (const toggle of toggles) {
-      expect(hasAttribute(toggle, "aria-expanded")).toBe(true);
-      expect(hasAttribute(toggle, "aria-haspopup", "dialog")).toBe(true);
-    }
-    expect(toolbar).toContain(
-      "id={activePanel === 'main' ? 'main-menu' : 'topbar-panel'}",
-    );
-    expect(toolbar).toContain('role="dialog"');
-    expect(toolbar).not.toContain("aria-modal");
-    const mainMenu = elements(markup, "div").find((node) =>
-      hasAttribute(node, "class", "main-menu"),
-    )!;
-    expect(elements([mainMenu], "p")).toHaveLength(0);
-    expect(styleRules(toolbar).get(".toolbar-panel")?.get("overflow")).toBe(
-      "auto",
-    );
-  });
-
-  it("keeps master and performance controls in the flat Audio panel", () => {
-    const audio = elements(markup, "div").find((node) =>
-      hasAttribute(node, "class", "audio-controls"),
-    )!;
-    expect(elements([audio], "h3").map(textContent)).toEqual([
-      "Master",
-      "Performance",
-    ]);
-    expect(components([audio], "Slider")).toHaveLength(1);
-    expect(hasAttribute(elements([audio], "fieldset")[0], "disabled")).toBe(
+      screen
+        .getByRole("button", { name: "Play song" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+    expect(screen.getByLabelText("Tempo (BPM)").hasAttribute("disabled")).toBe(
       true,
     );
-    expect(
-      elements([audio], "input").some((node) =>
-        hasAttribute(node, "type", "range"),
-      ),
-    ).toBe(true);
-  });
-
-  it("keeps Mixer and shortcut help directly available", () => {
-    const mixer = components(markup, "Button").find(
-      (node) => textContent(node) === "Mixer",
-    )!;
-    expect(
-      elements([mixer], "i").some((node) =>
-        hasAttribute(node, "class", "fa fa-chart-simple"),
-      ),
-    ).toBe(true);
-    expect(
-      components(markup, "IconButton").some((node) =>
-        hasAttribute(node, "title", "Keyboard shortcuts (?)"),
-      ),
-    ).toBe(true);
   });
 });
