@@ -5,6 +5,7 @@
     import {createInstrument} from '../lib/instruments';
     import {cloneInstrument, project, renameInstrument, selInstId, selPatId, touch} from '../lib/project';
     import Confirm from './ui/Confirm.svelte';
+    import IconButton from './ui/IconButton.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
 
@@ -178,13 +179,14 @@
         usedItemIds={usedInstrumentIds}
     >
         {#snippet headerActions()}
-            <button
-                class="header-add"
-                aria-label="New instrument"
+            <IconButton
+                ariaLabel="New instrument"
+                icon="fa-add"
                 onclick={add}
+                size="compact"
                 title="New instrument"
-                type="button"><i class="fa fa-add"></i></button
-            >
+                variant="outline"
+            />
         {/snippet}
     </TreeView>
 </div>
@@ -218,18 +220,4 @@
         flex: 1;
     }
 
-    .header-add {
-        width: 24px;
-        height: 22px;
-        padding: 2px;
-        background: transparent;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--accent);
-        cursor: pointer;
-    }
-
-    .header-add:hover {
-        background: var(--color-surface-hover);
-    }
 </style>

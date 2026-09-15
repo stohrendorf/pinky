@@ -52,6 +52,7 @@
     import Confirm from './ui/Confirm.svelte';
     import ContextMenu from './ui/ContextMenu.svelte';
     import Dialog from './ui/Dialog.svelte';
+    import IconButton from './ui/IconButton.svelte';
     import Prompt from './ui/Prompt.svelte';
 
     interface Props {
@@ -1276,17 +1277,22 @@
     <div class="playlist-scroll">
         <div class="corner frozen-corner">
             <div class="corner-actions">
-                <button aria-label="Add track" onclick={addTrack} title="Add track">
-                    <i class="fa fa-plus"></i>
-                </button>
-                <button
-                    class="auto-add"
-                    aria-label="Add automation lane"
+                <IconButton
+                    ariaLabel="Add track"
+                    icon="fa-plus"
+                    onclick={addTrack}
+                    size="compact"
+                    title="Add track"
+                    variant="outline"
+                />
+                <IconButton
+                    ariaLabel="Add automation lane"
+                    icon="fa-bezier-curve"
                     onclick={openAddAuto}
+                    size="compact"
                     title="Add automation lane"
-                >
-                    <i class="fa fa-bezier-curve"></i>
-                </button>
+                    variant="outline"
+                />
             </div>
         </div>
         <div style="max-width: {viewportWidth}px;" class="timeline-viewport">
@@ -1743,7 +1749,7 @@
         display: flex;
     }
 
-    .corner-actions button {
+    :global(.corner-actions .icon-btn) {
         flex: 1;
         height: 100%;
         display: flex;
@@ -1753,7 +1759,7 @@
         white-space: nowrap;
     }
 
-    .corner-actions button i {
+    :global(.corner-actions .icon-btn i) {
         font-size: 12px;
     }
 
@@ -2220,23 +2226,6 @@
         opacity: 0.7;
         z-index: 15;
         pointer-events: none;
-    }
-
-    /* automation lanes */
-    .auto-add {
-        background: var(--border);
-        border: none;
-        color: var(--primary-text);
-        font-family: inherit;
-        font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-    .auto-add:hover {
-        background: var(--color-surface-hover);
     }
 
     .auto-label {

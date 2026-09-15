@@ -7,6 +7,7 @@
     import ColorPicker from './ui/ColorPicker.svelte';
     import Confirm from './ui/Confirm.svelte';
     import Dialog from './ui/Dialog.svelte';
+    import IconButton from './ui/IconButton.svelte';
     import Prompt from './ui/Prompt.svelte';
     import TreeView from './ui/TreeView.svelte';
 
@@ -167,13 +168,14 @@
         title="Patterns"
     >
         {#snippet headerActions()}
-            <button
-                class="header-add"
-                aria-label="New pattern"
+            <IconButton
+                ariaLabel="New pattern"
+                icon="fa-add"
                 onclick={add}
+                size="compact"
                 title="New pattern"
-                type="button"><i class="fa fa-add"></i></button
-            >
+                variant="outline"
+            />
         {/snippet}
     </TreeView>
 </div>
@@ -217,20 +219,4 @@
         flex: 1;
     }
 
-    .header-add {
-        width: 24px;
-        height: 22px;
-        padding: 2px;
-        background: var(--color-surface);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--accent);
-        font: inherit;
-        font-size: 11px;
-        cursor: pointer;
-    }
-
-    .header-add:hover {
-        background: var(--color-surface-hover);
-    }
 </style>

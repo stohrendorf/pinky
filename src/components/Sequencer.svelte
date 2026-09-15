@@ -38,6 +38,7 @@
     } from '../lib/viewport';
     import {preventDefault, stopPropagation} from './event-modifiers';
     import ContextMenu from './ui/ContextMenu.svelte';
+    import IconButton from './ui/IconButton.svelte';
 
     interface Props {
         onEditInstrument?: () => void;
@@ -974,38 +975,30 @@
     <div class="editor-toolbar">
         <div class="toolbar-row">
             <div class="pattern-controls">
-                <button
-                    class="pattern-preview"
-                    aria-label="Play pattern"
-                    aria-pressed={patternPlaying}
+                <IconButton
+                    ariaLabel={patternPlaying ? 'Stop pattern playback' : 'Play pattern'}
                     disabled={!$project || $rendering}
+                    icon={patternPlaying ? 'fa-stop' : 'fa-play'}
                     onclick={togglePatternPlayback}
+                    pressed={patternPlaying}
                     title={patternPlaying
                         ? 'Stop pattern playback (Shift+Space)'
                         : 'Play selected pattern on repeat (Shift+Space)'}
-                    type="button"
-                >
-                    {#if patternPlaying}
-                        <span><i class="fa fa-stop" aria-hidden="true"></i></span>
-                    {:else}
-                        <span><i class="fa fa-play" aria-hidden="true"></i></span>
-                    {/if}
-                </button>
+                    variant="outline"
+                />
                 <span class="toolbar-hint">Alt+drag = velocity</span>
             </div>
             <div class="toolbar-actions">
-                <button
-                    class="pattern-focus"
-                    aria-label={patternFocused ? 'Exit pattern focus mode' : 'Focus pattern editor'}
-                    aria-pressed={patternFocused}
+                <IconButton
+                    ariaLabel={patternFocused ? 'Exit pattern focus mode' : 'Focus pattern editor'}
+                    icon={patternFocused ? 'fa-compress' : 'fa-expand'}
                     onclick={onToggleFocus}
+                    pressed={patternFocused}
                     title={patternFocused
                         ? 'Exit pattern focus mode (Esc or Ctrl+Shift+F)'
                         : 'Focus pattern editor (Ctrl+Shift+F)'}
-                    type="button"
-                >
-                    <i class="fa fa-{patternFocused ? 'compress' : 'expand'}" aria-hidden="true"></i>
-                </button>
+                    variant="outline"
+                />
                 <button
                     class="instrument-edit"
                     onclick={onEditInstrument}
@@ -1179,24 +1172,24 @@
                                         <option value={shape.id}>{shape.label}</option>
                                     {/each}
                                 </select>
-                                <button
-                                    aria-label="Create missing pitch slides"
+                                <IconButton
+                                    ariaLabel="Create missing pitch slides"
                                     disabled={!selectedLegatoCanConnect}
+                                    icon="fa-link"
                                     onclick={addLegato}
+                                    size="compact"
                                     title="Create missing pitch slides"
-                                    type="button"
-                                >
-                                    <i class="fa fa-link" aria-hidden="true"></i>
-                                </button>
-                                <button
-                                    aria-label="Remove pitch slides"
+                                    variant="outline"
+                                />
+                                <IconButton
+                                    ariaLabel="Remove pitch slides"
                                     disabled={!selectedLegatoHasConnections}
+                                    icon="fa-link-slash"
                                     onclick={removeLegato}
+                                    size="compact"
                                     title="Remove pitch slides"
-                                    type="button"
-                                >
-                                    <i class="fa fa-link-slash" aria-hidden="true"></i>
-                                </button>
+                                    variant="outline"
+                                />
                             </div>
                         {/if}
                     </div>
@@ -1235,16 +1228,14 @@
                 <section class="note-overrides" aria-label="Instrument overrides">
                     <header class="note-overrides-header">
                         <h4>Instrument overrides</h4>
-                        <button
-                            bind:this={overrideAddAnchor}
-                            class="note-override-add"
-                            aria-label="Add instrument override"
+                        <IconButton
+                            ariaLabel="Add instrument override"
+                            icon="fa-plus"
                             onclick={() => (overrideAddMenuOpen = !overrideAddMenuOpen)}
+                            size="compact"
                             title="Add instrument override"
-                            type="button"
-                        >
-                            <i class="fa fa-plus" aria-hidden="true"></i>
-                        </button>
+                            bind:element={overrideAddAnchor}
+                        />
                     </header>
                     {#each selectedOverrideDefinitions as def (def.param)}
                         {@const value = selectedOverrideValue(def.param)}
@@ -1413,47 +1404,7 @@
         gap: 6px;
     }
 
-    .pattern-focus {
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: transparent;
-        color: var(--primary-text);
-    }
 
-    .pattern-focus:hover,
-    .pattern-focus[aria-pressed='true'] {
-        border-color: var(--accent);
-        background: var(--color-accent-soft);
-        color: var(--accent);
-    }
-
-    .pattern-preview {
-        flex: 0 0 30px;
-        height: 30px;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: transparent;
-        color: var(--primary-text);
-        cursor: pointer;
-    }
-
-    .pattern-preview:hover:not(:disabled) {
-        background: var(--color-surface-hover);
-    }
-
-    .pattern-preview[aria-pressed='true'] {
-        border-color: var(--accent);
-        background: var(--color-accent-soft);
-        color: var(--accent);
-    }
-
-    .pattern-preview:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-    }
 
     .piano-roll {
         display: flex;
@@ -1779,13 +1730,6 @@
         gap: 6px;
     }
 
-    .note-overrides .note-override-add {
-        display: grid;
-        width: 24px;
-        height: 24px;
-        place-items: center;
-        padding: 0;
-    }
 
     .note-override-value {
         font-size: 10px;
@@ -1890,15 +1834,6 @@
         opacity: 0.7;
     }
 
-    .note-overrides button {
-        padding: 2px 5px;
-        border: 1px solid var(--color-border);
-        border-radius: 3px;
-        background: var(--border);
-        color: var(--primary-text);
-        font: inherit;
-        cursor: pointer;
-    }
 
     .note-inspector input::-webkit-outer-spin-button,
     .note-inspector input::-webkit-inner-spin-button {
@@ -1928,24 +1863,6 @@
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-warning) 45%, transparent);
     }
 
-    .note-legato-actions button {
-        display: grid;
-        width: 24px;
-        height: 24px;
-        place-items: center;
-        padding: 0;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: var(--border);
-        color: var(--primary-text);
-        font: inherit;
-        cursor: pointer;
-    }
-
-    .note-legato-actions button:hover:not(:disabled) {
-        border-color: var(--accent);
-        background: var(--color-accent-soft);
-    }
 
     .empty-inspector,
     .legato-hint {
