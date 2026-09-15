@@ -29,27 +29,27 @@
     "score:winter": "node score/winter/build.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@sveltejs/vite-plugin-svelte": "^7.3.0",
-    "@tsconfig/svelte": "^5.0.8",
-    "@types/node": "^26.2.0",
-    "eslint": "^10.8.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-perfectionist": "^5.10.1",
-    "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-svelte": "^3.22.0",
-    "globals": "^17.9.0",
-    "playwright-core": "^1.63.0",
-    "prettier": "^3.9.6",
-    "prettier-plugin-svelte": "^4.1.1",
-    "svelte": "^5.56.8",
-    "svelte-check": "^4.7.5",
-    "typescript": "^5.5.0",
-    "typescript-eslint": "^8.67.0",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "@eslint/js": "*",
+    "@sveltejs/vite-plugin-svelte": "*",
+    "@tsconfig/svelte": "*",
+    "@types/node": "*",
+    "eslint": "*",
+    "eslint-config-prettier": "*",
+    "eslint-plugin-perfectionist": "*",
+    "eslint-plugin-prettier": "*",
+    "eslint-plugin-svelte": "*",
+    "globals": "*",
+    "playwright-core": "*",
+    "prettier": "*",
+    "prettier-plugin-svelte": "*",
+    "svelte": "*",
+    "svelte-check": "*",
+    "typescript": "*",
+    "typescript-eslint": "*",
+    "vite": "*",
+    "vitest": "*"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.3.1"
+    "@fortawesome/fontawesome-free": "*"
   }
 }
