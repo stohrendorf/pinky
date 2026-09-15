@@ -1116,10 +1116,12 @@
                         {@const r = rowOfNote[n.pitch]}
                         {@const v = n.vel ?? 1}
                         <div
-                            style="left: {n.start * cellWidth}px; width: {n.len *
-                                cellWidth}px; top: {r * cellHeight + 1}px; height: {cellHeight -
-                                2}px; background: {pat.color || 'var(--accent)'}; opacity: {0.4 +
-                                0.6 * v}"
+                            style="left: {n.start * cellWidth}px;
+                            width: {n.len * cellWidth}px;
+                            top: {r * cellHeight + 1}px;
+                            height: {cellHeight - 2}px;
+                            background: {pat.color || 'var(--accent)'};
+                            opacity: {0.4 + 0.6 * v}"
                             class="note"
                             class:has-overrides={Object.values(n.overrides ?? {}).some(Number.isFinite)}
                             class:selected={selectedNotes.includes(n)}
@@ -1644,7 +1646,8 @@
     }
 
     .note.has-overrides {
-        box-shadow: 0 0 7px color-mix(in srgb, var(--accent2) 85%, transparent);
+        border: 2px solid var(--color-accent-bright);
+        box-shadow: inset 0 0 0 1px var(--color-canvas-deep);
     }
 
     .note.selected.has-overrides {
